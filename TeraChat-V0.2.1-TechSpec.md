@@ -1877,11 +1877,13 @@ allow_app[app] {
 
 *Trạm phụ phục vụ di chuyển, đòi hỏi tối ưu pin và đánh thức từ xa.*
 
+> **Đánh giá từ Kiến trúc sư trưởng (Lead Dev):** Tầm nhìn mở rộng sang Mobile (Android/iOS) để đánh chiếm phân khúc SME (doanh nghiệp vừa và nhỏ), F&B và Bán lẻ là hoàn toàn chính xác. Desktop là "trạm chỉ huy", còn Mobile là "tay chân tiền tuyến".  Kiến trúc v2.0 hiện tại đã tương thích 75-80% do những mảng cốt lõi (Rust Core Cryptography, Survival Link BLE/Wi-Fi Direct, Secure Enclave Hardware, Magic Logger) có thể "ăn ngay". Tuy nhiên, Mobile có đặc thù OS độc quyền khắt khe cần các lách luật kiến trúc.
+
 ### 11. Tech Stack & Architecture (Mobile)
 
-**React Native + Rust FFI**
+**React Native / Flutter + Rust FFI**
 
-Kiến trúc Mobile sử dụng React Native để đồng bộ mã nguồn UI với team Web. Giao tiếp mã hóa được gọi trực tiếp xuống thư viện C-compatible FFI của Rust Core để giải mã E2EE cực nhanh (trung bình <5ms) mà không bị nghẽn ở lớp Bridge của JS Engine.
+Để tối ưu chi phí phát triển (không đập đi xây lại Native Swift/Kotlin cho UI), kiến trúc Mobile sử dụng React Native hoặc Flutter để đồng bộ mã nguồn UI với team Web. Giao tiếp mã hóa được gọi trực tiếp xuống thư viện tĩnh C-compatible FFI của Rust Core để giải mã E2EE cực nhanh (trung bình <5ms) mà không bị nghẽn ở lớp Bridge của JS/Dart Engine.
 
 ### 12. UI/UX Constraints (Push-First)
 
@@ -1892,26 +1894,40 @@ Kiến trúc Mobile sử dụng React Native để đồng bộ mã nguồn UI v
 
 ### 13. Mobile-Specific Transport (Wake-up Ping)
 
-**Giải quyết Bài toán Pin & Chạy nền (iOS/Android):**
+**Giải quyết Tử huyệt kết nối nền (Background Execution):**
 
-Mobile **KHÔNG** duy trì connection WebSocket 24/7 như Desktop để tránh sập pin.
-* Khi có tin nhắn đến (E2EE payload), Relay Server gửi một **Wake-up Ping** (Data Push Notification - cấu trúc rỗng metadata) qua APNS (Apple) hoặc FCM (Google).
+OS của điện thoại rất độc tài trong việc quản lý tài nguyên. Khi vuốt thoát app trên iOS, hệ điều hành sẽ "giết" kết nối WebSocket ngay lập tức. Mobile **KHÔNG** duy trì connection 24/7 như Desktop để tránh sập pin.
+
+* Khi có tin nhắn đến (E2EE payload), Relay Server gửi một **Wake-up Ping** (Data Push Notification - cấu trúc rỗng metadata `content-available: 1`) qua APNS (Apple) hoặc FCM (Google).
+* **Apple Enterprise Program ($299):** Nếu doanh nghiệp muốn chạy mạng Private cục bộ và không publish app lên App Store đại trà, họ bắt buộc phải mua chứng chỉ này của Apple để APNS cấp quyền gửi Wake-up Ping nội bộ.
 * Hệ điều hành sẽ đánh thức ứng dụng đang ngủ trong background (~30 giây).
-* App Tự động mở kết nối TCP với Mesh Network trực tiếp (không qua Cloud), lấy tin nhắn về và giải mã cục bộ bằng Private Key trong Secure Enclave.
-* Sau khi giải mã thành văn bản rõ, App tự phát 'Local Notification' lên màn hình khóa.
+* App Tự động mở kết nối TCP với Mesh Network trực tiếp (không qua Cloud), lấy bản mã về và giải mã cục bộ bằng Private Key bảo vệ trong Secure Enclave (iOS) / StrongBox (Android - chuẩn quân đội).
+* Sau khi giải mã thành văn bản rõ, App tự phát 'Local Notification' lên màn hình khóa thiết bị.
 
 ### 14. Mobile Feature Modules
 
 #### 14.1 CRDT Offline Sync (Mobile Constraint)
 
-> **Context:** Mobile hạn chế bộ nhớ chạy nền và ổ cứng vật lý. Engine CRDT trên Mobile sẽ bị giới hạn chỉ lưu trữ một tập hợp State Vector nhỏ (ví dụ 30 ngài gần nhất). Khi có xung đột Merge phức tạp, Mobile ủy quyền (Offload) cho Desktop của chính User hoặc VPS rà soát thay.
+> **Context:** Mobile hạn chế bộ nhớ chạy nền và ổ cứng vật lý. Engine CRDT trên Mobile sẽ bị giới hạn chỉ lưu trữ một tập hợp State Vector nhỏ (ví dụ 30 ngày gần nhất). Khi có xung đột Merge phức tạp, Mobile ủy quyền (Offload) cho Desktop của chính User hoặc VPS rà soát thay.
 
 **Engine: Automerge CRDT Integration**
 
 * **Library:** Automerge CRDT (Rust library) tích hợp vào Rust Core.
 * **Ordering:** Mỗi document/message mang **Vector Clock** + **Causal ordering**.
 * **Merge Strategy:** Khi reconnect, merge tự động (thay vì "Last Write Wins").
-* **Scope:** Message ordering, Shared Document editing, Admin Policy sync.
+* **Scope:** Message ordering, Shared Document editing.
+
+#### 14.2 Enterprise Marketplace Policies (Apple "App trong App" Ban)
+
+Apple nghiêm cấm việc tải các đoạn code thực thi dộng (như `.tapp` WASM Mini-Apps) từ bên ngoài vào vì coi đó là hành vi trốn tránh kiểm duyệt của App Store.
+
+* **Giải pháp Lách luật (Workaround):** Thay vì thiết kế dạng Mini-App độc lập chạy mã WASM, TeraChat Marketplace trên Mobile sẽ trả về các **"Plugin tiện ích nội bộ"** hoặc **"Tài liệu JSON tương tác"** (tương tự định dạng Adaptive Cards). Tầng UI (React/Flutter) trên Mobile chỉ đóng vai trò là Engine Renderer tĩnh để render JSON Layout này thành giao diện bấm/điền form, đảm bảo tuân thủ tuyệt đối quy định "Không chạy mã thực thi lạ" của Apple.
+
+#### 14.3 Shared Device Auth (Kiosk Mode)
+
+Với nhóm F&B và Bán lẻ, thường xuyên có 3-4 nhân viên dùng chung 1 cái iPad đứng quầy. Việc liên kết thiết bị cứng ngắc 1:1 (Thiết bị = 1 Private Key của Cáp nhân) sẽ gây sập luồng vận hành.
+
+* **Giải pháp phân tách (Store Key vs PIN):** iPad Kiosk sẽ được Register vào mạng lưới bằng một định danh chung cấp Chi Nhánh (Store Key Pair) để mã hóa đường truyền. Để định danh thao tác của cá nhân, nhân viên sẽ dùng mã PIN 4-6 số ngắn gọn (có TTL) để mở Session nội bộ ngay trên giao diện của iPad đó (Layer 7). Điều này cho phép một thiết bị dùng chung bảo mật dữ liệu của quán ăn mà vẫn truy vết Audit Log được ai là người đã bấm nút gửi Order.
 
 ## PHẦN IV: HỆ SINH THÁI TÍCH HỢP (ECOSYSTEM & INTEGRATION)
 

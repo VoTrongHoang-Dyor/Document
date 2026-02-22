@@ -2754,9 +2754,10 @@ allow_app[app] {
 </ul>
 <h2 id="phần-iii-phân-khúc-mobile-app-android-ios">PHẦN III: PHÂN KHÚC MOBILE APP (ANDROID / IOS)</h2>
 <p><em>Trạm phụ phục vụ di chuyển, đòi hỏi tối ưu pin và đánh thức từ xa.</em></p>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Đánh giá từ Kiến trúc sư trưởng (Lead Dev):</strong> Tầm nhìn mở rộng sang Mobile (Android/iOS) để đánh chiếm phân khúc SME (doanh nghiệp vừa và nhỏ), F&B và Bán lẻ là hoàn toàn chính xác. Desktop là "trạm chỉ huy", còn Mobile là "tay chân tiền tuyến".  Kiến trúc v2.0 hiện tại đã tương thích 75-80% do những mảng cốt lõi (Rust Core Cryptography, Survival Link BLE/Wi-Fi Direct, Secure Enclave Hardware, Magic Logger) có thể "ăn ngay". Tuy nhiên, Mobile có đặc thù OS độc quyền khắt khe cần các lách luật kiến trúc.</p>
 <h3 id="11-tech-stack-architecture-mobile">11. Tech Stack & Architecture (Mobile)</h3>
-<p><strong>React Native + Rust FFI</strong></p>
-<p>Kiến trúc Mobile sử dụng React Native để đồng bộ mã nguồn UI với team Web. Giao tiếp mã hóa được gọi trực tiếp xuống thư viện C-compatible FFI của Rust Core để giải mã E2EE cực nhanh (trung bình <5ms) mà không bị nghẽn ở lớp Bridge của JS Engine.</p>
+<p><strong>React Native / Flutter + Rust FFI</strong></p>
+<p>Để tối ưu chi phí phát triển (không đập đi xây lại Native Swift/Kotlin cho UI), kiến trúc Mobile sử dụng React Native hoặc Flutter để đồng bộ mã nguồn UI với team Web. Giao tiếp mã hóa được gọi trực tiếp xuống thư viện tĩnh C-compatible FFI của Rust Core để giải mã E2EE cực nhanh (trung bình <5ms) mà không bị nghẽn ở lớp Bridge của JS/Dart Engine.</p>
 <h3 id="12-uiux-constraints-push-first">12. UI/UX Constraints (Push-First)</h3>
 <p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Mobile Context:</strong> Khác với Data Density của Desktop, Mobile sử dụng triết lý "Vuốt trượt và Cảnh báo".</p>
 <ul>
@@ -2764,23 +2765,34 @@ allow_app[app] {
 <li>Command Palette được thay bằng Floating/Quick Action Button phù hợp thao tác 1 ngón tay.</li>
 </ul>
 <h3 id="13-mobile-specific-transport-wake-up-ping">13. Mobile-Specific Transport (Wake-up Ping)</h3>
-<p><strong>Giải quyết Bài toán Pin & Chạy nền (iOS/Android):</strong></p>
-<p>Mobile <strong>KHÔNG</strong> duy trì connection WebSocket 24/7 như Desktop để tránh sập pin. </p>
+<p><strong>Giải quyết Tử huyệt kết nối nền (Background Execution):</strong></p>
+<p>OS của điện thoại rất độc tài trong việc quản lý tài nguyên. Khi vuốt thoát app trên iOS, hệ điều hành sẽ "giết" kết nối WebSocket ngay lập tức. Mobile <strong>KHÔNG</strong> duy trì connection 24/7 như Desktop để tránh sập pin.</p>
 <ul>
-<li>Khi có tin nhắn đến (E2EE payload), Relay Server gửi một <strong>Wake-up Ping</strong> (Data Push Notification - cấu trúc rỗng metadata) qua APNS (Apple) hoặc FCM (Google).</li>
+<li>Khi có tin nhắn đến (E2EE payload), Relay Server gửi một <strong>Wake-up Ping</strong> (Data Push Notification - cấu trúc rỗng metadata <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">content-available: 1</code>) qua APNS (Apple) hoặc FCM (Google).</li>
+<li><strong>Apple Enterprise Program ($299):</strong> Nếu doanh nghiệp muốn chạy mạng Private cục bộ và không publish app lên App Store đại trà, họ bắt buộc phải mua chứng chỉ này của Apple để APNS cấp quyền gửi Wake-up Ping nội bộ.</li>
 <li>Hệ điều hành sẽ đánh thức ứng dụng đang ngủ trong background (~30 giây).</li>
-<li>App Tự động mở kết nối TCP với Mesh Network trực tiếp (không qua Cloud), lấy tin nhắn về và giải mã cục bộ bằng Private Key trong Secure Enclave.</li>
-<li>Sau khi giải mã thành văn bản rõ, App tự phát 'Local Notification' lên màn hình khóa.</li>
+<li>App Tự động mở kết nối TCP với Mesh Network trực tiếp (không qua Cloud), lấy bản mã về và giải mã cục bộ bằng Private Key bảo vệ trong Secure Enclave (iOS) / StrongBox (Android - chuẩn quân đội).</li>
+<li>Sau khi giải mã thành văn bản rõ, App tự phát 'Local Notification' lên màn hình khóa thiết bị.</li>
 </ul>
 <h3 id="14-mobile-feature-modules">14. Mobile Feature Modules</h3>
 <h4 id="141-crdt-offline-sync-mobile-constraint">14.1 CRDT Offline Sync (Mobile Constraint)</h4>
-<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Context:</strong> Mobile hạn chế bộ nhớ chạy nền và ổ cứng vật lý. Engine CRDT trên Mobile sẽ bị giới hạn chỉ lưu trữ một tập hợp State Vector nhỏ (ví dụ 30 ngài gần nhất). Khi có xung đột Merge phức tạp, Mobile ủy quyền (Offload) cho Desktop của chính User hoặc VPS rà soát thay.</p>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Context:</strong> Mobile hạn chế bộ nhớ chạy nền và ổ cứng vật lý. Engine CRDT trên Mobile sẽ bị giới hạn chỉ lưu trữ một tập hợp State Vector nhỏ (ví dụ 30 ngày gần nhất). Khi có xung đột Merge phức tạp, Mobile ủy quyền (Offload) cho Desktop của chính User hoặc VPS rà soát thay.</p>
 <p><strong>Engine: Automerge CRDT Integration</strong></p>
 <ul>
 <li><strong>Library:</strong> Automerge CRDT (Rust library) tích hợp vào Rust Core.</li>
 <li><strong>Ordering:</strong> Mỗi document/message mang <strong>Vector Clock</strong> + <strong>Causal ordering</strong>.</li>
 <li><strong>Merge Strategy:</strong> Khi reconnect, merge tự động (thay vì "Last Write Wins").</li>
-<li><strong>Scope:</strong> Message ordering, Shared Document editing, Admin Policy sync.</li>
+<li><strong>Scope:</strong> Message ordering, Shared Document editing.</li>
+</ul>
+<h4 id="142-enterprise-marketplace-policies-apple-app-trong-app-ban">14.2 Enterprise Marketplace Policies (Apple "App trong App" Ban)</h4>
+<p>Apple nghiêm cấm việc tải các đoạn code thực thi dộng (như <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">.tapp</code> WASM Mini-Apps) từ bên ngoài vào vì coi đó là hành vi trốn tránh kiểm duyệt của App Store.</p>
+<ul>
+<li><strong>Giải pháp Lách luật (Workaround):</strong> Thay vì thiết kế dạng Mini-App độc lập chạy mã WASM, TeraChat Marketplace trên Mobile sẽ trả về các <strong>"Plugin tiện ích nội bộ"</strong> hoặc <strong>"Tài liệu JSON tương tác"</strong> (tương tự định dạng Adaptive Cards). Tầng UI (React/Flutter) trên Mobile chỉ đóng vai trò là Engine Renderer tĩnh để render JSON Layout này thành giao diện bấm/điền form, đảm bảo tuân thủ tuyệt đối quy định "Không chạy mã thực thi lạ" của Apple.</li>
+</ul>
+<h4 id="143-shared-device-auth-kiosk-mode">14.3 Shared Device Auth (Kiosk Mode)</h4>
+<p>Với nhóm F&B và Bán lẻ, thường xuyên có 3-4 nhân viên dùng chung 1 cái iPad đứng quầy. Việc liên kết thiết bị cứng ngắc 1:1 (Thiết bị = 1 Private Key của Cáp nhân) sẽ gây sập luồng vận hành.</p>
+<ul>
+<li><strong>Giải pháp phân tách (Store Key vs PIN):</strong> iPad Kiosk sẽ được Register vào mạng lưới bằng một định danh chung cấp Chi Nhánh (Store Key Pair) để mã hóa đường truyền. Để định danh thao tác của cá nhân, nhân viên sẽ dùng mã PIN 4-6 số ngắn gọn (có TTL) để mở Session nội bộ ngay trên giao diện của iPad đó (Layer 7). Điều này cho phép một thiết bị dùng chung bảo mật dữ liệu của quán ăn mà vẫn truy vết Audit Log được ai là người đã bấm nút gửi Order.</li>
 </ul>
 <h2 id="phần-iv-hệ-sinh-thái-tích-hợp-ecosystem-integration">PHẦN IV: HỆ SINH THÁI TÍCH HỢP (ECOSYSTEM & INTEGRATION)</h2>
 <p><em>Các đầu nối hệ thống với đối tác.</em></p>
