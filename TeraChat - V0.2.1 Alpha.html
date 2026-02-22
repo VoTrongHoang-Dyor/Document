@@ -1,0 +1,3265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat Enterprise OS (v2.0) - Technical Specification</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            /* Grid Layout */
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            /* Removed grid-specific width here as it's defined in grid-template-columns */
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky; /* Changed from fixed */
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        /* ... (navigation styles remain same) ... */
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        #nav-link-style { display: none; } /* Placeholder for grep match if needed, logic unchanged */
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        /* Main Content */
+        .main {
+            /* Removed margin-left and width calcs */
+            padding: 4rem 4rem; 
+            max-width: 100%; 
+            width: 100%;
+            /* Reading Mode Optimization */
+            margin: 0 auto; 
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+        
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        /* Scenario Cards */
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%; /* Safety */
+        }
+        
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+        
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        /* Tech Specs */
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto; /* Allow scroll if content bursts */
+        }
+        
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tech-header::before {
+            content: "⚙️ UNDER THE HOOD";
+            margin-right: 0.5rem;
+        }
+
+
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto; /* Enable horizontal scroll */
+            margin: 1rem 0;
+            display: block; /* Ensure block formatting context */
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+        }
+        /* Target the table inside the wrapper */
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px; /* Force min width to trigger scroll on small screens */
+        }
+        
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        /* Fix horizontal overflow */
+        pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; /* Better wrapping */
+            overflow-x: auto; 
+            max-width: 100%; 
+        }
+
+        /* Mobile / Vertical View Mode */
+        @media (max-width: 900px) {
+            body { 
+                grid-template-columns: 1fr; /* Switch to single column */
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative; /* Back to normal flow */
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem; /* Reduce padding on mobile */
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Enterprise</span></a>
+    
+    <div class="nav-header">Part 1: User Scenarios</div>
+    <a href="#secure-workspace" class="nav-link">1.1 Secure Workspace</a>
+    <a href="#code-sandbox" class="nav-link">1.2 Code Sandbox</a>
+    <a href="#smart-finance" class="nav-link">1.3 Smart Approval</a>
+    <a href="#remote-wipe" class="nav-link">1.4 Remote Wipe</a>
+    <a href="#context-isolation" class="nav-link">1.5 Context Isolation</a>
+    <a href="#enterprise-launchpad" class="nav-link">1.6 Enterprise Launchpad</a>
+    
+    <div class="nav-header">Part 2: Core Engine</div>
+    <a href="#architecture" class="nav-link">2.1 Architecture V2</a>
+    <a href="#biometric-signing" class="nav-link">2.2 Biometric Signing</a>
+    <a href="#iam-governance" class="nav-link">2.3 Enterprise Identity</a>
+    <a href="#opa-policy" class="nav-link">2.4 Access Policy (OPA)</a>
+    <a href="#endpoint-trust" class="nav-link">2.5 Endpoint Trust</a>
+    <a href="#formal-verification" class="nav-link">2.6 Formal Verification</a>
+    <a href="#binary-hardening" class="nav-link">2.7 Binary Hardening</a>
+    <a href="#fuzzing-infra" class="nav-link">2.8 Fuzzing</a>
+    <a href="#threat-model" class="nav-link">2.9 Threat Model</a>
+    <a href="#deduplication" class="nav-link">2.10 Global Deduplication</a>
+    <a href="#local-ai" class="nav-link">2.11 Local AI Engine</a>
+
+    <div class="nav-header">Part 3: Advanced Networking</div>
+    <a href="#messaging-core" class="nav-link">3.1 Messaging Core</a>
+    <a href="#secure-calling" class="nav-link">3.2 Secure Calling</a>
+    <a href="#advanced-transport" class="nav-link">3.3 Advanced Transport</a>
+    
+    <div class="nav-header">Part 4: Operations</div>
+    <a href="#observability" class="nav-link">4.1 Observability & SLA</a>
+    <a href="#deployment" class="nav-link">4.2 Deployment & K8s</a>
+    <a href="#production-config" class="nav-link">4.3 Production Config</a>
+    <a href="#interoperability" class="nav-link">4.4 Interoperability</a>
+    <a href="#day2-ops" class="nav-link">4.5 Security Governance</a>
+    <a href="#installer" class="nav-link">4.6 Web Installer</a>
+
+    <div class="nav-header">Part 6: Business API & Improvements</div>
+    <a href="#business-api" class="nav-link">6.1 Business API Package</a>
+    <a href="#topic-threading" class="nav-link">6.2 Topic Threading</a>
+    <a href="#crdt-offline" class="nav-link">6.3 CRDT Offline Sync</a>
+    <a href="#federation" class="nav-link">6.4 Integration Hub</a>
+    <a href="#rich-preview" class="nav-link">6.5 Rich File Preview</a>
+
+    <div class="nav-header">Appendix</div>
+    <a href="#tech-reuse" class="nav-link">Reusability Matrix</a>
+    <a href="#competitive-analysis" class="nav-link">Competitive Analysis</a>
+</nav>
+
+<div class="main">
+    <section id="intro">
+        <h1>Technical Specification v2.0</h1>
+        <p style="font-size: 1.1rem; color: var(--text-primary); max-width: 800px;">
+            Tài liệu này xác định kiến trúc cho <strong>TeraChat Enterprise OS</strong>. Chúng ta đã loại bỏ các thành phần cũ (Gossip Mobile-First, VPS cá nhân đơn lẻ) để chuyển sang mô hình <strong>Cụm Relay Doanh nghiệp (Federated Clusters)</strong> và <strong>Desktop-First</strong> nhằm đáp ứng nhu cầu bảo mật và hiệu năng cao của tổ chức.
+        </p>
+
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-top: 2rem; border-left: 4px solid var(--accent-purple);">
+            <h3 style="margin-top: 0; padding-left: 0; border: none; color: var(--accent-purple); font-size: 1.1rem;">✨ Triết lý cốt lõi: Chủ quyền Số & Vận hành Bất biến</h3>
+            
+            <p><strong>TeraChat Enterprise</strong> là pháo đài số nơi doanh nghiệp nắm quyền sở hữu tuyệt đối: <strong>Dữ liệu của bạn, Hạ tầng của bạn</strong>. Chúng tôi chỉ cung cấp công nghệ "Zero-Knowledge" – hoàn toàn "mù" trước bí mật kinh doanh của bạn.</p>
+
+            <p>Sức mạnh nằm ở sự Bất diệt: Kiến trúc <strong>Cụm Máy chủ Tự trị (Federated Clusters)</strong> thay thế cho máy chủ đơn lẻ, đảm bảo huyết mạch thông tin tự phục hồi và thông suốt 24/7 bất chấp mọi sự cố hạ tầng.</p>
+
+            <p>Đây là <strong>Hệ điều hành Web3</strong>, nơi Giao tiếp, Quản trị và Tài chính (Crypto) hợp nhất làm một, xóa bỏ vĩnh viễn rủi ro từ bên thứ ba.</p>
+        </div>
+    </section>
+
+    <section id="secure-workspace">
+        <h2>1.1 Secure Workspace <span class="badge">Digital Bunker</span></h2>
+        
+        <div class="scenario-card">
+            <div class="scenario-step">
+                <span class="step-label">Hành động</span>
+                <div>Alex vào nhóm chat <strong>"Project X Core Team"</strong>.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Trải nghiệm</span>
+                <div>Giao diện y hệt Telegram – mượt, nhanh, vuốt chạm sướng tay. Không có độ trễ tải lại tin nhắn.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Sự khác biệt</span>
+                <div>
+                    Đây không phải là Group Chat bình thường. Đây là một <strong>"Hầm trú ẩn số" (Digital Bunker)</strong>.
+                    <ul>
+                        <li>Server của TeraChat hoàn toàn "mù" (Zero-knowledge).</li>
+                        <li>Dữ liệu thực tế nằm trên <strong>Server nội bộ của Nebula AI</strong> (Công ty của Alex).</li>
+                        <li>Client chạy song song trên <strong>Workstation của Alex</strong> (Windows/macOS) với hiệu năng xử lý cực cao.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <div class="tech-header">Deep Dive: Federated Private Clusters</div>
+            <p>Thay thế VPS cá nhân đơn lẻ (Single Point of Failure) bằng kiến trúc <strong>Cluster</strong>:</p>
+            <ul>
+                <li><strong>Encryption:</strong> Toàn bộ Payload được mã hóa bằng <code>Company_Key</code> trước khi rời thiết bị.</li>
+                <li><strong>Storage:</strong> Cluster gồm 3-5 Nodes chạy thuật toán <strong>Erasure Coding</strong> (Sharding dữ liệu). Nếu 1 Node sập, dữ liệu tự phục hồi từ các mảnh còn lại.</li>
+                <li><strong>Routing:</strong> Client kết nối trực tiếp tới IP của Company Cluster, không đi qua Cloud công cộng của TeraChat.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="code-sandbox">
+        <h2>1.2 Code Sandbox <span class="badge badge-danger">DELAYED</span></h2>
+        
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 8px; padding: 1rem; margin-bottom: 2rem;">
+            <strong style="color: var(--danger);">⚠️ NOTICE: Feature Postponed</strong>
+            <p style="margin-bottom: 0; font-size: 0.9rem; color: var(--text-secondary);">
+                Kế hoạch triển khai module Code Sandbox (Mini-App) tạm thời bị hoãn lại để tập trung nguồn lực cho Core Engine và Security. Các thông số kỹ thuật dưới đây chỉ mang tính chất tham khảo cho lộ trình tương lai.
+            </p>
+        </div>
+
+        <div class="scenario-card">
+            <div class="scenario-step">
+                <span class="step-label">Tình huống</span>
+                <div>Trưởng nhóm dev gửi một thuật toán quan trọng cho Alex review.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Vấn đề cũ</span>
+                <div><span class="old-way">Gửi file .txt hoặc paste text</span> -> Rủi ro copy nhầm, lộ code ra ngoài, file lưu lộn xộn.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Giải pháp Mới</span>
+                <div>
+                    Dev nhấn <strong>+</strong> -> Chọn <strong>"Code Vault"</strong>.
+                    <ul>
+                        <li>Một cửa sổ Popup hiện lên (như Mini Program).</li>
+                        <li>Code hiển thị có <strong>Watermark</strong> tên "Alex" chạy loang lổ (chống chụp màn hình).</li>
+                        <li>Nút Copy bị <strong>Disabled</strong>. Chỉ cho phép Xem (View Only).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <div class="tech-header">Engine: WASM Sandbox & P2P Stream</div>
+            <ul>
+                <li><strong>Runtime:</strong> Mini-App chạy trong container <strong>WebAssembly (Wasm)</strong> bị cô lập. Không có quyền truy cập Clipboard hệ thống (trừ khi được cấp phép).</li>
+                <li><strong>Data Flow:</strong> Code không được lưu vào Database. Nó được <strong>Stream P2P</strong> trực tiếp từ RAM máy Dev sang RAM máy Alex (Ephemeral Streaming).</li>
+                <li><strong>Cache:</strong> Ngay khi đóng cửa sổ, dữ liệu bị ghi đè (Zeroing Memory).</li>
+            </ul>
+            
+            <div style="margin-top: 1.5rem; border-top: 1px dashed #4a5568; padding-top: 1rem;">
+                <div class="tech-header" style="color: var(--accent-pink);">🛡️ The Digital Glass Room (Security Layers)</div>
+                <p>Kiến trúc "Nhìn được nhưng không mang đi được":</p>
+                <ul style="font-size: 0.9rem;">
+                    <li><strong>Lớp 1 (OS Level):</strong> Sử dụng API chống chụp màn hình mức hệ thống: <code>SetWindowDisplayAffinity</code> (Windows) và <code>window.sharingType = .none</code> (macOS 14+).</li>
+                    <li><strong>Lớp 2 (Native Overlay):</strong> Vẽ <strong>Dynamic Watermark</strong> (User ID + Time + IP) đè lên cửa sổ ứng dụng. Chữ chạy random vị trí mỗi 5s để chống AI Inpainting.</li>
+                    <li><strong>Lớp 3 (Input Jammer):</strong> Chặn Global Hooks bàn phím (Keylogger) và vô hiệu hóa Clipboard khi cửa sổ Active.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--danger);">
+            <div class="tech-header" style="color: var(--danger);">🔒 Engine: Ephemeral Memory & Swap Defense</div>
+            <p>Cơ chế bảo vệ dữ liệu nhạy cảm (Private Key, Code snippet) khỏi việc bị ghi xuống đĩa cứng thông qua Swap File/Pagefile:</p>
+            
+            <div style="margin-bottom: 1.5rem; margin-top: 1rem;">
+                <strong style="color: var(--accent-pink);">A. RAM Pinning (Chống Swap)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>Vấn đề:</strong> Khi thiếu RAM hoặc ngủ đông (Hibernate), OS sẽ dump toàn bộ bộ nhớ (bao gồm cả Key đã giải mã) xuống ổ cứng (<code>Swap/Hiberfil.sys</code>). Dữ liệu này tồn tại ngay cả khi tắt máy.</li>
+                    <li><strong>Giải pháp (System Call):</strong> Sử dụng <strong>Memory Locking</strong> để "ghim" cứng các trang nhớ nhạy cảm:
+                        <ul>
+                            <li>Linux/macOS: <code>mlock()</code> hoặc <code>mlockall()</code></li>
+                            <li>Windows: <code>VirtualLock()</code></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <strong style="color: var(--accent-pink);">B. Encrypted Swap Policy (Lớp phòng thủ cuối)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>MDM Policy:</strong> TeraChat Client kiểm tra trạng thái mã hóa ổ đĩa khi khởi động.</li>
+                    <li><strong>Yêu cầu bắt buộc:</strong> Nếu phát hiện thiết bị không bật <strong>BitLocker</strong> (Windows) hoặc <strong>FileVault</strong> (macOS), ứng dụng từ chối khởi chạy.</li>
+                </ul>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 6px; margin-top: 1rem; font-family: monospace; font-size: 0.8rem; color: var(--success);">
+                <strong>Code Sample: Memory Locking</strong><br>
+                <code style="color: var(--accent-blue);">// Rust (cross-platform)</code><br>
+                <code>libc::mlock(ptr as *const c_void, size);</code><br>
+                <code style="color: var(--text-secondary);">// Windows: kernel32::VirtualLock(ptr, size);</code>
+            </div>
+        </div>
+    </section>
+
+    <section id="smart-finance">
+        <h2>1.3 Smart Approval & Pay <span class="badge badge-success">Fintech</span></h2>
+
+        <div class="scenario-card">
+            <div class="scenario-step">
+                <span class="step-label">Tình huống</span>
+                <div>Alex muốn thưởng nóng $500 cho nhân viên Alice sau khi deploy thành công.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Vấn đề cũ</span>
+                <div>Thoát app -> Mở Email duyệt -> Mở App Ngân hàng -> Chụp bill -> Gửi lại chat. (Mất 5-10 phút). Slack/Teams phải cài app bên thứ 3 rất lằng nhằng.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Giải pháp Mới</span>
+                <div>
+                    <ol>
+                        <li>Alex gõ lệnh <code>/bonus 500</code> hoặc bấm nút <strong>"Thưởng nóng"</strong> ngay trong khung chat.</li>
+                        <li><strong>Adaptive Card</strong> hiện ra: <em>"Xác nhận chuyển $500 cho Alice qua PayPal?"</em>.</li>
+                        <li>Alex quét <strong>FaceID/TouchID (Mac)</strong> hoặc <strong>Windows Hello</strong> — xác thực phần cứng.</li>
+                        <li><strong>Tự động:</strong> TeraChat Server gọi <strong>PayPal Payouts API</strong> → Tiền vào ví PayPal của Alice sau 3 giây. Alex không bao giờ rời khỏi khung chat.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <div class="tech-header">Engine: Blind Fintech Bridge</div>
+            <p>Kiến trúc tách biệt giữa hệ thống E2EE (TeraChat) và hệ thống thanh toán tập trung (PayPal), đảm bảo PayPal không bao giờ thấy nội dung chat.</p>
+            <ul>
+                <li><strong>One-time Binding:</strong> Nhân viên link tài khoản PayPal <em>một lần duy nhất</em> vào Profile công ty. OAuth Token được mã hóa và lưu trong <strong>Secure Enclave</strong> của thiết bị.</li>
+                <li><strong>PayPal Payouts API:</strong> Lệnh <code>/bonus</code> trigger REST call đến PayPal Payouts API qua Enterprise Relay Server. TeraChat Server chỉ forward lệnh thanh toán đã ký, không đọc được nội dung chat.</li>
+                <li><strong>Audit Trail:</strong> Mọi lệnh duyệt chi được ghi trong <strong>tamper-proof audit log</strong> nội bộ (write-only, append-only) với chữ ký số của người duyệt.</li>
+            </ul>
+
+            <div style="margin-top: 1.5rem; border-top: 1px dashed #4a5568; padding-top: 1rem;">
+                <div class="tech-header" style="color: var(--warning);">⚡ Blind Fintech Bridge — PayPal Payout Flow</div>
+                <p>Luồng thanh toán tự động qua PayPal Payouts API:</p>
+                
+                <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem;">
+// Rust — Blind Fintech Bridge (Simplified)
+async fn execute_payout(cmd: PayoutCommand, ctx: &AppContext) -> Result&lt;PayoutReceipt&gt; {
+    // 1. Xác thực phần cứng (FaceID/TouchID/Windows Hello)
+    let signature = ctx.secure_enclave.biometric_sign(&cmd.to_bytes())?;
+    
+    // 2. Lấy OAuth Token từ Secure Enclave (đã link 1 lần)
+    let oauth_token = ctx.secure_enclave.decrypt_token("paypal_oauth")?;
+    
+    // 3. Gọi PayPal Payouts API
+    let payout = PayPalPayout {
+        sender_batch_header: SenderBatchHeader {
+            sender_batch_id: generate_idempotency_key(),
+            email_subject: "Thưởng nóng từ công ty",
+        },
+        items: vec![PayoutItem {
+            recipient_type: "EMAIL",
+            amount: Amount { currency: "USD", value: cmd.amount },
+            receiver: cmd.recipient_paypal_email,
+        }],
+    };
+    
+    let receipt = ctx.paypal_client.create_payout(&oauth_token, &payout).await?;
+    
+    // 4. Ghi Audit Log (tamper-proof, chữ ký số)
+    ctx.audit_log.append(AuditEntry {
+        action: "PAYOUT",
+        signer: signature,
+        amount: cmd.amount,
+        recipient: cmd.recipient_paypal_email,
+        paypal_batch_id: receipt.batch_id,
+        timestamp: SystemTime::now(),
+    })?;
+    
+    Ok(receipt)
+}
+</pre>
+                </div>
+                
+                <div style="margin-top: 0.8rem; font-size: 0.9rem;">
+                    <strong>Security Constraints:</strong>
+                    <ul>
+                        <li><strong>OAuth Token Rotation:</strong> Token PayPal được rotate tự động mỗi 30 ngày. Token cũ bị Crypto-Shred từ Secure Enclave.</li>
+                        <li><strong>Idempotency Key:</strong> Mỗi lệnh thanh toán mang <code>sender_batch_id</code> duy nhất để chống replay/double-spend.</li>
+                        <li><strong>Rate Limiting:</strong> Giới hạn tổng giải ngân/ngày theo chính sách OPA (ví dụ: max $10,000/ngày/user).</li>
+                        <li><strong>Biometric Gate:</strong> Mọi lệnh thanh toán > $0 đều yêu cầu xác thực phần cứng — không có ngoại lệ.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="remote-wipe">
+        <h2>1.4 Remote Wipe <span class="badge badge-danger">Kill Switch</span></h2>
+
+        <div class="scenario-card">
+            <div class="scenario-step">
+                <span class="step-label">Tình huống</span>
+                <div>Nhân viên "Tuấn" nghỉ việc và có dấu hiệu mang dữ liệu sang đối thủ.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Vấn đề cũ</span>
+                <div>Kick khỏi nhóm chat, nhưng Tuấn vẫn giữ lịch sử tin nhắn và file đã tải về máy.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Giải pháp Mới</span>
+                <div>
+                    Alex vào Admin Panel -> Bấm <strong>"Revoke Access"</strong> tài khoản Tuấn.
+                    <br><strong>Ngay lập tức trên máy Tuấn:</strong>
+                    <ul>
+                        <li>Ứng dụng tự nhận lệnh hủy.</li>
+                        <li>Toàn bộ lịch sử chat biến thành <strong>Garbage Data</strong> (chuỗi mã hóa vô nghĩa).</li>
+                        <li>File trong Sandbox Storage bị xóa trắng.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <div class="tech-header">Engine: Hierarchical Key Management (HKMS)</div>
+            <ul>
+                <li><strong>Key Rotation:</strong> Khi bấm Revoke, Server phát lệnh <strong>Key Ratchet Rotation</strong>. Khóa giải mã cũ bị hủy hiệu lực.</li>
+                <li><strong>Dead Man Switch (Hardware-Backed):</strong> 
+                    <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        <li><strong>Monotonic Counter:</strong> Sử dụng Hardware Counter (iOS: Secure Enclave Counter, Android: StrongBox) thay vì đồng hồ hệ thống để chống Time Travel Attack.</li>
+                        <li><strong>Mechanism:</strong> Mỗi lần unlock DB → Counter++. Server lưu "Last Valid Counter Value" cho mỗi device.</li>
+                        <li><strong>Verification:</strong> Khi online, Client gửi Counter hiện tại lên Server. Nếu Counter < Server's Value → Device đã bị revert/clone → Từ chối và trigger Self-Destruct.</li>
+                        <li><strong>Offline Grace Period:</strong> Client có thể hoạt động offline tối đa 72h. Sau đó bắt buộc phải online 1 lần để verify counter.</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #2d3748;">
+                <div class="tech-header" style="color: var(--warning);">⚡ Technical Implementation (MLS Protocol)</div>
+                <p>Logic thực thi <strong>Remote Wipe</strong> tái sử dụng cơ chế <code>Epoch Rotation</code> của giao thức MLS:</p>
+                <ol style="font-size: 0.85rem; color: var(--text-secondary);">
+                    <li><strong>Event Listener:</strong> App lắng nghe <code>onEpochChanged</code>. Nếu <code>self.userID</code> nằm trong danh sách <code>removedMembers</code>...</li>
+                    <li><strong>Poison Pill (Tự hủy):</strong>
+                        <ul>
+                            <li><code>KeyStore.deleteKeys()</code>: Xóa Private Key trong Secure Enclave -> Dữ liệu thành rác.</li>
+                            <li><code>WatermelonDB.unsafeResetDatabase()</code>: Drop bảng chat.</li>
+                            <li><code>FileSystem</code>: Quét và xóa file Sandbox.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Constraint:</strong> Thực thi trong <code>autoreleasepool</code> (iOS) hoặc <code>try-finally</code> (Android) để đảm bảo không thể bị chặn bởi User.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--danger);">
+            <div class="tech-header" style="color: var(--danger);">🧹 Crypto-Shredding: The Only Reliable Method</div>
+            <p>Trên SSD/NVMe hiện đại, việc overwrite data là <strong>VÔ HIỆU QUẢ</strong> do Wear Leveling. Giải pháp duy nhất: <strong>Crypto-Shredding</strong> - Xóa khóa giải mã thay vì xóa dữ liệu.</p>
+
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <strong style="color: var(--danger);">❌ Tại sao Overwrite KHÔNG hoạt động trên SSD:</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li>SSD Controller sử dụng <strong>Wear Leveling</strong>: Khi ghi đè Sector A, controller thực tế ghi vào Sector B và đánh dấu A là "trống".</li>
+                    <li>Dữ liệu gốc vẫn còn nguyên vật lý trên chip NAND Flash, có thể khôi phục bằng <strong>Chip-off Forensics</strong>.</li>
+                    <li>Overwrite 1000 lần vẫn vô nghĩa vì chỉ xóa ở tầng logic, không phải tầng vật lý.</li>
+                </ul>
+            </div>
+
+            <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <th style="width: 25%;">Lớp Bảo Mật</th>
+                        <th>Crypto-Shredding Implementation</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Layer</strong></td>
+                        <td>
+                            Toàn bộ DB được mã hóa bằng <strong>DEK (Data Encryption Key)</strong> - 256-bit AES-GCM.<br>
+                            DEK là random unique key cho mỗi database instance.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key Layer</strong></td>
+                        <td>
+                            DEK được mã hóa (wrapped) bằng <strong>KEK (Key Encryption Key)</strong>.<br>
+                            KEK được derive từ Master Key trong Secure Enclave/TPM.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Master Key</strong></td>
+                        <td>
+                            Master Key nằm trong <strong>Hardware Security Module</strong> (Secure Enclave/StrongBox).<br>
+                            <strong>KHÔNG BAO GIỜ</strong> rời khỏi chip bảo mật.
+                        </td>
+                    </tr>
+                    <tr style="background: rgba(74, 222, 128, 0.1);">
+                        <td><strong>⚡ Shredding Process</strong></td>
+                        <td>
+                            <strong>1.</strong> Xóa KEK từ Secure Enclave → DEK không thể decrypt<br>
+                            <strong>2.</strong> DEK trở nên vô dụng → Toàn bộ DB = garbage data<br>
+                            <strong>3.</strong> Dữ liệu vẫn còn trên SSD nhưng <em>vĩnh viễn không đọc được</em> (cryptographically erased)
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); margin-top: 1rem;">
+<pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem;">
+// Swift (iOS) - Crypto-Shredding Implementation
+func secureDataDestruction() {
+    // 1. Delete KEK from Secure Enclave
+    let query: [String: Any] = [
+        kSecClass as String: kSecClassKey,
+        kSecAttrApplicationTag as String: "com.terachat.kek"
+    ]
+    SecItemDelete(query as CFDictionary)
+    
+    // 2. Zero out any cached DEK in RAM
+    memset_s(&dek, dek.count, 0, dek.count)
+    
+    // 3. (Optional) Zero-fill DB file for defense in depth
+    // But understand this is NOT reliable on SSD
+}
+</pre>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <strong style="color: var(--success);">✅ Best Practices:</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>KEK Rotation:</strong> Rotate KEK mỗi 30 ngày. Re-encrypt DEK với KEK mới.</li>
+                    <li><strong>RAM Pinning:</strong> Sử dụng <code>mlock()</code> để prevent DEK bị swap xuống disk.</li>
+                    <li><strong>Full Disk Encryption:</strong> Bắt buộc BitLocker/FileVault làm lớp phòng thủ cuối cùng.</li>
+                    <li><strong>Audit Logging:</strong> Log mọi KEK deletion event (tamper-proof, write-only log).</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="context-isolation">
+        <h2>1.5 Context Isolation <span class="badge badge-warning">DLP Enforcer</span></h2>
+
+        <div class="tech-box">
+             <div class="tech-header">Triết lý: Phân tách ngữ cảnh (Context Isolation)</div>
+             <p>Cơ chế ngăn chặn kết nối hỗn tạp giữa công việc và đời sống cá nhân, đảm bảo bí mật doanh nghiệp (DLP - Data Loss Prevention) thông qua quy trình <strong>"Chuyển mạch Ngữ cảnh Tự động"</strong>.</p>
+        </div>
+
+        <div class="scenario-card">
+            <div class="tech-header" style="color: var(--text-primary); margin-bottom: 1rem;">Quy trình Toàn trình (User Journey): Từ Công sở ra Phố xá</div>
+            
+            <div class="scenario-step">
+                <span class="step-label">Giai đoạn 1</span>
+                <div>
+                     <strong>Gọi Nội bộ (Enterprise Mode)</strong><br>
+                     <em>Bối cảnh: Alex gọi cho đồng nghiệp "Sarah (HR)".</em>
+                     <ul>
+                         <li><strong>Routing Check:</strong> App phát hiện cùng <code>Org_ID</code>.</li>
+                         <li><strong>Hạ tầng:</strong> Định tuyến qua <strong>Federated Private Clusters</strong> (Whitelist Only).</li>
+                         <li><strong>Định danh:</strong> Khóa cứng "Alex (Dev Lead)".</li>
+                     </ul>
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">Giai đoạn 2</span>
+                <div>
+                     <strong>Chuyển mạch Tự động (The Auto-Switch)</strong><br>
+                     <em>Bối cảnh: Alex gọi cho bạn thân "Tom" (ngoài công ty).</em>
+                     <ul>
+                         <li><strong>Phát hiện:</strong> Tom không có <code>Org_ID</code> doanh nghiệp.</li>
+                         <li><strong>Thực thi:</strong> Ngắt kết nối Cluster Công ty. Đánh thức VPS Cá nhân.</li>
+                         <li><strong>Identity Swap:</strong> Tự động đổi profile sang "Alex_Gamer_99".</li>
+                     </ul>
+                </div>
+            </div>
+
+             <div class="scenario-step">
+                <span class="step-label">Giai đoạn 3</span>
+                <div>
+                     <strong>Gọi Cá nhân (Personal Mode)</strong><br>
+                     <em>Bối cảnh: Kết nối qua VPS cá nhân (Caller-Allocated).</em>
+                     <ul>
+                         <li><strong>Khởi tạo:</strong> App Alex yêu cầu VPS cá nhân cấp <strong>Token tạm thời</strong>.</li>
+                         <li><strong>Handshake:</strong> Gửi Token cho Tom qua tin nhắn mã hóa. Tom dùng Token kết nối VPS Alex.</li>
+                         <li><strong>Kết quả:</strong> Cuộc gọi hoàn toàn tách biệt khỏi hạ tầng công ty.</li>
+                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <div class="tech-header">Deep Dive: Caller-Allocated Relay</div>
+            <p>Kỹ thuật dành cho cuộc gọi cá nhân, sử dụng VPS riêng làm cầu nối trung gian:</p>
+            <ul>
+                <li><strong>Nguyên lý:</strong> Dùng VPS cá nhân của người gọi làm TURN Server.</li>
+                <li><strong>Ephemeral Credential:</strong> Token chỉ sống trong 5 phút, được cấp phát user-to-user.</li>
+                <li><strong>Privacy:</strong> Server chỉ đóng vai trò chuyển tiếp (Relay), không lưu trữ logs.</li>
+            </ul>
+        </div>
+
+        <div class="comparison-table">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Đặc tính</th>
+                        <th>Chế độ Doanh nghiệp (Enterprise)</th>
+                        <th>Chế độ Cá nhân (Personal)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Hạ tầng mạng</strong></td>
+                        <td>Private Cluster (Nội bất xuất, ngoại bất nhập)</td>
+                        <td>VPS Cá nhân (Caller-Allocated Relay)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Định danh</strong></td>
+                        <td>Corporate ID: "Alex (Dev Lead)" (Cố định)</td>
+                        <td>Pseudonym: "Alex_Gamer_99" (Tùy biến)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cơ chế Gọi</strong></td>
+                        <td>WebRTC qua HA Cluster (Server Mù)</td>
+                        <td>Caller-Allocated Relay (Token tạm)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Chi phí</strong></td>
+                        <td>Công ty chi trả</td>
+                        <td>User tự chi trả</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quyền riêng tư</strong></td>
+                        <td>Công ty kiểm soát Metadata</td>
+                        <td>User toàn quyền kiểm soát Logs</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="enterprise-launchpad">
+        <h2>1.6 Enterprise Launchpad <span class="badge badge-success">Productivity Dock</span></h2>
+        <p><strong>"Chrome Bookmark Bar cho Doanh nghiệp"</strong> — Ghim Web App công việc (Jira, Trello, Google Sheets, CRM) ngay trong TeraChat. User không rời app để làm việc, nhưng khi cần mở link ngoài, hệ thống bảo vệ bằng 3 lớp "Túi khí".</p>
+
+        <div class="tech-box">
+             <div class="tech-header">Triết lý CEO</div>
+             <p>Đừng làm "Launcher" để mở App đối thủ — đó là <strong>hành động tự sát</strong>. Giữ chân user → <strong>Retention</strong>. Biến TeraChat thành <strong>"Bàn làm việc số" (Digital Workspace)</strong>.</p>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--accent-blue);">
+            <div class="tech-header" style="color: var(--accent-blue);">Smart Deep Link — Cơ chế hoạt động</div>
+            <div class="comparison-table">
+                <table>
+                    <tr><th>Loại Link</th><th>Hành vi</th><th>Ví dụ</th></tr>
+                    <tr>
+                        <td><strong><code>https://</code></strong></td>
+                        <td>Gọi trình duyệt mặc định (Chrome/Safari)</td>
+                        <td><code>https://docs.google.com/...</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong><code>scheme://</code></strong></td>
+                        <td>Gọi OS đánh thức App tương ứng</td>
+                        <td><code>zalo://</code>, <code>slack://</code>, <code>zoommtg://</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Internal Link</strong></td>
+                        <td class="new-way">Mở ngay trong TeraChat (Trusted Domain)</td>
+                        <td><code>https://jira.company.com</code></td>
+                    </tr>
+                </table>
+            </div>
+            <p style="margin-top: 1rem;"><strong>Tương thích 100%:</strong> Không cần lo render web bị lỗi, không lo cookie. Trình duyệt của user lo hết.</p>
+        </div>
+
+        <div class="scenario-card" style="margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--text-primary); margin-bottom: 1rem;">🛡️ 3 Lớp Bảo mật "Túi khí" (Airbags)</div>
+
+            <div class="scenario-step">
+                <span class="step-label">Lớp 1: The Airlock (Khoang đệm an toàn)</span>
+                <div>
+                    Khi User click vào Icon link ngoài (ví dụ "Google Drive"):
+                    <ul>
+                        <li>Hiển thị <strong>Bottom Sheet Popup:</strong> <em>"Bạn đang rời khỏi TeraChat để mở Google Drive. Kết nối này không được mã hóa bởi chúng tôi. Bạn có muốn tiếp tục?"</em></li>
+                        <li>Tùy chọn: ☐ <strong>"Không nhắc lại cho trang web này"</strong> (Trust this domain)</li>
+                        <li>Nếu là domain nội bộ (Trusted) → <strong>Bypass Airlock</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">Lớp 2: Visual Trust (Niềm tin thị giác)</span>
+                <div>
+                    <ul>
+                        <li><strong>Favicon Fetcher:</strong> Khi user paste link <code>vietcombank.com.vn</code>, hệ thống tự động crawler lấy Favicon chính chủ làm logo. Không cho user tự upload logo (tránh phishing).</li>
+                        <li><strong>Verified Badge:</strong> Domain thuộc Whitelist công ty → hiện 🛡️ <strong>khiên xanh</strong> bên cạnh icon.</li>
+                        <li><strong>Google Safe Browsing API:</strong> Mọi link được add vào thanh Bar phải đi qua <strong>Proxy Scan</strong> check phishing/malware.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">Lớp 3: Admin Policy (Quyền lực của Sếp) — 💰 Enterprise Revenue</span>
+                <div>
+                    <ul>
+                        <li><strong>Managed Bookmarks (Push):</strong> Admin đẩy link bắt buộc xuống máy tất cả nhân viên. Ví dụ: <em>"Chấm công", "HR Portal", "Tài liệu đào tạo"</em>. Nhân viên <strong>không được xóa</strong> các icon này.</li>
+                        <li><strong>Blacklist Domain:</strong> Admin chặn domain cấm (web cờ bạc, web đối thủ). Nếu cố add → App báo lỗi: <em>"Bị chặn bởi chính sách công ty"</em>.</li>
+                        <li><strong>Audit Log:</strong> Ghi lại toàn bộ link được add/remove/click bởi nhân viên.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--accent-purple);">
+            <div class="tech-header" style="color: var(--accent-purple);">Sandbox Isolation</div>
+            <p>Mọi WebView (nếu có) chạy trong <strong>Isolated Process</strong>. Nếu trang web bị hack, nó không thể đọc trộm dữ liệu chat TeraChat (<strong>Cookie/Storage Isolation</strong>). Tương đương cơ chế Sandbox của Section 1.2.</p>
+        </div>
+    </section>
+
+    <section id="tech-reuse">
+        <h2>Technical Reusability & Gap Analysis</h2>
+        <p>Phân tích khả năng tái sử dụng module lõi của TeraChat Alpha 6.0 cho mô hình Enterprise.</p>
+
+        <div class="tech-box">
+            <div class="tech-header">1. Reusability Map (Bản đồ Tái sử dụng)</div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-blue);">A. Offline & Mesh Networking</strong>
+                <ul style="margin-top: 0.5rem;">
+                    <li><span class="badge" style="background: rgba(74, 222, 128, 0.2); color: var(--success);">REUSE</span> <strong>Air-Gapped Security:</strong> Dùng Mesh cho phòng họp bí mật không Internet.</li>
+                    <li><span class="badge" style="background: rgba(251, 191, 36, 0.2); color: var(--warning);">MODIFY</span> <strong>Filter:</strong> Thêm <code>Organization ID</code> để Mesh chỉ kết nối thiết bị cùng công ty.</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-blue);">B. Bắt tay P2P (Noise Protocol)</strong>
+                <ul style="margin-top: 0.5rem;">
+                    <li><span class="badge" style="background: rgba(74, 222, 128, 0.2); color: var(--success);">REUSE</span> <strong>Zero-Trust:</strong> Server Nebula AI chỉ làm Relay, không giải mã được nội dung.</li>
+                    <li><span class="badge" style="background: rgba(251, 191, 36, 0.2); color: var(--warning);">MODIFY</span> <strong>Auth:</strong> Xác thực khóa dựa trên Certificate Authority (CA) của Doanh nghiệp thay vì TOFU.</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-blue);">C. Mã hóa E2EE (MLS Protocol)</strong>
+                <ul style="margin-top: 0.5rem;">
+                    <li><span class="badge" style="background: rgba(74, 222, 128, 0.2); color: var(--success);">REUSE</span> <strong>Perfect Fit:</strong> MLS sinh ra để quản lý nhóm lớn (Enterprise).</li>
+                    <li><strong>Benefit:</strong> Tính năng <em>Post-Compromise Security</em> tự động vô hiệu hóa Key của nhân viên bị sa thải.</li>
+                </ul>
+            </div>
+            
+             <div>
+                <strong style="color: var(--accent-blue);">D. Blind Relay (Calling)</strong>
+                <ul style="margin-top: 0.5rem;">
+                     <li><span class="badge" style="background: rgba(251, 191, 36, 0.2); color: var(--warning);">MODIFY</span> <strong>Self-hosted:</strong> Nebula AI tự host Signaling/TURN Server nội bộ để đảm bảo tốc độ và bí mật tuyệt đối.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--accent-purple);">
+            <div class="tech-header" style="color: var(--accent-purple);">2. Gap Analysis (Mảnh ghép còn thiếu)</div>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Module</th>
+                        <th>Logic Cá nhân (Cũ)</th>
+                        <th>Logic Enterprise (Mới)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Lưu trữ Key</strong></td>
+                        <td>Secure Enclave (User toàn quyền)</td>
+                        <td><strong>Managed Enclave</strong> (Key bị wrap bởi Company Token).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Xóa dữ liệu</strong></td>
+                        <td>Manual / Auto-clear</td>
+                        <td><strong>Remote Kill Switch</strong> (Lệnh từ Server -> App tự xóa DB).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mini Apps</strong></td>
+                        <td>Tor / Public Relay</td>
+                        <td><strong>Secure Sandbox</strong> (Watermark, Chặn Copy, Audit Log).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="architecture">
+        <h2>2.1 Architecture V2 <span class="badge badge-success">Enterprise Core</span></h2>
+        <p>Tổng hợp các thay đổi kỹ thuật cốt lõi (Refactor Manifest).</p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Thành phần</th>
+                    <th>Cũ (V1 - Personal)</th>
+                    <th>Mới (V2 - Enterprise)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Client Engine</strong></td>
+                    <td class="old-way">Swift/Kotlin (Native Mobile)</td>
+                    <td><span class="new-way">Rust + Tauri (Desktop Central)</span><br>Tận dụng sức mạnh PC để chạy Node.</td>
+                </tr>
+                <tr>
+                    <td><strong>Đồng bộ (Sync)</strong></td>
+                    <td class="old-way">Gossip Protocol (Lan truyền)</td>
+                    <td><span class="new-way">Encrypted Log Streams (Kafka P2P)</span><br>Đồng bộ tức thì, hỗ trợ history cực lớn.</td>
+                </tr>
+                <tr>
+                    <td><strong>Hạ tầng (Infra)</strong></td>
+                    <td class="old-way">VPS Cá nhân (Dễ chết lẻ tẻ)</td>
+                    <td><span class="new-way">Federated Clusters</span><br>Cụm 3-5 node tự cân bằng tải và sao lưu.</td>
+                </tr>
+                <tr>
+                    <td><strong>Crypto & Privacy</strong></td>
+                    <td class="old-way">Curve25519 (Standard)</td>
+                    <td><span class="new-way">Post-Quantum (Kyber/Dilithium) + Sealed Sender</span><br>Chống máy tính lượng tử & ẩn Metadata.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- NEW CONTENT: ENTERPRISE VPS DEEP DIVE -->
+        <div class="tech-box" style="margin-top: 2rem;">
+            <div class="tech-header">Deep Dive: Federated Private Clusters (Mechanics)</div>
+            <p>Khác biệt hoàn toàn với VPS Cá nhân, Cluster Doanh nghiệp chuyển từ mô hình "Mời thủ công" sang <strong>"Quản trị tập trung"</strong>.</p>
+            
+            <div style="margin-top: 1rem;">
+                <strong style="color: var(--accent-pink);">1. Identity Onboarding (Không dùng Invite Code)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>Admin Action:</strong> Nhập Email vào hệ thống -> Server gửi <strong>Invite Token</strong> (Signed JWT) qua Email.</li>
+                    <li><strong>User Action:</strong> Click Link -> App dùng Private Key ký Token -> Hệ thống tự động <strong>Bind</strong> thiết bị vào định danh công ty.</li>
+                    <li><strong>Auto-Sync:</strong> Tự động add nhân viên vào nhóm (VD: "Finance Dept") dựa trên thông tin từ Azure AD/LDAP.</li>
+                    <li><strong>Identity Lock:</strong> Tên hiển thị bị khóa theo danh tính doanh nghiệp (VD: <code>Alex (Nebula)</code>), user không được tự đổi.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Cluster Scope: Hạ tầng nền tảng 4-trong-1</div>
+            <p style="font-size: 0.9rem;">Cluster không chỉ phục vụ chat, mà là xương sống vận hành của toàn bộ OS:</p>
+            
+            <div class="scenario-step">
+                <span class="step-label">Secure Workspace</span>
+                <div><strong>MLS Backbone:</strong> Phân phối khóa & định tuyến tin nhắn cho nhóm 5000+ người. Lưu trữ Encrypted Log Streams (Zero-Knowledge) để đồng bộ history.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Calling Infra</span>
+                <div><strong>HA TURN Cluster:</strong> Cung cấp Floating IP, tự động Failover trong 3s nếu Node sập. Chịu tải hàng nghìn cuộc gọi HD/Video Conference.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Mini-Apps</span>
+                <div><strong>Execution Environment:</strong> Nơi thực thi backend cho các App nội bộ (Duyệt chi, Code Viewer), đảm bảo dữ liệu P2P chỉ nằm trên RAM máy nhân viên.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Interop Hub</span>
+                <div><strong>Mã hóa & Gateway:</strong> Kết nối SAP/Jira/CRM. Mã hóa dữ liệu từ hệ thống Legacy chuẩn E2EE trước khi đẩy xuống Client.</div>
+            </div>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--warning); margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--warning);">Phân tích: Personal VPS vs Enterprise Cluster</div>
+            <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>Đặc điểm</th>
+                            <th>VPS Cá nhân (Personal)</th>
+                            <th>VPS Doanh nghiệp (Enterprise Cluster)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Cách tham gia</strong></td>
+                            <td class="old-way">Chủ nhà mời thủ công (Guest Token).</td>
+                            <td><span class="new-way">Admin cấp Token</span>, tự động đồng bộ theo phòng ban (HR System).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phạm vi</strong></td>
+                            <td class="old-way">Chỉ nhóm chat nhỏ lẻ.</td>
+                            <td><span class="new-way">Toàn hệ thống:</span> Chat, Gọi, Mini-App, Kết nối SAP/Jira.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Quyền kiểm soát</strong></td>
+                            <td class="old-way">Chủ VPS (User-owned).</td>
+                            <td><span class="new-way">Công ty (Company-owned).</span> Có quyền <strong>Remote Wipe</strong> khi nhân viên nghỉ.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hạ tầng</strong></td>
+                            <td class="old-way">Máy chủ đơn lẻ (Single Point of Failure).</td>
+                            <td><span class="new-way">Cụm Cluster</span> đa máy chủ, tự phục hồi (High Availability).</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="biometric-signing">
+        <h2>2.2 Hardware-Backed Signing <span class="badge">Non-Custodial</span></h2>
+        <p>Cơ chế biến FaceID thành Chữ ký Blockchain (TON) mà không bao giờ để lộ Private Key ra khỏi chip bảo mật.</p>
+
+        <div class="tech-box">
+            <div class="tech-header">1. Architecture: The Black Box</div>
+            <p>Hệ thống chia làm 2 thế giới tách biệt:</p>
+            <ul>
+                <li><strong>Thế giới mở (The App Land):</strong> Nơi ứng dụng chạy (CPU/RAM thường). KHÔNG AN TOÀN.</li>
+                <li><strong>Thế giới kín (The Fortress):</strong> Chip bảo mật vật lý (Secure Enclave/Titan M). Private Key nằm tại đây và KHÔNG BAO GIỜ ra ngoài.</li>
+            </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-pink);">
+            <div class="tech-header" style="color: var(--text-primary);">2. The Flow (Quy trình ký)</div>
+            <ol>
+                <li><strong>Unsigned Payload:</strong> App tạo gói tin <code>[Chuyển 50k USDT]</code> dạng Binary.</li>
+                <li><strong>Thách thức:</strong> App gọi System API (TPM/Secure Enclave). OS chặn lại: "Cần Xác thực".</li>
+                <li><strong>Mở khóa:</strong> Quét vân tay TouchID hoặc Windows Hello Camera -> Mở khóa Hardware Chip.</li>
+                <li><strong>Ký trong Bóng tối:</strong> Gói tin được đẩy VÀO Chip -> Ký bằng Private Key -> Đẩy RA chữ ký <code>Signature</code>.</li>
+            </ol>
+            <p><em>Kết quả: App có chữ ký để gửi lên Chain, nhưng không bao giờ thấy Private Key.</em></p>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">3. Seed Phrase Import (Vấn đề "Nhập ví")</div>
+             <p>Làm sao đưa 12 từ khóa vào "Hộp đen" an toàn?</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Secure Input:</strong> Ô nhập có cờ <code>secureTextEntry</code> (chặn keylogger/screenshot).</li>
+                 <li><strong>Wrapping:</strong> App yêu cầu Enclave tạo <strong>Master Key</strong> nội bộ -> Mã hóa 12 từ khóa thành <code>Encrypted_Seed</code> -> Lưu vào bộ nhớ máy.</li>
+                 <li><strong>Unwrapping:</strong> Khi cần dùng, Enclave giải mã <code>Encrypted_Seed</code> trong RAM kín -> Derive Key -> Ký -> Wipe RAM ngay lập tức.</li>
+             </ul>
+        </div>
+
+        <div style="margin-top: 1.5rem; border-top: 1px dashed #4a5568; padding-top: 1rem;">
+             <div class="tech-header" style="color: var(--success);">Implementation Guide: BiometricSigner</div>
+             <p style="font-size: 0.85rem; color: var(--text-secondary);">Chỉ dẫn implementation Native (Swift/Kotlin):</p>
+             
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                         <th style="width: 50%;">macOS (Swift/Rust Bridge)</th>
+                         <th>Windows (Rust/C++)</th>
+                     </tr>
+                     <tr>
+                         <td style="vertical-align: top; padding: 0.5rem; border-right: 1px solid var(--border);">
+                             <code>CryptoTokenKit</code> (SmartCard API)<br>
+                             Key Type: <code>kSecAttrTokenIDSecureEnclave</code><br>
+                             Access: <code>SecAccessControlCreateWithFlags(..., .userPresence)</code>
+                         </td>
+                         <td style="vertical-align: top; padding: 0.5rem;">
+                             <code>CNG (Cryptography Next Gen)</code><br>
+                             Provider: <code>Microsoft Platform Crypto Provider</code> (TPM)<br>
+                             Auth: <code>NCryptSignHash</code> + UI Context.
+                         </td>
+                     </tr>
+                 </table>
+             </div>
+        </div>
+
+        <!-- WYSIWYS DEEP DIVE -->
+        <div class="tech-box" style="border-color: var(--danger); margin-top: 2rem;">
+            <div class="tech-header" style="color: var(--danger);">🚨 4. WYSIWYS Vulnerability (What You See Is What You Sign)</div>
+            <p>Lỗ hổng chết người khi Secure Enclave chỉ ký Hash "mù" mà không biết Hash đại diện cho nội dung gì.</p>
+            
+            <div style="margin-top: 1rem;">
+                <strong style="color: var(--warning);">Attack Vectors:</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>UI Redressing (Overlay Attack):</strong> Malware vẽ lớp trong suốt đè lên UI thật (Accessibility Service / Window Hooks).</li>
+                    <li><strong>Function Hooking (Frida):</strong> Hook <code>renderTransactionDetails()</code> để hiển thị giả, hook <code>preparePayload()</code> để tráo dữ liệu thật.</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 1rem; background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 6px;">
+                <strong style="color: var(--danger);">Kịch bản tấn công:</strong>
+                <ol style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-secondary);">
+                    <li>App hiển thị: <code>"Chuyển $50 cho Dev A"</code></li>
+                    <li>User: Nhìn thấy → Bấm FaceID</li>
+                    <li>App (Malware injected): Gửi <code>Hash({ "to": "Hacker", "amt": 50000 })</code> vào Enclave</li>
+                    <li>Enclave: <strong>"Mù" (Blind)</strong> → Ký và trả về chữ ký hợp lệ cho giao dịch $50,000</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--success); margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--text-primary);">5. Defense-in-Depth (Giải pháp đa lớp)</div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-blue);">Solution 1: System-Managed Trusted UI</strong>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Nhúng thông tin giao dịch vào <strong>Biometric Prompt của OS</strong>. Malware không thể vẽ đè lên System Prompt (Sandbox và Z-order protection).</p>
+                <ul style="font-size: 0.85rem;">
+                    <li><strong>Kỹ thuật:</strong> Prompt hiện: <em>"Confirm sending 50,000 USDT to 0x123...abc"</em> thay vì chỉ "Xác thực bằng FaceID".</li>
+                    <li><strong>Yêu cầu:</strong> Android 10+ / iOS 13+.</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-blue);">Solution 2: Visual Challenge-Response</strong>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Phá vỡ kịch bản Scripting của Malware bằng cách yêu cầu User nhập liệu ngẫu nhiên.</p>
+                <ul style="font-size: 0.85rem;">
+                    <li>Không dùng nút Yes/No → Yêu cầu nhập <strong>3 số cuối ví đích + số tiền</strong>.</li>
+                    <li>Bàn phím hiển thị là <strong>Randomized Layout</strong> (vị trí số thay đổi mỗi lần).</li>
+                    <li>Nếu Malware vẽ đè thông tin giả ($50) → User nhập sai → Hash không khớp → Ký thất bại.</li>
+                </ul>
+            </div>
+
+            <div>
+                <strong style="color: var(--accent-blue);">Solution 3: Structured Data Signing (EIP-712 / TEP-81)</strong>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Không bao giờ ký chuỗi Hash vô nghĩa (<code>0x8f2...</code>). Dữ liệu được phân rã thành cấu trúc (To, From, Amount, Token) để Wallet có thể parse và hiển thị lại trước khi ký.</p>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--warning);">6. Implementation: System-Managed Trusted UI</div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-pink);">Android (Kotlin) - BiometricPrompt</strong>
+                <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; font-size: 0.75rem; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc;">
+val promptInfo = BiometricPrompt.PromptInfo.Builder()
+    .setTitle("Xác thực Giao dịch")
+    .setSubtitle("Chuyển tiền Smart Contract")
+    // CRITICAL: Inject thông tin vào System Prompt
+    .setDescription("LỆNH: Gửi ${payload.amount} USDT\nĐẾN: ...${payload.toAddress.takeLast(6)}")
+    .setConfirmationRequired(true)
+    .build()
+
+biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(signature))
+</pre>
+                </div>
+            </div>
+
+            <div>
+                <strong style="color: var(--accent-pink);">iOS (Swift) - LAContext</strong>
+                <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; font-size: 0.75rem; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc;">
+// Localized Reason hiển thị trên FaceID dialog của iOS
+let reason = "Phê duyệt chuyển khoản: \(amount) tới \(recipient)"
+
+// SecKeyCreateSignature xử lý UI FaceID ngầm nếu Key có flag .biometryCurrentSet
+guard let signature = SecKeyCreateSignature(
+    privateKey,
+    .ecdsaSignatureMessageX962SHA256,
+    payload as CFData,
+    &error
+) as Data? else { throw error!.takeRetainedValue() as Error }
+</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--accent-purple); margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--accent-purple);">7. Enterprise Security Checklist</div>
+            <p>Các cơ chế bổ sung để thuyết phục InfoSec của ngân hàng:</p>
+            <ul style="font-size: 0.9rem;">
+                <li><strong>🛡️ Anti-Overlay Detection:</strong> Service quét liên tục Floating Windows. Nếu phát hiện App có quyền <code>SYSTEM_ALERT_WINDOW</code> → Tự động vô hiệu hóa Smart Approval, fallback Password thủ công.</li>
+                <li><strong>📵 Screenshot Protection:</strong> Set cờ <code>FLAG_SECURE</code> (Android) để Malware chụp màn hình chỉ nhận được màu đen.</li>
+                <li><strong>✅ Server-Side Verification:</strong> Relay Server phải verify: <code>Recover(Signature, Hash(PlainData)) == User_Public_Key</code>. Không chỉ nhận "Signed Hash".</li>
+            </ul>
+            <p style="font-size: 0.8rem; margin-top: 1rem; color: var(--warning);"><strong>⚠️ Lưu ý:</strong> Lỗ hổng WYSIWYS không thể vá hoàn toàn nếu OS đã bị root. Với System-Managed Trusted UI, Malware phải khai thác lỗ hổng Kernel mới can thiệp được.</p>
+        </div>
+
+        <div class="tech-box" style="border-top: 4px solid var(--danger); margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--danger);">🛡️ 8. SECURITY PATCH: Trusted Path Architecture</div>
+            <p>Phân tích chuyên sâu về kiến trúc <strong>Z-Order Protection</strong> để ngăn chặn UI Redressing:</p>
+            
+            <div style="margin-bottom: 1.5rem; margin-top: 1rem;">
+                <strong style="color: var(--accent-blue);">Window Layer Hierarchy:</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>App UI (Layer thấp - Untrusted):</strong> Giao diện do TeraChat vẽ. Malware có quyền <code>SYSTEM_ALERT_WINDOW</code> có thể vẽ đè lên lớp này (ví dụ: vẽ "$50" đè lên "$50,000").</li>
+                    <li><strong>System UI (Layer cao nhất - Trusted):</strong> Giao diện do Kernel/System Server vẽ (Biometric Prompt, Permission Dialog). Hệ điều hành <strong>CẤM</strong> app thứ 3 vẽ đè lên layer này.</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <strong style="color: var(--accent-blue);">Nguyên lý Trusted Path:</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li>Thông tin hiển thị trên System UI đi qua "con đường tin cậy": <code>App → OS API → Màn hình</code></li>
+                    <li>Malware không thể intercept để sửa đổi nội dung text trên đường đi này (trừ khi máy đã bị Root/Jailbreak).</li>
+                    <li><strong>Chiến lược:</strong> Buộc App chuyển chuỗi text giao dịch cho OS. OS hiển thị trong hộp thoại sinh trắc học → Tin tưởng tuyệt đối.</li>
+                </ul>
+            </div>
+
+            <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <th style="width: 15%;">OS</th>
+                        <th style="width: 35%;">API Implementation</th>
+                        <th>Cơ chế Bảo vệ</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Android</strong></td>
+                        <td><code>BiometricPrompt.setDescription()</code></td>
+                        <td>Inject chuỗi <em>"Gửi 50K đến ví ...ABC"</em> vào hộp thoại hệ thống. Malware không thể sửa text này. Yêu cầu Key có <code>setUserAuthenticationRequired(true)</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>iOS</strong></td>
+                        <td><code>LAContext.localizedReason</code></td>
+                        <td>Hiển thị context trên FaceID Dialog. Key phải được tạo với cờ <code>.biometryCurrentSet</code> và <code>.privateKeyUsage</code>.</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.1); padding: 0.8rem; border-radius: 6px; margin-top: 1rem; font-size: 0.85rem; border: 1px solid var(--danger);">
+                <strong>⚠️ CRITICAL FALLBACK REQUIREMENT:</strong><br>
+                Nếu OS không hỗ trợ hiển thị đủ thông tin (iOS cũ cắt bớt text), App phải kích hoạt <strong>Out-of-Band Verification</strong>: Yêu cầu nhập lại 3 ký tự cuối của ví đích vào <strong>Randomized Keyboard</strong> (bàn phím vị trí số ngẫu nhiên) trước khi gọi FaceID.
+            </div>
+        </div>
+    </section>
+
+    <section id="iam-governance">
+        <h2>2.3 Enterprise Identity & Onboarding <span class="badge badge-success">Federated PKI</span></h2>
+        <p>Giải pháp định danh doanh nghiệp, tích hợp SSO (Azure AD/Okta/Google Workspace) với bảo mật E2EE của TeraChat. <strong>Doanh nghiệp 5,000+ nhân viên không thể gửi Invite Code thủ công</strong> — cần Zero-Touch Provisioning.</p>
+
+        <div class="scenario-card" style="margin-bottom: 1.5rem;">
+            <div class="tech-header" style="color: var(--text-primary);">Zero-Touch Provisioning (Tự động hóa hoàn toàn)</div>
+            <div class="scenario-step">
+                <span class="step-label">Bước 1</span>
+                <div>HR thêm nhân viên mới "Mai" vào <strong>Azure AD / Okta / Google Workspace</strong>.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Bước 2</span>
+                <div><strong>SCIM Webhook</strong> tự động sync → TeraChat tạo tài khoản + join Teams mặc định (theo Department).</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Bước 3</span>
+                <div>Mai mở TeraChat lần đầu → Đăng nhập bằng <strong>SSO công ty</strong> (1 click) → Sẵn sàng chat.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Offboard</span>
+                <div>Mai nghỉ việc → HR deactivate trên Azure AD → TeraChat <strong>tức thì</strong> revoke access + trigger <strong>Remote Wipe</strong> (Section 1.4).</div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Gap Analysis: Tại sao cần Federated Identity?</div>
+             <table class="comparison-table">
+                 <tr>
+                    <th>Tiêu chí</th>
+                    <th>Mô hình cũ (Personal)</th>
+                    <th>Enterprise Requirements</th>
+                 </tr>
+                 <tr>
+                     <td><strong>Nguồn Định danh</strong></td>
+                     <td>Self-sovereign Key (Tự tạo)</td>
+                     <td><strong>Centralized IdP</strong> (Azure AD, Okta, Google Workspace).</td>
+                 </tr>
+                 <tr>
+                     <td><strong>Onboarding</strong></td>
+                     <td>Mời thủ công từng Key.</td>
+                     <td><strong>Auto-Sync (SCIM):</strong> Tự động đồng bộ 5000+ nhân viên từ HR System.</td>
+                 </tr>
+                 <tr>
+                     <td><strong>Offboarding</strong></td>
+                     <td>Revoke Key thủ công.</td>
+                     <td><strong>Kill Switch:</strong> HR xóa user -> Quyền truy cập TeraChat bị cắt tức thì + Remote Wipe.</td>
+                 </tr>
+             </table>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-purple);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Architecture: Federated Identity with Key Binding</div>
+            <ul>
+                <li><strong>Identity Broker (Keycloak/Dex):</strong> Cầu nối giữa TeraChat và Azure AD/Okta/Google Workspace. Hỗ trợ OIDC/SAML.</li>
+                <li><strong>Enterprise CA:</strong> Hệ thống PKI nội bộ. Chỉ tin tưởng Key được ký bởi CA doanh nghiệp, không tin Key tự sinh.</li>
+                <li><strong>SCIM Listener:</strong> Service lắng nghe sự kiện nhân sự (Tuyển dụng/Sa thải) từ <strong>Azure AD, Okta, Google Workspace</strong> để cập nhật DB tức thì.</li>
+            </ul>
+        </div>
+        
+        <div class="tech-box">
+            <div class="tech-header">3. Database Schema (PostgreSQL for SCIM Store)</div>
+            <p>Ánh xạ định danh doanh nghiệp sang định danh Crypto:</p>
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc;">
+-- 1. Users (Synced from Azure AD)
+CREATE TABLE enterprise_users (
+    internal_id UUID PRIMARY KEY,
+    external_id VARCHAR(255) UNIQUE, -- Azure Object ID
+    email VARCHAR(255) UNIQUE NOT NULL,
+    active BOOLEAN DEFAULT TRUE, -- Kill Switch State
+    attributes JSONB DEFAULT '{}', -- Dept, Title for ABAC
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Certificate Binding (The Link)
+CREATE TABLE pki_bindings (
+    binding_id UUID PRIMARY KEY,
+    user_id UUID REFERENCES enterprise_users(internal_id),
+    device_public_key TEXT NOT NULL, -- User's Ed25519 Key
+    certificate_body TEXT NOT NULL, -- Signed by Enterprise CA
+    revoked BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMPTZ NOT NULL
+);
+
+-- Trigger: Auto-Revoke when HR deactivates user
+CREATE TRIGGER trg_auto_revoke 
+AFTER UPDATE OF active ON enterprise_users
+FOR EACH ROW EXECUTE FUNCTION auto_revoke_on_terminate();
+</pre>
+            </div>
+        </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--danger);">
+             <div class="tech-header" style="color: var(--danger);">2.3. Rủi Ro: Rào Cản Pháp Lý Về Mã Hóa</div>
+             <p><strong>Vấn đề:</strong> Một số chính phủ không thích mã hóa E2EE/ZK vì khó kiểm soát tội phạm.</p>
+             <p><strong>Giải pháp: Enterprise Escrow Key</strong></p>
+             <ul>
+                 <li>Doanh nghiệp giữ một <strong>Khóa khôi phục (Recovery Key)</strong> được quản lý nghiêm ngặt.</li>
+                 <li>Cho phép giải mã dữ liệu nhân viên trong trường hợp đặc biệt (Điều tra nội bộ, Yêu cầu pháp lý).</li>
+                 <li>Cân bằng giữa nhu cầu bảo mật dữ liệu và tuân thủ quy định quản lý nhà nước.</li>
+             </ul>
+        </div>
+        <div class="tech-box" style="margin-top: 1.5rem;">
+             <div class="tech-header">4. Quy trình Onboarding "Self-Sovereign"</div>
+             <p>Quy trình "Bring Your Own Identity" - Admin chỉ cấp quyền, User nắm giữ Khóa (Non-Custodial).</p>
+             <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>Chức năng</th>
+                            <th>Kỹ thuật</th>
+                            <th>Mô tả User Flow</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1. Khởi tạo Danh tính</strong><br><em>(Ref: User Action)</em></td>
+                            <td>Ed25519 / BIP-39<br><em>(On-Device Gen)</em></td>
+                            <td>App tự sinh Key & Seed Phrase trong Secure Enclave.<br>User sao lưu 12/24 từ khóa. User là "Bóng ma" ẩn danh.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2. Admin Mời</strong><br><em>(Ref: Admin Action)</em></td>
+                            <td>Invite Token<br><em>(Signed JWT)</em></td>
+                            <td>Admin nhập Email -> Server gửi Link chứa Token (Role/Dept).<br>Server chưa biết Public Key của User.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. Liên kết 1 Chạm</strong><br><em>(Ref: Handshake)</em></td>
+                            <td>Deep Link<br><em>(Challenge-Response)</em></td>
+                            <td>User bấm Link -> App dùng Private Key ký xác nhận.<br>Gửi gói tin `Sign(Token) + PubKey` lên Server.</td>
+                        </tr>
+                         <tr>
+                            <td><strong>4. Xác thực & Cấp quyền</strong><br><em>(Ref: Verify)</em></td>
+                            <td>PKI Mapping<br><em>(PostgreSQL)</em></td>
+                            <td>Server verify chữ ký -> Map `Email <-> PubKey`.<br>Mã hóa tin công ty cho PubKey này.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>5. Thu hồi Quyền</strong><br><em>(Ref: Offboarding)</em></td>
+                            <td>Key Rotation</td>
+                            <td>Admin xóa Email -> Server cắt liên kết.<br>Các nhóm chat xoay vòng Key (Epoch). User giữ lại Ví.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-top: 4px solid var(--info);">
+            <div class="tech-header" style="color: var(--info);">5. Data Flow Diagram: Binding Process</div>
+            <pre style="background: #1e1e1e; padding: 15px; border-radius: 6px; color: #d4d4d4; font-size: 0.85rem; overflow-x: auto;">
+[USER DEVICE]                          [ADMIN SERVER]
+     |                                        |
+1. Gen Key (Pub/Priv)                         |
+     |                                        |
+     | <------- 2. Email (Invite Link) ------ |
+     |                                        |
+3. Click Link -> App Open                     |
+     |                                        |
+4. Sign(Invite_Token) + PubKey -------------> | 5. Verify Signature
+     |                                        |    Bind: Email <-> PubKey
+     |                                        |    Add PubKey to Groups
+     | <------- 6. Sync Group Data ---------- |
+     |                                        |
+[USER READY] (User owns the Key)</pre>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">
+                <strong>Điểm khác biệt cốt lõi:</strong> Admin không bao giờ cầm Private Key của nhân viên.
+            </p>
+        </div>
+    </section>
+
+    <section id="opa-policy">
+        <h2>2.4 Access Policy Engine (OPA) <span class="badge badge-warning">Zero-Trust</span></h2>
+        <p>Phân quyền động dựa trên Attribute-Based Access Control (ABAC) thay vì Role tĩnh.</p>
+        
+        <div class="tech-box">
+             <div class="tech-header">Policy Logic (Rego)</div>
+             <p>Luật quyết định: <em>"Ai được vào nhóm nào?"</em></p>
+             <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #4ade80;">
+package terachat.authz
+default allow = false
+
+# Rule: Chỉ nhân viên phòng Finance mới được vào nhóm Budget
+allow {
+    input.action == "join"
+    input.resource.type == "chat_group"
+    input.resource.required_dept == "Finance"
+    
+    # Check Attribute từ DB Sync
+    input.user.attributes.department == "Finance"
+}
+
+# Rule: Chặn truy cập từ quốc gia bị cấm (Geofencing)
+deny {
+    input.resource.geo_restriction == "US-Only"
+    input.user.attributes.location != "US"
+}
+</pre>
+             </div>
+        </div>
+    </section>
+
+    <section id="endpoint-trust">
+        <h2>2.5 Zero-Trust Endpoint Assurance <span class="badge badge-danger">Hardware Root of Trust</span></h2>
+        <p>Giải quyết lỗ hổng "The Lying Endpoint": Server từ chối cấp phát Key nếu thiết bị không chứng minh được sự toàn vẹn phần cứng (Hardware Integrity).</p>
+
+        <div class="tech-box" style="border-color: var(--danger);">
+            <div class="tech-header" style="color: var(--danger);">🚨 Why RASP Fails (Ring 3 Problem)</div>
+            <ul style="font-size: 0.9rem;">
+                <li><strong>RASP chạy ở User Mode (Ring 3):</strong> Nếu Hacker chiếm Kernel (Ring 0) qua Root/Jailbreak hoặc VM, hắn có thể hook hàm <code>open()</code> để trả về "File not found" khi RASP kiểm tra <code>/sbin/su</code>.</li>
+                <li><strong>Kết quả:</strong> Thiết bị đã bị Root nhưng RASP bị bịt mắt, báo cáo "sạch".</li>
+            </ul>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Architecture: Remote Attestation Flow</div>
+             <p>Quy trình "Challenge-Response" để xác minh thiết bị thật bằng phần cứng:</p>
+             <ol style="font-size: 0.9rem;">
+                 <li><strong>Challenge:</strong> Khi Login, Server gửi một chuỗi ngẫu nhiên <code>nonce</code> xuống Client.</li>
+                 <li><strong>Attestation:</strong> Client yêu cầu Chip bảo mật (TPM/Secure Element) tạo "Health Quote" chứa:
+                    <ul>
+                        <li><code>nonce</code> (chống Replay attack)</li>
+                        <li>Trạng thái Boot (Secure Boot: ON/OFF)</li>
+                        <li>Chữ ký số của Chip (ký bởi Root CA của Apple/Google/Microsoft)</li>
+                    </ul>
+                 </li>
+                 <li><strong>Verification:</strong> Client gửi Quote lên Server. Server verify chữ ký với Vendor CA → Cấp Session Token.</li>
+             </ol>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-pink);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Implementation Strategy (OS Specific)</div>
+            
+            <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th style="width: 18%;">Platform</th>
+                        <th style="width: 32%;">Native API</th>
+                        <th>Cơ chế xác thực</th>
+                     </tr>
+                     <tr>
+                         <td><strong>iOS</strong></td>
+                         <td><code>DCAppAttestService</code></td>
+                         <td>Verify App là bản gốc (không Mod) và chạy trên iPhone thật (không Jailbreak).</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Android</strong></td>
+                         <td><code>Play Integrity API</code></td>
+                         <td>Yêu cầu <code>MEETS_STRONG_INTEGRITY</code> (Hardware-backed Keystore, chặn Emulator/Root).</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Windows</strong></td>
+                         <td><code>TPM 2.0 Health Attestation</code></td>
+                         <td>Kiểm tra PCR (Platform Configuration Registers) đảm bảo Kernel chưa bị tamper + BitLocker đang bật.</td>
+                     </tr>
+                 </table>
+            </div>
+
+            <div style="margin-top: 1.5rem; border-top: 1px dashed #444; padding-top: 1rem;">
+                <div style="color: var(--warning); font-size: 0.85rem; font-weight: bold;">CODE: ANDROID PLAY INTEGRITY</div>
+                <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; border: 1px solid var(--border); margin-top: 0.5rem;">
+<pre style="margin: 0; color: #a5b4fc;">
+// 1. Client: Request Integrity Token
+val integrityManager = IntegrityManagerFactory.create(context)
+val tokenResponse = integrityManager.requestIntegrityToken(
+    IntegrityTokenRequest.builder()
+        .setNonce(serverNonce) // Nonce từ Server
+        .build()
+).await()
+
+// 2. Server Verify - Payload phải đạt:
+{
+  "deviceIntegrity": {
+    "deviceRecognitionVerdict": ["MEETS_STRONG_INTEGRITY"] // Hardware Required
+  },
+  "appIntegrity": {
+    "appRecognitionVerdict": "PLAY_RECOGNIZED",
+    "certificateSha256Digest": ["SHA_CỦA_TERACHAT_SIGNING_KEY"]
+  }
+}
+</pre>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--danger); margin-top: 0.5rem;">
+                    <strong>POLICY:</strong> Nếu chỉ đạt <code>MEETS_BASIC_INTEGRITY</code> (Software Only) hoặc phát hiện Root → Server từ chối Handshake và gửi lệnh <strong>Remote Wipe</strong>.
+                </p>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+             <div class="tech-header">4. Quy trình Onboarding "Self-Sovereign"</div>
+             <p>Quy trình "Bring Your Own Identity" - Admin chỉ cấp quyền, User nắm giữ Khóa (Non-Custodial).</p>
+             <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>Chức năng</th>
+                            <th>Kỹ thuật</th>
+                            <th>Mô tả User Flow</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1. Khởi tạo Danh tính</strong><br><em>(Ref: User Action)</em></td>
+                            <td>Ed25519 / BIP-39<br><em>(On-Device Gen)</em></td>
+                            <td>App tự sinh Key & Seed Phrase trong Secure Enclave.<br>User sao lưu 12/24 từ khóa. User là "Bóng ma" ẩn danh.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2. Admin Mời</strong><br><em>(Ref: Admin Action)</em></td>
+                            <td>Invite Token<br><em>(Signed JWT)</em></td>
+                            <td>Admin nhập Email -> Server gửi Link chứa Token (Role/Dept).<br>Server chưa biết Public Key của User.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. Liên kết 1 Chạm</strong><br><em>(Ref: Handshake)</em></td>
+                            <td>Deep Link<br><em>(Challenge-Response)</em></td>
+                            <td>User bấm Link -> App dùng Private Key ký xác nhận.<br>Gửi gói tin `Sign(Token) + PubKey` lên Server.</td>
+                        </tr>
+                         <tr>
+                            <td><strong>4. Xác thực & Cấp quyền</strong><br><em>(Ref: Verify)</em></td>
+                            <td>PKI Mapping<br><em>(PostgreSQL)</em></td>
+                            <td>Server verify chữ ký -> Map `Email <-> PubKey`.<br>Mã hóa tin công ty cho PubKey này.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>5. Thu hồi Quyền</strong><br><em>(Ref: Offboarding)</em></td>
+                            <td>Key Rotation</td>
+                            <td>Admin xóa Email -> Server cắt liên kết.<br>Các nhóm chat xoay vòng Key (Epoch). User giữ lại Ví.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="formal-verification">
+        <h2>2.6 Formal Verification <span class="badge badge-success">Math Proof</span></h2>
+        <p>Thay thế niềm tin vào "Human Review" bằng "Mathematical Proof". Chứng minh tính đúng đắn của Smart Contract ở cấp độ toán học.</p>
+
+        <div class="tech-box" style="border-color: var(--danger);">
+            <div class="tech-header" style="color: var(--danger);">Why Unit Test Is Not Enough</div>
+            <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <th style="width: 25%;">Tiêu chí</th>
+                        <th style="width: 37%;">Unit/Integration Test</th>
+                        <th>Formal Verification</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Bản chất</strong></td>
+                        <td class="old-way">Probabilistic. "Tôi đã thử 100 trường hợp, đều ổn."</td>
+                        <td><span class="new-way">Deterministic</span>. "Tôi chứng minh được không tồn tại trường hợp sai."</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phạm vi</strong></td>
+                        <td class="old-way">Kiểm tra các code path đã biết.</td>
+                        <td><span class="new-way">Quét toàn bộ State Space</span> của hợp đồng.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kết quả</strong></td>
+                        <td class="old-way">Tìm thấy lỗi (Bugs found).</td>
+                        <td><span class="new-way">Chứng minh sự vắng mặt của lỗi</span> (Absence of bugs).</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Methodology: Invariant-Based Safety</div>
+             <p>Hệ thống không tìm kiếm lỗi, mà tìm kiếm sự vi phạm các <strong>Bất biến (Invariants)</strong>:</p>
+             
+             <div class="comparison-table" style="margin-top: 1rem;">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th style="width: 28%;">Loại Bất biến</th>
+                        <th>Logic (Tact/FunC)</th>
+                     </tr>
+                     <tr>
+                         <td><strong>Solvency</strong><br>(Khả năng thanh toán)</td>
+                         <td><code>assert(Vault.balance >= sum(User.deposits))</code><br>Tiền trong két không bao giờ nhỏ hơn tổng nợ người dùng.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Access Control</strong><br>(Quyền truy cập)</td>
+                         <td><code>forall state: withdraw() => msg.sender == owner</code><br>Mọi trạng thái: chỉ Owner gọi được hàm rút.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Monotonicity</strong><br>(Tính đơn điệu)</td>
+                         <td><code>nonce_new > nonce_old</code><br>Số thứ tự giao dịch chỉ tăng, không bao giờ giảm (chống Replay).</td>
+                     </tr>
+                 </table>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-purple);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Implementation: Z3 SMT Solver</div>
+            <p style="font-size: 0.9rem;">Vì hệ sinh thái TON chưa có công cụ FV tự động như Certora (EVM), sử dụng phương pháp <strong>Model Checking</strong>:</p>
+            
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; border: 1px solid var(--border); margin: 1rem 0;">
+<pre style="margin: 0; color: #a5b4fc;">
+// 1. Tact Logic (Simplified)
+fun withdraw(amount: Int) {
+  require(balance >= amount, "Insufficient funds");
+  balance = balance - amount;
+}
+
+// 2. SMT-LIB Model (Z3 Prover)
+(declare-const balance_old Int)
+(declare-const amount Int)
+(declare-const balance_new Int)
+
+(assert (>= balance_old amount))           // require condition
+(assert (= balance_new (- balance_old amount))) // logic
+(assert (< balance_new 0))                  // Attack: Can balance go negative?
+
+(check-sat) 
+// UNSAT = Không tìm được cách hack → AN TOÀN
+// SAT   = Z3 trả về giá trị cụ thể để hack → FIX NGAY
+</pre>
+            </div>
+            
+            <div style="background: rgba(74, 222, 128, 0.1); padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--success);">
+                <strong>✅ AUTOMATED CI/CD PIPELINE:</strong><br>
+                Smart Contract Pipeline tự động dịch Tact → SMT Model → Chạy Z3 Solver. Nếu tìm thấy kẽ hở toán học → <strong>Block Deploy ngay lập tức</strong>.
+            </div>
+        </div>
+    </section>
+
+    <section id="binary-hardening">
+        <h2>2.7 Binary Hardening & Obfuscation <span class="badge badge-success">Anti-RE</span></h2>
+        <p>Biến ứng dụng thành "Hộp đen" thực sự. Tăng chi phí tấn công ngược (Reverse Engineering) lên mức tối đa.</p>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Obfuscation Strategy (O-LLVM)</div>
+             <p>Áp dụng các kỹ thuật làm rối mã ở tầng Compiler (LLVM Pass):</p>
+             
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th style="width: 28%;">Kỹ thuật</th>
+                        <th style="width: 42%;">Cơ chế</th>
+                        <th>Mục tiêu phòng thủ</th>
+                     </tr>
+                     <tr>
+                         <td><strong>Control Flow Flattening</strong></td>
+                         <td>Biến <code>if-else/loop</code> thành vòng lặp <code>switch</code> khổng lồ và phẳng.</td>
+                         <td>Phá vỡ CFG trong IDA Pro/Ghidra.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Bogus Control Flow</strong></td>
+                         <td>Chèn mã giả (Junk Code) không bao giờ được thực thi.</td>
+                         <td>Làm nhiễu phân tích tĩnh.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Instruction Substitution</strong></td>
+                         <td>Thay <code>a + b</code> bằng <code>a - (-b) + x - x</code>.</td>
+                         <td>Làm rối Decompiler.</td>
+                     </tr>
+                 </table>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-pink);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Secrets Protection (Compile-time XOR)</div>
+            <p style="font-size: 0.9rem;">Ngăn chặn trích xuất API Key, URL bằng lệnh <code>strings</code>.</p>
+            
+            <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <li><strong>String Encryption:</strong> Mọi chuỗi tĩnh được mã hóa XOR với key ngẫu nhiên tại thời điểm biên dịch.</li>
+                <li><strong>Stack Decryption:</strong> Chuỗi chỉ giải mã trên Stack trước khi dùng và bị Zeroized ngay sau đó.</li>
+            </ul>
+
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; border: 1px solid var(--border); margin-top: 1rem;">
+<pre style="margin: 0; color: #a5b4fc;">
+// Rust: String Obfuscation (obfstr crate)
+use obfstr::obfstr;
+
+fn verify_license() {
+    // Chuỗi này KHÔNG tồn tại trong Binary
+    // Thay bằng mảng bytes đã XOR, giải mã tại runtime
+    let endpoint = obfstr!("https://auth.terachat.internal/verify");
+    
+    if check_server(endpoint) {
+        println!("{}", obfstr!("Access Granted"));
+    } else {
+        println!("{}", obfstr!("Error: 0x99")); // Hacker không trace được
+    }
+}
+</pre>
+            </div>
+            
+            <div style="margin-top: 1rem; border-top: 1px dashed #444; padding-top: 1rem;">
+                <div style="color: var(--danger); font-size: 0.85rem; font-weight: bold;">⚠️ TAMPER DETECTION (Self-Checksumming)</div>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem;">
+                    App tự tính Hash của <code>.text section</code> khi khởi chạy. Nếu phát hiện Hash thay đổi (Hacker patch <code>JZ</code> → <code>JMP</code>) → Kích hoạt <strong>Silent Crash</strong> (treo ngẫu nhiên) thay vì thông báo lỗi.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="fuzzing-infra">
+        <h2>2.8 Continuous Fuzzing Infrastructure <span class="badge badge-danger">Anti-ZeroDay</span></h2>
+        <p>Chuyển từ kiểm thử xác định (Unit Test) sang kiểm thử ngẫu nhiên (Fuzzing) để tìm các lỗi bộ nhớ và logic tiềm ẩn mà con người không thể nghĩ ra.</p>
+
+        <div class="tech-box" style="border-color: var(--danger);">
+            <div class="tech-header" style="color: var(--danger);">Why Unit Test Is Not Enough</div>
+            <ul style="font-size: 0.9rem;">
+                <li><strong>Unit Test:</strong> "Tôi đưa vào <code>A</code>, mong đợi ra <code>B</code>." → Chỉ kiểm tra những gì bạn <em>biết</em>.</li>
+                <li><strong>Thực tế:</strong> Hacker đưa vào <code>FFFF...</code> (tràn bộ đệm), <code>NULL</code>, emoji, binary méo mó.</li>
+                <li><strong>Hậu quả:</strong> Packet Parser chạy đúng 100% Unit Test, nhưng gói tin 1MB dị dạng → <strong>Crash (DoS)</strong> hoặc <strong>RCE</strong>.</li>
+            </ul>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Architecture: Coverage-Guided Fuzzing</div>
+             <p>Hệ thống tự động sinh hàng tỉ test-case dị dạng để tấn công vào các điểm yếu:</p>
+             
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th style="width: 28%;">Target Component</th>
+                        <th style="width: 35%;">Fuzzing Strategy</th>
+                        <th>Mục tiêu phát hiện</th>
+                     </tr>
+                     <tr>
+                         <td><strong>Packet Parser</strong><br>(Protobuf/Binary)</td>
+                         <td>Structure-Aware Fuzzing (LibFuzzer)</td>
+                         <td>Buffer Overflow, Integer Overflow, Infinite Loops (DoS).</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Crypto Handshake</strong><br>(Noise/MLS)</td>
+                         <td>Stateful Fuzzing</td>
+                         <td>Sai thứ tự gói tin → Deadlock hoặc bypass xác thực.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>File Processing</strong><br>(Image/Docs)</td>
+                         <td>File Format Mutation (AFL++)</td>
+                         <td>Memory Corruption (như ImageTragick) khi xử lý file đính kèm độc hại.</td>
+                     </tr>
+                 </table>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-pink);">
+            <div class="tech-header" style="color: var(--text-primary);">2. CI/CD Integration (Security Pipeline)</div>
+            <p style="font-size: 0.9rem;">Fuzzing là quy trình bắt buộc (Mandatory Gate) trong Release Cycle, không phải sự kiện một lần.</p>
+            
+            <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <li><strong>Smoke Fuzz (PR Gate):</strong> Mọi Pull Request sửa Core Logic phải vượt qua 10 phút Fuzzing. Nếu Crash → Block Merge.</li>
+                <li><strong>Deep Fuzz (Nightly):</strong> Server chuyên dụng chạy Fuzzer 24h/ngày trên nhánh <code>main</code>.</li>
+                <li><strong>LLVM Sanitizers:</strong>
+                    <ul>
+                        <li><code>AddressSanitizer (ASan)</code>: Phát hiện Buffer Overflow, Use-after-free.</li>
+                        <li><code>MemorySanitizer (MSan)</code>: Phát hiện biến chưa khởi tạo.</li>
+                        <li><code>UBSan</code>: Phát hiện tràn số, chia cho 0.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; border: 1px solid var(--border); margin-top: 1rem;">
+<pre style="margin: 0; color: #a5b4fc;">
+// Rust Fuzz Target (cargo-fuzz + libFuzzer)
+#![no_main]
+use libfuzzer_sys::fuzz_target;
+use terachat_core::protocol::parse_packet;
+
+fuzz_target!(|data: &[u8]| {
+    // Fuzzer bơm dữ liệu ngẫu nhiên vào `data`
+    // Chỉ quan tâm: Hàm có Panic/Crash/Leak không?
+    if let Ok(packet) = parse_packet(data) {
+        let _encoded = packet.to_bytes(); // Round-trip test
+    }
+});
+</pre>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.1); padding: 0.8rem; border-radius: 6px; margin-top: 1rem; font-size: 0.85rem; border: 1px solid var(--danger);">
+                <strong>⚠️ ZERO-TRUST POLICY:</strong><br>
+                Bất kỳ thư viện bên thứ 3 nào (XML Parser, Image Decoder) <strong>BẮT BUỘC</strong> phải được Fuzzing độc lập trước khi tích hợp vào TeraChat Core. Không tin tưởng code của người khác.
+            </div>
+        </div>
+    </section>
+
+    <section id="threat-model">
+        <h2>2.9 Threat Model & Security Mitigation <span class="badge badge-danger">Red Team Analysis</span></h2>
+        <p>Phân tích toàn diện các attack vectors và mitigations dựa trên góc nhìn của Red Teamer (Penetration Testing).</p>
+
+        <div class="tech-box" style="border-color: var(--danger);">
+            <div class="tech-header" style="color: var(--danger);">Security Threat Priority Matrix</div>
+            <p>Đánh giá mức độ nghiêm trọng dựa trên Impact và Likelihood:</p>
+
+            <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 25%;">Attack Vector</th>
+                            <th style="width: 12%;">Severity</th>
+                            <th style="width: 12%;">Likelihood</th>
+                            <th style="width: 10%;">Risk Score</th>
+                            <th style="width: 10%;">Priority</th>
+                            <th>Mitigation Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(239, 68, 68, 0.1);">
+                            <td><strong>1</strong></td>
+                            <td><strong>Dead Man Switch Time Travel</strong></td>
+                            <td><span style="color: var(--danger);">CRITICAL</span></td>
+                            <td>High</td>
+                            <td style="color: var(--danger);"><strong>9/10</strong></td>
+                            <td><span class="badge" style="background: var(--danger);">P0</span></td>
+                            <td><span class="new-way">✅ FIXED: Hardware Counter</span></td>
+                        </tr>
+                        <tr style="background: rgba(239, 68, 68, 0.05);">
+                            <td><strong>2</strong></td>
+                            <td><strong>Signing Oracle Attack</strong></td>
+                            <td><span style="color: var(--danger);">CRITICAL</span></td>
+                            <td>Medium</td>
+                            <td style="color: var(--danger);"><strong>8/10</strong></td>
+                            <td><span class="badge" style="background: var(--danger);">P0</span></td>
+                            <td><span class="new-way">✅ MITIGATED: WYSIWYS + Rate Limiting</span></td>
+                        </tr>
+                        <tr style="background: rgba(251, 191, 36, 0.1);">
+                            <td><strong>3</strong></td>
+                            <td><strong>SSD Wear Leveling</strong></td>
+                            <td><span style="color: var(--warning);">HIGH</span></td>
+                            <td>Medium</td>
+                            <td style="color: var(--warning);"><strong>7/10</strong></td>
+                            <td><span class="badge" style="background: var(--warning);">P1</span></td>
+                            <td><span class="new-way">✅ FIXED: Crypto-Shredding</span></td>
+                        </tr>
+                        <tr style="background: rgba(251, 191, 36, 0.05);">
+                            <td><strong>4</strong></td>
+                            <td><strong>Mesh Network MITM</strong></td>
+                            <td><span style="color: var(--warning);">HIGH</span></td>
+                            <td>Medium</td>
+                            <td style="color: var(--warning);"><strong>7/10</strong></td>
+                            <td><span class="badge" style="background: var(--warning);">P1</span></td>
+                            <td><span style="color: var(--text-secondary);">⚠️ PARTIAL: Node Rotation Required</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>5</strong></td>
+                            <td><strong>Non-Custodial Enterprise Risk</strong></td>
+                            <td><span style="color: var(--accent-blue);">MEDIUM</span></td>
+                            <td>High</td>
+                            <td style="color: var(--accent-blue);"><strong>6/10</strong></td>
+                            <td><span class="badge" style="background: var(--accent-blue);">P2</span></td>
+                            <td><span style="color: var(--text-secondary);">📋 POLICY: Multi-Sig Strategy</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>6</strong></td>
+                            <td><strong>Analog Hole (Camera)</strong></td>
+                            <td><span style="color: var(--success);">LOW</span></td>
+                            <td>High</td>
+                            <td style="color: var(--success);"><strong>4/10</strong></td>
+                            <td><span class="badge" style="background: var(--success);">P3</span></td>
+                            <td><span style="color: var(--text-secondary);">⚠️ ACCEPTED: Physical Limitation</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ATTACK VECTOR 1: TIME TRAVEL ATTACK -->
+        <div class="tech-box" style="border-color: var(--danger); margin-top: 2rem;">
+            <div class="tech-header" style="color: var(--danger);">🎯 Attack Vector #1: Dead Man Switch Time Travel</div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--warning);">Attack Scenario:</strong>
+                <ol style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li>Attacker lấy trộm laptop nhân viên, ngay lập tức bỏ vào <strong>Lồng Faraday</strong> (chặn sóng 100%).</li>
+                    <li>Vào BIOS hoặc dùng tool hook API <code>GetSystemTime</code>, đóng băng thời gian hoặc lùi lại quá khứ.</li>
+                    <li>Client nghĩ: <em>"Mới trôi qua 5 phút, chưa cần xóa"</em> → Không trigger Self-Destruct.</li>
+                    <li>Attacker ung dung dump RAM hoặc Clone ổ cứng để brute-force từ từ.</li>
+                </ol>
+            </div>
+
+            <div style="background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                <strong style="color: var(--success);">✅ Mitigation Strategy</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li><strong>Hardware Monotonic Counter:</strong> Sử dụng Secure Enclave Counter (iOS) / StrongBox (Android) không thể revert.</li>
+                    <li><strong>Verification Protocol:</strong> Server lưu "Last Valid Counter Value" cho mỗi device.</li>
+                    <li><strong>Detection:</strong> Counter < Server's Value → Device bị revert/clone → Từ chối + Self-Destruct.</li>
+                    <li><strong>Trade-off:</strong> Yêu cầu online 1 lần/72h để verify counter.</li>
+                </ul>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-secondary);"><strong>Implementation:</strong> Đã cập nhật Section 1.4 Remote Wipe.</p>
+            </div>
+        </div>
+
+        <!-- IMPLEMENTATION ROADMAP -->
+        <div class="tech-box" style="border-color: var(--accent-purple); margin-top: 2rem;">
+            <div class="tech-header" style="color: var(--accent-purple);">📅 Security Implementation Roadmap</div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--danger);">Phase 1: Pre-Alpha (Blocking Issues)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li>✅ <strong>DONE:</strong> Fix Dead Man Switch → Hardware counter-based</li>
+                    <li>✅ <strong>DONE:</strong> Implement Crypto-Shredding cho DB cleanup</li>
+                    <li>✅ <strong>DONE:</strong> Transaction-level biometric auth</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--warning);">Phase 2: Beta</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li>⏳ <strong>IN PROGRESS:</strong> Node rotation cho Mesh network</li>
+                    <li>📋 <strong>PLANNED:</strong> Multi-Sig wallet cho Enterprise tier</li>
+                    <li>📋 <strong>PLANNED:</strong> Byzantine fault tolerance implementation</li>
+                </ul>
+            </div>
+
+            <div>
+                <strong style="color: var(--success);">Phase 3: Post-Launch</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    <li>📋 <strong>PLANNED:</strong> External penetration testing</li>
+                    <li>📋 <strong>PLANNED:</strong> Bug bounty program</li>
+                    <li>📋 <strong>PLANNED:</strong> Incident response playbook</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="deduplication">
+        <h2>2.10 Global Deduplication <span class="badge badge-success">Single Instance Storage</span></h2>
+        <p>Giải pháp tối ưu hóa lưu trữ và băng thông: "Lưu một, Tham chiếu nhiều" (Store Once, Reference Many).</p>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Nguyên lý Cốt lõi: Content-Addressable Storage (CAS)</div>
+             <p>Trong mô hình Enterprise, dữ liệu không được quản lý theo tên file, mà dựa trên <strong>Bản băm nội dung (Content Hash)</strong>:</p>
+             <ul>
+                 <li><strong>Logic:</strong> Hệ thống tệp tin cục bộ hoạt động như một kho Object Store.</li>
+                 <li><strong>Physical Filename:</strong> Là chuỗi SHA-256 của chính nội dung file đó (Ví dụ: <code>a1b2c3d4...</code>).</li>
+                 <li><strong>Database (SQLite):</strong> Chỉ lưu metadata và đường dẫn tham chiếu (Symlink).</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Quy trình Xử lý Trùng lặp (Workflow)</div>
+            <p style="font-size: 0.9rem;">Cơ chế "Check-before-Write" tại tầng <strong>Rust Core</strong> giúp tiết kiệm 100% băng thông cho file trùng lặp.</p>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-pink);">Bước 1: Nhận Metadata (Signaling Phase)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                     <li>Client nhận gói tin Metadata trước khi tải file:
+                        <ul>
+                            <li><code>File_Name</code>: "Bao_cao_Tai_chinh.pdf"</li>
+                            <li><code>Content_Hash</code>: <code>sha256:8f9d...</code> (Hash tin cậy của file gốc)</li>
+                            <li><code>Encrypted_Hash</code>: <code>sha256:7a2b...</code> (Hash của blob đã mã hóa)</li>
+                        </ul>
+                     </li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-pink);">Bước 2: Kiểm tra Kho cục bộ (Local Lookup)</strong>
+                <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.75rem; border: 1px solid var(--border); margin: 0.5rem 0;">
+<pre style="margin: 0; color: #a5b4fc;">
+SELECT file_path FROM local_assets WHERE content_hash = 'sha256:8f9d...';
+</pre>
+                </div>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                     <li><strong>Kịch bản A (Cache Hit):</strong> File đã tồn tại (do người khác gửi trước đó).
+                        <br>→ <span style="color: var(--success);">Hủy tải xuống (Abort)</span>. Hiển thị ngay lập tức bằng cách trỏ tham chiếu (Symlink).
+                     </li>
+                     <li><strong>Kịch bản B (Cache Miss):</strong> Chưa có file.
+                        <br>→ Tiến hành tải từ Encrypted Log Streams (Kafka) hoặc P2P Torrent.
+                     </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tech-box">
+            <div class="tech-header">3. Cơ chế Nâng cao (Advanced Dedup)</div>
+            
+            <div class="comparison-table">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <th style="width: 30%;">Tính năng</th>
+                        <th>Cơ chế Kỹ thuật</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Big Data Deduplication</strong><br>(P2P / Torrent)</td>
+                        <td>
+                            Sử dụng <strong>Merkle Tree</strong> để check trùng lặp từng Block/Piece nhỏ.<br>
+                            Nếu User A forward file 1GB cho C, máy User B (đã có file) tự động chuyển sang chế độ <strong>Seeding</strong> mà không cần tải lại.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Packet Deduplication</strong><br>(Dual-Stack Network)</td>
+                        <td>
+                            Do chạy Dual-Stack (Mesh + Internet), 1 tin nhắn có thể đến 2 lần.<br>
+                            <strong>Solution:</strong> Bloom Filter trong RAM ghi nhớ <code>PacketID (UUID)</code> trong 10 phút. Drop gói tin trùng ngay tại cổng mạng.
+                        </td>
+                    </tr>
+                </table>
+           </div>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--warning); margin-top: 1.5rem;">
+             <div class="tech-header" style="color: var(--warning);">So sánh: Alpha V1 vs Enterprise V2</div>
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <thead>
+                         <tr>
+                             <th>Tiêu chí</th>
+                             <th>Alpha V1 (Mobile-First)</th>
+                             <th>Enterprise V2 (Desktop-First)</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         <tr>
+                             <td><strong>Định danh File</strong></td>
+                             <td class="old-way">Hash đơn giản (SHA-256)</td>
+                             <td><span class="new-way">Content-Addressable Storage (CAS)</span></td>
+                         </tr>
+                         <tr>
+                             <td><strong>Phạm vi Check</strong></td>
+                             <td class="old-way">Chỉ check file hoàn tất</td>
+                             <td><span class="new-way">Check cả Block đang tải dở (Resume)</span></td>
+                         </tr>
+                         <tr>
+                             <td><strong>Lưu trữ</strong></td>
+                             <td class="old-way">Mỗi Chat 1 file (Dư thừa)</td>
+                             <td><span class="new-way">Global Single Instance</span> (1 File cho N Chat)</td>
+                         </tr>
+                     </tbody>
+                 </table>
+            </div>
+        </div>
+
+    </section>
+
+    <section id="local-ai">
+        <h2>2.11 Local AI Engine <span class="badge badge-success">In-App DevOps</span></h2>
+        <p>Triển khai quy trình <strong>App Deployment</strong> tự động hóa: Biến TeraChat thành một "AI Manager" (tương tự <em>LM Studio</em>) giúp người dùng phổ thông có thể chạy LLM (Llama 3) chỉ với 1 cú click.</p>
+
+        <div class="tech-box">
+             <div class="tech-header">Giai đoạn 1: Chuẩn bị "Engine" (Embedded Runtime)</div>
+             <p>Nhúng sẵn <strong>Inference Engine</strong> gọn nhẹ vào bộ cài App để "đọc và chạy" model mà không cần Python environment.</p>
+             <ul>
+                 <li><strong>Công cụ:</strong> <code>llama.cpp</code> (bản build <code>server</code> tối ưu hóa).</li>
+                 <li><strong>Triển khai:</strong> Đóng gói Binary vào thư mục tài nguyên: <code>resources/bin/llama-server</code>.</li>
+                 <li><strong>Lợi ích:</strong> Tận dụng tốt GPU (CUDA/Metal), API chuẩn OpenAI, không cần cài đặt dependencies ngoài.</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-purple);">
+            <div class="tech-header" style="color: var(--text-primary);">Giai đoạn 2: User Flow & Download Strategy</div>
+            
+            <div class="scenario-step">
+                <span class="step-label">1. Resource Check</span>
+                <div>
+                     User chọn <strong>"Llama 3 (8B)"</strong>. App kiểm tra ổ cứng:<br>
+                     <em>"Model này nặng 4.7GB, bạn có đủ chỗ trống không?"</em><br>
+                     → Nếu không gian đĩa > 5GB, nút "Cài đặt" mới sáng lên (Enabled).
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">2. Downloader</span>
+                <div>
+                     Trình quản lý tải xuống kéo file <code>.gguf</code> về đường dẫn an toàn:<br>
+                     <code>AppData/Local/TeraChat/models/llama-3-8b-instruct.gguf</code>
+                     <ul>
+                         <li><strong>Features:</strong> Progress Bar thực, hỗ trợ <strong>Resume</strong> (tải nối).</li>
+                         <li><strong>Integrity:</strong> Check mã Hash (SHA256) sau khi tải xong để đảm bảo file không bị lỗi/tamper.</li>
+                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">Giai đoạn 3: Orchestration (Điều phối Process)</div>
+             <p>App đóng vai trò "Orchestrator", âm thầm kích hoạt Engine dưới nền (không hiện cửa sổ Terminal).</p>
+             
+             <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-top: 0.5rem; font-size: 0.75rem; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc;">
+// Pseudocode: Spawning Background Process
+./resources/bin/llama-server \
+  --model "./models/llama-3-8b-instruct.gguf" \
+  --port 8080 \
+  --ctx-size 8192 \
+  --n-gpu-layers 35  # Auto-scaling: Offload tối đa layer sang GPU
+</pre>
+             </div>
+             
+             <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                 <li><strong>Health Check:</strong> App ping liên tục <code>http://localhost:8080/health</code>. Khi nhận <code>200 OK</code> → Báo User: "AI đã sẵn sàng".</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card">
+            <div class="tech-header" style="color: var(--text-primary);">Giai đoạn 4: Giao tiếp (OpenAI Compat API)</div>
+            <div class="scenario-step">
+                <span class="step-label">Input</span>
+                <div>User ra lệnh: <em>"Tắt chế độ tối giúp tôi."</em></div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Process</span>
+                <div>
+                    App tạo JSON Payload kèm <strong>System Prompt</strong> (để AI trả về JSON commands).<br>
+                    → POST <code>http://localhost:8080/v1/chat/completions</code>
+                </div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Action</span>
+                <div>App nhận JSON phản hồi → Parse lệnh → Thực thi đổi Theme.</div>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+             <div class="tech-header">Architecture Flow (Data Pipeline)</div>
+             <pre class="mermaid">
+graph TD
+    User[Người dùng] -->|1. Chọn Model| UI[Giao diện App]
+    UI -->|2. Tải file .gguf| Downloader[Trình quản lý tải xuống]
+    Downloader -->|3. Lưu file| Disk[(Ổ cứng Local)]
+    
+    User -->|4. Ra lệnh| UI
+    UI -->|5. Gọi tiến trình ngầm| ServerWrapper[Orchestrator]
+    ServerWrapper -->|6. Chạy lệnh| Binary[llama-server]
+    Binary -->|7. Load Model| Disk
+    
+    UI -->|8. Gửi API Request| Binary
+    Binary -->|9. Trả về JSON| UI
+    UI -->|10. Thực thi lệnh| AppAction[Hành động App]
+             </pre>
+        </div>
+
+        <div class="tech-box" style="border-color: var(--success); margin-top: 1.5rem;">
+             <div class="tech-header" style="color: var(--success);">Ưu điểm cho TeraChat Enterprise</div>
+             <ul>
+                 <li><strong>One-Click UX:</strong> Đóng gói phức tạp của DevOps vào 1 nút bấm. User không cần kiến thức IT.</li>
+                 <li><strong>Sovereignty:</strong> Không phụ thuộc API bên thứ 3 (như Ollama). App tự quản lý vòng đời của AI.</li>
+                 <li><strong>Performance:</strong> Tự động phát hiện phần cứng (NPU/GPU) để tối ưu tham số chạy (<code>--n-gpu-layers</code>).</li>
+             </ul>
+        </div>
+    </section>
+
+    <section id="networking-protocols">
+        <h1 style="border-bottom: 2px solid var(--accent-blue); padding-bottom: 1rem; margin-top: 3rem;">Part 3: Advanced Networking & Communication Protocols</h1>
+
+        <!-- 3.1 Messaging Core (Merged 5.1 Messaging + 3.3 Privacy) -->
+        <section id="messaging-core" style="margin-top: 2rem;">
+            <h2>3.1 Messaging Core <span class="badge">MLS + Sealed Sender</span></h2>
+            <p>Mục tiêu: Xử lý chat nhóm lớn (5000+ người), bảo mật E2EE, đồng bộ đa thiết bị và ẩn danh siêu dữ liệu (Metadata Privacy).</p>
+
+            <div class="tech-box">
+                <div class="tech-header">1. Giao thức Lõi: MLS (Messaging Layer Security)</div>
+                <p>Thay thế Double Ratchet (Signal) bằng <strong>MLS (IETF RFC 9420)</strong> để tối ưu cho Enterprise:</p>
+                <ul>
+                    <li><strong>TreeKEM Structure:</strong> Mã hóa 1 lần cho cả nhóm (O(log n)) thay vì n lần. Tăng tốc độ sync tin nhắn gấp 100 lần cho nhóm 5000 user.</li>
+                    <li><strong>Self-Healing:</strong> Cơ chế <strong>Epoch Rotation</strong>. Khi nhân viên rời công ty (Offboarding), hệ thống tự động xoay khóa nhóm mới, đảm bảo họ không đọc được tin nhắn trong tương lai.</li>
+                </ul>
+            </div>
+
+            <div class="tech-box" style="margin-top: 1.5rem;">
+                <div class="tech-header">2. Metadata Privacy: Sealed Sender</div>
+                <p>Nguyên tắc: Server Relay biết gói tin đi <strong>ĐẾN đâu</strong>, nhưng tuyệt đối không biết nó <strong>ĐẾN TỪ ai</strong>.</p>
+                
+                <div class="comparison-table">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <th>Thành phần</th>
+                            <th>Chat Thường (Lộ Metadata)</th>
+                            <th>Sealed Sender (Riêng tư)</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Header</strong></td>
+                            <td class="old-way"><code>From: Alice</code> -> <code>To: Bob</code></td>
+                            <td><code>To: Bob_Delivery_Token</code> (Không có From)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Payload</strong></td>
+                            <td><code>Encrypted_Body</code></td>
+                            <td><code>Sign(Alice_ID) + Encrypted_Body</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Server Action</strong></td>
+                            <td>Verify Alice -> Forward</td>
+                            <td><span class="new-way">Check Token -> Forward</span> (Không biết ai gửi)</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="background: rgba(74, 222, 128, 0.1); padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--success); margin-top: 1rem;">
+                    <strong>✅ ENTERPRISE ANSWER:</strong><br>
+                    <em>"Nếu Server bị chiếm quyền, họ có biết CEO đang liên lạc với ai không?"</em> → <strong>KHÔNG</strong>. Server chỉ thấy các gói tin 4KB được Padding giống hệt nhau bay đến các Token vô danh.
+                </div>
+            </div>
+        </section>
+
+        <!-- 3.2 Secure Calling (Merged 5.2 Calling + 5.4 Infra Sizing) -->
+        <section id="secure-calling" style="margin-top: 3rem;">
+            <h2>3.2 Secure Calling Infrastructure <span class="badge badge-warning">WebRTC / Blind Relay</span></h2>
+            <p>Hệ thống gọi thoại chất lượng cao (HD Voice), độ trễ thấp (<200ms) với kiến trúc Server "Mù" (Blind Relay).</p>
+
+            <div class="tech-box">
+                <div class="tech-header">1. Protocols & Security</div>
+                <ul>
+                    <li><strong>Signaling:</strong> Trao đổi SDP qua kênh chat MLS bảo mật (không dùng WebSocket trần).</li>
+                    <li><strong>Transport:</strong> SRTP (Secure Real-time Transport Protocol) mã hóa đầu cuối (E2EE) cho Audio/Video.</li>
+                    <li><strong>Blind Relay:</strong> TURN Server chỉ chuyển tiếp gói UDP mã hóa, không nắm giữ Key giải mã.</li>
+                </ul>
+            </div>
+
+            <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--accent-purple);">
+                 <div class="tech-header" style="color: var(--accent-purple);">2. Infrastructure Sizing (Enterprise Node)</div>
+                 <p>Cấu hình đề xuất cho 1 Relay Node chịu tải ~50 luồng HD Video đồng thời:</p>
+                 <div class="comparison-table">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <th>Resource</th>
+                            <th>Spec</th>
+                            <th>Lý do</th>
+                        </tr>
+                        <tr>
+                            <td>CPU</td>
+                            <td>4 vCPUs</td>
+                            <td>Xử lý mã hóa DTLS handshake ở tần suất cao.</td>
+                        </tr>
+                        <tr>
+                            <td>RAM</td>
+                            <td>8 GB</td>
+                            <td>Cache session state & connection tables.</td>
+                        </tr>
+                        <tr>
+                            <td>Network</td>
+                            <td>1 Gbps</td>
+                            <td>Băng thông cho Video Conference (2Mbps/user).</td>
+                        </tr>
+                    </table>
+                </div>
+                <p style="font-size: 0.85rem; margin-top: 0.8rem;">
+                    <strong>High Availability:</strong> Sử dụng <strong>Keepalived (Floating IP)</strong>. Nếu Node chính sập, Node dự phòng tiếp quản IP ảo trong 3 giây.
+                </p>
+            </div>
+        </section>
+
+        <!-- 3.3 Advanced Transport (Merged 3.1 Mesh + 3.2 Hybrid) -->
+        <section id="advanced-transport" style="margin-top: 3rem;">
+            <h2>3.3 Advanced Transport & Mesh <span class="badge badge-success">Offline First</span></h2>
+            <p>Khả năng hoạt động bền bỉ trong môi trường mạng chập chờn hoặc Air-Gapped (Không Internet).</p>
+
+            <div class="tech-box">
+                <div class="tech-header">1. Desktop Super Node Strategy</div>
+                <p>Máy tính Desktop (nguồn điện ổn định) đóng vai trò trung tâm mạng Mesh:</p>
+                <ul>
+                    <li><strong>Bridge Mode:</strong> Nhận tin từ Internet -> Phát lại vào mạng Bluetooth Mesh cho Mobile.</li>
+                    <li><strong>Torrent Seeding:</strong> Desktop dùng ổ cứng lớn để Seed file tài liệu lớn (Big Data) cho cả văn phòng qua mạng LAN P2P.</li>
+                </ul>
+            </div>
+
+            <div class="scenario-card" style="border-left: 4px solid var(--accent-blue);">
+                <div class="tech-header" style="color: var(--text-primary);">2. Hybrid Transport Flow (P2P Upgrade)</div>
+                <p style="font-size: 0.9rem;">Cơ chế "Nâng cấp đường truyền" thông minh:</p>
+                <ol style="font-size: 0.9rem;">
+                    <li><strong>Discovery:</strong> Tìm thấy nhau qua Bluetooth LE (Tốn ít pin).</li>
+                    <li><strong>Handshake:</strong> Thỏa thuận gửi File lớn (1GB).</li>
+                    <li><strong>Upgrade:</strong> Tự động bật <strong>Wi-Fi Direct / Local LAN</strong>.</li>
+                    <li><strong>Transfer:</strong> Bắn file tốc độ cao (50MB/s) trực tiếp giữa 2 máy.</li>
+                    <li><strong>Fallback:</strong> Nếu mất kết nối P2P -> Dùng Internet Relay.</li>
+                </ol>
+            </div>
+        </section>
+    </section>
+
+    <section id="observability">
+        <h2>4.1 Observability & SLA <span class="badge badge-success">White Box Ops</span></h2>
+        <p>Biến hạ tầng thành "Hộp trắng" vận hành (Metrics, Logs, Traces) nhưng vẫn giữ "Hộp đen" về dữ liệu nội dung.</p>
+
+        <div class="tech-box">
+             <div class="tech-header">1. The O11y Pipeline (LGTM Stack)</div>
+             <p>Stack đo lường tiêu chuẩn, tích hợp sẵn trong Binary (Rust/Go):</p>
+             <ul>
+                 <li><strong>Metrics (Prometheus):</strong> Đo nhịp tim hệ thống (CPU, RAM, Connections).</li>
+                 <li><strong>Logs (Loki):</strong> Structured JSON Logs (Che giấu IP/User).</li>
+                 <li><strong>Traces (Tempo):</strong> Theo vết gói tin qua các Relay Node (Waterfall Chart).</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-purple);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Key Metrics & Code Instrumentation</div>
+            
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--border); margin-bottom: 1rem;">
+<pre style="margin: 0; color: #a5b4fc;">
+// Rust Example: Measuring Packet Latency
+async fn handle_packet(req: Request) -> Response {
+    let start = Instant::now();
+    let response = process(req).await;
+    
+    // Ghi vào Prometheus Histogram (đơn vị ms)
+    histogram!("terachat_delivery_latency_ms", start.elapsed().as_millis());
+    
+    if response.is_error() {
+        counter!("terachat_errors_total", 1);
+    }
+    response
+}
+</pre>
+            </div>
+
+            <table class="comparison-table">
+                 <tr>
+                    <th>Metric Name</th>
+                    <th>Type</th>
+                    <th>Ý nghĩa Enterprise</th>
+                 </tr>
+                 <tr>
+                     <td><code>active_connections</code></td>
+                     <td>Gauge</td>
+                     <td>Số lượng User đang online.</td>
+                 </tr>
+                 <tr>
+                     <td><code>delivery_latency_ms</code></td>
+                     <td>Histogram</td>
+                     <td>Quan trọng nhất cho SLA (Target < 200ms).</td>
+                 </tr>
+                 <tr>
+                     <td><code>relay_buffer_bytes</code></td>
+                     <td>Gauge</td>
+                     <td>Cảnh báo nghẽn (Backpressure) nếu đầy.</td>
+                 </tr>
+                 <tr>
+                     <td><code>decryption_failures</code></td>
+                     <td>Counter</td>
+                     <td>Phát hiện tấn công hoặc lệch Key.</td>
+                 </tr>
+            </table>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">3. Service Level Agreement (SLA) Targets</div>
+             <p>Cam kết chất lượng dịch vụ với khách hàng Doanh nghiệp:</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Availability:</strong> 99.9% (Downtime < 43 phút/tháng). Dựa trên Healthcheck API.</li>
+                 <li><strong>Latency (p95):</strong> < 200ms trong mạng LAN/WAN nội bộ (Loại trừ Tor).</li>
+                 <li><strong>Error Rate:</strong> < 0.1% Request 5xx.</li>
+             </ul>
+        </div>
+    </section>
+
+    <section id="deployment">
+        <h2>4.2 Deployment & Orchestration <span class="badge badge-success">Cloud Native</span></h2>
+        <p>Kiến trúc triển khai quy mô lớn (20.000+ Users) sử dụng Kubernetes và các chuẩn Enterprise.</p>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Architecture: K8s-First Strategy</div>
+             <p>Chuyển từ "VPS lẻ" (Pets) sang "Cluster tự động" (Cattle):</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Helm Charts:</strong> Đóng gói tiêu chuẩn (Relay, Signaling, IAM, DB HA).</li>
+                 <li><strong>High Availability (HA):</strong> Auto-scaling (HPA) cho Relay Nodes. Postgres Operator cho Database.</li>
+                 <li><strong>GitOps:</strong> Quản lý cấu hình bằng Code (ArgoCD). Rollback tự động khi lỗi.</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="tech-header" style="color: var(--text-primary);">2. Client Deployment: Mobile Device Management (MDM)</div>
+            <p style="font-size: 0.9rem;">Tự động cấu hình 20.000 thiết bị qua <strong>AppConfig Community Standard</strong> (Intune/VMware).</p>
+            
+            <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th>Tiêu chí</th>
+                        <th>Windows (Intune/GPO)</th>
+                        <th>macOS (Jamf/MDM)</th>
+                     </tr>
+                     <tr>
+                         <td><strong>Cơ chế</strong></td>
+                         <td><code>Registry Key (HKLM\Software\Policies)</code></td>
+                         <td><code>Managed Preferences (plist)</code></td>
+                     </tr>
+                     <tr>
+                         <td><strong>Key Config</strong></td>
+                         <td colspan="2">
+                            - <code>server_url</code>: https://internal-chat.bank-x.com<br>
+                            - <code>cert_pinning_hash</code>: "sha256/..."<br>
+                            - <code>disable_camera</code>: true
+                         </td>
+                     </tr>
+                 </table>
+            </div>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">3. Air-Gapped Delivery (Mạng cô lập)</div>
+             <p>Quy trình triển khai cho môi trường không Internet (Quốc phòng/Chính phủ):</p>
+             <ol style="font-size: 0.9rem;">
+                 <li><strong>Offline Bundle:</strong> Script <code>docker save</code> toàn bộ hệ thống -> File <code>.tar.gz</code> (5GB).</li>
+                 <li><strong>Private Registry:</strong> Load ảnh vào Harbor nội bộ của khách hàng.</li>
+                 <li><strong>Local Helm:</strong> Cài đặt trỏ về Registry nội bộ. Không kết nối Docker Hub.</li>
+             </ol>
+        </div>
+    </section>
+
+    <section id="production-config">
+        <h2>4.3 Production Config (5,000 CCU) <span class="badge badge-success">Ready-to-Deploy</span></h2>
+        <p>Cấu hình Helm Chart chuẩn Enterprise cho quy mô 5.000 Concurrent Users. Tuân thủ nguyên tắc High Availability (HA).</p>
+
+        <div class="tech-box">
+             <div class="tech-header">Strategy: "Cattle, not Pets"</div>
+             <p>File <code>values-production-5k.yaml</code> này định nghĩa hạ tầng có khả năng tự phục hồi:</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Relay Nodes:</strong> 3 Replicas chạy trên 3 server vật lý khác nhau (Anti-Affinity).</li>
+                 <li><strong>Resource Limits:</strong> QoS Burstable (0.5 -> 2 Core) để chịu tải đột biến.</li>
+                 <li><strong>Data Layer:</strong> Postgres HA (Repmgr) tự động bầu Master mới trong 10s.</li>
+             </ul>
+        </div>
+
+        <div style="background: #1e1e1e; padding: 1rem; border-radius: 8px; margin-top: 1.5rem; border: 1px solid #333; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #d4d4d4;">
+            <div style="color: #6a9955; margin-bottom: 0.5rem; font-weight: bold;"># values-production-5k.yaml</div>
+<pre style="margin: 0; color: #9cdcfe;">
+global:
+  domain: "chat.bank-enterprise.internal"
+  environment: "production"
+  imageRegistry: "registry.bank-internal.com"
+
+# 1. RELAY NODES (Stateless Backbone)
+relay:
+  enabled: true
+  image: { repository: "terachat/enterprise-relay", tag: "v2.1.0-rust-optimized" }
+  replicaCount: 3
+  
+  # Autoscaling: CPU > 70% -> Scale up to 15 pods
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+
+  # QoS: Burstable
+  resources:
+    requests: { cpu: "500m", memory: "512Mi" }
+    limits: { cpu: "2000m", memory: "2Gi" }
+
+  # Topology Spread: Ensure High Availability across physical nodes
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: ["terachat-relay"]
+          topologyKey: "kubernetes.io/hostname"
+
+# 2. SIGNALING (WebSockets)
+signaling:
+  enabled: true
+  replicaCount: 3
+  sessionAffinity: { enabled: true, timeoutSeconds: 3600 }
+
+# 3. IDENTITY BRIDGE
+iam:
+  enabled: true
+  provider: "keycloak-sidecar"
+  config: { scimEnabled: true, syncInterval: "30s" }
+
+# 4. STORAGE HA (Bitnami Sub-charts)
+postgresql-ha:
+  enabled: true
+  postgresql: { repmgr: { enabled: true } } # Auto-failover
+  pgpool: { enabled: true, replicaCount: 2 }
+
+redis-ha:
+  enabled: true
+  sentinel: { enabled: true }
+
+# 5. SECURITY GATEWAY
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"
+</pre>
+        </div>
+
+        <div class="tech-box" style="margin-top: 2rem; border-color: var(--success);">
+            <div class="tech-header" style="color: var(--success);">Deployment Command</div>
+            <p>Triển khai cho khách hàng:</p>
+            <div style="background: #000; padding: 1rem; border-radius: 6px; font-family: monospace; color: #fff;">
+helm install terachat-enterprise ./charts/terachat \<br>
+&nbsp;&nbsp;--namespace terachat-prod \<br>
+&nbsp;&nbsp;--values values-production-5k.yaml \<br>
+&nbsp;&nbsp;--set postgresql-ha.postgresql.password=$(vault kv get -field=db_pass secret/terachat)
+            </div>
+        </div>
+    </section>
+
+    <section id="interoperability">
+        <h2>4.4 Interoperability & ESB <span class="badge badge-warning">Integration Hub</span></h2>
+        <p>Phá bỏ rào cản "Walled Garden". Biến TeraChat thành cổng giao tiếp trung tâm (Notifications Center) cho mọi ứng dụng doanh nghiệp (SAP, Jira, CRM).</p>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Bridges to Legacy Systems (Cầu nối hệ thống cũ)</div>
+             <p>Xây dựng các cầu nối (Bridges) cho phép TeraChat giao tiếp hai chiều với các hệ thống cũ (Email, ERP, Legacy CRM) thay vì bị cô lập:</p>
+             <ul>
+                 <li><strong>Inbound (Gửi tin):</strong> Một tin nhắn từ SAP, Email hoặc Legacy CRM có thể gọi Webhook -> Gateway mã hóa -> Đẩy xuống App.</li>
+                 <li><strong>Outbound (Kích hoạt):</strong> Một hành động trong TeraChat có thể kích hoạt quy trình ngược lại trong SAP hoặc gửi Email.</li>
+             </ul>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+             <div class="tech-header">Standard Compliance (Tuân thủ Tiêu chuẩn)</div>
+             <p>Đảm bảo khả năng tích hợp dễ dàng vào hạ tầng IT tập đoàn nhờ tuân thủ các chuẩn mở:</p>
+             <ul>
+                 <li><strong>Messaging:</strong> Tuân thủ hoàn toàn <strong>MLS (Messaging Layer Security)</strong> cho bảo mật nhóm chat quy mô lớn.</li>
+                 <li><strong>Data Exchange:</strong> Hỗ trợ chuẩn <strong>NIEM (National Information Exchange Model)</strong> giúp đồng bộ dữ liệu cấu trúc với các hệ thống Chính phủ/Enterprise khác.</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-pink);">
+            <div class="tech-header" style="color: var(--text-primary);">2. UI/UX: Adaptive Cards Engine</div>
+            <p style="font-size: 0.9rem;">Thay vì tin nhắn text vô hồn, gửi các Mini-Form tương tác (JSON-driven UI).</p>
+            
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--border); margin-bottom: 1rem;">
+<pre style="margin: 0; color: #a5b4fc;">
+// JSON Payload from SAP to Mobile App
+{
+  "type": "interactive_card",
+  "body": [
+    { "type": "text", "text": "YÊU CẦU THANH TOÁN", "weight": "heavy" },
+    { "type": "fact_set", "facts": [
+        { "title": "Vendor:", "value": "AWS Inc" },
+        { "title": "Amount:", "value": "$50,000" }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "button",
+      "style": "positive",
+      "label": "DUYỆT NGAY (Windows Hello)",
+      "action_id": "approve_payment_123",
+      "require_biometric": true // Trigger Hardware Signer
+    }
+  ]
+}
+</pre>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--success);">* Desktop App sẽ render JSON này thành Native View (React/Tauri) mượt mà.</p>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">3. Security Hardening & Plugins</div>
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th>Layer</th>
+                        <th>Giải pháp</th>
+                     </tr>
+                     <tr>
+                         <td><strong>Transport Auth</strong></td>
+                         <td><strong>mTLS (Mutual TLS):</strong> Gateway chỉ nhận request từ Server có Certificate nội bộ hợp lệ. Chống giả mạo SAP.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Extensibility</strong></td>
+                         <td><strong>Lua/WASM Plugins:</strong> Cho phép IT viết script xử lý luồng (Logic) tùy chỉnh mà không cần sửa core Gateway.</td>
+                     </tr>
+                 </table>
+            </div>
+            
+            <div style="margin-top: 1rem; border-top: 1px dashed #444; padding-top: 1rem;">
+                <div style="color: var(--warning); font-size: 0.85rem; font-weight: bold;">LUA PLUGIN EXAMPLE:</div>
+                <div style="font-family: monospace; font-size: 0.8rem; color: #aaa; margin-top: 0.5rem;">
+                    if jira_data.priority == "High" then<br>
+                    &nbsp;&nbsp;terachat.send_card(jira_data.assignee, { title="CRITICAL BUG", actions=["Fix Now"] })<br>
+                    end
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Day-2 Operations & Governance -->
+    <section id="day2-ops">
+        <h2>4.5 Security Governance & Day-2 Ops <span class="badge badge-danger">CIO Mandatory</span></h2>
+        <p>Không chỉ là tính năng, đây là cam kết về Sự an toàn Chuỗi cung ứng, Vận hành bền vững và Tuân thủ pháp lý cao cấp.</p>
+
+        <div class="tech-box">
+             <div class="tech-header">1. Supply Chain Security (SBOM)</div>
+             <p>Chống cài cắm mã độc từ gốc (Build Phase):</p>
+             <ul>
+                 <li><strong>SBOM (Software Bill of Materials):</strong> Cung cấp file <code>spdx.json</code> liệt kê toàn bộ 1,500 thư viện phụ thuộc. Khách hàng có thể quét lỗ hổng (CVE) độc lập.</li>
+                 <li><strong>Reproducible Builds:</strong> Cam kết Binary Hash luôn trùng khớp với Source Code, chứng minh không có "Backdoor" được inject bí mật khi compile.</li>
+             </ul>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">2. Advanced Database Strategy</div>
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th>Yêu cầu</th>
+                        <th>Giải pháp Day-2</th>
+                     </tr>
+                     <tr>
+                         <td><strong>Zero-Downtime Migration</strong></td>
+                         <td>Sử dụng <strong>Blue-Green Deploys</strong> cho DB. Ứng dụng hỗ trợ song song 2 phiên bản Schema (n-1 và n) trong quá trình Rolling Update.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Data Sovereignty</strong></td>
+                         <td><strong>Geo-Partitioning (Postgres):</strong> Dữ liệu user Đức (GDPR) được ghim cứng tại Node Frankfurt, không replicate sang Node Vietnam.</td>
+                     </tr>
+                 </table>
+            </div>
+        </div>
+
+         <div class="tech-box">
+             <div class="tech-header">3. Must-Have Operations Checklist</div>
+             <p>Danh sách các module bổ trợ bắt buộc cho Enterprise:</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>🛡️ RASP (Runtime Protection):</strong> Chống Debug/Dump RAM ngay cả khi máy bị nhiễm virus.</li>
+                 <li><strong>🧠 UEBA (Behavior Analytics):</strong> Dùng ML phát hiện CEO đăng nhập lúc 3h sáng để tải 1GB dữ liệu -> Block ngay.</li>
+                 <li><strong>🌪️ Chaos Engineering:</strong> Tích hợp Chaos Mesh để khách hàng tự diễn tập "rút dây nguồn" Server.</li>
+                 <li><strong>🔍 Encrypted Search:</strong> Tìm kiếm trên dữ liệu mã hóa (Blind Seer) mà Server không cần giải mã.</li>
+                 <li><strong>⚖️ Legal Hold:</strong> Chế độ "Đóng băng" tài khoản đang bị điều tra, vô hiệu hóa Remote Wipe.</li>
+             </ul>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-purple);">
+            <div class="tech-header" style="color: var(--text-primary);">4. Deep Dive: Critical Solutions</div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong style="color: var(--accent-pink);">A. Air-Gapped Patching (BSDiff)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                     <li><strong>Thực trạng:</strong> Mạng nội bộ băng thông yếu, không thể tải 500MB update cho 5,000 máy.</li>
+                     <li><strong>Giải pháp:</strong> Chỉ tải file <strong>Delta Patch</strong> (vài KB/MB). Client tự vá binary cũ (In-place patching) sau khi verify chữ ký số.</li>
+                </ul>
+            </div>
+
+            <div>
+                <strong style="color: var(--accent-pink);">B. GDPR-Compliant Blockchain (Crypto-shredding)</strong>
+                <ul style="font-size: 0.9rem; margin-top: 0.5rem;">
+                     <li><strong>Mâu thuẫn:</strong> Blockchain là vĩnh viễn <-> GDPR yêu cầu quyền được quên.</li>
+                     <li><strong>Giải pháp:</strong> Chỉ lưu <code>Hash(Encrypted_Data)</code> lên Chain. Khi cần xóa, chỉ cần hủy khóa giải mã (Key Destruction). Dữ liệu còn đó nhưng vĩnh viễn không thể đọc.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">5. Endpoint Trust & Quality (Military Grade)</div>
+             <p>Cơ chế xác thực thiết bị và kiểm thử nâng cao:</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Remote Attestation (TPM 2.0):</strong> Server chỉ gửi Key giải mã sau khi nhận được "Health Quote" có chữ ký của TPM, chứng minh Secure Boot đang bật và Kernel không bị tamper.</li>
+                 <li><strong>Continuous Fuzzing (AFL++):</strong> Hệ thống CI/CD liên tục bơm dữ liệu rác vào các hàm Protocol để tìm lỗi Mem Leak/Crash tiềm ẩn (Zero-day).</li>
+             </ul>
+        </div>
+
+        <div class="tech-box">
+             <div class="tech-header">6. Deep Security & Obfuscation</div>
+             <p>Làm nản lòng Reverse Engineer:</p>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Control Flow Flattening:</strong> Biến đổi luồng code (Workflow) thành một Switch-Case khổng lồ để che giấu logic thật.</li>
+                 <li><strong>String Encryption (XOR):</strong> Không bao giờ lưu chuỗi plain text (API Key, Error Msg) trong binary.</li>
+             </ul>
+        </div>
+    </section>
+
+    <section id="installer">
+        <h2>4.6 Web-based Installer <span class="badge badge-success">One-Tap Deploy</span></h2>
+        <p>Hiện thực hóa khái niệm "1 chạm" (One-Tap) cho việc triển khai hạ tầng phức tạp. <strong>"Bấm Next 3 lần → Có ngay hệ thống Chat nội bộ riêng tư."</strong> Target: Công ty SME không có đội IT xịn.</p>
+
+        <div class="tech-box">
+             <div class="tech-header">Triết lý CEO: Abstraction Layer</div>
+             <p>Đừng cố "1 chạm" từ A-Z cho mọi thứ. Chia <strong>2 luồng</strong>: Cloud có API (dùng Terraform ẩn bên dưới) vs Server riêng không có API (dùng Magic Script). Mỗi nhà cung cấp có API khác nhau — nếu hard-code từng cái, team Dev sẽ chết chìm trong maintenance.</p>
+        </div>
+
+        <div class="scenario-card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="tech-header" style="color: var(--text-primary);">☁️ Luồng 1: Cloud Path (AWS / GCP / DigitalOcean) — Terraform</div>
+            
+            <div class="scenario-step">
+                <span class="step-label">Bước 1: Chọn Chế Độ</span>
+                <div>
+                    <ul>
+                        <li>👤 <strong>Personal:</strong> Tự host trên VPS $5. Free License.</li>
+                        <li>🏢 <strong>Enterprise:</strong> Cho công ty >50 người. Cần License Key.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">Bước 2: Chọn Cloud Provider</span>
+                <div>
+                    Grid Layout: <strong>[AWS]</strong>, <strong>[DigitalOcean]</strong>, <strong>[Google Cloud]</strong>.
+                    <br><strong>UX 1 Chạm (OAuth):</strong> Nút "Connect Account" → Cấp quyền API tự động.
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">Bước 3: Cấu hình Quy mô (Enterprise Only)</span>
+                <div>
+                    <ul>
+                        <li><strong>Start-up:</strong> 1 Server (Docker Compose). Max 100 User.</li>
+                        <li><strong>SME:</strong> 3 Servers (K8s Cluster). Max 1,000 User.</li>
+                        <li><strong>Corp:</strong> 5+ Servers (HA). Max 5,000 User.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="scenario-step">
+                <span class="step-label">Bước 4: 🚀 DEPLOY NOW</span>
+                <div>
+                    Backend điền API Key của user vào <code>main.tf</code> → chạy <code>terraform apply</code> ngầm.
+                    <br><strong>Tự động:</strong> Tạo VM → Mở Port → Cài Docker → Pull Image TeraChat → Start.
+                    <br>User chỉ thấy <strong>Progress Bar</strong> đẹp mắt + Log rút gọn.
+                </div>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="margin-top: 1.5rem; border-left: 4px solid var(--warning);">
+            <div class="tech-header" style="color: var(--text-primary);">🖥️ Luồng 2: BYOS — Bring Your Own Server (Magic Script)</div>
+            <p>Dành cho khách hàng có server riêng (Bare Metal, VPS cũ, On-Premise). Không có API → không thể dùng Terraform.</p>
+            
+            <div class="scenario-step">
+                <span class="step-label">Magic Command (1 dòng lệnh duy nhất)</span>
+                <div>
+                    <div style="background: #000; padding: 1rem; border-radius: 6px; margin: 0.5rem 0; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #4ade80; font-size: 0.85rem;">curl -sL install.terachat.com | sudo bash</pre>
+                    </div>
+                    <p>Khách hàng SSH vào server → paste dòng lệnh trên. Script tự động:</p>
+                    <ol>
+                        <li><strong>Pre-flight Check</strong> (Kiểm tra trước khi cất cánh)</li>
+                        <li>Cài Docker &amp; Docker Compose</li>
+                        <li>Kéo Image TeraChat về và chạy</li>
+                        <li>Gửi tín hiệu "Thành công" ngược lại Web Installer</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--error);">
+            <div class="tech-header" style="color: var(--error);">🛑 Pre-flight Check (Bắt buộc cho cả 2 luồng)</div>
+            <p>Trước khi cài đặt, hệ thống kiểm tra yêu cầu tối thiểu. Nếu không đạt → <strong>từ chối cài đặt</strong> (đừng cố cài đè rồi gây lỗi):</p>
+            <div class="comparison-table">
+                <table>
+                    <tr><th>Kiểm tra</th><th>Yêu cầu tối thiểu</th><th>Hành vi khi Fail</th></tr>
+                    <tr>
+                        <td><strong>RAM</strong></td>
+                        <td>≥ 4GB</td>
+                        <td class="old-way">❌ Báo lỗi đỏ, dừng ngay</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Port 443/80</strong></td>
+                        <td>Phải trống</td>
+                        <td>⚠️ Cảnh báo xung đột, hướng dẫn giải phóng</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OS</strong></td>
+                        <td>Ubuntu 20+ / Debian 11+ / CentOS 8+</td>
+                        <td class="old-way">❌ Từ chối, hiện danh sách OS hỗ trợ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Docker</strong></td>
+                        <td>Bất kỳ version</td>
+                        <td class="new-way">✅ Tự cài nếu chưa có</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Disk</strong></td>
+                        <td>≥ 20GB trống</td>
+                        <td class="old-way">❌ Báo lỗi, yêu cầu dọn dẹp</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--accent-blue);">
+             <div class="tech-header" style="color: var(--accent-blue);">🐳 Docker Containerization (Tách biệt hoàn toàn)</div>
+             <p><strong>CEO Rule:</strong> Đóng gói TẤT CẢ (Database, Redis, App) vào trong <strong>Docker</strong>. Không cài trực tiếp lên Host OS. Điều này đảm bảo môi trường TeraChat <strong>tách biệt hoàn toàn</strong> với phần mềm rác trên máy khách hàng.</p>
+             <p>Nếu cần xóa TeraChat → <code>docker compose down -v</code> → Sạch sẽ.</p>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--accent-purple);">
+             <div class="tech-header" style="color: var(--accent-purple);">🔌 Stateful Installer (Chống mất kết nối)</div>
+             <p><strong>Rủi ro:</strong> User tắt trình duyệt giữa chừng, mạng lag, mất kết nối WiFi.</p>
+             <p><strong>Giải pháp:</strong> Tiến trình cài đặt chạy trên <strong>Backend</strong> (server của TeraChat), không phải trên trình duyệt.</p>
+             <ul style="font-size: 0.9rem;">
+                 <li>User tắt browser đi ngủ → Sáng mai mở lại → Installer hiện: <em>"Đã cài xong 80%, đang đợi khởi động Database"</em></li>
+                 <li><strong>WebSocket</strong> push trạng thái real-time từ Backend → Frontend</li>
+                 <li>Mỗi bước cài đặt có <strong>checkpoint</strong>. Nếu fail giữa chừng → resume từ checkpoint, không cài lại từ đầu.</li>
+             </ul>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--warning);">
+             <div class="tech-header" style="color: var(--warning);">Day-2 Ops: Update &amp; Rollback</div>
+             <div class="comparison-table">
+                 <table style="width: 100%; border-collapse: collapse;">
+                     <tr>
+                        <th>Tính năng</th>
+                        <th>UX Mechanism</th>
+                     </tr>
+                     <tr>
+                         <td><strong>1-Tap Update</strong></td>
+                         <td>Thanh thông báo: *"Đã có phiên bản mới v1.2.0"*. <br>Nút <strong>[ Update System Now ]</strong> với cảnh báo bảo trì 30s.</td>
+                     </tr>
+                     <tr>
+                         <td><strong>Time Machine</strong></td>
+                         <td>Nút <strong>[ Rollback ]</strong> về v1.1.0 ngay lập tức nếu bản mới lỗi. <br>GitOps/Helm Rollback ngầm.</td>
+                     </tr>
+                 </table>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+             <div class="tech-header">Tech Stack</div>
+             <ul style="font-size: 0.9rem;">
+                 <li><strong>Frontend:</strong> React/Vue.js (SPA mượt mà).</li>
+                 <li><strong>Backend:</strong> Rust (Hiệu năng cao, WebSocket server).</li>
+                 <li><strong>Cloud Orchestrator:</strong> Terraform (Tạo server) + Ansible (Cài software). Ẩn toàn bộ YAML/CLI.</li>
+                 <li><strong>BYOS Orchestrator:</strong> Shell Script + Docker Compose. Zero dependency ngoài <code>curl</code> và <code>bash</code>.</li>
+             </ul>
+        </div>
+    </section>
+
+    <section id="business-api">
+        <h2>6.1 Business API Integration Package <span class="badge badge-success">Productivity Hub</span></h2>
+        
+        <p>Biến TeraChat thành <strong>trung tâm năng suất doanh nghiệp</strong> (Productivity Hub), không chỉ là ứng dụng chat. Gói API Business chuẩn hóa cho phép mọi hệ thống doanh nghiệp tích hợp sâu vào luồng giao tiếp E2EE.</p>
+
+        <div class="tech-box">
+            <div class="tech-header">Architecture: Business API Gateway</div>
+<pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem;">
+┌─────────────────────────────────────────────────┐
+│             TeraChat Business API               │
+│                  (Gateway)                      │
+├─────────────┬──────────────┬───────────────────┤
+│  REST API   │  WebSocket   │  Webhook Engine   │
+│  (CRUD)     │  (Realtime)  │  (Event Push)     │
+├─────────────┴──────────────┴───────────────────┤
+│           Authentication & Authorization        │
+│     (OAuth 2.0 + API Key + mTLS + OPA)         │
+├────────────────────────────────────────────────┤
+│               E2EE Bridge Layer                │
+│   (Bot KeyPair → MLS Group → Encrypt/Decrypt)  │
+├────────────────────────────────────────────────┤
+│             TeraChat Core (Rust)               │
+└────────────────────────────────────────────────┘
+</pre>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+            <div class="tech-header">Tiered API Packages</div>
+            <div class="comparison-table">
+                <table>
+                    <tr>
+                        <th>Gói</th>
+                        <th>Tên</th>
+                        <th>Tính năng</th>
+                        <th>Đối tượng</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Tier 1</strong></td>
+                        <td><strong>Notify API</strong></td>
+                        <td>Gửi tin nhắn, Adaptive Cards, File đính kèm vào channel</td>
+                        <td>IT Manager cần thông báo tự động</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tier 2</strong></td>
+                        <td><strong>Workflow API</strong></td>
+                        <td>Approval flows, Interactive buttons, Form submission, Slash commands</td>
+                        <td>PM cần quy trình duyệt</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tier 3</strong></td>
+                        <td><strong>Data Export API</strong></td>
+                        <td>Compliance export, Audit trail, Legal Hold integration</td>
+                        <td>CISO/DPO cần tuân thủ</td>
+                    </tr>
+                    <tr style="background: rgba(74, 222, 128, 0.1);">
+                        <td><strong>Tier 4</strong></td>
+                        <td><strong>Bot Builder SDK</strong></td>
+                        <td>Full bot lifecycle, Custom Mini-Apps, Plugin marketplace</td>
+                        <td>Developer tạo tích hợp riêng</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--text-primary); margin-bottom: 1rem;">REST API Endpoints</div>
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem;">
+# ── MESSAGING ──────────────────────────────
+POST   /api/v1/messages                  # Gửi tin nhắn (text/card/file)
+POST   /api/v1/messages/card             # Gửi Adaptive Card (Interactive UI)
+GET    /api/v1/messages/{channel_id}     # Lấy tin nhắn (Encrypted metadata only)
+DELETE /api/v1/messages/{msg_id}         # Xóa tin nhắn (Crypto-Shred)
+
+# ── CHANNELS ───────────────────────────────
+POST   /api/v1/channels                  # Tạo channel
+GET    /api/v1/channels                  # Liệt kê channels (có phân quyền OPA)
+PUT    /api/v1/channels/{id}/members     # Quản lý thành viên
+POST   /api/v1/channels/{id}/topics      # Tạo Topic Thread
+
+# ── WORKFLOWS ──────────────────────────────
+POST   /api/v1/workflows/approval        # Tạo luồng phê duyệt
+POST   /api/v1/workflows/slash-command   # Đăng ký Slash Command
+GET    /api/v1/workflows/{id}/status     # Theo dõi trạng thái
+
+# ── COMPLIANCE (Tier 3) ───────────────────
+POST   /api/v1/compliance/export         # Export dữ liệu (GDPR)
+POST   /api/v1/compliance/legal-hold     # Đóng băng tài khoản
+GET    /api/v1/compliance/audit-trail    # Truy vết hành vi
+
+# ── BOT MANAGEMENT (Tier 4) ──────────────
+POST   /api/v1/bots                      # Đăng ký bot mới
+PUT    /api/v1/bots/{id}/permissions     # Cấu hình quyền bot
+POST   /api/v1/bots/{id}/miniapp        # Deploy Mini-App cho bot
+</pre>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+            <div class="tech-header">WebSocket Realtime Events</div>
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem;">
+{
+  "type": "event",
+  "event": "message.new",
+  "data": {
+    "channel_id": "ch_abc123",
+    "sender_id": "usr_xyz789",
+    "content_type": "adaptive_card",
+    "encrypted_payload": "base64...",
+    "timestamp": "2026-02-10T12:00:00Z"
+  }
+}
+</pre>
+            </div>
+            <p style="margin-top: 1rem;"><strong>Events quan trọng:</strong></p>
+            <ul style="font-size: 0.9rem;">
+                <li><code>message.new</code> / <code>message.deleted</code> / <code>message.reaction</code></li>
+                <li><code>workflow.approval_requested</code> / <code>workflow.approved</code> / <code>workflow.rejected</code></li>
+                <li><code>security.threat_detected</code> / <code>security.device_revoked</code></li>
+            </ul>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem; border-color: var(--accent-purple);">
+            <div class="tech-header" style="color: var(--accent-purple);">E2EE Bridge cho Bot</div>
+            <p>Giải quyết bài toán Bot cần đọc/gửi tin trong môi trường E2EE (Server "mù"):</p>
+            <div class="comparison-table">
+                <table>
+                    <tr><th>Mô hình</th><th>Cơ chế</th><th>Khi nào dùng</th></tr>
+                    <tr>
+                        <td><strong>Service Bot (On-Prem)</strong></td>
+                        <td>Bot chạy trong network nội bộ, có KeyPair riêng, join MLS Group như member thường</td>
+                        <td>Khi cần bot đọc nội dung (AI Assistant, Search)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Notification Bot (Proxy)</strong></td>
+                        <td>Bot không join MLS Group, chỉ gửi tin 1 chiều qua Gateway → Encrypt bằng Bot Key → Forward</td>
+                        <td>Khi chỉ cần push thông báo (Jira, SAP)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stateless Webhook</strong></td>
+                        <td>Không có key, chỉ trigger event ra ngoài (không nội dung, chỉ metadata)</td>
+                        <td>Khi cần integration nhẹ (Zapier, n8n)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="scenario-card" style="margin-top: 1.5rem;">
+            <div class="tech-header" style="color: var(--text-primary); margin-bottom: 1rem;">Pre-built Connectors</div>
+            <div class="comparison-table">
+                <table>
+                    <tr><th>Connector</th><th>Loại</th><th>Chức năng</th></tr>
+                    <tr><td><strong>Jira/Linear</strong></td><td>Workflow</td><td>Tạo ticket từ chat, cập nhật trạng thái, notify assignee</td></tr>
+                    <tr><td><strong>SAP/Oracle ERP</strong></td><td>Notify + Workflow</td><td>Yêu cầu duyệt chi, PO approval, budget alert</td></tr>
+                    <tr><td><strong>GitHub/GitLab</strong></td><td>Notify</td><td>PR review, CI/CD status, merge notification</td></tr>
+                    <tr><td><strong>Google Workspace</strong></td><td>Workflow</td><td>Calendar invite từ chat, Drive file sharing</td></tr>
+                    <tr><td><strong>Microsoft 365</strong></td><td>Workflow</td><td>Teams bridge, SharePoint integration, Azure AD sync</td></tr>
+                    <tr><td><strong>Salesforce</strong></td><td>Notify + Workflow</td><td>Lead notification, deal approval, quote signing</td></tr>
+                    <tr><td><strong>Slack Bridge</strong></td><td>Bridge</td><td>2-way message sync cho giai đoạn migration</td></tr>
+                    <tr><td><strong>n8n/Zapier</strong></td><td>Webhook</td><td>No-code automation cho IT teams</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tech-box" style="margin-top: 1.5rem;">
+            <div class="tech-header">TypeScript SDK Example</div>
+            <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border);">
+<pre style="margin: 0; color: #a5b4fc; font-size: 0.75rem;">
+import { TeraChatClient } from '@terachat/sdk';
+
+const client = new TeraChatClient({
+  apiKey: process.env.TERACHAT_API_KEY,
+  serverUrl: 'https://chat.company.internal',
+});
+
+// Gửi Adaptive Card
+await client.messages.sendCard('channel_budget', {
+  title: 'YÊU CẦU DUYỆT NGÂN SÁCH',
+  facts: [
+    { title: 'Vendor', value: 'AWS Inc' },
+    { title: 'Amount', value: '$50,000' },
+  ],
+  actions: [
+    {
+      label: '✅ DUYỆT (Sinh trắc học)',
+      action: 'approve_payment_123',
+      requireBiometric: true
+    }
+  ]
+});
+
+// Lắng nghe Realtime Events
+client.on('workflow.approved', async (event) => {
+  await sapClient.releasePO(event.data.reference_id);
+  await client.messages.send(event.channel_id, 
+    `✅ PO #${event.data.reference_id} đã được giải ngân.`
+  );
+});
+</pre>
+            </div>
+        </div>
+    </section>
+
+    <section id="topic-threading">
+        <h2>6.2 Topic-based Threading <span class="badge badge-info">Productivity</span></h2>
+        <p>Giải quyết vấn đề chat doanh nghiệp 5000+ người trôi tuyến tính, mất thông tin. Học từ mô hình <strong>Zulip</strong> (Topic Threading) và <strong>Element</strong> (Matrix Threads/Spaces) — nhưng <strong>đơn giản hóa UI</strong> và thêm <strong>AI Summary</strong> mà Zulip không có.</p>
+
+        <div class="tech-box">
+            <div class="tech-header">Architecture: Hierarchical Channel → Topic Model</div>
+            <ul>
+                <li><strong>Topic Thread:</strong> Mỗi Channel có thể tạo sub-channel gắn với chủ đề cụ thể.</li>
+                <li><strong>MLS Key Hierarchy:</strong> <code>Channel_Key → Topic_Key</code>.</li>
+                <li><strong>Search Index:</strong> Thread metadata được index trong SQLCipher để hỗ trợ tìm kiếm nhanh.</li>
+                <li><strong>UI Layout (Anti-Zulip):</strong> Sidebar trái = <strong>Channel List</strong>, sidebar phải = <strong>Active Threads</strong>. Không trộn lẫn vào giữa như Zulip (quá rối mắt cho non-dev).</li>
+                <li><strong>🤖 AI Thread Summary (Local Llama 3):</strong> Tích hợp AI chạy <strong>100% Local</strong> (không gửi data ra ngoài). Sếp đi vắng 1 tuần? Bấm nút <strong>"Tóm tắt"</strong> → AI tóm tắt toàn bộ Thread: <em>"Đội Dev cãi nhau về API, cuối cùng chốt phương án B, đã deploy lúc 3h chiều"</em>. <strong>Đây là điểm sát thủ so với Zulip.</strong></li>
+            </ul>
+        </div>
+
+        <div class="scenario-card" style="margin-top: 1.5rem;">
+            <div class="scenario-step">
+                <span class="step-label">Bước 1</span>
+                <div>User vào Channel "Engineering" → Thấy danh sách Topics: <code>[Bug #1234]</code>, <code>[Release v2.1]</code>, <code>[Code Review]</code>.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Bước 2</span>
+                <div>Gửi tin vào Topic cụ thể → Tin nhắn được gắn nhãn Topic, không trôi lẫn.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">Thông minh</span>
+                <div>Notification thông minh: Chỉ ping khi có tin trong Topic mà user theo dõi.</div>
+            </div>
+            <div class="scenario-step">
+                <span class="step-label">🤖 AI Catch-up</span>
+                <div>Sếp bấm nút 🤖 trên Topic → Nhận bản tóm tắt nội dung tuần qua trong 3 giây (xử lý hoàn toàn trên thiết bị, <strong>không gửi data ra cloud</strong>).</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="crdt-offline">
+        <h2>6.3 CRDT-based Offline Conflict Resolution <span class="badge badge-warning">Resilience</span></h2>
+        <p>Giải quyết vấn đề Air-Gapped Mesh thiếu cơ chế resolve conflict khi 2 người edit cùng lúc offline. Học từ <strong>Berty</strong> (Wesh Protocol/CRDT) và <strong>Keet</strong> (Hypercore).</p>
+
+        <div class="tech-box">
+            <div class="tech-header">Engine: Automerge CRDT Integration</div>
+            <ul>
+                <li><strong>Library:</strong> Tích hợp <strong>Automerge CRDT</strong> (Rust library) vào Rust Core.</li>
+                <li><strong>Ordering:</strong> Mỗi document/message mang <strong>Vector Clock</strong> + <strong>Causal ordering</strong>.</li>
+                <li><strong>Merge Strategy:</strong> Khi reconnect, merge tự động thay vì "Last Write Wins".</li>
+                <li><strong>Scope:</strong> Message ordering, Shared Document editing, Admin Policy sync.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="federation">
+        <h2>6.4 Integration Hub & Multi-Platform Bridge <span class="badge badge-success">Integration Hub</span></h2>
+        <p><strong>"Dùng 1 app, quản lý mọi nền tảng."</strong> Thay vì cố xây Federation phức tạp như Matrix (Synapse ăn RAM khủng khiếp), TeraChat ưu tiên <strong>Bridges-first</strong> — kết nối với hệ sinh thái có sẵn để doanh nghiệp không cần ép nhân viên đổi app.</p>
+
+        <div class="tech-box">
+            <div class="tech-header">Architecture: TeraChat Integration Hub</div>
+            
+            <div style="margin-bottom: 1rem;">
+                <strong style="color: var(--accent-green);">Phase 1 — Multi-Platform Bridges (MVP):</strong>
+                <ul>
+                    <li><strong>Telegram Bridge:</strong> Nhận/gửi tin nhắn từ Telegram Group ngay trong TeraChat.</li>
+                    <li><strong>WhatsApp Bridge:</strong> Hỗ trợ khách hàng qua WhatsApp mà không rời khung chat.</li>
+                    <li><strong>Slack Bridge:</strong> Đồng bộ Channel Slack ↔ TeraChat cho giai đoạn chuyển đổi.</li>
+                    <li><strong>Tất cả Bridges</strong> chạy qua E2EE Relay — tin nhắn được mã hóa ở 2 đầu, Bridge Server chỉ thấy blob.</li>
+                </ul>
+            </div>
+            
+            <div>
+                <strong style="color: var(--accent-blue);">Phase 2 — Inter-org Federation:</strong>
+                <ul>
+                    <li><strong>Transport:</strong> Relay Server A ↔ Relay Server B qua <strong>mTLS + Sealed Sender</strong>.</li>
+                    <li><strong>Data Sovereignty:</strong> Mỗi org giữ dữ liệu riêng, chỉ forward E2EE payload qua Federation Bridge.</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 1rem; padding: 0.8rem; background: rgba(72, 187, 120, 0.1); border-left: 3px solid var(--accent-green); border-radius: 4px;"><strong>Lợi thế vs Element:</strong> Không cần cài Synapse nặng nề. Bridges nhẹ, dễ deploy, target SME không có đội IT xịn.</p>
+        </div>
+    </section>
+
+    <section id="rich-preview">
+        <h2>6.5 Rich File Preview <span class="badge badge-info">Sandbox Extension</span></h2>
+        <p>Mở rộng WASM Sandbox (Code Vault) để preview tài liệu kinh doanh. Học từ <strong>Nextcloud Talk</strong> (tích hợp Nextcloud Files).</p>
+
+        <div class="tech-box">
+            <div class="tech-header">Engine: Extended WASM Sandbox</div>
+            <ul>
+                <li><strong>Renderers:</strong> PDF (<code>pdf.js</code>), DOCX (<code>Mammoth.js</code>), Excel (<code>SheetJS</code>).</li>
+                <li><strong>Security:</strong> Giữ nguyên <strong>Dynamic Watermark + Anti-Screenshot</strong> cho tất cả preview.</li>
+                <li><strong>Data Flow:</strong> Streaming P2P từ RAM (không lưu file), giống cơ chế Code Vault hiện tại.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="competitive-analysis">
+        <h2>Appendix B: Competitive Analysis Matrix</h2>
+        <p>Đối sánh TeraChat V0.2.1 Alpha với 8 nền tảng nhắn tin doanh nghiệp tham chiếu.</p>
+
+        <div class="comparison-table" style="margin-top: 1.5rem;">
+            <table>
+                <tr>
+                    <th>Tiêu chí</th>
+                    <th>TeraChat</th>
+                    <th>Zulip</th>
+                    <th>Element</th>
+                    <th>Wire</th>
+                    <th>Threema</th>
+                    <th>Jami</th>
+                    <th>Keet</th>
+                    <th>Berty</th>
+                </tr>
+                <tr>
+                    <td><strong>Mô hình</strong></td>
+                    <td class="new-way">Federated Clusters + Mesh</td>
+                    <td>Client-Server</td>
+                    <td>Federated (S2S)</td>
+                    <td>Client-Server</td>
+                    <td>Client-Server</td>
+                    <td>Pure P2P (DHT)</td>
+                    <td>Pure P2P (Hypercore)</td>
+                    <td>P2P (IPFS/CRDT)</td>
+                </tr>
+                <tr>
+                    <td><strong>E2EE</strong></td>
+                    <td class="new-way">MLS (RFC 9420)</td>
+                    <td class="old-way">❌ (TLS only)</td>
+                    <td>Megolm/Vodozemac</td>
+                    <td>MLS</td>
+                    <td>NaCl</td>
+                    <td>TLS 1.3</td>
+                    <td>Noise Protocol</td>
+                    <td>X3DH + Double Ratchet</td>
+                </tr>
+                <tr>
+                    <td><strong>Offline</strong></td>
+                    <td class="new-way">Air-Gapped Mesh + BLE</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td>DHT (limited)</td>
+                    <td>Hyperswarm</td>
+                    <td>✅ BLE/Wi-Fi Direct</td>
+                </tr>
+                <tr>
+                    <td><strong>Thanh toán tích hợp</strong></td>
+                    <td class="new-way">✅ PayPal Native (1-chạm)</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                </tr>
+                <tr>
+                    <td><strong>Business API</strong></td>
+                    <td class="new-way">✅ Tiered (4 gói)</td>
+                    <td>✅ REST API</td>
+                    <td>✅ CS API</td>
+                    <td>✅ REST + Bot</td>
+                    <td>✅ Gateway</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                </tr>
+                <tr>
+                    <td><strong>Topic Threading</strong></td>
+                    <td class="new-way">✅ (Section 6.2)</td>
+                    <td>✅ (Core USP)</td>
+                    <td>✅ Threads/Spaces</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                </tr>
+                <tr>
+                    <td><strong>AI Local</strong></td>
+                    <td class="new-way">✅ Llama 3 (100% Local)</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                </tr>
+                <tr>
+                    <td><strong>LAN P2P Transfer</strong></td>
+                    <td class="new-way">✅ 100MB/s (P2P Torrent)</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td class="old-way">❌</td>
+                    <td>✅ Hypercore</td>
+                    <td class="old-way">❌</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+</body>
+</html>
