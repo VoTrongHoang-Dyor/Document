@@ -1364,6 +1364,33 @@ revoke_access {
     input.user.active == false
     input.connection.zone == "federation"
 }</code></pre></div>
+<p><strong>Federation DLP Rules (Vùng 2):</strong></p>
+<ul>
+<li>Chỉ nhắn tin, gửi ảnh dung lượng thấp.</li>
+<li><strong>Cấm gửi File qua lại (>1MB)</strong>.</li>
+<li><strong>Cấm chia sẻ Màn hình</strong>.</li>
+<li><strong>Cấm gọi Audio/Video Call</strong>.</li>
+</ul>
+<h4 id="441-dlp-multi-sig-quarantine-cryptographic-rbac">4.4.1 DLP Multi-Sig Quarantine & Cryptographic RBAC</h4>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Lead Dev's Note (Military-Grade Security):</strong> Trong môi trường Zero-Trust, quyền hạn phân duyệt không phải là việc sửa một cờ <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">role=supervisor</code> trong cơ sở dữ liệu (vì IT Admin có thể sửa lén database). Mọi hành vi cấp quyền và duyệt file đều phải là <strong>Cấp quyền bằng Mật mã (Cryptographic Delegation)</strong> và <strong>Phê duyệt đa chữ ký (Maker-Checker / Multi-Sig)</strong>. Không một ai, kể cả Admin nắm Root của Server, có thể vượt quyền mà không sở hữu Private Key vật lý của Giám đốc.</p>
+<p><strong>A. Cơ chế Cấp quyền bằng Mật mã (Internal Delegation Certificate)</strong></p>
+<p>Sép (CEO/Giám đốc) không đăng nhập vào hệ thống ảo mà dùng khóa Private Key trên thiết bị của mình để ký <em>Chứng thư số nội bộ</em> cho cấp dưới.</p>
+<ol>
+<li><strong>Chọn đối tượng:</strong> CEO chọn <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Nguyễn Văn A - Kế toán trưởng</code> để cấp quyền Giám sát phòng Kế toán.</li>
+<li><strong>Ký ủy quyền (Delegation):</strong> App của CEO lấy Public Key của Nguyễn Văn A, tạo một File Chứng thư (Token) xác nhận: <em>"Public Key [A] này có quyền phê duyệt file ra ngoài của phòng Kế toán."</em></li>
+<li><strong>Đóng dấu Private Key:</strong> Device của CEO dùng Private Key của chính mình ký điện tử lên cái Token này và thả xuống Router Vùng 2 (Cổng Hải Quan).</li>
+<li><strong>Hậu quả:</strong> Kể cả khi Hacker chiếm được Database của Server, họ không có Private Key của CEO, nên không thể sinh ra một cái chứng thư giải mạo để tự phong mình thành Giám sát viên nhằm rút file ra ngoài.</li>
+<li><strong>Thu hồi nhanh (Kill-Switch):</strong> Khi CEO bấm "Revoke", danh sách thu hồi bay đi, Cổng Hải Quan từ chối chữ ký của Nguyễn Văn A chỉ trong <1 giây.</li>
+</ol>
+<p><strong>B. Quy trình Kiểm dịch (M-of-N Cryptographic Quarantine)</strong></p>
+<p>Khi OPA Policy (ở Cổng Hải Quan) phát hiện một File từ phòng bị Cấm (vd: R&D) gửi ra ngoài, luồng chặn mã hóa diễn ra như sau:</p>
+<ol>
+<li><strong>OPA Interception:</strong> Lệnh gửi bị chặn tại Vùng 2 bởi Router theo công thức <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">If (Dept == R&D AND Destination = Zone 2) => Action = QUARANTINE</code>.</li>
+<li><strong>E2EE Quarantine State:</strong> Client của người gửi sẽ sinh ra khóa đối xứng <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">File_Key</code> và dùng MLS để mã hóa <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">File_Key</code> này cho <em>Người nhận</em> và <em>N Người Giám sát (Supervisors)</em>. Gói mã hóa bị neo lại trên Message Queue của Cổng Hải Quan. File nằm trên mạng là một cục rác tối nghĩa.</li>
+<li><strong>Thử thách Ký số (Cryptographic Challenge):</strong> Cảnh báo được gửi đến Cấp trên. Họ xem trước Nội dung (vì có khóa giải mã), và Bấm Phê duyệt.</li>
+<li><strong>Bấm = Ký Điện Tử:</strong> Nút phê duyệt kích hoạt Secure Enclave của Supervisor, sinh ra một chữ ký đi kèm với cái Chứng thư Ủy quyền mà CEO đã phát ở bước A.</li>
+<li><strong>Release Contract:</strong> Cổng Hải Quan sử dụng hợp đồng phân quyền <strong>M-of-N (vd 2/3 Giám đốc)</strong> để đếm số lượng chữ ký hợp lệ. Đạt đủ 2 chữ ký toán học, cổng mở van, gói mã hóa được bay sang VPS người nhận.</li>
+</ol>
 <h3 id="45-enterprise-invite-only-no-personal-p2p">4.5 Enterprise Invite Only (No Personal P2P)</h3>
 <h4 id="a-luồng-kỹ-thuật-technical-flow">A. Luồng Kỹ thuật (Technical Flow)</h4>
 <div style="background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); margin: 1rem 0;"><pre style="margin: 0; color: #a5b4fc; font-size: 0.85rem;"><code>  [USER A - Host]                    [VPS Alice]                    [USER B - Guest]

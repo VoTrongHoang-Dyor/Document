@@ -792,6 +792,37 @@ revoke_access {
 }
 ```
 
+**Federation DLP Rules (Vùng 2):**
+
+* Chỉ nhắn tin, gửi ảnh dung lượng thấp.
+* **Cấm gửi File qua lại (>1MB)**.
+* **Cấm chia sẻ Màn hình**.
+* **Cấm gọi Audio/Video Call**.
+
+#### 4.4.1 DLP Multi-Sig Quarantine & Cryptographic RBAC
+
+> **Lead Dev's Note (Military-Grade Security):** Trong môi trường Zero-Trust, quyền hạn phân duyệt không phải là việc sửa một cờ `role=supervisor` trong cơ sở dữ liệu (vì IT Admin có thể sửa lén database). Mọi hành vi cấp quyền và duyệt file đều phải là **Cấp quyền bằng Mật mã (Cryptographic Delegation)** và **Phê duyệt đa chữ ký (Maker-Checker / Multi-Sig)**. Không một ai, kể cả Admin nắm Root của Server, có thể vượt quyền mà không sở hữu Private Key vật lý của Giám đốc.
+
+**A. Cơ chế Cấp quyền bằng Mật mã (Internal Delegation Certificate)**
+
+Sép (CEO/Giám đốc) không đăng nhập vào hệ thống ảo mà dùng khóa Private Key trên thiết bị của mình để ký *Chứng thư số nội bộ* cho cấp dưới.
+
+1. **Chọn đối tượng:** CEO chọn `Nguyễn Văn A - Kế toán trưởng` để cấp quyền Giám sát phòng Kế toán.
+2. **Ký ủy quyền (Delegation):** App của CEO lấy Public Key của Nguyễn Văn A, tạo một File Chứng thư (Token) xác nhận: *"Public Key [A] này có quyền phê duyệt file ra ngoài của phòng Kế toán."*
+3. **Đóng dấu Private Key:** Device của CEO dùng Private Key của chính mình ký điện tử lên cái Token này và thả xuống Router Vùng 2 (Cổng Hải Quan).
+4. **Hậu quả:** Kể cả khi Hacker chiếm được Database của Server, họ không có Private Key của CEO, nên không thể sinh ra một cái chứng thư giải mạo để tự phong mình thành Giám sát viên nhằm rút file ra ngoài.
+5. **Thu hồi nhanh (Kill-Switch):** Khi CEO bấm "Revoke", danh sách thu hồi bay đi, Cổng Hải Quan từ chối chữ ký của Nguyễn Văn A chỉ trong <1 giây.
+
+**B. Quy trình Kiểm dịch (M-of-N Cryptographic Quarantine)**
+
+Khi OPA Policy (ở Cổng Hải Quan) phát hiện một File từ phòng bị Cấm (vd: R&D) gửi ra ngoài, luồng chặn mã hóa diễn ra như sau:
+
+1. **OPA Interception:** Lệnh gửi bị chặn tại Vùng 2 bởi Router theo công thức `If (Dept == R&D AND Destination = Zone 2) => Action = QUARANTINE`.
+2. **E2EE Quarantine State:** Client của người gửi sẽ sinh ra khóa đối xứng `File_Key` và dùng MLS để mã hóa `File_Key` này cho *Người nhận* và *N Người Giám sát (Supervisors)*. Gói mã hóa bị neo lại trên Message Queue của Cổng Hải Quan. File nằm trên mạng là một cục rác tối nghĩa.
+3. **Thử thách Ký số (Cryptographic Challenge):** Cảnh báo được gửi đến Cấp trên. Họ xem trước Nội dung (vì có khóa giải mã), và Bấm Phê duyệt.
+4. **Bấm = Ký Điện Tử:** Nút phê duyệt kích hoạt Secure Enclave của Supervisor, sinh ra một chữ ký đi kèm với cái Chứng thư Ủy quyền mà CEO đã phát ở bước A.
+5. **Release Contract:** Cổng Hải Quan sử dụng hợp đồng phân quyền **M-of-N (vd 2/3 Giám đốc)** để đếm số lượng chữ ký hợp lệ. Đạt đủ 2 chữ ký toán học, cổng mở van, gói mã hóa được bay sang VPS người nhận.
+
 ### 4.5 Enterprise Invite Only (No Personal P2P)
 
 #### A. Luồng Kỹ thuật (Technical Flow)
