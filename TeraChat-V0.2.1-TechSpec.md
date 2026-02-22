@@ -1,8 +1,6 @@
-# TeraChat Enterprise OS — Technical Specification v2.0
+## PHẦN I: KIẾN TRÚC LÕI & HẠ TẦNG (CORE ARCHITECTURE & INFRA)
 
-> **Phiên bản:** V0.2.1 Alpha | **Kiến trúc:** Desktop-First, Federated Clusters | **Mục tiêu:** Bảo mật & Hiệu năng Doanh nghiệp
-
----
+*Đây là phần "Bên ngoài" - Nền móng hệ thống trước khi chạm vào các thiết bị cuối.*
 
 ## Executive Summary: Business Logic & Core Architecture
 
@@ -87,16 +85,6 @@ Kiến trúc Cluster thay thế VPS đơn lẻ (Single Point of Failure):
 | **Managed SaaS** | Nhà hàng, SME (Non-Tech) | TeraChat Cloud (AWS/GCP) | TeraChat quản lý hạ tầng. Admin công ty chỉ quản lý User. |
 | **On-Premise** | Bank, Gov, Large Enterprise | Private Server (Vật lý/VMware) | IT doanh nghiệp tự quản lý (Helm Chart). Data Sovereignty 100%. |
 
-### 1.2 Architecture V2 — Refactor Manifest
-
-| Thành phần | Specification |
-|---|---|
-| **Client Engine** | Rust + Tauri (Desktop Central) |
-| **Đồng bộ (Sync)** | Encrypted Mailbox (Store-and-Forward) + CRDT Merge |
-| **Hạ tầng (Infra)** | Federated Clusters — Cụm 3–5 node tự cân bằng tải |
-| **Crypto & Privacy** | Post-Quantum (Kyber/Dilithium) + Sealed Sender |
-| **AI Integration** | API AI Gateway (BYOK) — OpenAI/Claude/Azure qua Middleware |
-
 ### 1.3 Chiến lược Định tuyến: "Vùng Chiến Thuật"
 
 > **Nguyên lý:** Không chặn người dùng, mà **phân luồng** họ vào đúng vùng hạ tầng phù hợp.
@@ -120,27 +108,6 @@ Kiến trúc Cluster thay thế VPS đơn lẻ (Single Point of Failure):
 > **Enterprise Only:** TeraChat là nền tảng dành riêng cho doanh nghiệp. Không hỗ trợ chế độ "Personal Mode" hoặc kết nối VPS cá nhân. Nhân viên Sale/CSKH **BẮT BUỘC** dùng Vùng 2 (Federation) để đảm bảo Audit Log.
 
 ---
-
-### 1.4 UI/UX Philosophy: "Data Density" (Productivity First)
-
-> **CEO Directive:** TeraChat không phải là mạng xã hội. Nó là **công cụ lao động** (Operating System for Work).
-
-**Core Principles:**
-
-1. **No Chat Bubbles:**
-    * Loại bỏ giao diện "bong bóng chat" (Facebook/Zalo style) tốn diện tích.
-    * Sử dụng giao diện **List View** (Slack/Discord/Terminal style) để hiển thị tối đa thông tin trên màn hình.
-    * Avatar nhỏ (24px), Tên người gửi Highlight màu, Timestamp rõ ràng.
-
-* **Target:** Hiển thị 20 dòng tin nhắn trên màn hình 13 inch (so với 8 dòng của Zalo).
-
-1. **Command Palette (`Cmd+K`):**
-    * Điều hướng không dùng chuột (Keyboard-centric).
-    * Gõ `/` để gọi lệnh (Slash Commands): `/sign` (Trình ký), `/approve` (Duyệt chi), `/pos` (Mở máy bán hàng).
-
-2. **App-in-Chat (Adaptive Widgets):**
-    * Không pop-up cửa sổ mới.
-    * Các Mini-App (Form duyệt, Báo cáo tồn kho) hiển thị trực tiếp dưới dạng **Collapsible Card** ngay trong dòng chat.
 
 ## 2. Security Engine
 
@@ -784,31 +751,6 @@ Hệ thống gọi thoại HD Voice, độ trễ <200ms, Server "Mù" (Blind Rel
 
 **HA:** Sử dụng **Keepalived (Floating IP)**. Node dự phòng tiếp quản IP ảo trong 3 giây.
 
-### 4.3 LAN P2P Transport (No Internet Seeding)
-
-**Routing Strategy:**
-
-| Loại dữ liệu | Transport | Lý do |
-|---|---|---|
-| **Text Message** (nhẹ, < 64KB) | VPS Store-and-Forward (Encrypted Mailbox) | Đảm bảo 100% delivery, hoạt động khi offline. |
-| **File nặng** (> 1MB) | P2P trực tiếp (TeraShare/Torrent) | Tiết kiệm băng thông Server, tốc độ cao trên LAN. |
-| **Voice/Video** | WebRTC (Blind Relay) | Realtime, low-latency. |
-
-**Desktop Super Node Strategy:**
-
-* **Bridge Mode:** Nhận tin từ Internet → Phát lại vào mạng Bluetooth Mesh cho Mobile.
-* **LAN Seeding:** Desktop dùng ổ cứng lớn Seed file qua mạng LAN nội bộ (Bonjour/mDNS). **Không Seed qua Internet.**
-
-**Hybrid Transport Flow (P2P Upgrade — File Transfer):**
-
-1. **Discovery:** Tìm nhau qua Bluetooth LE.
-2. **Handshake:** Thỏa thuận gửi File lớn.
-3. **Upgrade:** Tự động bật **Wi-Fi Direct / Local LAN**.
-4. **Transfer:** Bắn file tốc độ cao (50MB/s) trực tiếp.
-5. **Fallback:** Nếu mất P2P → Upload file mã hóa lên Encrypted Mailbox (Store-and-Forward).
-
-**Lightweight Server Target:** Tối ưu Rust Core để Server chỉ cần **512MB RAM** cho SME (< 200 user). Giảm OpEx cho doanh nghiệp tự host.
-
 ### 4.4 Context Isolation (DLP — 3 Vùng)
 
 Phân tách ngữ cảnh theo mô hình **"3 Vùng Chiến Thuật"** (Section 1.3) thông qua **Auto-Switch**:
@@ -1029,208 +971,233 @@ Khác với các app Mesh dân dụng (Bridgefy), TeraChat Survival Link đượ
 
 ---
 
-## 5. Platform Features
+## 6. Operations & Deployment
 
-### 5.1 Code Sandbox (WASM) — App Runtime
+### 6.1 Observability & SLA
 
-> **Architectural Upgrade:** Section này được nâng cấp từ "Code Sandbox" thành **App Runtime** — nền tảng chạy các ứng dụng `.tapp` từ TeraChat Marketplace (Section 5.10).
+**O11y Pipeline (LGTM Stack):**
 
-**Engine: WASM Sandbox & App Isolation**
-
-* **Runtime:** App chạy trong container WebAssembly bị cô lập. Không có quyền truy cập Clipboard hệ thống.
-* **Package Format:** `.tapp` (TeraChat App Package) — file nén chứa WASM bytecode + UI Assets (HTML/CSS/JS) + Manifest.
-* **Data Flow:** App chạy trong Sandbox, dữ liệu lưu trong vùng Encrypted Storage riêng biệt.
-* **Cache:** Khi đóng cửa sổ, bộ nhớ runtime bị ghi đè (Zeroing Memory).
-
-**Technology Stack:**
-
-| Thành phần | Công nghệ | Vai trò |
-|---|---|---|
-| **Runtime** | WebAssembly (WASM) | Chạy logic app với tốc độ gần native, cách ly hoàn toàn với hệ thống |
-| **UI Layer** | Tauri (HTML5/CSS/JS WebView) | Hiển thị giao diện app trong cửa sổ riêng biệt, siêu nhẹ |
-| **Storage** | Encrypted Local Storage (SQLCipher) | Mỗi app có vùng nhớ riêng, không xâm phạm dữ liệu của nhau |
-| **Security** | Digital Signature (Ed25519) | App phải có chữ ký số của TeraChat HOẶC của Doanh nghiệp mới được khởi chạy |
-
-**Digital Glass Room (Security Layers):**
-
-| Lớp | Cơ chế |
-|---|---|
-| **Lớp 1 (OS Level)** | `SetWindowDisplayAffinity` (Windows), `window.sharingType = .none` (macOS 14+) — Chống chụp màn hình. |
-| **Lớp 2 (Native Overlay)** | Dynamic Watermark (User ID + Time + IP) đổi vị trí mỗi 5s — Chống AI Inpainting. |
-| **Lớp 3 (Input Jammer)** | Chặn Global Hooks bàn phím (Keylogger), vô hiệu hóa Clipboard khi cửa sổ Active. |
-
-**Document Security (Công văn mật):**
-
-* **Dynamic Watermark:** Hiển thị mờ tên người xem + IP + Timestamp đè lên file PDF/DOCX preview.
-* **Print Blocking:** Hook vào Driver in ấn cấp OS để chặn lệnh Print từ App.
-* **Self-Destruct:** File tự hủy sau khi đóng cửa sổ (không lưu cache).
-
-### 5.2 Smart Approval & Pay (Fintech Bridge)
-
-**Engine: Blind Fintech Bridge**
-
-Kiến trúc tách biệt E2EE (TeraChat) và hệ thống thanh toán tập trung (PayPal):
-
-* **One-time Binding:** Nhân viên link tài khoản PayPal *một lần duy nhất*. OAuth Token mã hóa và lưu trong Secure Enclave.
-* **PayPal Payouts API:** Lệnh `/bonus` trigger REST call qua Enterprise Relay Server. Server chỉ forward lệnh thanh toán đã ký.
-* **Audit Trail:** Mọi lệnh duyệt chi ghi trong **tamper-proof audit log** (write-only, append-only) với chữ ký số.
+* **Metrics (Prometheus):** CPU, RAM, Connections.
+* **Logs (Loki):** Structured JSON Logs (Che giấu IP/User).
+* **Traces (Tempo):** Theo vết gói tin qua các Relay Node.
 
 ```rust
-// Rust — Blind Fintech Bridge
-async fn execute_payout(cmd: PayoutCommand, ctx: &AppContext) -> Result<PayoutReceipt> {
-    let signature = ctx.secure_enclave.biometric_sign(&cmd.to_bytes())?;
-    let oauth_token = ctx.secure_enclave.decrypt_token("paypal_oauth")?;
-
-    let payout = PayPalPayout {
-        sender_batch_header: SenderBatchHeader {
-            sender_batch_id: generate_idempotency_key(),
-            email_subject: "Thưởng nóng từ công ty",
-        },
-        items: vec![PayoutItem {
-            recipient_type: "EMAIL",
-            amount: Amount { currency: "USD", value: cmd.amount },
-            receiver: cmd.recipient_paypal_email,
-        }],
-    };
-
-    let receipt = ctx.paypal_client.create_payout(&oauth_token, &payout).await?;
-
-    ctx.audit_log.append(AuditEntry {
-        action: "PAYOUT",
-        signer: signature,
-        amount: cmd.amount,
-        recipient: cmd.recipient_paypal_email,
-        paypal_batch_id: receipt.batch_id,
-        timestamp: SystemTime::now(),
-    })?;
-
-    Ok(receipt)
+// Rust: Measuring Packet Latency
+async fn handle_packet(req: Request) -> Response {
+    let start = Instant::now();
+    let response = process(req).await;
+    histogram!("terachat_delivery_latency_ms", start.elapsed().as_millis());
+    if response.is_error() {
+        counter!("terachat_errors_total", 1);
+    }
+    response
 }
 ```
 
-**Workflow: Sequential Signing (Trình Ký):**
+**Key Metrics:**
 
-```mermaid
-sequenceDiagram
-    participant Staff as Chuyên viên
-    participant Manager as Trưởng phòng
-    participant Director as Giám đốc
-    participant Core as Rust Core
-
-    Staff->>Core: 1. Soạn thảo & Ký nháp (User Token)
-    Core-->>Manager: 2. Notify: Chờ duyệt (Pending Review)
-    Manager->>Core: 3. Duyệt & Ký nháy (Review Token)
-    Core-->>Director: 4. Notify: Chờ ký số (Pending Sign)
-    Director->>Core: 5. Ký số chính thức (Director USB Token)
-    Core->>Core: 6. Timestamping & Lock Document
-```
-
-**Security Constraints:**
-
-* **OAuth Token Rotation:** Token PayPal rotate tự động mỗi 30 ngày. Token cũ bị Crypto-Shred.
-* **Idempotency Key:** Mỗi lệnh thanh toán mang `sender_batch_id` duy nhất — chống replay/double-spend.
-* **Rate Limiting:** Giới hạn tổng giải ngân/ngày theo chính sách OPA (max $10,000/ngày/user).
-* **Biometric Gate:** Mọi lệnh thanh toán > $0 đều yêu cầu xác thực phần cứng.
-
-### 5.3 Enterprise Launchpad (Productivity Dock)
-
-**Smart Deep Link:**
-
-| Loại Link | Hành vi |
-|---|---|
-| `https://` | Gọi trình duyệt mặc định (Chrome/Safari) |
-| `scheme://` | Gọi OS đánh thức App tương ứng |
-| **Internal Link** | Mở ngay trong TeraChat (Trusted Domain) |
-
-**3 Lớp Bảo mật:**
-
-| Lớp | Cơ chế |
-|---|---|
-| **Airlock** | Bottom Sheet Popup xác nhận trước khi mở link ngoài. Domain nội bộ (Trusted) → Bypass. |
-| **Visual Trust** | Favicon Fetcher tự động (không cho user upload logo). Verified Badge cho Whitelist. Google Safe Browsing API scan. |
-| **Admin Policy** | Managed Bookmarks (Push). Blacklist Domain. Audit Log toàn bộ link add/remove/click. |
-
-**Sandbox Isolation:** Mọi WebView chạy trong **Isolated Process** — Cookie/Storage Isolation.
-
-**App Distribution (Marketplace Integration):**
-
-Launchpad đóng vai trò **"Tủ App" nội bộ** — chỉ hiển thị các app được Admin cho phép:
-
-| Trạng thái | Icon | Hành vi |
+| Metric Name | Type | Ý nghĩa |
 |---|---|---|
-| **Chưa tải** | ☁️ Cloud | Nhân viên click → Kéo `.tapp` từ Private Cluster về máy |
-| **Đã tải** | ✅ App Icon | Click → Khởi chạy trong WASM Sandbox (Section 5.1) |
-| **Cần cập nhật** | 🔄 Badge | Auto-update khi Admin push phiên bản mới |
+| `active_connections` | Gauge | Số User đang online. |
+| `delivery_latency_ms` | Histogram | SLA Target < 200ms. |
+| `relay_buffer_bytes` | Gauge | Cảnh báo nghẽn (Backpressure). |
+| `decryption_failures` | Counter | Phát hiện tấn công hoặc lệch Key. |
 
-**OPA Policy cho App Visibility (Section 3.3):**
+**SLA Targets:**
 
-```rego
-package terachat.app_visibility
+* **Availability:** 99.9% (Downtime < 43 phút/tháng).
+* **Latency (p95):** < 200ms (LAN/WAN nội bộ).
+* **Error Rate:** < 0.1% Request 5xx.
 
-# Rule: Chỉ phòng Sale thấy Magic Logger
-allow_app["magic_logger"] {
-    input.user.attributes.department == "Sales"
-}
+### 6.2 Kubernetes Deployment
 
-# Rule: App Kế toán chỉ trên máy có mã hóa ổ đĩa
-allow_app["finance_app"] {
-    input.user.attributes.department == "Finance"
-    input.device.disk_encryption == true
-}
+**K8s-First Strategy:**
 
-# Rule: Admin thấy tất cả
-allow_app[app] {
-    input.user.attributes.role == "admin"
+* **Helm Charts:** Đóng gói tiêu chuẩn (Relay, Signaling, IAM, DB HA).
+* **High Availability:** Auto-scaling (HPA) cho Relay Nodes. Postgres Operator cho Database.
+* **GitOps:** ArgoCD. Rollback tự động khi lỗi.
+
+**Client Deployment (MDM):**
+
+| Tiêu chí | Windows (Intune/GPO) | macOS (Jamf/MDM) |
+|---|---|---|
+| **Cơ chế** | `Registry Key (HKLM\Software\Policies)` | `Managed Preferences (plist)` |
+| **Config** | `server_url`, `cert_pinning_hash`, `disable_camera` | (Same) |
+
+**Air-Gapped Delivery:**
+
+1. `docker save` toàn bộ hệ thống → `.tar.gz` (5GB).
+2. Load vào Harbor nội bộ.
+3. Local Helm cài đặt trỏ về Registry nội bộ.
+
+### 6.3 Production Config (5,000 CCU)
+
+```yaml
+# values-production-5k.yaml
+global:
+  domain: "chat.bank-enterprise.internal"
+  environment: "production"
+  imageRegistry: "registry.bank-internal.com"
+
+# RELAY NODES (Stateless Backbone)
+relay:
+  enabled: true
+  image: { repository: "terachat/enterprise-relay", tag: "v2.1.0-rust-optimized" }
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+  resources:
+    requests: { cpu: "500m", memory: "512Mi" }
+    limits: { cpu: "2000m", memory: "2Gi" }
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: ["terachat-relay"]
+          topologyKey: "kubernetes.io/hostname"
+
+# SIGNALING (WebSockets)
+signaling:
+  enabled: true
+  replicaCount: 3
+  sessionAffinity: { enabled: true, timeoutSeconds: 3600 }
+
+# IDENTITY BRIDGE
+iam:
+  enabled: true
+  provider: "keycloak-sidecar"
+  config: { scimEnabled: true, syncInterval: "30s" }
+
+# STORAGE HA
+postgresql-ha:
+  enabled: true
+  postgresql: { repmgr: { enabled: true } }
+  pgpool: { enabled: true, replicaCount: 2 }
+
+redis-ha:
+  enabled: true
+  sentinel: { enabled: true }
+
+# SECURITY GATEWAY
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"
+```
+
+**Deployment Command:**
+
+```bash
+helm install terachat-enterprise ./charts/terachat \
+  --namespace terachat-prod \
+  --values values-production-5k.yaml \
+  --set postgresql-ha.postgresql.password=$(vault kv get -field=db_pass secret/terachat)
+```
+
+### 6.4 Flexible Infrastructure (BYOS & Cloud Hybrid)
+
+**Triết lý:** TeraChat cung cấp Software, Doanh nghiệp tự chủ Hardware.
+
+#### A. Option 1: On-Premise (Tận dụng phần cứng cũ)
+
+* **Đối tượng:** Nhà hàng có PC cũ, Cơ quan có Server phòng lạnh.
+* **Cơ chế:** Magic Script (1 dòng lệnh).
+
+```bash
+curl -sL install.terachat.com | sudo bash --token=[License_Key]
+```
+
+* **Kết quả:** Máy tính biến thành Private Node. Dữ liệu không bao giờ rời khỏi văn phòng.
+
+#### B. Option 2: Cloud Hybrid (Thuê VPS)
+
+* **Đối tượng:** Start-up, Shop online (không có IT).
+* **Cơ chế:**
+    1. User thuê VPS (DigitalOcean, FPT, Viettel).
+    2. Vào TeraChat Admin Console -> Nhập IP & SSH Key của VPS.
+    3. TeraChat Server -> SSH vào VPS -> Cài đặt Docker/K8s -> Bàn giao lại quyền quản trị.
+* **Kết quả:** Có Server riêng (Isolated Tenant) nhưng không cần biết kỹ thuật.
+
+### 6.5 Security Governance (Day-2 Ops)
+
+**Supply Chain Security:**
+
+* **SBOM:** File `spdx.json` liệt kê toàn bộ thư viện phụ thuộc.
+* **Reproducible Builds:** Binary Hash luôn trùng khớp với Source Code.
+
+**Database Strategy:**
+
+| Yêu cầu | Giải pháp |
+|---|---|
+| **Zero-Downtime Migration** | Blue-Green Deploys cho DB. Hỗ trợ song song 2 Schema (n-1 và n). |
+| **Data Sovereignty** | Geo-Partitioning (Postgres): Dữ liệu GDPR ghim cứng tại Node tương ứng. |
+
+**Operations Checklist:**
+
+* **RASP:** Chống Debug/Dump RAM.
+* **UEBA:** ML phát hiện hành vi bất thường.
+* **Chaos Engineering:** Chaos Mesh cho diễn tập sự cố.
+* **Encrypted Search:** Blind Seer — tìm kiếm trên dữ liệu mã hóa.
+* **Legal Hold:** Đóng băng tài khoản đang bị điều tra.
+
+**Air-Gapped Patching (BSDiff):** Chỉ tải Delta Patch (vài KB/MB). Client tự vá binary cũ sau khi verify chữ ký số.
+
+**GDPR-Compliant Audit Trail:** Sử dụng **Tamper-Proof Append-Only Log** (Merkle Tree + Write-Only DB). Mỗi entry chứa `Hash(Encrypted_Data)` + chữ ký số. Khi cần xóa dữ liệu theo GDPR → hủy khóa giải mã (Crypto-Shredding, Section 2.2). Log metadata vẫn giữ nguyên để audit.
+
+### 6.6 Interoperability & ESB
+
+**Bridges to Legacy Systems:**
+
+* **Inbound:** SAP/Email/CRM → Webhook → Gateway mã hóa → Push xuống App.
+* **Outbound:** Hành động trong TeraChat → Kích hoạt quy trình trong SAP hoặc gửi Email.
+
+**Standard Compliance:**
+
+* **Messaging:** MLS (Messaging Layer Security).
+* **Data Exchange:** NIEM (National Information Exchange Model).
+
+**Adaptive Cards Engine:** JSON-driven Interactive UI.
+
+```json
+{
+  "type": "interactive_card",
+  "body": [
+    { "type": "text", "text": "YÊU CẦU THANH TOÁN", "weight": "heavy" },
+    { "type": "fact_set", "facts": [
+        { "title": "Vendor:", "value": "AWS Inc" },
+        { "title": "Amount:", "value": "$50,000" }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "button",
+      "style": "positive",
+      "label": "DUYỆT NGAY (Windows Hello)",
+      "action_id": "approve_payment_123",
+      "require_biometric": true
+    }
+  ]
 }
 ```
 
-### 5.4 Topic-based Threading
+**Security Hardening:**
 
-**Architecture: Hierarchical Channel → Topic Model**
-
-* **Topic Thread:** Mỗi Channel tạo sub-channel gắn chủ đề cụ thể.
-* **MLS Key Hierarchy:** `Channel_Key → Topic_Key`.
-* **Search Index:** Thread metadata index trong SQLCipher.
-* **AI-Assisted Threading:** Bot AI (xem Section 5.8) tự động đặt tiêu đề và gợi ý Topic cho đoạn chat. User @mention AI Bot để kích hoạt.
-
-### 5.5 CRDT Offline Sync
-
-**Engine: Automerge CRDT Integration**
-
-* **Library:** Automerge CRDT (Rust library) tích hợp vào Rust Core.
-* **Ordering:** Mỗi document/message mang **Vector Clock** + **Causal ordering**.
-* **Merge Strategy:** Khi reconnect, merge tự động (thay vì "Last Write Wins").
-* **Scope:** Message ordering, Shared Document editing, Admin Policy sync.
-
-### 5.6 Global Deduplication (CAS)
-
-**Content-Addressable Storage:**
-
-* **Logic:** Hệ thống tệp hoạt động như Object Store.
-* **Physical Filename:** Chuỗi SHA-256 của nội dung file.
-* **Database (SQLite):** Chỉ lưu metadata và đường dẫn tham chiếu (Symlink).
-
-**Quy trình Check-before-Write:**
-
-1. **Signaling Phase:** Client nhận Metadata (`File_Name`, `Content_Hash`, `Encrypted_Hash`).
-2. **Local Lookup:** `SELECT file_path FROM local_assets WHERE content_hash = ?`
-   * **Cache Hit:** Hủy tải xuống, hiển thị ngay bằng Symlink.
-   * **Cache Miss:** Tải từ Encrypted Log Streams hoặc P2P Torrent.
-
-**Advanced Dedup:**
-
-| Tính năng | Cơ chế |
+| Layer | Giải pháp |
 |---|---|
-| **Big Data Dedup** (Torrent) | Merkle Tree check trùng lặp từng Block. Auto-Seeding. |
-| **Packet Dedup** (Dual-Stack) | Bloom Filter trong RAM ghi `PacketID (UUID)` trong 10 phút. Drop gói trùng. |
+| **Transport Auth** | mTLS (Mutual TLS) — Gateway chỉ nhận request từ Server có Certificate hợp lệ. |
+| **Extensibility** | Lua/WASM Plugins — IT viết script xử lý luồng tùy chỉnh. |
 
-### 5.7 Rich File Preview
+---
 
-**Engine: Extended WASM Sandbox**
-
-* **Renderers:** PDF (`pdf.js`), DOCX (`Mammoth.js`), Excel (`SheetJS`).
-* **Security:** Dynamic Watermark + Anti-Screenshot cho tất cả preview.
-* **Data Flow:** Streaming P2P từ RAM (không lưu file).
+## 5. Platform Features
 
 ### 5.8 AI Integration Gateway
 
@@ -1635,231 +1602,320 @@ impl SyncWorker {
 
 ---
 
-## 6. Operations & Deployment
+## PHẦN II: PHÂN KHÚC DESKTOP APP (WINDOWS / MACOS / LINUX)
 
-### 6.1 Observability & SLA
+*Trung tâm điều khiển chính của nhân viên văn phòng.*
 
-**O11y Pipeline (LGTM Stack):**
+### 7. Tech Stack & Architecture (Desktop)
 
-* **Metrics (Prometheus):** CPU, RAM, Connections.
-* **Logs (Loki):** Structured JSON Logs (Che giấu IP/User).
-* **Traces (Tempo):** Theo vết gói tin qua các Relay Node.
+**Rust Core + Tauri**
+
+Kiến trúc lõi được xây dựng bằng Rust để đảm bảo an toàn bộ nhớ và hiệu năng xử lý tác vụ mã hóa nền. Giao diện Tauri bằng ReactJS giúp Web-dev dễ dàng bảo trì nhưng vẫn ăn ít RAM hơn Electron 10 lần.
+
+#### Components Manifest
+
+| Thành phần | Specification |
+|---|---|
+| **Client Engine** | Rust + Tauri (Desktop Central) |
+| **Đồng bộ (Sync)** | Encrypted Mailbox (Store-and-Forward) + CRDT Merge |
+| **Hạ tầng (Infra)** | Federated Clusters — Cụm 3–5 node tự cân bằng tải |
+| **Crypto & Privacy** | Post-Quantum (Kyber/Dilithium) + Sealed Sender |
+| **AI Integration** | API AI Gateway (BYOK) — OpenAI/Claude/Azure qua Middleware |
+
+### 8. UI/UX Philosophy (Data Density)
+
+> **CEO Directive:** TeraChat không phải là mạng xã hội. Nó là **công cụ lao động** (Operating System for Work).
+
+**Core Principles:**
+
+1. **No Chat Bubbles:**
+    * Loại bỏ giao diện "bong bóng chat" (Facebook/Zalo style) tốn diện tích.
+    * Sử dụng giao diện **List View** (Slack/Discord/Terminal style) để hiển thị tối đa thông tin trên màn hình.
+    * Avatar nhỏ (24px), Tên người gửi Highlight màu, Timestamp rõ ràng.
+
+* **Target:** Hiển thị 20 dòng tin nhắn trên màn hình 13 inch (so với 8 dòng của Zalo).
+
+1. **Command Palette (`Cmd+K`):**
+    * Điều hướng không dùng chuột (Keyboard-centric).
+    * Gõ `/` để gọi lệnh (Slash Commands): `/sign` (Trình ký), `/approve` (Duyệt chi), `/pos` (Mở máy bán hàng).
+
+2. **App-in-Chat (Adaptive Widgets):**
+    * Không pop-up cửa sổ mới.
+    * Các Mini-App (Form duyệt, Báo cáo tồn kho) hiển thị trực tiếp dưới dạng **Collapsible Card** ngay trong dòng chat.
+
+### 9. Desktop-Specific Transport (LAN P2P)
+
+**Routing Strategy:**
+
+| Loại dữ liệu | Transport | Lý do |
+|---|---|---|
+| **Text Message** (nhẹ, < 64KB) | VPS Store-and-Forward (Encrypted Mailbox) | Đảm bảo 100% delivery, hoạt động khi offline. |
+| **File nặng** (> 1MB) | P2P trực tiếp (TeraShare/Torrent) | Tiết kiệm băng thông Server, tốc độ cao trên LAN. |
+| **Voice/Video** | WebRTC (Blind Relay) | Realtime, low-latency. |
+
+**Desktop Super Node Strategy:**
+
+* **Bridge Mode:** Nhận tin từ Internet → Phát lại vào mạng Bluetooth Mesh cho Mobile.
+* **LAN Seeding:** Desktop dùng ổ cứng lớn Seed file qua mạng LAN nội bộ (Bonjour/mDNS). **Không Seed qua Internet.**
+
+**Hybrid Transport Flow (P2P Upgrade — File Transfer):**
+
+1. **Discovery:** Tìm nhau qua Bluetooth LE.
+2. **Handshake:** Thỏa thuận gửi File lớn.
+3. **Upgrade:** Tự động bật **Wi-Fi Direct / Local LAN**.
+4. **Transfer:** Bắn file tốc độ cao (50MB/s) trực tiếp.
+5. **Fallback:** Nếu mất P2P → Upload file mã hóa lên Encrypted Mailbox (Store-and-Forward).
+
+**Lightweight Server Target:** Tối ưu Rust Core để Server chỉ cần **512MB RAM** cho SME (< 200 user). Giảm OpEx cho doanh nghiệp tự host.
+
+### 10. Desktop Feature Modules
+
+#### 10.1 CRDT Offline Sync (Desktop Context)
+
+> **Context:** RAM và Ổ cứng nội bộ của desktop rất lớn. Node CRDT trên Desktop có thể lưu trữ toàn bộ lịch sử Document mà không cần lo tràn LocalStorage.
+
+**Engine: Automerge CRDT Integration**
+
+* **Library:** Automerge CRDT (Rust library) tích hợp vào Rust Core.
+* **Ordering:** Mỗi document/message mang **Vector Clock** + **Causal ordering**.
+* **Merge Strategy:** Khi reconnect, merge tự động (thay vì "Last Write Wins").
+* **Scope:** Message ordering, Shared Document editing, Admin Policy sync.
+
+### 10.2 Code Sandbox (WASM)
+
+> **Architectural Upgrade:** Section này được nâng cấp từ "Code Sandbox" thành **App Runtime** — nền tảng chạy các ứng dụng `.tapp` từ TeraChat Marketplace (Section 5.10).
+
+**Engine: WASM Sandbox & App Isolation**
+
+* **Runtime:** App chạy trong container WebAssembly bị cô lập. Không có quyền truy cập Clipboard hệ thống.
+* **Package Format:** `.tapp` (TeraChat App Package) — file nén chứa WASM bytecode + UI Assets (HTML/CSS/JS) + Manifest.
+* **Data Flow:** App chạy trong Sandbox, dữ liệu lưu trong vùng Encrypted Storage riêng biệt.
+* **Cache:** Khi đóng cửa sổ, bộ nhớ runtime bị ghi đè (Zeroing Memory).
+
+**Technology Stack:**
+
+| Thành phần | Công nghệ | Vai trò |
+|---|---|---|
+| **Runtime** | WebAssembly (WASM) | Chạy logic app với tốc độ gần native, cách ly hoàn toàn với hệ thống |
+| **UI Layer** | Tauri (HTML5/CSS/JS WebView) | Hiển thị giao diện app trong cửa sổ riêng biệt, siêu nhẹ |
+| **Storage** | Encrypted Local Storage (SQLCipher) | Mỗi app có vùng nhớ riêng, không xâm phạm dữ liệu của nhau |
+| **Security** | Digital Signature (Ed25519) | App phải có chữ ký số của TeraChat HOẶC của Doanh nghiệp mới được khởi chạy |
+
+**Digital Glass Room (Security Layers):**
+
+| Lớp | Cơ chế |
+|---|---|
+| **Lớp 1 (OS Level)** | `SetWindowDisplayAffinity` (Windows), `window.sharingType = .none` (macOS 14+) — Chống chụp màn hình. |
+| **Lớp 2 (Native Overlay)** | Dynamic Watermark (User ID + Time + IP) đổi vị trí mỗi 5s — Chống AI Inpainting. |
+| **Lớp 3 (Input Jammer)** | Chặn Global Hooks bàn phím (Keylogger), vô hiệu hóa Clipboard khi cửa sổ Active. |
+
+**Document Security (Công văn mật):**
+
+* **Dynamic Watermark:** Hiển thị mờ tên người xem + IP + Timestamp đè lên file PDF/DOCX preview.
+* **Print Blocking:** Hook vào Driver in ấn cấp OS để chặn lệnh Print từ App.
+* **Self-Destruct:** File tự hủy sau khi đóng cửa sổ (không lưu cache).
+
+### 10.3 Smart Approval (Fintech Bridge)
+
+**Engine: Blind Fintech Bridge**
+
+Kiến trúc tách biệt E2EE (TeraChat) và hệ thống thanh toán tập trung (PayPal):
+
+* **One-time Binding:** Nhân viên link tài khoản PayPal *một lần duy nhất*. OAuth Token mã hóa và lưu trong Secure Enclave.
+* **PayPal Payouts API:** Lệnh `/bonus` trigger REST call qua Enterprise Relay Server. Server chỉ forward lệnh thanh toán đã ký.
+* **Audit Trail:** Mọi lệnh duyệt chi ghi trong **tamper-proof audit log** (write-only, append-only) với chữ ký số.
 
 ```rust
-// Rust: Measuring Packet Latency
-async fn handle_packet(req: Request) -> Response {
-    let start = Instant::now();
-    let response = process(req).await;
-    histogram!("terachat_delivery_latency_ms", start.elapsed().as_millis());
-    if response.is_error() {
-        counter!("terachat_errors_total", 1);
-    }
-    response
+// Rust — Blind Fintech Bridge
+async fn execute_payout(cmd: PayoutCommand, ctx: &AppContext) -> Result<PayoutReceipt> {
+    let signature = ctx.secure_enclave.biometric_sign(&cmd.to_bytes())?;
+    let oauth_token = ctx.secure_enclave.decrypt_token("paypal_oauth")?;
+
+    let payout = PayPalPayout {
+        sender_batch_header: SenderBatchHeader {
+            sender_batch_id: generate_idempotency_key(),
+            email_subject: "Thưởng nóng từ công ty",
+        },
+        items: vec![PayoutItem {
+            recipient_type: "EMAIL",
+            amount: Amount { currency: "USD", value: cmd.amount },
+            receiver: cmd.recipient_paypal_email,
+        }],
+    };
+
+    let receipt = ctx.paypal_client.create_payout(&oauth_token, &payout).await?;
+
+    ctx.audit_log.append(AuditEntry {
+        action: "PAYOUT",
+        signer: signature,
+        amount: cmd.amount,
+        recipient: cmd.recipient_paypal_email,
+        paypal_batch_id: receipt.batch_id,
+        timestamp: SystemTime::now(),
+    })?;
+
+    Ok(receipt)
 }
 ```
 
-**Key Metrics:**
+**Workflow: Sequential Signing (Trình Ký):**
 
-| Metric Name | Type | Ý nghĩa |
-|---|---|---|
-| `active_connections` | Gauge | Số User đang online. |
-| `delivery_latency_ms` | Histogram | SLA Target < 200ms. |
-| `relay_buffer_bytes` | Gauge | Cảnh báo nghẽn (Backpressure). |
-| `decryption_failures` | Counter | Phát hiện tấn công hoặc lệch Key. |
+```mermaid
+sequenceDiagram
+    participant Staff as Chuyên viên
+    participant Manager as Trưởng phòng
+    participant Director as Giám đốc
+    participant Core as Rust Core
 
-**SLA Targets:**
-
-* **Availability:** 99.9% (Downtime < 43 phút/tháng).
-* **Latency (p95):** < 200ms (LAN/WAN nội bộ).
-* **Error Rate:** < 0.1% Request 5xx.
-
-### 6.2 Kubernetes Deployment
-
-**K8s-First Strategy:**
-
-* **Helm Charts:** Đóng gói tiêu chuẩn (Relay, Signaling, IAM, DB HA).
-* **High Availability:** Auto-scaling (HPA) cho Relay Nodes. Postgres Operator cho Database.
-* **GitOps:** ArgoCD. Rollback tự động khi lỗi.
-
-**Client Deployment (MDM):**
-
-| Tiêu chí | Windows (Intune/GPO) | macOS (Jamf/MDM) |
-|---|---|---|
-| **Cơ chế** | `Registry Key (HKLM\Software\Policies)` | `Managed Preferences (plist)` |
-| **Config** | `server_url`, `cert_pinning_hash`, `disable_camera` | (Same) |
-
-**Air-Gapped Delivery:**
-
-1. `docker save` toàn bộ hệ thống → `.tar.gz` (5GB).
-2. Load vào Harbor nội bộ.
-3. Local Helm cài đặt trỏ về Registry nội bộ.
-
-### 6.3 Production Config (5,000 CCU)
-
-```yaml
-# values-production-5k.yaml
-global:
-  domain: "chat.bank-enterprise.internal"
-  environment: "production"
-  imageRegistry: "registry.bank-internal.com"
-
-# RELAY NODES (Stateless Backbone)
-relay:
-  enabled: true
-  image: { repository: "terachat/enterprise-relay", tag: "v2.1.0-rust-optimized" }
-  replicaCount: 3
-  autoscaling:
-    enabled: true
-    minReplicas: 3
-    maxReplicas: 15
-    targetCPUUtilizationPercentage: 70
-  resources:
-    requests: { cpu: "500m", memory: "512Mi" }
-    limits: { cpu: "2000m", memory: "2Gi" }
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-              - key: app
-                operator: In
-                values: ["terachat-relay"]
-          topologyKey: "kubernetes.io/hostname"
-
-# SIGNALING (WebSockets)
-signaling:
-  enabled: true
-  replicaCount: 3
-  sessionAffinity: { enabled: true, timeoutSeconds: 3600 }
-
-# IDENTITY BRIDGE
-iam:
-  enabled: true
-  provider: "keycloak-sidecar"
-  config: { scimEnabled: true, syncInterval: "30s" }
-
-# STORAGE HA
-postgresql-ha:
-  enabled: true
-  postgresql: { repmgr: { enabled: true } }
-  pgpool: { enabled: true, replicaCount: 2 }
-
-redis-ha:
-  enabled: true
-  sentinel: { enabled: true }
-
-# SECURITY GATEWAY
-ingress:
-  enabled: true
-  annotations:
-    nginx.ingress.kubernetes.io/limit-rps: "100"
-    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"
+    Staff->>Core: 1. Soạn thảo & Ký nháp (User Token)
+    Core-->>Manager: 2. Notify: Chờ duyệt (Pending Review)
+    Manager->>Core: 3. Duyệt & Ký nháy (Review Token)
+    Core-->>Director: 4. Notify: Chờ ký số (Pending Sign)
+    Director->>Core: 5. Ký số chính thức (Director USB Token)
+    Core->>Core: 6. Timestamping & Lock Document
 ```
 
-**Deployment Command:**
+**Security Constraints:**
 
-```bash
-helm install terachat-enterprise ./charts/terachat \
-  --namespace terachat-prod \
-  --values values-production-5k.yaml \
-  --set postgresql-ha.postgresql.password=$(vault kv get -field=db_pass secret/terachat)
-```
+* **OAuth Token Rotation:** Token PayPal rotate tự động mỗi 30 ngày. Token cũ bị Crypto-Shred.
+* **Idempotency Key:** Mỗi lệnh thanh toán mang `sender_batch_id` duy nhất — chống replay/double-spend.
+* **Rate Limiting:** Giới hạn tổng giải ngân/ngày theo chính sách OPA (max $10,000/ngày/user).
+* **Biometric Gate:** Mọi lệnh thanh toán > $0 đều yêu cầu xác thực phần cứng.
 
-### 6.4 Flexible Infrastructure (BYOS & Cloud Hybrid)
+### 10.4 Enterprise Launchpad (Productivity Dock)
 
-**Triết lý:** TeraChat cung cấp Software, Doanh nghiệp tự chủ Hardware.
+**Smart Deep Link:**
 
-#### A. Option 1: On-Premise (Tận dụng phần cứng cũ)
-
-* **Đối tượng:** Nhà hàng có PC cũ, Cơ quan có Server phòng lạnh.
-* **Cơ chế:** Magic Script (1 dòng lệnh).
-
-```bash
-curl -sL install.terachat.com | sudo bash --token=[License_Key]
-```
-
-* **Kết quả:** Máy tính biến thành Private Node. Dữ liệu không bao giờ rời khỏi văn phòng.
-
-#### B. Option 2: Cloud Hybrid (Thuê VPS)
-
-* **Đối tượng:** Start-up, Shop online (không có IT).
-* **Cơ chế:**
-    1. User thuê VPS (DigitalOcean, FPT, Viettel).
-    2. Vào TeraChat Admin Console -> Nhập IP & SSH Key của VPS.
-    3. TeraChat Server -> SSH vào VPS -> Cài đặt Docker/K8s -> Bàn giao lại quyền quản trị.
-* **Kết quả:** Có Server riêng (Isolated Tenant) nhưng không cần biết kỹ thuật.
-
-### 6.5 Security Governance (Day-2 Ops)
-
-**Supply Chain Security:**
-
-* **SBOM:** File `spdx.json` liệt kê toàn bộ thư viện phụ thuộc.
-* **Reproducible Builds:** Binary Hash luôn trùng khớp với Source Code.
-
-**Database Strategy:**
-
-| Yêu cầu | Giải pháp |
+| Loại Link | Hành vi |
 |---|---|
-| **Zero-Downtime Migration** | Blue-Green Deploys cho DB. Hỗ trợ song song 2 Schema (n-1 và n). |
-| **Data Sovereignty** | Geo-Partitioning (Postgres): Dữ liệu GDPR ghim cứng tại Node tương ứng. |
+| `https://` | Gọi trình duyệt mặc định (Chrome/Safari) |
+| `scheme://` | Gọi OS đánh thức App tương ứng |
+| **Internal Link** | Mở ngay trong TeraChat (Trusted Domain) |
 
-**Operations Checklist:**
+**3 Lớp Bảo mật:**
 
-* **RASP:** Chống Debug/Dump RAM.
-* **UEBA:** ML phát hiện hành vi bất thường.
-* **Chaos Engineering:** Chaos Mesh cho diễn tập sự cố.
-* **Encrypted Search:** Blind Seer — tìm kiếm trên dữ liệu mã hóa.
-* **Legal Hold:** Đóng băng tài khoản đang bị điều tra.
+| Lớp | Cơ chế |
+|---|---|
+| **Airlock** | Bottom Sheet Popup xác nhận trước khi mở link ngoài. Domain nội bộ (Trusted) → Bypass. |
+| **Visual Trust** | Favicon Fetcher tự động (không cho user upload logo). Verified Badge cho Whitelist. Google Safe Browsing API scan. |
+| **Admin Policy** | Managed Bookmarks (Push). Blacklist Domain. Audit Log toàn bộ link add/remove/click. |
 
-**Air-Gapped Patching (BSDiff):** Chỉ tải Delta Patch (vài KB/MB). Client tự vá binary cũ sau khi verify chữ ký số.
+**Sandbox Isolation:** Mọi WebView chạy trong **Isolated Process** — Cookie/Storage Isolation.
 
-**GDPR-Compliant Audit Trail:** Sử dụng **Tamper-Proof Append-Only Log** (Merkle Tree + Write-Only DB). Mỗi entry chứa `Hash(Encrypted_Data)` + chữ ký số. Khi cần xóa dữ liệu theo GDPR → hủy khóa giải mã (Crypto-Shredding, Section 2.2). Log metadata vẫn giữ nguyên để audit.
+**App Distribution (Marketplace Integration):**
 
-### 6.6 Interoperability & ESB
+Launchpad đóng vai trò **"Tủ App" nội bộ** — chỉ hiển thị các app được Admin cho phép:
 
-**Bridges to Legacy Systems:**
+| Trạng thái | Icon | Hành vi |
+|---|---|---|
+| **Chưa tải** | ☁️ Cloud | Nhân viên click → Kéo `.tapp` từ Private Cluster về máy |
+| **Đã tải** | ✅ App Icon | Click → Khởi chạy trong WASM Sandbox (Section 5.1) |
+| **Cần cập nhật** | 🔄 Badge | Auto-update khi Admin push phiên bản mới |
 
-* **Inbound:** SAP/Email/CRM → Webhook → Gateway mã hóa → Push xuống App.
-* **Outbound:** Hành động trong TeraChat → Kích hoạt quy trình trong SAP hoặc gửi Email.
+**OPA Policy cho App Visibility (Section 3.3):**
 
-**Standard Compliance:**
+```rego
+package terachat.app_visibility
 
-* **Messaging:** MLS (Messaging Layer Security).
-* **Data Exchange:** NIEM (National Information Exchange Model).
+# Rule: Chỉ phòng Sale thấy Magic Logger
+allow_app["magic_logger"] {
+    input.user.attributes.department == "Sales"
+}
 
-**Adaptive Cards Engine:** JSON-driven Interactive UI.
+# Rule: App Kế toán chỉ trên máy có mã hóa ổ đĩa
+allow_app["finance_app"] {
+    input.user.attributes.department == "Finance"
+    input.device.disk_encryption == true
+}
 
-```json
-{
-  "type": "interactive_card",
-  "body": [
-    { "type": "text", "text": "YÊU CẦU THANH TOÁN", "weight": "heavy" },
-    { "type": "fact_set", "facts": [
-        { "title": "Vendor:", "value": "AWS Inc" },
-        { "title": "Amount:", "value": "$50,000" }
-      ]
-    }
-  ],
-  "actions": [
-    {
-      "type": "button",
-      "style": "positive",
-      "label": "DUYỆT NGAY (Windows Hello)",
-      "action_id": "approve_payment_123",
-      "require_biometric": true
-    }
-  ]
+# Rule: Admin thấy tất cả
+allow_app[app] {
+    input.user.attributes.role == "admin"
 }
 ```
 
-**Security Hardening:**
+### 10.5 Global Deduplication (CAS)
 
-| Layer | Giải pháp |
+**Content-Addressable Storage:**
+
+* **Logic:** Hệ thống tệp hoạt động như Object Store.
+* **Physical Filename:** Chuỗi SHA-256 của nội dung file.
+* **Database (SQLite):** Chỉ lưu metadata và đường dẫn tham chiếu (Symlink).
+
+**Quy trình Check-before-Write:**
+
+1. **Signaling Phase:** Client nhận Metadata (`File_Name`, `Content_Hash`, `Encrypted_Hash`).
+2. **Local Lookup:** `SELECT file_path FROM local_assets WHERE content_hash = ?`
+   * **Cache Hit:** Hủy tải xuống, hiển thị ngay bằng Symlink.
+   * **Cache Miss:** Tải từ Encrypted Log Streams hoặc P2P Torrent.
+
+**Advanced Dedup:**
+
+| Tính năng | Cơ chế |
 |---|---|
-| **Transport Auth** | mTLS (Mutual TLS) — Gateway chỉ nhận request từ Server có Certificate hợp lệ. |
-| **Extensibility** | Lua/WASM Plugins — IT viết script xử lý luồng tùy chỉnh. |
+| **Big Data Dedup** (Torrent) | Merkle Tree check trùng lặp từng Block. Auto-Seeding. |
+| **Packet Dedup** (Dual-Stack) | Bloom Filter trong RAM ghi `PacketID (UUID)` trong 10 phút. Drop gói trùng. |
 
----
+### 10.6 Rich File Preview
+
+**Engine: Extended WASM Sandbox**
+
+* **Renderers:** PDF (`pdf.js`), DOCX (`Mammoth.js`), Excel (`SheetJS`).
+* **Security:** Dynamic Watermark + Anti-Screenshot cho tất cả preview.
+* **Data Flow:** Streaming P2P từ RAM (không lưu file).
+
+### 10.7 Topic-based Threading
+
+**Architecture: Hierarchical Channel → Topic Model**
+
+* **Topic Thread:** Mỗi Channel tạo sub-channel gắn chủ đề cụ thể.
+* **MLS Key Hierarchy:** `Channel_Key → Topic_Key`.
+* **Search Index:** Thread metadata index trong SQLCipher.
+* **AI-Assisted Threading:** Bot AI (xem Section 5.8) tự động đặt tiêu đề và gợi ý Topic cho đoạn chat. User @mention AI Bot để kích hoạt.
+
+## PHẦN III: PHÂN KHÚC MOBILE APP (ANDROID / IOS)
+
+*Trạm phụ phục vụ di chuyển, đòi hỏi tối ưu pin và đánh thức từ xa.*
+
+### 11. Tech Stack & Architecture (Mobile)
+
+**React Native + Rust FFI**
+
+Kiến trúc Mobile sử dụng React Native để đồng bộ mã nguồn UI với team Web. Giao tiếp mã hóa được gọi trực tiếp xuống thư viện C-compatible FFI của Rust Core để giải mã E2EE cực nhanh (trung bình <5ms) mà không bị nghẽn ở lớp Bridge của JS Engine.
+
+### 12. UI/UX Constraints (Push-First)
+
+> **Mobile Context:** Khác với Data Density của Desktop, Mobile sử dụng triết lý "Vuốt trượt và Cảnh báo".
+
+* Thay vì List View hẹp dày đặc text, Mobile sử dụng Feed View hoặc Card View.
+* Command Palette được thay bằng Floating/Quick Action Button phù hợp thao tác 1 ngón tay.
+
+### 13. Mobile-Specific Transport (Wake-up Ping)
+
+**Giải quyết Bài toán Pin & Chạy nền (iOS/Android):**
+
+Mobile **KHÔNG** duy trì connection WebSocket 24/7 như Desktop để tránh sập pin.
+* Khi có tin nhắn đến (E2EE payload), Relay Server gửi một **Wake-up Ping** (Data Push Notification - cấu trúc rỗng metadata) qua APNS (Apple) hoặc FCM (Google).
+* Hệ điều hành sẽ đánh thức ứng dụng đang ngủ trong background (~30 giây).
+* App Tự động mở kết nối TCP với Mesh Network trực tiếp (không qua Cloud), lấy tin nhắn về và giải mã cục bộ bằng Private Key trong Secure Enclave.
+* Sau khi giải mã thành văn bản rõ, App tự phát 'Local Notification' lên màn hình khóa.
+
+### 14. Mobile Feature Modules
+
+#### 14.1 CRDT Offline Sync (Mobile Constraint)
+
+> **Context:** Mobile hạn chế bộ nhớ chạy nền và ổ cứng vật lý. Engine CRDT trên Mobile sẽ bị giới hạn chỉ lưu trữ một tập hợp State Vector nhỏ (ví dụ 30 ngài gần nhất). Khi có xung đột Merge phức tạp, Mobile ủy quyền (Offload) cho Desktop của chính User hoặc VPS rà soát thay.
+
+**Engine: Automerge CRDT Integration**
+
+* **Library:** Automerge CRDT (Rust library) tích hợp vào Rust Core.
+* **Ordering:** Mỗi document/message mang **Vector Clock** + **Causal ordering**.
+* **Merge Strategy:** Khi reconnect, merge tự động (thay vì "Last Write Wins").
+* **Scope:** Message ordering, Shared Document editing, Admin Policy sync.
+
+## PHẦN IV: HỆ SINH THÁI TÍCH HỢP (ECOSYSTEM & INTEGRATION)
+
+*Các đầu nối hệ thống với đối tác.*
 
 ## 7. Business API
 
@@ -2051,7 +2107,9 @@ client.on('workflow.approved', async (event) => {
 
 ---
 
-## Appendix
+## PHẦN V: PHỤ LỤC CHIẾN LƯỢC (APPENDIX)
+
+*Các chiến lược cốt lõi giữ chân khách hàng và doanh thu.*
 
 ### A. Threat Priority Matrix
 
