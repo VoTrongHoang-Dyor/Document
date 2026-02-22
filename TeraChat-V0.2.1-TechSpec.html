@@ -325,6 +325,7 @@
 <a href="#b-revised-roadmap-amputate-scale-up" class="nav-link" style="padding-left: 0.8rem;">B. Revised Roadmap (Amputate & Scale Up)</a>
 <a href="#c-ghi-chú-chiến-lược-kinh-doanh-ceo-lead-dev-directive" class="nav-link" style="padding-left: 0.8rem;">C. Ghi chú Chiến lược Kinh doanh (CEO & Lead Dev Directive)</a>
 <a href="#d-chiến-lược-mã-nguồn-open-core-license" class="nav-link" style="padding-left: 0.8rem;">D. Chiến lược Mã nguồn "Open-Core" & License</a>
+<a href="#e-chiến-lược-chống-phân-mảnh-phiên-bản-forced-upgrade" class="nav-link" style="padding-left: 0.8rem;">E. Chiến lược Chống Phân mảnh Phiên bản & Forced Upgrade</a>
 
 </nav>
 
@@ -3230,6 +3231,37 @@ client.on('workflow.approved', async (event) =&gt; {
 <li><strong>BSL (Business Source License):</strong> Dành cho một số thành phần khác. Mã nguồn có khả năng tham khảo (Source-Available), dùng miễn phí cho cá nhân, nhưng <strong>CẤM</strong> các tổ chức sử dụng để cạnh tranh trực tiếp trong 3-4 năm đầu. Sau thời gian đó mới tự chuyển thành Open Source hoàn toàn.</li>
 </ul>
 <p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Tóm lại:</strong> Chúng ta mở cửa phòng khách (Client, Thuật toán mã hóa) để khách hàng thấy nhà mình sạch sẽ và an toàn. Nhưng khóa chặt phòng bếp và két sắt (Admin Console, AI, Tích hợp doanh nghiệp). Kiến trúc này giải quyết cả bài toán minh bạch lẫn bài toán lợi nhuận.</p>
+<hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+<h3 id="e-chiến-lược-chống-phân-mảnh-phiên-bản-forced-upgrade">E. Chiến lược Chống Phân mảnh Phiên bản & Forced Upgrade</h3>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Lưu ý từ Kiến trúc sư trưởng (Lead Dev):</strong> Sự phân mảnh phiên bản (Version Fragmentation) là "căn bệnh kinh điển" của phần mềm On-Premise. Tuy nhiên, người dùng cuối không có quyền quyết định nâng cấp hay không, mà là IT Admin và Ban Giám đốc của họ. Để đảm bảo dòng tiền nâng cấp và phí bảo trì (SLA) chảy đều đặn, chúng ta dùng <strong>Kỷ luật Hệ thống và Nút thắt Kiến trúc</strong>.</p>
+<p>Dưới đây là 4 vũ khí kỹ thuật và thương mại để giải quyết triệt để sự phân mảnh:</p>
+<h4 id="1-nút-thắt-thương-mại-giấy-phép-thuê-bao-subscription-license">1. Nút thắt Thương mại: Giấy phép thuê bao (Subscription License)</h4>
+<p>Đừng bao giờ bán Giấy phép vĩnh viễn (Perpetual License). Mã nguồn có thể nằm trên VPS của họ, nhưng <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Admin Console</code> cần một <strong>License Key</strong> để hoạt động.</p>
+<ul>
+<li>License có thời hạn (ví dụ: 1 năm). Doanh nghiệp ngừng gia hạn, hệ thống không "chết" ngay lập tức (tránh rủi ro pháp lý), nhưng <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Admin Console</code> sẽ bị khóa tính năng: Không thêm được user, Module AI ngừng, Azure AD Sync lỗi.</li>
+<li><strong>Kết quả:</strong> Ép buộc phải gia hạn License. Khi gia hạn, họ tự động nhận được bản nâng cấp mới.</li>
+</ul>
+<h4 id="2-nút-thắt-bảo-mật-vũ-khí-hóa-các-bản-vá-security-deprecation">2. Nút thắt Bảo mật: Vũ khí hóa các bản vá (Security Deprecation)</h4>
+<p>Với khối Government/Banking, tuân thủ bảo mật (Compliance) là sinh tử.</p>
+<ul>
+<li>Mỗi khi ra phiên bản mới, ta công bố kèm các <strong>Bản vá lỗ hổng (CVE / Security Patch)</strong>. Ví dụ: <em>"Bản 2.0 vá lỗ hổng bộ nhớ CRDT. Các bản 1.x sẽ End-of-Life sau 90 ngày."</em></li>
+<li>IT Admin khi thấy thông báo này bắt buộc phải tự tải bản mới về cài lên VPS để tránh vi phạm bảo mật hệ thống mạng nội bộ.</li>
+</ul>
+<h4 id="3-nút-thắt-giao-thức-ép-buộc-bằng-sự-tương-thích-protocol-versioning">3. Nút thắt Giao thức: Ép buộc bằng sự Tương thích (Protocol Versioning)</h4>
+<p>Đây là đòn bẩy kỹ thuật mạnh nhất của kiến trúc Federated Clusters.</p>
+<ul>
+<li>Khi Chi nhánh A (v2.0) giao tiếp qua Vùng 2 (Cổng Hải Quan) với Chi nhánh B (v1.0), Federation Bridge sẽ báo lỗi <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Incompatible Protocol Version</code>.</li>
+<li><strong>Kết quả:</strong> Muốn các chi nhánh chat được với nhau (hoặc với đối tác), bắt buộc IT Admin phải đồng bộ nâng cấp tất cả lên phiên bản mới. Thuật toán mã hóa và định dạng payload <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Company_Key</code> không tương thích ngược.</li>
+</ul>
+<h4 id="4-giải-pháp-kỹ-thuật-local-ota-update-cập-nhật-tự-động-nội-bộ">4. Giải pháp Kỹ thuật: "Local OTA Update" (Cập nhật tự động nội bộ)</h4>
+<p>Cập nhật không tải từ Server của chúng ta, mà <strong>tự động từ VPS của khách hàng đến thiết bị Desktop App của nhân viên</strong>.</p>
+<ol>
+<li>IT Admin tải file Update (<code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">terachat-server-v2.docker</code>, <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">terachat-client-v2.exe</code>) về cụm VPS Private của họ. Ngay cả trong môi trường Air-Gapped.</li>
+<li>Tại <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Admin Console</code> trên VPS, Admin nhấn thả bản cập nhật.</li>
+<li>Server VPS lập tức bắn lệnh ép nâng cấp cho toàn bộ nhân viên qua LAN. Tốc độ kéo bản Update sẽ cực cao vì tải từ mạng nội bộ công ty.</li>
+<li>Nếu nhân viên từ chối nhấn nâng cấp, Client sẽ chối kết nối vào Cluster nội bộ.</li>
+</ol>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Tóm lại chiến lược Forced Upgrade:</strong> Chúng ta giao quyền kiểm soát mã nguồn và dữ liệu vật lý để lấy niềm tin. Nhưng chúng ta nắm giữ <strong>License Key, Chuẩn giao thức liên Vùng, và Nỗi sợ rủi ro bảo mật (CVE)</strong> để điều phối nhịp đập cập nhật và dòng tiền SLA của họ.</p>
     
     <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.9rem; text-align: center;">
         <p>TeraChat Enterprise OS &copy; 2026</p>

@@ -2164,3 +2164,43 @@ Rào cản pháp lý là vũ khí bảo vệ cuối cùng cho các Module Mở:
 * **BSL (Business Source License):** Dành cho một số thành phần khác. Mã nguồn có khả năng tham khảo (Source-Available), dùng miễn phí cho cá nhân, nhưng **CẤM** các tổ chức sử dụng để cạnh tranh trực tiếp trong 3-4 năm đầu. Sau thời gian đó mới tự chuyển thành Open Source hoàn toàn.
 
 > **Tóm lại:** Chúng ta mở cửa phòng khách (Client, Thuật toán mã hóa) để khách hàng thấy nhà mình sạch sẽ và an toàn. Nhưng khóa chặt phòng bếp và két sắt (Admin Console, AI, Tích hợp doanh nghiệp). Kiến trúc này giải quyết cả bài toán minh bạch lẫn bài toán lợi nhuận.
+
+---
+
+### E. Chiến lược Chống Phân mảnh Phiên bản & Forced Upgrade
+
+> **Lưu ý từ Kiến trúc sư trưởng (Lead Dev):** Sự phân mảnh phiên bản (Version Fragmentation) là "căn bệnh kinh điển" của phần mềm On-Premise. Tuy nhiên, người dùng cuối không có quyền quyết định nâng cấp hay không, mà là IT Admin và Ban Giám đốc của họ. Để đảm bảo dòng tiền nâng cấp và phí bảo trì (SLA) chảy đều đặn, chúng ta dùng **Kỷ luật Hệ thống và Nút thắt Kiến trúc**.
+
+Dưới đây là 4 vũ khí kỹ thuật và thương mại để giải quyết triệt để sự phân mảnh:
+
+#### 1. Nút thắt Thương mại: Giấy phép thuê bao (Subscription License)
+
+Đừng bao giờ bán Giấy phép vĩnh viễn (Perpetual License). Mã nguồn có thể nằm trên VPS của họ, nhưng `Admin Console` cần một **License Key** để hoạt động.
+
+* License có thời hạn (ví dụ: 1 năm). Doanh nghiệp ngừng gia hạn, hệ thống không "chết" ngay lập tức (tránh rủi ro pháp lý), nhưng `Admin Console` sẽ bị khóa tính năng: Không thêm được user, Module AI ngừng, Azure AD Sync lỗi.
+* **Kết quả:** Ép buộc phải gia hạn License. Khi gia hạn, họ tự động nhận được bản nâng cấp mới.
+
+#### 2. Nút thắt Bảo mật: Vũ khí hóa các bản vá (Security Deprecation)
+
+Với khối Government/Banking, tuân thủ bảo mật (Compliance) là sinh tử.
+
+* Mỗi khi ra phiên bản mới, ta công bố kèm các **Bản vá lỗ hổng (CVE / Security Patch)**. Ví dụ: *"Bản 2.0 vá lỗ hổng bộ nhớ CRDT. Các bản 1.x sẽ End-of-Life sau 90 ngày."*
+* IT Admin khi thấy thông báo này bắt buộc phải tự tải bản mới về cài lên VPS để tránh vi phạm bảo mật hệ thống mạng nội bộ.
+
+#### 3. Nút thắt Giao thức: Ép buộc bằng sự Tương thích (Protocol Versioning)
+
+Đây là đòn bẩy kỹ thuật mạnh nhất của kiến trúc Federated Clusters.
+
+* Khi Chi nhánh A (v2.0) giao tiếp qua Vùng 2 (Cổng Hải Quan) với Chi nhánh B (v1.0), Federation Bridge sẽ báo lỗi `Incompatible Protocol Version`.
+* **Kết quả:** Muốn các chi nhánh chat được với nhau (hoặc với đối tác), bắt buộc IT Admin phải đồng bộ nâng cấp tất cả lên phiên bản mới. Thuật toán mã hóa và định dạng payload `Company_Key` không tương thích ngược.
+
+#### 4. Giải pháp Kỹ thuật: "Local OTA Update" (Cập nhật tự động nội bộ)
+
+Cập nhật không tải từ Server của chúng ta, mà **tự động từ VPS của khách hàng đến thiết bị Desktop App của nhân viên**.
+
+1. IT Admin tải file Update (`terachat-server-v2.docker`, `terachat-client-v2.exe`) về cụm VPS Private của họ. Ngay cả trong môi trường Air-Gapped.
+2. Tại `Admin Console` trên VPS, Admin nhấn thả bản cập nhật.
+3. Server VPS lập tức bắn lệnh ép nâng cấp cho toàn bộ nhân viên qua LAN. Tốc độ kéo bản Update sẽ cực cao vì tải từ mạng nội bộ công ty.
+4. Nếu nhân viên từ chối nhấn nâng cấp, Client sẽ chối kết nối vào Cluster nội bộ.
+
+> **Tóm lại chiến lược Forced Upgrade:** Chúng ta giao quyền kiểm soát mã nguồn và dữ liệu vật lý để lấy niềm tin. Nhưng chúng ta nắm giữ **License Key, Chuẩn giao thức liên Vùng, và Nỗi sợ rủi ro bảo mật (CVE)** để điều phối nhịp đập cập nhật và dòng tiền SLA của họ.
