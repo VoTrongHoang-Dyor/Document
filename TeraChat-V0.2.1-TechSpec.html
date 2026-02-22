@@ -324,6 +324,7 @@
 <a href="#a-threat-priority-matrix" class="nav-link" style="padding-left: 0.8rem;">A. Threat Priority Matrix</a>
 <a href="#b-revised-roadmap-amputate-scale-up" class="nav-link" style="padding-left: 0.8rem;">B. Revised Roadmap (Amputate & Scale Up)</a>
 <a href="#c-ghi-chú-chiến-lược-kinh-doanh-ceo-lead-dev-directive" class="nav-link" style="padding-left: 0.8rem;">C. Ghi chú Chiến lược Kinh doanh (CEO & Lead Dev Directive)</a>
+<a href="#d-chiến-lược-mã-nguồn-open-core-license" class="nav-link" style="padding-left: 0.8rem;">D. Chiến lược Mã nguồn "Open-Core" & License</a>
 
 </nav>
 
@@ -3199,6 +3200,36 @@ client.on('workflow.approved', async (event) =&gt; {
 <li><strong>Lý do:</strong> Nếu cho Sale dùng Vùng 3 (VPS cá nhân) → Khi nghỉ việc, Sale mang theo toàn bộ dữ liệu khách hàng → Doanh nghiệp sẽ <strong>không mua</strong> gói Enterprise.</li>
 <li><strong>Enforcement:</strong> OPA Policy + UI restriction (ẩn option VPS cá nhân khi context là Customer Contact).</li>
 </ul>
+<hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+<h3 id="d-chiến-lược-mã-nguồn-open-core-license">D. Chiến lược Mã nguồn "Open-Core" & License</h3>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Lưu ý từ Kiến trúc sư trưởng (Lead Dev):</strong> Đối với các hệ thống yêu cầu bảo mật Zero-Trust như TeraChat, việc chọn mô hình mã nguồn sẽ quyết định sự sống còn và khả năng gọi vốn B2B SaaS. Chúng ta áp dụng chiến lược <strong>"Mở Lõi" (Open-Core Model)</strong>.</p>
+<h4 id="1-phân-tích-hai-thái-cực-đóng-vs-mở">1. Phân tích Hai thái cực: Đóng vs. Mở</h4>
+<ul>
+<li><strong>Mã nguồn đóng (Zalo, MS Teams) - Rủi ro Khủng hoảng niềm tin:</strong> Mặc dù bảo vệ tuyệt đối IP, khách hàng Enterprise (Chính phủ, Ngân hàng) không thể tự kiểm chứng Backdoor. Đòi hỏi hàng trăm ngàn USD chi phí Audit.</li>
+<li><strong>Mã nguồn mở hoàn toàn (Matrix, Signal) - Rủi ro Thuơng mại:</strong> Dễ bị các đối tác/công ty lớn "hút máu", sử dụng mã nguồn miễn phí để cạnh tranh trực tiếp mà không mang lại doanh thu.</li>
+</ul>
+<h4 id="2-chiến-lược-open-core-mở-lõi-đóng-tiện-ích">2. Chiến lược "Open-Core" (Mở lõi, Đóng tiện ích)</h4>
+<p>Để cân bằng giữa <strong>Niềm tin tuyết đối</strong> từ phía Enterprise và việc <strong>Bảo vệ tài sản thương mại</strong>, kiến trúc TeraChat bị phân tách nghiêm ngặt.</p>
+<p><strong>Phân hệ BẮT BUỘC MỞ (Chứng minh không có Backdoor):</strong></p>
+<ol>
+<li><strong>Core Cryptography (Rust Core):</strong> Toàn bộ thuật toán mã hóa E2EE, hàm băm, cách tạo <code style="color: var(--accent-pink); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">Company_Key</code>, và thuật toán đồng bộ CRDT offline.</li>
+<li><strong>Client Apps (Desktop - Windows, macOS, Linux):</strong> Mở mã nguồn của ứng dụng người dùng để họ tự compile (biên dịch) nếu muốn. Điều này chứng minh ứng dụng không thu thập telemetry ngầm.</li>
+<li><strong>Giao thức Federation (P2P / LAN P2P):</strong> Tài liệu hóa và mở mã nguồn giao thức truyền tải để chứng minh chúng ta không route dữ liệu qua server trung gian trái phép.</li>
+</ol>
+<p><strong>Phân hệ BẮT BUỘC ĐÓNG (Bảo vệ bí mật thương mại):</strong></p>
+<ol>
+<li><strong>Enterprise Admin Console:</strong> Đây là giá trị cốt lõi để thu tiền. Bao gồm toàn bộ bảng điều khiển dành cho IT Admin (quản trị phân quyền, OPA Policy, Vùng 2, tích hợp LDAP/Azure AD).</li>
+<li><strong>License Manager & Billing:</strong> Hệ thống kiểm tra License Key, đếm số lượng Seat (User), và giới hạn tính năng.</li>
+<li><strong>AI Modules (Magic Logger / RAG Context):</strong> Logic bóc tách dữ liệu AI cục bộ phải đóng chặt để bảo vệ thuật toán và đảm bảo lời hứa <em>không dùng dữ liệu khách hàng để train model</em>.</li>
+<li><strong>Deployment Scripts:</strong> Các kịch bản tự động scale HA TURN Cluster Kubernetes/Docker Swarm.</li>
+</ol>
+<h4 id="3-trói-chân-đối-thủ-bằng-giấy-phép-license">3. "Trói chân" đối thủ bằng Giấy phép (License)</h4>
+<p>Rào cản pháp lý là vũ khí bảo vệ cuối cùng cho các Module Mở:</p>
+<ul>
+<li><strong>AGPLv3 (Affero General Public License):</strong> Dùng cho lõi Core Cryptography và Federation. Buộc bất kỳ công ty nào dùng mã nguồn của ta để làm Cloud SaaS đều phải <em>mở ngược</em> toàn bộ mã nguồn của họ. Điều này ngăn chặn triệt để sự ăn cắp từ các đối thủ thương mại.</li>
+<li><strong>BSL (Business Source License):</strong> Dành cho một số thành phần khác. Mã nguồn có khả năng tham khảo (Source-Available), dùng miễn phí cho cá nhân, nhưng <strong>CẤM</strong> các tổ chức sử dụng để cạnh tranh trực tiếp trong 3-4 năm đầu. Sau thời gian đó mới tự chuyển thành Open Source hoàn toàn.</li>
+</ul>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Tóm lại:</strong> Chúng ta mở cửa phòng khách (Client, Thuật toán mã hóa) để khách hàng thấy nhà mình sạch sẽ và an toàn. Nhưng khóa chặt phòng bếp và két sắt (Admin Console, AI, Tích hợp doanh nghiệp). Kiến trúc này giải quyết cả bài toán minh bạch lẫn bài toán lợi nhuận.</p>
     
     <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.9rem; text-align: center;">
         <p>TeraChat Enterprise OS &copy; 2026</p>

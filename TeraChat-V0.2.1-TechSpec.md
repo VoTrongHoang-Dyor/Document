@@ -2127,3 +2127,40 @@ Tiền đầu tư (nếu có từ VC) tuyệt đối không đốt vào thuê Se
 * Sale/CSKH **BẮT BUỘC** dùng Vùng 2 (Federation) khi chat với khách hàng.
 * **Lý do:** Nếu cho Sale dùng Vùng 3 (VPS cá nhân) → Khi nghỉ việc, Sale mang theo toàn bộ dữ liệu khách hàng → Doanh nghiệp sẽ **không mua** gói Enterprise.
 * **Enforcement:** OPA Policy + UI restriction (ẩn option VPS cá nhân khi context là Customer Contact).
+
+---
+
+### D. Chiến lược Mã nguồn "Open-Core" & License
+
+> **Lưu ý từ Kiến trúc sư trưởng (Lead Dev):** Đối với các hệ thống yêu cầu bảo mật Zero-Trust như TeraChat, việc chọn mô hình mã nguồn sẽ quyết định sự sống còn và khả năng gọi vốn B2B SaaS. Chúng ta áp dụng chiến lược **"Mở Lõi" (Open-Core Model)**.
+
+#### 1. Phân tích Hai thái cực: Đóng vs. Mở
+
+* **Mã nguồn đóng (Zalo, MS Teams) - Rủi ro Khủng hoảng niềm tin:** Mặc dù bảo vệ tuyệt đối IP, khách hàng Enterprise (Chính phủ, Ngân hàng) không thể tự kiểm chứng Backdoor. Đòi hỏi hàng trăm ngàn USD chi phí Audit.
+* **Mã nguồn mở hoàn toàn (Matrix, Signal) - Rủi ro Thuơng mại:** Dễ bị các đối tác/công ty lớn "hút máu", sử dụng mã nguồn miễn phí để cạnh tranh trực tiếp mà không mang lại doanh thu.
+
+#### 2. Chiến lược "Open-Core" (Mở lõi, Đóng tiện ích)
+
+Để cân bằng giữa **Niềm tin tuyết đối** từ phía Enterprise và việc **Bảo vệ tài sản thương mại**, kiến trúc TeraChat bị phân tách nghiêm ngặt.
+
+**Phân hệ BẮT BUỘC MỞ (Chứng minh không có Backdoor):**
+
+1. **Core Cryptography (Rust Core):** Toàn bộ thuật toán mã hóa E2EE, hàm băm, cách tạo `Company_Key`, và thuật toán đồng bộ CRDT offline.
+2. **Client Apps (Desktop - Windows, macOS, Linux):** Mở mã nguồn của ứng dụng người dùng để họ tự compile (biên dịch) nếu muốn. Điều này chứng minh ứng dụng không thu thập telemetry ngầm.
+3. **Giao thức Federation (P2P / LAN P2P):** Tài liệu hóa và mở mã nguồn giao thức truyền tải để chứng minh chúng ta không route dữ liệu qua server trung gian trái phép.
+
+**Phân hệ BẮT BUỘC ĐÓNG (Bảo vệ bí mật thương mại):**
+
+1. **Enterprise Admin Console:** Đây là giá trị cốt lõi để thu tiền. Bao gồm toàn bộ bảng điều khiển dành cho IT Admin (quản trị phân quyền, OPA Policy, Vùng 2, tích hợp LDAP/Azure AD).
+2. **License Manager & Billing:** Hệ thống kiểm tra License Key, đếm số lượng Seat (User), và giới hạn tính năng.
+3. **AI Modules (Magic Logger / RAG Context):** Logic bóc tách dữ liệu AI cục bộ phải đóng chặt để bảo vệ thuật toán và đảm bảo lời hứa *không dùng dữ liệu khách hàng để train model*.
+4. **Deployment Scripts:** Các kịch bản tự động scale HA TURN Cluster Kubernetes/Docker Swarm.
+
+#### 3. "Trói chân" đối thủ bằng Giấy phép (License)
+
+Rào cản pháp lý là vũ khí bảo vệ cuối cùng cho các Module Mở:
+
+* **AGPLv3 (Affero General Public License):** Dùng cho lõi Core Cryptography và Federation. Buộc bất kỳ công ty nào dùng mã nguồn của ta để làm Cloud SaaS đều phải *mở ngược* toàn bộ mã nguồn của họ. Điều này ngăn chặn triệt để sự ăn cắp từ các đối thủ thương mại.
+* **BSL (Business Source License):** Dành cho một số thành phần khác. Mã nguồn có khả năng tham khảo (Source-Available), dùng miễn phí cho cá nhân, nhưng **CẤM** các tổ chức sử dụng để cạnh tranh trực tiếp trong 3-4 năm đầu. Sau thời gian đó mới tự chuyển thành Open Source hoàn toàn.
+
+> **Tóm lại:** Chúng ta mở cửa phòng khách (Client, Thuật toán mã hóa) để khách hàng thấy nhà mình sạch sẽ và an toàn. Nhưng khóa chặt phòng bếp và két sắt (Admin Console, AI, Tích hợp doanh nghiệp). Kiến trúc này giải quyết cả bài toán minh bạch lẫn bài toán lợi nhuận.
