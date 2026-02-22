@@ -323,7 +323,7 @@
 <a href="#appendix" class="nav-link" style="padding-left: 0.8rem;">Appendix</a>
 <a href="#a-threat-priority-matrix" class="nav-link" style="padding-left: 0.8rem;">A. Threat Priority Matrix</a>
 <a href="#b-revised-roadmap-amputate-scale-up" class="nav-link" style="padding-left: 0.8rem;">B. Revised Roadmap (Amputate & Scale Up)</a>
-<a href="#c-ghi-chú-chiến-lược-kinh-doanh-ceo-directive" class="nav-link" style="padding-left: 0.8rem;">C. Ghi chú Chiến lược Kinh doanh (CEO Directive)</a>
+<a href="#c-ghi-chú-chiến-lược-kinh-doanh-ceo-lead-dev-directive" class="nav-link" style="padding-left: 0.8rem;">C. Ghi chú Chiến lược Kinh doanh (CEO & Lead Dev Directive)</a>
 
 </nav>
 
@@ -3154,16 +3154,46 @@ client.on('workflow.approved', async (event) =&gt; {
 <td>Tech Support / MSP</td>
 </tr>
 </tbody></table></div>
-<h3 id="c-ghi-chú-chiến-lược-kinh-doanh-ceo-directive">C. Ghi chú Chiến lược Kinh doanh (CEO Directive)</h3>
-<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Ngày:</strong> 2026-02-12 | <strong>Nguồn:</strong> CEO & Lead Dev</p>
-<p><strong>1. Mô hình Kinh tế — "Zero Bandwidth Cost":</strong></p>
+<h3 id="c-ghi-chú-chiến-lược-kinh-doanh-ceo-lead-dev-directive">C. Ghi chú Chiến lược Kinh doanh (CEO & Lead Dev Directive)</h3>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Lưu ý từ Lead Dev:</strong> TeraChat không phải là ứng dụng nhắn tin giải trí B2C, nó là <strong>"Enterprise OS" (Hệ điều hành Doanh nghiệp)</strong>. Các tính năng nâng cao được gọi là <strong>"Enterprise Modules"</strong>.</p>
+<h4 id="1-lợi-thế-cốt-lõi-mô-hình-zero-bandwidth-cost">1. Lợi thế cốt lõi: Mô hình "Zero Bandwidth Cost"</h4>
+<p>Sự khác biệt lớn nhất của TeraChat so với Slack hay Microsoft Teams nằm ở kiến trúc <em>Federated Private Clusters</em>.</p>
 <ul>
-<li>Toàn bộ chi phí băng thông (vốn là chi phí lớn nhất của app chat) được đẩy về phía người dùng:</li>
-<li><strong>Doanh nghiệp</strong> tự trả tiền Private Cluster.</li>
-<li><strong>Cá nhân</strong> tự trả tiền VPS.</li>
-<li>TeraChat chỉ bán <strong>License phần mềm</strong> → Biên lợi nhuận (Gross Margin) cực cao.</li>
+<li><strong>Doanh nghiệp tự trả tiền cho hạ tầng lưu trữ và băng thông của họ</strong> (Private Cluster/VPS).</li>
+<li>Chúng ta <strong>chỉ bán License phần mềm</strong> và không tốn một xu nào cho chi phí duy trì Server trung tâm hay băng thông truyền tải file định dạng lớn (đã có LAN P2P lo).</li>
+<li><strong>Kết quả:</strong> Biên lợi nhuận gộp (Gross Margin) của chúng ta cực kỳ cao, có thể đạt trên 90%, do chi phí vận hành (OPEX) không phình to theo lượng người dùng.</li>
 </ul>
-<p><strong>2. Quy tắc Sale vs. Cá nhân:</strong></p>
+<h4 id="2-cấu-trúc-doanh-thu">2. Cấu trúc Doanh thu</h4>
+<p><strong>A. Phí cấp phép theo người dùng (Per-Seat License - B2B Subscription)</strong></p>
+<ul>
+<li>Nguồn thu chính. Thu phí theo dạng Subscription (thường là trả trước hàng năm) dựa trên số lượng nhân sự (Vd: $5/user/tháng).</li>
+<li>Doanh nghiệp nhập định danh (Azure AD/LDAP), hệ thống tự động map số lượng user để xuất hóa đơn.</li>
+</ul>
+<p><strong>B. Phí bảo trì và SLA (Service Level Agreement)</strong></p>
+<ul>
+<li>Thu phí bảo trì hàng năm (Maintenance Fee) để đảm bảo doanh nghiệp luôn nhận được các bản vá bảo mật mới nhất và hỗ trợ kỹ thuật (Tier 2/3).</li>
+<li>Với các cụm Server Private của chính phủ hay ngân hàng, thu phí triển khai on-premise ban đầu rất cao.</li>
+</ul>
+<p><strong>C. Phí dịch vụ nâng cao (Enterprise Add-ons / Marketplace)</strong></p>
+<ul>
+<li><strong>Tiện ích AI (Magic Logger / RAG):</strong> Tích hợp AI nội bộ tóm tắt tài liệu, phân tích hóa đơn ngành F&B hoặc văn bản hành chính mà <em>không đẩy dữ liệu ra ngoài để train model</em>. Tổ chức phải trả thêm phí cho module này.</li>
+<li><strong>Reseller Mode:</strong> Thu phí cấp phép cho các công ty IT Service (MSP) đi cài đặt và bảo trì TeraChat dạo cho các chuỗi nhà hàng, bán lẻ. Chúng ta ăn chia doanh thu với các đối tác này.</li>
+</ul>
+<h4 id="3-vòng-quay-dòng-tiền-cash-flow">3. Vòng quay Dòng tiền (Cash Flow)</h4>
+<ul>
+<li>Khách hàng Enterprise B2B luôn ký hợp đồng dài hạn (1-3 năm) và <strong>trả tiền trước (Upfront)</strong>.</li>
+<li>Vì không phải gánh chi phí Server/Cloud AWS hàng tháng cho khách, dòng tiền của chúng ta luôn ở trạng thái <strong>Dương (Positive Cash Flow)</strong> ngay từ ngày đầu có khách hàng. Dòng tiền này dùng trực tiếp để trả lương cho đội ngũ R&D.</li>
+</ul>
+<h4 id="4-chiến-lược-giải-ngân-khi-được-rót-vốn-funding-allocation">4. Chiến lược Giải ngân khi được Rót vốn (Funding Allocation)</h4>
+<p>Tiền đầu tư (nếu có từ VC) tuyệt đối không đốt vào thuê Server Cloud hay chạy quảng cáo, mà đầu tư vào <strong>Công nghệ Lõi và Niềm tin Bảo mật</strong>:</p>
+<ol>
+<li><strong>Audit & Chứng chỉ Bảo mật (20% vốn):</strong> Thuê bên thứ 3 (như Cure53) Pen-test kiến trúc mã hóa E2EE và Causal Order CRDT. Lấy chứng chỉ ISO 27001, SOC 2 Type II, GDPR Compliance.</li>
+<li><strong>Mở rộng Đội ngũ R&D Core (40% vốn):</strong> Tuyển chuyên gia C++, Rust để tối ưu CRDT Sync và thuật toán mã hóa, kiến trúc sư hệ thống phân tán. Hệ thống đa nền tảng cần code native chất lượng cao, chạy mượt mà không ngốn RAM.</li>
+<li><strong>Phát triển mạng lưới Đối tác & Reseller (25% vốn):</strong> Đào tạo chứng chỉ cho công ty IT nội địa (MSP) để đi bán và cài đặt cụm VPS TeraChat.</li>
+<li><strong>Quỹ dự phòng (15% vốn):</strong> Đảm bảo runway (thời gian sinh tồn) tối thiểu 18-24 tháng trong điều kiện kinh tế xấu.</li>
+</ol>
+<p style="padding-left: 1rem; border-left: 4px solid var(--border); color: var(--text-secondary);"><strong>Tổng kết:</strong> Mô hình này cực kỳ lean (tinh gọn) và thực dụng. Nhiệm vụ của đội Dev là viết ra mã nguồn bọc thép, hiệu suất cao. Nhiệm vụ của hệ thống kinh doanh là bán License. Chúng ta không bán dung lượng, chúng ta bán <strong>Sự tự chủ và Bảo mật tuyệt đối</strong>.</p>
+<h4 id="5-quy-tắc-sale-vs-cá-nhân">5. Quy tắc Sale vs. Cá nhân</h4>
 <ul>
 <li>Sale/CSKH <strong>BẮT BUỘC</strong> dùng Vùng 2 (Federation) khi chat với khách hàng.</li>
 <li><strong>Lý do:</strong> Nếu cho Sale dùng Vùng 3 (VPS cá nhân) → Khi nghỉ việc, Sale mang theo toàn bộ dữ liệu khách hàng → Doanh nghiệp sẽ <strong>không mua</strong> gói Enterprise.</li>

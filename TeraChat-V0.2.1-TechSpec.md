@@ -2077,18 +2077,52 @@ client.on('workflow.approved', async (event) => {
 | **Marketplace (5.10)** | **QUY HOẠCH** | Không cho User tự cài. Admin push app theo Department (Bộ phận). | Enterprise |
 | **Deployment (6.4)** | **ĐƠN GIẢN HÓA** | Xóa "Personal Mode". Thêm **"Reseller Mode"** (cho các công ty IT đi cài dạo cho nhà hàng). | Tech Support / MSP |
 
-### C. Ghi chú Chiến lược Kinh doanh (CEO Directive)
+### C. Ghi chú Chiến lược Kinh doanh (CEO & Lead Dev Directive)
 
-> **Ngày:** 2026-02-12 | **Nguồn:** CEO & Lead Dev
+> **Lưu ý từ Lead Dev:** TeraChat không phải là ứng dụng nhắn tin giải trí B2C, nó là **"Enterprise OS" (Hệ điều hành Doanh nghiệp)**. Các tính năng nâng cao được gọi là **"Enterprise Modules"**.
 
-**1. Mô hình Kinh tế — "Zero Bandwidth Cost":**
+#### 1. Lợi thế cốt lõi: Mô hình "Zero Bandwidth Cost"
 
-* Toàn bộ chi phí băng thông (vốn là chi phí lớn nhất của app chat) được đẩy về phía người dùng:
-  * **Doanh nghiệp** tự trả tiền Private Cluster.
-  * **Cá nhân** tự trả tiền VPS.
-* TeraChat chỉ bán **License phần mềm** → Biên lợi nhuận (Gross Margin) cực cao.
+Sự khác biệt lớn nhất của TeraChat so với Slack hay Microsoft Teams nằm ở kiến trúc *Federated Private Clusters*.
 
-**2. Quy tắc Sale vs. Cá nhân:**
+* **Doanh nghiệp tự trả tiền cho hạ tầng lưu trữ và băng thông của họ** (Private Cluster/VPS).
+* Chúng ta **chỉ bán License phần mềm** và không tốn một xu nào cho chi phí duy trì Server trung tâm hay băng thông truyền tải file định dạng lớn (đã có LAN P2P lo).
+* **Kết quả:** Biên lợi nhuận gộp (Gross Margin) của chúng ta cực kỳ cao, có thể đạt trên 90%, do chi phí vận hành (OPEX) không phình to theo lượng người dùng.
+
+#### 2. Cấu trúc Doanh thu
+
+**A. Phí cấp phép theo người dùng (Per-Seat License - B2B Subscription)**
+
+* Nguồn thu chính. Thu phí theo dạng Subscription (thường là trả trước hàng năm) dựa trên số lượng nhân sự (Vd: $5/user/tháng).
+* Doanh nghiệp nhập định danh (Azure AD/LDAP), hệ thống tự động map số lượng user để xuất hóa đơn.
+
+**B. Phí bảo trì và SLA (Service Level Agreement)**
+
+* Thu phí bảo trì hàng năm (Maintenance Fee) để đảm bảo doanh nghiệp luôn nhận được các bản vá bảo mật mới nhất và hỗ trợ kỹ thuật (Tier 2/3).
+* Với các cụm Server Private của chính phủ hay ngân hàng, thu phí triển khai on-premise ban đầu rất cao.
+
+**C. Phí dịch vụ nâng cao (Enterprise Add-ons / Marketplace)**
+
+* **Tiện ích AI (Magic Logger / RAG):** Tích hợp AI nội bộ tóm tắt tài liệu, phân tích hóa đơn ngành F&B hoặc văn bản hành chính mà *không đẩy dữ liệu ra ngoài để train model*. Tổ chức phải trả thêm phí cho module này.
+* **Reseller Mode:** Thu phí cấp phép cho các công ty IT Service (MSP) đi cài đặt và bảo trì TeraChat dạo cho các chuỗi nhà hàng, bán lẻ. Chúng ta ăn chia doanh thu với các đối tác này.
+
+#### 3. Vòng quay Dòng tiền (Cash Flow)
+
+* Khách hàng Enterprise B2B luôn ký hợp đồng dài hạn (1-3 năm) và **trả tiền trước (Upfront)**.
+* Vì không phải gánh chi phí Server/Cloud AWS hàng tháng cho khách, dòng tiền của chúng ta luôn ở trạng thái **Dương (Positive Cash Flow)** ngay từ ngày đầu có khách hàng. Dòng tiền này dùng trực tiếp để trả lương cho đội ngũ R&D.
+
+#### 4. Chiến lược Giải ngân khi được Rót vốn (Funding Allocation)
+
+Tiền đầu tư (nếu có từ VC) tuyệt đối không đốt vào thuê Server Cloud hay chạy quảng cáo, mà đầu tư vào **Công nghệ Lõi và Niềm tin Bảo mật**:
+
+1. **Audit & Chứng chỉ Bảo mật (20% vốn):** Thuê bên thứ 3 (như Cure53) Pen-test kiến trúc mã hóa E2EE và Causal Order CRDT. Lấy chứng chỉ ISO 27001, SOC 2 Type II, GDPR Compliance.
+2. **Mở rộng Đội ngũ R&D Core (40% vốn):** Tuyển chuyên gia C++, Rust để tối ưu CRDT Sync và thuật toán mã hóa, kiến trúc sư hệ thống phân tán. Hệ thống đa nền tảng cần code native chất lượng cao, chạy mượt mà không ngốn RAM.
+3. **Phát triển mạng lưới Đối tác & Reseller (25% vốn):** Đào tạo chứng chỉ cho công ty IT nội địa (MSP) để đi bán và cài đặt cụm VPS TeraChat.
+4. **Quỹ dự phòng (15% vốn):** Đảm bảo runway (thời gian sinh tồn) tối thiểu 18-24 tháng trong điều kiện kinh tế xấu.
+
+> **Tổng kết:** Mô hình này cực kỳ lean (tinh gọn) và thực dụng. Nhiệm vụ của đội Dev là viết ra mã nguồn bọc thép, hiệu suất cao. Nhiệm vụ của hệ thống kinh doanh là bán License. Chúng ta không bán dung lượng, chúng ta bán **Sự tự chủ và Bảo mật tuyệt đối**.
+
+#### 5. Quy tắc Sale vs. Cá nhân
 
 * Sale/CSKH **BẮT BUỘC** dùng Vùng 2 (Federation) khi chat với khách hàng.
 * **Lý do:** Nếu cho Sale dùng Vùng 3 (VPS cá nhân) → Khi nghỉ việc, Sale mang theo toàn bộ dữ liệu khách hàng → Doanh nghiệp sẽ **không mua** gói Enterprise.
