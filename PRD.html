@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Product Requirements Document</title>
+    <style>
+    
+        :root { --border: #333; --text-secondary: #888; --accent-blue: #60a5fa;
+                --accent-pink: #f472b6; --accent-purple: #a78bfa; --warning: #fb923c; }
+        body { font-family: sans-serif; color: #e2e8f0; background: #0f172a; display: flex; }
+        .sidebar { width: 260px; min-height: 100vh; padding: 1.5rem; background: #1e293b;
+                   position: sticky; top: 0; overflow-y: auto; }
+        .sidebar .brand { color: white; font-weight: bold; font-size: 1.1rem; text-decoration: none;
+                          display: block; margin-bottom: 1rem; }
+        .sidebar .brand span { color: #60a5fa; }
+        .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 0.25rem 0;
+                    font-size: 0.85rem; }
+        .nav-link:hover { color: white; }
+        .nav-header { color: #60a5fa; font-size: 0.75rem; text-transform: uppercase;
+                      letter-spacing: 0.1em; margin: 1rem 0 0.5rem; }
+        .main { flex: 1; padding: 2rem 3rem; max-width: 900px; }
+        h1,h2,h3,h4,h5,h6 { color: white; }
+        h1 { font-size: 2rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.5rem; margin-top: 2.5rem; color: #60a5fa; }
+        h3 { font-size: 1.2rem; color: #a78bfa; }
+        p { line-height: 1.7; color: #cbd5e1; }
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th { background: #1e293b; color: #60a5fa; padding: 0.6rem 1rem; text-align: left; }
+        td { padding: 0.6rem 1rem; border-bottom: 1px solid #334155; color: #cbd5e1; }
+        .tech-box { border-left: 4px solid #60a5fa; padding: 1rem; background: rgba(96,165,250,0.05);
+                    margin: 1rem 0; border-radius: 0 6px 6px 0; }
+        .tech-header { font-weight: bold; margin-bottom: 0.5rem; }
+        ul, ol { color: #cbd5e1; line-height: 1.8; }
+        
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Product Requirements Document</span></a>
+    <div class="nav-header">Table of Contents</div><a href="#terachat-v021-product-requirements-document-prd" class="nav-link" style="">TeraChat V0.2.1 — Product Requirements Document (PRD)</a>
+<a href="#table-of-contents" class="nav-link" style="padding-left:0.8rem;">TABLE OF CONTENTS</a>
+<a href="#1-product-vision-scope" class="nav-link" style="padding-left:0.8rem;">1. Product Vision & Scope</a>
+<a href="#11-product-vision" class="nav-link" style="padding-left:0.8rem;">1.1 Product Vision</a>
+<a href="#12-target-customers" class="nav-link" style="padding-left:0.8rem;">1.2 Target Customers</a>
+<a href="#13-product-positioning" class="nav-link" style="padding-left:0.8rem;">1.3 Product Positioning</a>
+<a href="#2-user-roles-access-model" class="nav-link" style="padding-left:0.8rem;">2. User Roles & Access Model</a>
+<a href="#21-ba-vùng-hạ-tầng-zone-architecture" class="nav-link" style="padding-left:0.8rem;">2.1 Ba Vùng Hạ tầng (Zone Architecture)</a>
+<a href="#22-phân-quyền-theo-vùng" class="nav-link" style="padding-left:0.8rem;">2.2 Phân quyền theo Vùng</a>
+<a href="#23-user-roles" class="nav-link" style="padding-left:0.8rem;">2.3 User Roles</a>
+<a href="#24-onboarding-flow-self-sovereign-non-custodial" class="nav-link" style="padding-left:0.8rem;">2.4 Onboarding Flow (Self-Sovereign, Non-Custodial)</a>
+<a href="#3-core-workflows-features" class="nav-link" style="padding-left:0.8rem;">3. Core Workflows & Features</a>
+<a href="#31-smart-approval-sequential-signing" class="nav-link" style="padding-left:0.8rem;">3.1 Smart Approval (Sequential Signing)</a>
+<a href="#32-magic-logger-smart-import" class="nav-link" style="padding-left:0.8rem;">3.2 Magic Logger (Smart Import)</a>
+<a href="#33-enterprise-launchpad-marketplace" class="nav-link" style="padding-left:0.8rem;">3.3 Enterprise Launchpad & Marketplace</a>
+<a href="#34-offline-first-instant-on" class="nav-link" style="padding-left:0.8rem;">3.4 Offline-First (Instant-on)</a>
+<a href="#35-federation-zone-2-vùng-2" class="nav-link" style="padding-left:0.8rem;">3.5 Federation (Zone 2 — Vùng 2)</a>
+<a href="#36-inter-org-federation-phase-2" class="nav-link" style="padding-left:0.8rem;">3.6 Inter-org Federation (Phase 2)</a>
+<a href="#4-uiux-philosophy-constraints" class="nav-link" style="padding-left:0.8rem;">4. UI/UX Philosophy & Constraints</a>
+<a href="#41-desktop-data-density-philosophy" class="nav-link" style="padding-left:0.8rem;">4.1 Desktop: Data Density Philosophy</a>
+<a href="#42-desktop-security-ui" class="nav-link" style="padding-left:0.8rem;">4.2 Desktop Security UI</a>
+<a href="#43-ai-sidecar-panel" class="nav-link" style="padding-left:0.8rem;">4.3 AI Sidecar Panel</a>
+<a href="#5-mobile-product" class="nav-link" style="padding-left:0.8rem;">5. Mobile Product</a>
+<a href="#51-mobile-philosophy-push-first" class="nav-link" style="padding-left:0.8rem;">5.1 Mobile Philosophy: Push-First</a>
+<a href="#52-mobile-vs-desktop-feature-matrix" class="nav-link" style="padding-left:0.8rem;">5.2 Mobile vs Desktop Feature Matrix</a>
+<a href="#53-kiosk-mode-fbretail" class="nav-link" style="padding-left:0.8rem;">5.3 Kiosk Mode (F&B/Retail)</a>
+<a href="#54-mobile-notifications" class="nav-link" style="padding-left:0.8rem;">5.4 Mobile Notifications</a>
+<a href="#6-ecosystem-integrations-user-perspective" class="nav-link" style="padding-left:0.8rem;">6. Ecosystem Integrations (User Perspective)</a>
+<a href="#61-chatops-devops-console" class="nav-link" style="padding-left:0.8rem;">6.1 ChatOps & DevOps Console</a>
+<a href="#62-pre-built-connectors-user-benefits" class="nav-link" style="padding-left:0.8rem;">6.2 Pre-built Connectors (User Benefits)</a>
+<a href="#63-identity-integration-user-transparent" class="nav-link" style="padding-left:0.8rem;">6.3 Identity Integration (User-transparent)</a>
+<a href="#7-product-roadmap" class="nav-link" style="padding-left:0.8rem;">7. Product Roadmap</a>
+<a href="#revised-roadmap-prioritized-actions" class="nav-link" style="padding-left:0.8rem;">Revised Roadmap (Prioritized Actions)</a>
+<a href="#use-case-selling-points" class="nav-link" style="padding-left:0.8rem;">Use Case Selling Points</a>
+
+</nav>
+
+<div class="main">
+    <h1 id="terachat-v021-product-requirements-document-prd">TeraChat V0.2.1 — Product Requirements Document (PRD)</h1>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Document Owner:</strong> Product Manager / CEO</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> Product, Design, QA, Business Stakeholders</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Scope:</strong> User-facing features, workflows, UX philosophy, access model, and product roadmap. For implementation details see <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TechSpec.md</code>. For business strategy see <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BusinessPlan.md</code>.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="table-of-contents">TABLE OF CONTENTS</h2>
+<ol>
+<li><a href="#1-product-vision--scope" style="color:var(--accent-blue);text-decoration:none;">Product Vision & Scope</a></li>
+<li><a href="#2-user-roles--access-model" style="color:var(--accent-blue);text-decoration:none;">User Roles & Access Model</a></li>
+<li><a href="#3-core-workflows--features" style="color:var(--accent-blue);text-decoration:none;">Core Workflows & Features</a></li>
+<li><a href="#4-uiux-philosophy--constraints" style="color:var(--accent-blue);text-decoration:none;">UI/UX Philosophy & Constraints</a></li>
+<li><a href="#5-mobile-product" style="color:var(--accent-blue);text-decoration:none;">Mobile Product</a></li>
+<li><a href="#6-ecosystem-integrations-user-perspective" style="color:var(--accent-blue);text-decoration:none;">Ecosystem Integrations (User Perspective)</a></li>
+<li><a href="#7-product-roadmap" style="color:var(--accent-blue);text-decoration:none;">Product Roadmap</a></li>
+</ol>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="1-product-vision-scope">1. Product Vision & Scope</h2>
+<h3 id="11-product-vision">1.1 Product Vision</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"TeraChat là Hệ điều hành Công việc (Operating System for Work) cho Enterprise và Chính phủ."</strong></p>
+<p>TeraChat <strong>không phải</strong> ứng dụng nhắn tin giải trí. Đây là <strong>công cụ lao động</strong> được thiết kế để giải quyết 4 bài toán khắt khe của tổ chức quy mô lớn:</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Bài toán</th>
+<th>Giải pháp TeraChat</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Chủ quyền dữ liệu (Data Sovereignty)</strong></td>
+<td>Mỗi chi nhánh tự host Private Cluster riêng. Dữ liệu không bao giờ rời khỏi ranh giới vật lý.</td>
+</tr>
+<tr>
+<td><strong>Độ trễ thấp (Low Latency)</strong></td>
+<td>Nhân viên trong cùng văn phòng kết nối trực tiếp vào Cluster nội bộ — không đi vòng qua Data Center trung tâm.</td>
+</tr>
+<tr>
+<td><strong>Sức chống chịu thảm họa</strong></td>
+<td>Khi Internet sập, chi nhánh vẫn hoạt động độc lập. Survival Link (BLE/Wi-Fi Mesh) duy trì liên lạc nội bộ.</td>
+</tr>
+<tr>
+<td><strong>Bảo mật Zero-Trust</strong></td>
+<td>Mọi dữ liệu mã hóa E2EE ngay tại thiết bị trước khi truyền. Server không bao giờ thấy nội dung plaintext.</td>
+</tr>
+</tbody></table></div>
+<h3 id="12-target-customers">1.2 Target Customers</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Segment</th>
+<th>Profile</th>
+<th>Key Pain Point</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Chính phủ / Cơ quan nhà nước</strong></td>
+<td>Văn phòng, Bộ, Cơ quan hành chính</td>
+<td>Tuân thủ dữ liệu nội địa, ký số công văn pháp lý</td>
+</tr>
+<tr>
+<td><strong>Ngân hàng / Tài chính</strong></td>
+<td>Bank, Fintech, Bảo hiểm</td>
+<td>Zero-Trust, compliance (SOC 2, ISO 27001), Smart Approval</td>
+</tr>
+<tr>
+<td><strong>Doanh nghiệp lớn (Large Enterprise)</strong></td>
+<td>Tập đoàn đa quốc gia, Manufaturing</td>
+<td>Liên lạc liên chi nhánh, bảo mật dữ liệu chiến lược</td>
+</tr>
+<tr>
+<td><strong>F&B / Bán lẻ (SME)</strong></td>
+<td>Nhà hàng, chuỗi cafe, shop thời trang</td>
+<td>Shared Device (Kiosk), Magic Logger (POS), không cần IT pro</td>
+</tr>
+</tbody></table></div>
+<h3 id="13-product-positioning">1.3 Product Positioning</h3>
+<ul>
+<li><strong>Bán theo mô hình B2B Enterprise</strong> — không có Consumer/Personal mode.</li>
+<li><strong>Data Sovereignty first</strong> — TeraChat không lưu dữ liệu của khách hàng trên server của mình.</li>
+<li><strong>Desktop-First</strong> — Desktop là trung tâm điều khiển. Mobile là trạm phụ (tier-2).</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="2-user-roles-access-model">2. User Roles & Access Model</h2>
+<h3 id="21-ba-vùng-hạ-tầng-zone-architecture">2.1 Ba Vùng Hạ tầng (Zone Architecture)</h3>
+<p>Hệ thống phân chia người dùng và ngữ cảnh giao tiếp vào 3 vùng hạ tầng rõ ràng:</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Vùng</th>
+<th>Tên</th>
+<th>Đối tượng sử dụng</th>
+<th>Đặc điểm</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Vùng 1</strong></td>
+<td>"Pháo Đài Số" (Intranet)</td>
+<td>Nhân viên nội bộ</td>
+<td>Dữ liệu không bao giờ rời Private Cluster. Chỉ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Org_ID</code> hợp lệ mới vào được.</td>
+</tr>
+<tr>
+<td><strong>Vùng 2</strong></td>
+<td>"Cổng Hải Quan" (Federation)</td>
+<td>Sale, CSKH làm việc với khách ngoài</td>
+<td><strong>Audit Log bắt buộc.</strong> Nhân viên nghỉ việc → mất quyền ngay. Dữ liệu khách ở lại với công ty.</td>
+</tr>
+</tbody></table></div>
+<div class="tech-box" style="border-color:var(--accent-purple);">
+<div class="tech-header" style="color:var(--accent-purple);">🔺 IMPORTANT</div>
+<p><strong>Enterprise Rule:</strong> Sale/CSKH <strong>BẮT BUỘC</strong> dùng Vùng 2 khi chat với khách hàng. Không được dùng kênh cá nhân. Đây là điều kiện then chốt để doanh nghiệp mua gói Enterprise.</p>
+</div>
+<h3 id="22-phân-quyền-theo-vùng">2.2 Phân quyền theo Vùng</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tính năng</th>
+<th>Vùng 1 (Nội bộ)</th>
+<th>Vùng 2 (Đối ngoại)</th>
+</tr></thead><tbody>
+<tr>
+<td>Chat mật (E2EE)</td>
+<td>✅</td>
+<td>✅ (có Audit Log)</td>
+</tr>
+<tr>
+<td>Smart Approval</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Gửi file nội bộ</td>
+<td>✅</td>
+<td>✅ (có DLP scan)</td>
+</tr>
+<tr>
+<td>Magic Logger (AI Import)</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Gửi file &gt; 1MB</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Screen Share</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Audio/Video Call</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+</tbody></table></div>
+<h3 id="23-user-roles">2.3 User Roles</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Role</th>
+<th>Quyền hạn chính</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Super Admin / IT Admin</strong></td>
+<td>Quản trị toàn hệ thống. Cấp phép app (Marketplace). Revoke user. WASM Doctor. SCIM sync.</td>
+</tr>
+<tr>
+<td><strong>Department Admin</strong></td>
+<td>Quản lý nhóm nội bộ. Cấu hình OPA Policy theo phòng ban.</td>
+</tr>
+<tr>
+<td><strong>Director / CFO / CEO</strong></td>
+<td>Ký số chính thức (Smart Approval). Ký ủy quyền (Delegation Certificate).</td>
+</tr>
+<tr>
+<td><strong>Manager / Supervisor</strong></td>
+<td>Duyệt file, phê duyệt chi tiêu. Giám sát DLP Quarantine.</td>
+</tr>
+<tr>
+<td><strong>Staff (F&B/Kiosk)</strong></td>
+<td>Shared Device (PIN login). Magic Logger POS.</td>
+</tr>
+<tr>
+<td><strong>Sale / CSKH</strong></td>
+<td>Bắt buộc Vùng 2. Magic Logger (chốt đơn từ Zalo/Telegram).</td>
+</tr>
+<tr>
+<td><strong>Developer (ISV)</strong></td>
+<td>Bot Builder SDK. Viết <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Mini-App cho Marketplace.</td>
+</tr>
+</tbody></table></div>
+<h3 id="24-onboarding-flow-self-sovereign-non-custodial">2.4 Onboarding Flow (Self-Sovereign, Non-Custodial)</h3>
+<ol>
+<li><strong>Admin nhập Email</strong> → Server gửi Invite Link (Signed JWT).</li>
+<li><strong>User click Link</strong> → App mở → App tạo Key Pair trong Secure Enclave → Ký xác nhận bằng Private Key.</li>
+<li><strong>Server verify</strong> → Bind <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Email ↔ Public Key</code> → User được cấp vào nhóm dựa trên Azure AD/LDAP.</li>
+<li><strong>Identity Lock:</strong> Tên hiển thị được khóa theo danh tính doanh nghiệp — user không tự đổi.</li>
+</ol>
+<p><strong>Shared Device Onboarding (F&B/Kiosk):</strong></p>
+<ul>
+<li>iPad được Register bằng Store Key Pair (định danh chi nhánh).</li>
+<li>Nhân viên đăng nhập bằng <strong>PIN 4-6 số</strong> hoặc <strong>Thẻ từ NFC</strong> → Session tồn tại trong ca làm việc.</li>
+<li>Logout = Ephemeral Session Key bị xóa.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="3-core-workflows-features">3. Core Workflows & Features</h2>
+<h3 id="31-smart-approval-sequential-signing">3.1 Smart Approval (Sequential Signing)</h3>
+<p><strong>Mô tả:</strong> Luồng phê duyệt tài liệu / chi tiêu tuần tự, mỗi bước yêu cầu xác thực sinh trắc học (FaceID, Windows Hello, USB Token).</p>
+<p><strong>Luồng phê duyệt:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Chuyên viên soạn thảo &amp; ký nháp
+        ↓
+Trưởng phòng xem xét &amp; ký nháy
+        ↓
+Giám đốc ký số chính thức (USB Token Gov)
+        ↓
+Hệ thống Timestamping &amp; Lock Document</code></pre></div>
+<p><strong>User Experience:</strong></p>
+<ul>
+<li>Chuyên viên soạn đơn → Bấm "Gửi duyệt" → Trưởng phòng nhận notification trong chat.</li>
+<li>Trưởng phòng xem Adaptive Card trong chat → Bấm "DUYỆT" → Windows Hello / FaceID xuất hiện → Xác thực → Ký xong.</li>
+<li>Giám đốc nhận notification → Cắm USB Token → Bấm "Ký số" → Văn bản được lock.</li>
+<li>Chuyên viên nhận notification "Đã được duyệt". Văn bản tự động lưu vào Archive.</li>
+</ul>
+<p><strong>Smart Approval Anti-Fraud:</strong></p>
+<ul>
+<li>Giao diện phê duyệt hiển thị trong <strong>System Biometric Prompt</strong> (tầng OS) — Malware không thể giả mạo.</li>
+<li>Thông tin giao dịch (số tiền, người nhận, mã đơn) hiển thị rõ ràng <strong>trong chính hộp thoại xác thực</strong>.</li>
+</ul>
+<p><strong>Fintech (Bonus/Payout):</strong></p>
+<ul>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">/bonus @employee [amount]</code> → Blind Fintech Bridge → PayPal Payouts API.</li>
+<li>OAuth Token lưu trong Secure Enclave (không bao giờ plaintext).</li>
+<li>Audit trail write-only cho mọi lệnh duyệt chi.</li>
+</ul>
+<h3 id="32-magic-logger-smart-import">3.2 Magic Logger (Smart Import)</h3>
+<p><strong>Concept:</strong> Biến TeraChat thành cổng nhập liệu tự động bằng AI OCR & Regex.</p>
+<p><strong>A. POS Edition (F&B/Retail)</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Bước</th>
+<th>Hành động</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>Nhân viên chụp ảnh Bill viết tay / Order trên giấy / Màn hình máy POS cũ</td>
+</tr>
+<tr>
+<td>2</td>
+<td>AI OCR phát hiện: món ăn, SKU, số lượng → Map vào Inventory System</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Tự động tạo phiếu nhập/xuất kho JSON → Nhân viên xem và bấm "Confirm"</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Kho tự trừ, CRM cập nhật. <strong>$0</strong> dữ liệu qua TeraChat Central</td>
+</tr>
+</tbody></table></div>
+<p><strong>B. Gov Edition (Administrative)</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Bước</th>
+<th>Hành động</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>Văn thư chụp ảnh công văn giấy / PDF scan</td>
+</tr>
+<tr>
+<td>2</td>
+<td>AI trích xuất: Số hiệu, Ngày ban hành, Người ký, Trích yếu</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Redact PII (che số điện thoại/địa chỉ riêng tư)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Index vào hệ thống lưu trữ → tự động routing tới người nhận đúng</td>
+</tr>
+</tbody></table></div>
+<p><strong>C. Cầu nối Zalo/Telegram/Facebook</strong></p>
+<p>Sale dùng App gốc (Zalo/Telegram/Facebook) chat với khách → <strong>Copy hội thoại hoặc chụp màn hình → Paste vào TeraChat</strong> → Magic Logger tự động OCR & lưu vào CRM.</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Kênh</th>
+<th>Yêu cầu Sale</th>
+<th>Kết quả</th>
+</tr></thead><tbody>
+<tr>
+<td>Zalo OA</td>
+<td>Paste vào TeraChat</td>
+<td>Magic Logger lo phần nhập liệu CRM. Dữ liệu thuộc công ty.</td>
+</tr>
+<tr>
+<td>Telegram</td>
+<td>Paste vào TeraChat</td>
+<td>↑</td>
+</tr>
+<tr>
+<td>Facebook Messenger</td>
+<td>Paste vào TeraChat</td>
+<td>↑</td>
+</tr>
+</tbody></table></div>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Dù Zalo/Facebook thay đổi API, TeraChat vẫn hoạt động 100% — không phụ thuộc bên thứ 3.</p>
+<h3 id="33-enterprise-launchpad-marketplace">3.3 Enterprise Launchpad & Marketplace</h3>
+<p><strong>Enterprise Launchpad (Productivity Dock)</strong></p>
+<p>Cửa sổ trung tâm điều khiển cho nhân viên, tương tự Dock trên macOS nhưng dành cho doanh nghiệp:</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Trạng thái App</th>
+<th>Icon</th>
+<th>Hành vi</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Chưa tải</strong></td>
+<td>☁️ Cloud</td>
+<td>Click → Tải <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> từ Private Cluster về máy</td>
+</tr>
+<tr>
+<td><strong>Đã cài</strong></td>
+<td>✅ App Icon</td>
+<td>Click → Khởi chạy trong WASM Sandbox</td>
+</tr>
+<tr>
+<td><strong>Cần cập nhật</strong></td>
+<td>🔄 Badge</td>
+<td>Tự cập nhật sau khi Admin push phiên bản mới</td>
+</tr>
+</tbody></table></div>
+<p><strong>Nguyên tắc Marketplace:</strong></p>
+<ul>
+<li><strong>Admin kiểm soát hoàn toàn</strong> — Nhân viên không tự cài app từ Internet.</li>
+<li>App được phân quyền theo phòng ban (OPA Policy): Sale chỉ thấy Magic Logger, Finance chỉ thấy Finance App.</li>
+<li>Mọi app phải được Admin duyệt trước khi xuất hiện trên Launchpad.</li>
+</ul>
+<p><strong>Quy trình Admin triển khai app:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>1. Admin vào TeraChat Marketplace → Tải gói .tapp
+2. Upload lên Admin Console → Hệ thống verify chữ ký &amp; tạo Manifest
+3. Admin cấu hình: "Chỉ phòng Sale thấy app này" (OPA Policy)
+4. Nhân viên Sale mở Launchpad → Thấy icon Magic Logger ☁️ → Click tải
+5. App chạy trong WASM Sandbox → PII được che trước khi gửi lên AI API</code></pre></div>
+<p><strong>Link Security (Airlock):</strong></p>
+<ul>
+<li>Link nội bộ (Trusted Domain) → Mở thẳng trong TeraChat.</li>
+<li>Link ngoài → Bottom Sheet xác nhận trước khi mở trình duyệt.</li>
+<li>Google Safe Browsing API scan tự động.</li>
+<li>Admin có thể push Managed Bookmarks, blacklist domain.</li>
+</ul>
+<h3 id="34-offline-first-instant-on">3.4 Offline-First (Instant-on)</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"App mở lên là chạy ngay. Nhân viên làm việc mọi lúc mọi nơi — dữ liệu âm thầm đồng bộ khi có mạng."</strong></p>
+<p><strong>User Experience:</strong></p>
+<ul>
+<li>Nhân viên mở app ngay cả khi không có Internet — app chạy dưới 500ms.</li>
+<li>Nhập dữ liệu offline → lưu cục bộ ngay, <strong>không có vòng xoay "Loading"</strong>.</li>
+<li>Khi Internet trở lại → Background Worker tự động sync, người dùng không cần làm gì.</li>
+<li>Xung đột dữ liệu giữa 2 người sửa cùng lúc → hiển thị dialog cho user chọn.</li>
+</ul>
+<p><strong>Survival Link (Mesh — khi Internet sập hoàn toàn):</strong></p>
+<ol>
+<li>App phát hiện mất Internet → hiển thị thông báo.</li>
+<li>User bấm <strong>[BẬT Mesh]</strong> → App tìm thiết bị đồng nghiệp qua Bluetooth.</li>
+<li>Tin nhắn text truyền qua BLE (relay nhảy cóc A→B→C).</li>
+<li>File lớn → chuyển sang Wi-Fi Direct (~30MB/s).</li>
+<li>Khi Internet trở lại → app tự tắt Mesh, đồng bộ về Server.</li>
+</ol>
+<h3 id="35-federation-zone-2-vùng-2">3.5 Federation (Zone 2 — Vùng 2)</h3>
+<p><strong>Kịch bản sử dụng:</strong> Sale của Công ty A chat với khách hàng Công ty B.</p>
+<p><strong>Cơ chế user flow:</strong></p>
+<ol>
+<li>Sale mở cửa sổ chat mới → Chọn "Liên hệ đối ngoại" → App tự chuyển sang Vùng 2.</li>
+<li>Audit Log tự động ghi lại toàn bộ cuộc hội thoại (metadata + encrypted hash).</li>
+<li>Sale nghỉ việc → IT Admin revoke quyền → Dữ liệu khách hàng <strong>ở lại với công ty</strong>, không theo người.</li>
+</ol>
+<p><strong>DLP Quarantine (khi file bị chặn):</strong></p>
+<ol>
+<li>Sale cố gửi file từ phòng R&D (bị cấm) → App hiển thị "File cần được duyệt".</li>
+<li>Supervisor nhận notification → Xem trước nội dung → Bấm "DUYỆT" (ký điện tử).</li>
+<li>Khi đủ số supervisor yêu cầu (M-of-N) → File được gửi đi.</li>
+</ol>
+<h3 id="36-inter-org-federation-phase-2">3.6 Inter-org Federation (Phase 2)</h3>
+<ul>
+<li><strong>Transport:</strong> Relay Server A ↔ Relay Server B qua mTLS + Sealed Sender.</li>
+<li><strong>Data Sovereignty:</strong> Mỗi org giữ dữ liệu riêng, chỉ forward E2EE payload qua Federation Bridge.</li>
+<li><strong>Audit toàn bộ:</strong> Mọi tin nhắn liên tổ chức → tamper-proof audit log.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="4-uiux-philosophy-constraints">4. UI/UX Philosophy & Constraints</h2>
+<h3 id="41-desktop-data-density-philosophy">4.1 Desktop: Data Density Philosophy</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"TeraChat là công cụ lao động, không phải mạng xã hội."</strong></p>
+<p><strong>Core Principles:</strong></p>
+<p><strong>1. Không có Chat Bubbles:</strong></p>
+<ul>
+<li>Loại bỏ giao diện bong bóng chat (Facebook/Zalo style) — tốn diện tích, hiển thị ít dòng.</li>
+<li>Sử dụng <strong>List View</strong> (Slack/Discord/Terminal style): Avatar nhỏ 24px, tên người gửi highlight màu, timestamp rõ ràng.</li>
+<li><strong>Target:</strong> Hiển thị 20 dòng tin nhắn trên màn hình 13 inch (so với 8 dòng của Zalo).</li>
+</ul>
+<p><strong>2. Command Palette (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cmd+K</code>):</strong></p>
+<ul>
+<li>Điều hướng keyboard-centric, không cần chuột.</li>
+<li>Slash Commands: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">/sign</code> (Trình ký), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">/approve</code> (Duyệt chi), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">/pos</code> (Mở máy bán hàng).</li>
+<li>Quick search channel, user, file.</li>
+</ul>
+<p><strong>3. App-in-Chat (Adaptive Widgets):</strong></p>
+<ul>
+<li>Không pop-up cửa sổ mới.</li>
+<li>Mini-App (Form duyệt, Báo cáo tồn kho) hiển thị dưới dạng <strong>Collapsible Card</strong> ngay trong dòng chat.</li>
+</ul>
+<p><strong>4. Topic-based Threading:</strong></p>
+<ul>
+<li>Mỗi Channel có Sub-threads gắn chủ đề cụ thể.</li>
+<li>AI Bot tự động đặt tiêu đề và gợi ý Topic cho đoạn chat.</li>
+</ul>
+<h3 id="42-desktop-security-ui">4.2 Desktop Security UI</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Feature</th>
+<th>UX Detail</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Smart Approval</strong></td>
+<td>System Biometric Prompt (FaceID/Windows Hello) hiển thị thông tin giao dịch rõ ràng.</td>
+</tr>
+<tr>
+<td><strong>File Preview</strong></td>
+<td>PDF/DOCX/Excel hiển thị với Dynamic Watermark (UserID + Time + IP). Print và Screenshot bị chặn.</td>
+</tr>
+<tr>
+<td><strong>AI Toggle</strong></td>
+<td>Nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[AI Mode: ON/OFF]</code> rõ ràng. Khi OFF → tuyệt đối không gửi data lên AI API.</td>
+</tr>
+<tr>
+<td><strong>Sensitive App</strong></td>
+<td>Khi mở <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nhạy cảm → Clipboard bị vô hiệu hóa, chặn keylogger global.</td>
+</tr>
+</tbody></table></div>
+<h3 id="43-ai-sidecar-panel">4.3 AI Sidecar Panel</h3>
+<p>Panel bên phải (tương tự Copilot), kích hoạt khi User chủ động:</p>
+<ul>
+<li><strong>Summarize:</strong> Tóm tắt cuộc họp / thread dài.</li>
+<li><strong>Translate:</strong> Dịch thuật đa ngôn ngữ.</li>
+<li><strong>Draft:</strong> Soạn thảo Email / báo cáo.</li>
+<li><strong>Thread Auto-Title:</strong> Tự động đặt tiêu đề cho Topic.</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Opt-in Only:</strong> User phải @mention Bot hoặc Add Bot vào nhóm. AI không tự ý đọc tin nhắn.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="5-mobile-product">5. Mobile Product</h2>
+<h3 id="51-mobile-philosophy-push-first">5.1 Mobile Philosophy: Push-First</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"Khác với Data Density của Desktop, Mobile sử dụng triết lý 'Vuốt trượt và Cảnh báo'."</strong></p>
+<ul>
+<li>Thay vì List View hẹp & đặc, Mobile dùng <strong>Feed View</strong> hoặc <strong>Card View</strong>.</li>
+<li>Command Palette thay bằng <strong>Floating / Quick Action Button</strong> phù hợp thao tác 1 ngón tay.</li>
+<li>Mobile là "tay chân tiền tuyến" — nhận thông báo, xem nhanh, phê duyệt nhanh.</li>
+</ul>
+<h3 id="52-mobile-vs-desktop-feature-matrix">5.2 Mobile vs Desktop Feature Matrix</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Feature</th>
+<th>Desktop</th>
+<th>Mobile</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Chat</strong></td>
+<td>List View, 20 dòng/màn hình</td>
+<td>Feed View / Card View</td>
+</tr>
+<tr>
+<td><strong>Smart Approval</strong></td>
+<td>Full signing flow</td>
+<td>Nhanh — xem & ký bằng FaceID</td>
+</tr>
+<tr>
+<td><strong>Magic Logger</strong></td>
+<td>Paste + OCR</td>
+<td>Chụp ảnh trực tiếp → OCR</td>
+</tr>
+<tr>
+<td><strong>Marketplace</strong></td>
+<td>WASM .tapp đầy đủ</td>
+<td>Adaptive Cards (JSON) — không chạy WASM</td>
+</tr>
+<tr>
+<td><strong>Offline</strong></td>
+<td>CRDT đầy đủ (toàn bộ lịch sử)</td>
+<td>CRDT 30 ngày gần nhất</td>
+</tr>
+<tr>
+<td><strong>Survival Link</strong></td>
+<td>Desktop = Super Node (Bridge)</td>
+<td>BLE/Wi-Fi Direct trực tiếp</td>
+</tr>
+<tr>
+<td><strong>Background</strong></td>
+<td>Luôn kết nối WebSocket</td>
+<td>Wake-up Ping (APNS/FCM)</td>
+</tr>
+</tbody></table></div>
+<h3 id="53-kiosk-mode-fbretail">5.3 Kiosk Mode (F&B/Retail)</h3>
+<p><strong>Vấn đề:</strong> Nhà hàng, cafe, shop thời trang dùng 1 iPad cho 3–4 nhân viên theo ca.</p>
+<p><strong>Giải pháp UX:</strong></p>
+<ul>
+<li>iPad hiển thị màn hình đăng nhập ca: ô nhập <strong>PIN 4-6 số</strong> hoặc <strong>quét Thẻ từ NFC</strong>.</li>
+<li>Sau khi nhập PIN → Session mở trong ca làm việc.</li>
+<li>Cuối ca → bấm "Kết thúc ca" → Session Key xóa → màn hình đăng nhập hiện lại.</li>
+<li>Audit Log ghi rõ nhân viên nào đã thao tác lệnh nào.</li>
+</ul>
+<p><strong>Use cases chính trên Kiosk:</strong></p>
+<ul>
+<li>Nhận/gửi Order từ bàn.</li>
+<li>Magic Logger: chụp ảnh Bill → tự động nhập kho.</li>
+<li>Nhận lệnh điều phối từ quản lý qua nhóm chat.</li>
+</ul>
+<h3 id="54-mobile-notifications">5.4 Mobile Notifications</h3>
+<ul>
+<li>Tin nhắn đến → Relay Server gửi Silent Push (không có nội dung, bảo mật tuyệt đối).</li>
+<li>iOS/Android OS đánh thức App → App tự kết nối, giải mã, hiển thị Local Notification: <strong>"Bạn có tin nhắn mới"</strong>.</li>
+<li>Nội dung tin nhắn <strong>không bao giờ</strong> xuất hiện trong payload push.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="6-ecosystem-integrations-user-perspective">6. Ecosystem Integrations (User Perspective)</h2>
+<h3 id="61-chatops-devops-console">6.1 ChatOps & DevOps Console</h3>
+<ul>
+<li>Grafana/Prometheus/Sentry alert → Adaptive Card trong nhóm DevOps.</li>
+<li>Nút bấm "Restart Server", "Rollback", "View Logs" ngay trên thẻ Card.</li>
+<li>Dev có thể SSH vào Server nội bộ qua <strong>TeraChat Tunnel</strong> — không cần VPN.</li>
+</ul>
+<h3 id="62-pre-built-connectors-user-benefits">6.2 Pre-built Connectors (User Benefits)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Connector</th>
+<th>Lợi ích cho User</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Jira/Linear</strong></td>
+<td>Tạo ticket từ chat, cập nhật trạng thái mà không rời TeraChat</td>
+</tr>
+<tr>
+<td><strong>SAP/Oracle ERP</strong></td>
+<td>Nhận thông báo PO, duyệt chi tiêu ngay trong chat</td>
+</tr>
+<tr>
+<td><strong>GitHub/GitLab</strong></td>
+<td>Nhận thông báo PR, CI/CD, merge notification</td>
+</tr>
+<tr>
+<td><strong>Google Workspace</strong></td>
+<td>Calendar invite, chia sẻ Drive file</td>
+</tr>
+<tr>
+<td><strong>Microsoft 365</strong></td>
+<td>Teams bridge, SharePoint, Azure AD sync</td>
+</tr>
+<tr>
+<td><strong>Salesforce</strong></td>
+<td>Thông báo lead mới, duyệt deal</td>
+</tr>
+<tr>
+<td><strong>Slack Bridge</strong></td>
+<td>2-way message sync trong giai đoạn migration</td>
+</tr>
+</tbody></table></div>
+<h3 id="63-identity-integration-user-transparent">6.3 Identity Integration (User-transparent)</h3>
+<ul>
+<li>Nhân viên đăng nhập 1 lần qua <strong>SSO (Google, M365, Slack)</strong> — không cần tạo tài khoản mới.</li>
+<li>Khi nhân viên bị xóa khỏi HR → quyền TeraChat bị thu hồi tự động (trong vòng 15 phút với SCIM, real-time với SCIM 2.0 Enterprise).</li>
+<li>Nhân viên nghỉ việc → không mang theo được dữ liệu khách hàng (Vùng 2).</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="7-product-roadmap">7. Product Roadmap</h2>
+<h3 id="revised-roadmap-prioritized-actions">Revised Roadmap (Prioritized Actions)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Module</th>
+<th>Action</th>
+<th>Rationale</th>
+<th>Audience</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Zone Architecture</strong></td>
+<td>SỬA — xóa logic Vùng 3 cá nhân</td>
+<td>Đơn giản hóa kiến trúc, focus Enterprise</td>
+<td>Tất cả</td>
+</tr>
+<tr>
+<td><strong>Identity (Shared Device Auth)</strong></td>
+<td>NÂNG CẤP</td>
+<td>Thêm chế độ 1 Device Key + PIN Session</td>
+<td>F&B / Bán lẻ</td>
+</tr>
+<tr>
+<td><strong>P2P Transport</strong></td>
+<td>GIỚI HẠN — chỉ LAN P2P</td>
+<td>Chặn P2P qua Internet (bảo mật + compliance)</td>
+<td>Văn phòng / Tech</td>
+</tr>
+<tr>
+<td><strong>Magic Logger</strong></td>
+<td>MỞ RỘNG — context RAG theo ngành</td>
+<td>Gov: Văn bản. F&B: Bill. POS: SKU.</td>
+<td>Tất cả</td>
+</tr>
+<tr>
+<td><strong>Marketplace</strong></td>
+<td>QUY HOẠCH — Admin-push theo Department</td>
+<td>Không cho User tự cài. OPA per-dept.</td>
+<td>Enterprise</td>
+</tr>
+<tr>
+<td><strong>Deployment</strong></td>
+<td>ĐƠN GIẢN HÓA — thêm Reseller Mode</td>
+<td>Xóa Personal Mode. MSP partner deploy.</td>
+<td>Tech Support / MSP</td>
+</tr>
+</tbody></table></div>
+<h3 id="use-case-selling-points">Use Case Selling Points</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Scenario</th>
+<th>TeraChat Advantage</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Chính phủ / Cứu hộ</strong></td>
+<td>Bão làm sập BTS → Survival Link. Đội cứu hộ điều phối + gửi bản đồ qua P2P.</td>
+</tr>
+<tr>
+<td><strong>Nhà máy</strong></td>
+<td>Xe container cắt cáp quang → Kho vận vẫn gửi lệnh xuất kho qua Mesh.</td>
+</tr>
+<tr>
+<td><strong>Văn phòng</strong></td>
+<td>Cháy nổ, mất điện → Nhân viên điểm danh + gửi sơ đồ thoát hiểm qua BLE.</td>
+</tr>
+<tr>
+<td><strong>F&B Chain</strong></td>
+<td>1 iPad cho 3 nhân viên → Kiosk Mode + Magic Logger = zero manual data entry.</td>
+</tr>
+<tr>
+<td><strong>Bank</strong></td>
+<td>Phê duyệt chi tiêu lớn → Smart Approval 3 cấp với ký số USB Token (Gov CA).</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Tài liệu này chỉ chứa product flows, UX và user requirements. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TechSpec.md</code> cho technical implementation. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BusinessPlan.md</code> cho chiến lược kinh doanh.</em></p>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+</body>
+</html>

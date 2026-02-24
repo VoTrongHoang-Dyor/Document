@@ -50,6 +50,42 @@ Dựa trên thực tiễn vận hành hạ tầng quy mô lớn, các tổ chứ
 
 > **Tổng kết:** Chúng ta không bắt dữ liệu phải chạy đường vòng. Chúng ta mang sức mạnh xử lý và lưu trữ đặt thẳng vào tay từng chi nhánh.
 
+### TỔNG THỂ KIẾN TRÚC: "LOCAL-FIRST PROCESSING & BLIND ROUTING"
+
+**(Xử lý tại thiết bị đầu cuối - Định tuyến mù tại Server)**
+
+Chiến lược cốt lõi để giải quyết cả 4 bài toán trên nằm ở nguyên tắc: **Server (VPS Return / Cluster) chỉ làm nhiệm vụ luân chuyển các gói Byte mã hóa. Mọi tác vụ nặng (Tìm kiếm, Lưu trữ lịch sử, Gỡ lỗi, Sinh khóa) đều bị đẩy về Client (Desktop App).**
+
+#### Trụ cột 1: Quản lý Danh tính & Phục hồi (Zero-Ticket Recovery)
+
+* **Giải pháp chọn lọc:** **Multi-Device Cross-Signing (Mặc định)** kết hợp **Mailbox Re-binding (Dự phòng)**.
+* **Vai trò trong Combo:** Giải quyết bài toán ổ cứng chết và TPM bị khóa. Thay vì ép IT Admin giải quyết ticket reset pass, chúng ta ép nhân viên dùng 2 thiết bị (Laptop + Mobile). Khi 1 máy hỏng, thiết bị còn lại sẽ ký xác thực (Cross-Sign) cho thiết bị mới và đồng bộ lại khóa. Nếu mất cả 2 máy, IT Admin chỉ việc thu hồi (Revoke) và cấp Invite Token mới (Mailbox Re-binding), chấp nhận nhân viên mất tin nhắn cũ hơn 14 ngày.
+* **Tác dụng cộng hưởng:** Không cần lưu Key trên Server, không cần Seed Phrase phức tạp cho nhân viên thường, giải phóng 90% thời gian cho IT Admin.
+
+#### Trụ cột 2: Cỗ máy Truy vấn Cục bộ (Zero-Knowledge Search)
+
+* **Giải pháp chọn lọc:** **Client-Side Indexing (SQLite FTS5)** làm lõi tĩnh, kết hợp **Local Edge RAG (Vector DB)** làm lõi ngữ nghĩa.
+* **Vai trò trong Combo:** Do Server "mù", Desktop App sẽ tự động chạy Background Worker lập chỉ mục toàn bộ tin nhắn đã giải mã ngay trên ổ cứng máy tính bằng FTS5. Hỗ trợ sếp tìm kiếm cực nhanh (millisecond) bằng từ khóa. Các bản báo cáo phức tạp sẽ được chạy qua Embedding Model nhúng sẵn (WebAssembly/Rust) để tìm theo ngữ nghĩa (Magic Logger).
+* **Tác dụng cộng hưởng:** Không một metadata nào rò rỉ lên mạng. Tận dụng triệt để tài nguyên (CPU/RAM) dư thừa của Desktop/Laptop doanh nghiệp theo đúng định hướng "Desktop-First".
+
+#### Trụ cột 3: Cô lập Dữ liệu Ngoại lai (Legacy Vault)
+
+* **Giải pháp chọn lọc:** **Read-Only Encrypted Local Vault** (Kho lưu trữ cách ly).
+* **Vai trò trong Combo:** Giải quyết rác từ Slack. Toàn bộ file Export của Slack được mã hóa 1 lần duy nhất bằng `Archive_Key` thành một file `.sqlite.enc` và đẩy về máy Client. Lịch sử Slack sẽ nằm ở một Tab "Archive" riêng biệt và được tìm kiếm bằng chính **Cỗ máy FTS5 (Trụ cột 2)**.
+* **Tác dụng cộng hưởng:** Giữ cho luồng tin nhắn E2EE (MLS Epochs) hiện tại của TeraChat cực kỳ sạch sẽ và tuân thủ chuẩn mật mã. Không bắt Server phải gánh hàng chục GB dữ liệu rác không được mã hóa chuẩn.
+
+#### Trụ cột 4: Giám sát Vận hành Vô hình (Blind Observability)
+
+* **Giải pháp chọn lọc:** **Sanitized Crash Dumps (Mã hóa bằng Admin PubKey)** kết hợp **WASM Doctor (Deep Dive)**.
+* **Vai trò trong Combo:** Khi Sandbox hoặc MLS crash do xử lý lượng lớn dữ liệu (ví dụ như lúc đang chạy Trụ cột 2 hoặc 3), Client sẽ xóa sạch toàn bộ nội dung text của Log, chỉ chừa lại mã lỗi hệ thống và Stack Trace. Gói này được mã hóa riêng cho IT Admin. Nếu cần debug sâu, Admin bắn script "WASM Doctor" xuống tận máy Client để tự động sửa lỗi (như ép Re-keying nhánh MLS).
+* **Tác dụng cộng hưởng:** Đội Dev có số liệu Telemetry real-time để vá bug mà không bao giờ chạm được vào nội dung tin nhắn của khách hàng. Tuân thủ tuyệt đối chuẩn bảo mật E2EE.
+
+#### TẠI SAO COMBO NÀY LÀ HOÀN HẢO? (Lập luận của Tech Lead)
+
+1. **Tính Nhất quán về Kiến trúc (Architectural Integrity):** Tất cả 4 giải pháp đều phục vụ triết lý "Client Heavy, Server Light". Server VPS của TeraChat Alpha sẽ tốn chi phí cực thấp (chỉ tốn băng thông - Zero Bandwidth Cost model), biên lợi nhuận cao, vì chúng ta ép máy tính của khách hàng tự làm mọi việc (Indexing, RAG, Storing Slack Vault, Sanitizing Logs).
+2. **Bảo mật Không Thỏa hiệp (Zero Compromises):** Cả 4 giải pháp đều đảm bảo `Company_Key` và Plaintext không bao giờ rời khỏi thiết bị (Secure Enclave). Ngay cả Log báo lỗi cũng được mã hóa E2EE, và lịch sử ngoại lai (Slack) bị khóa chết trong một Vault riêng.
+3. **Vận hành Trơn tru (Smooth Ops):** IT Admin có đủ đồ chơi (WASM Doctor, Encrypted Telemetry, JWT Re-binding) để quản lý hệ thống khổng lồ mà không cần phá vỡ tính riêng tư của bất kỳ ai.
+
 ---
 
 ## 1. Kiến trúc Hệ thống
@@ -957,7 +993,17 @@ Tận dụng phần cứng có sẵn (Laptop, Phone) để tạo mạng lưới 
 | **Signal Plane** | **BLE Advertising** (Bluetooth 5.0) | Lan truyền tin nhắn text (Gossip Protocol), Tìm kiếm thiết bị, Bắt tay (Handshake) | ~2 Mbps (Lý thuyết) <br> Payload cực nhỏ | ~10-100m |
 | **Data Plane** | **Wi-Fi Direct / AWDL** | Vận chuyển file lớn (Ảnh, PDF) sau khi đã bắt tay qua BLE | ~200 Mbps | ~50-100m |
 
-#### B. Module: "Survival Link" Core
+#### B. Cơ chế Kích hoạt: Trigger Tự động kết hợp Xác nhận (User-Prompted Fallback)
+
+Thay vì âm thầm tự bật tín hiệu Mesh có thể làm tiêu hao pin và quá nhiệt, TeraChat đóng vai trò "người tư vấn" và nhường quyền quyết định cho người dùng ("User-in-the-loop"). Quy trình diễn ra như sau:
+
+* **Bước 1: Giám sát thụ động (Passive Detection):** Rust Core chạy ngầm một bộ đếm. Khi phát hiện mất kết nối WebSocket với máy chủ Relay vượt quá 15 giây (Timeout), hệ thống xác nhận thiết bị đã bị cô lập khỏi Internet. Lúc này, ăng-ten Bluetooth/Wi-Fi Direct **vẫn đang tắt** để bảo toàn năng lượng.
+* **Bước 2: Kích hoạt Hộp thoại (The Prompt):** Ứng dụng đẩy một Thông báo nội bộ (Local Notification) lên màn hình:
+  > *"Mất kết nối Internet. Kích hoạt mạng Sinh tồn (Mesh) để duy trì liên lạc với đồng nghiệp xung quanh? [BẬT] / [BỎ QUA]"*
+* **Bước 3: Người dùng Gạt công tắc (Execution):** Chỉ khi người dùng chủ động bấm **[BẬT]**, Rust Core mới ra lệnh mở ăng-ten, bắt đầu rà quét (BLE Scanning) và phát tín hiệu (Advertising) để tìm kiếm các thiết bị đồng nghiệp lân cận. Nếu họ chọn [BỎ QUA], app sẽ chìm vào trạng thái ngủ đông hoàn toàn.
+* **Bước 4: Tự động Thu hồi (Auto-Teardown):** Rust Core thỉnh thoảng sẽ gửi một ping siêu nhỏ kiểm tra 4G/Wi-Fi công cộng. Ngay khi có Internet trở lại, hệ thống hiển thị thông báo *"Đã kết nối lại Internet"*, tự động ngắt toàn bộ sóng Mesh và chuyển về luồng giao tiếp E2EE qua máy chủ Relay để làm mát thiết bị.
+
+#### C. Module: "Survival Link" Core
 
 **1. Text Message (The Signal - BLE Flooding)**
 
@@ -975,23 +1021,14 @@ Quy trình "Mồi lửa Bluetooth - Bùng nổ Wi-Fi":
 * **B4: Tunneling (Wi-Fi):** B kết nối vào A, tải file qua TCP/IP nội bộ (~30MB/s).
 * **B5: Teardown:** Ngắt Wi-Fi ngay lập tức để tiết kiệm pin. Quay về lắng nghe BLE.
 
-**3. Routing Optimization (Prim's Algorithm - MST)**
+#### D. Enterprise Features (Control & Audit)
 
-* **Bài toán:** Khi hàng trăm thiết bị (nhân viên trong nhà máy) cùng phát sóng tín hiệu, việc broadcast file 5MB sẽ gây "bão mạng" (broadcast storm), làm nghẽn băng thông và cạn pin thiết bị.
-* **Thuật toán:** Áp dụng **Prim's Algorithm** để xây dựng **Cây khung nhỏ nhất (Minimum Spanning Tree - MST)** cho mạng Mesh cục bộ.
-* **Thực thi:**
-    1. **Weight Calculation:** Trọng số cạnh dựa trên RSSI (độ mạnh tín hiệu) và Battery Level của thiết bị trung gian.
-    2. **Tree Construction:** Từ Super Node (Máy chủ/Laptop admin), chọn các kết nối tốt nhất để phủ sóng toàn mạng với tổng chi phí năng lượng thấp nhất.
-    3. **Multicast:** Dữ liệu chỉ đi theo các cạnh của cây MST, loại bỏ hoàn toàn các gói tin trùng lặp (Redundant Packets).
+Khác với các app Mesh dân dụng (Bridgefy), TeraChat Survival Link loại bỏ rào cản Geofencing. Việc dựa lưng vào Thuật toán Prim cùng hệ thống Chứng chỉ số giúp hệ thống giải quyết triệt để vấn đề quá nhiệt (Thermal Throttling) và tụt pin, bảo đảm trải nghiệm minh bạch mà không gây rủi ro bảo mật:
 
-#### C. Enterprise Features (Control & Audit)
-
-Khác với các app Mesh dân dụng (Bridgefy), TeraChat Survival Link được "Hardened" cho doanh nghiệp:
-
-| Tính năng | Mô tả | Lợi ích |
+| Lớp khiên / Tính năng | Mô tả | Lợi ích |
 |---|---|---|
-| **Cert-Based Auth** | Chỉ thiết bị có **Certificate Doanh nghiệp** mới được tham gia Mesh. | Chống người lạ/hacker trà trộn vào mạng lưới nội bộ. |
-| **Geo-fencing** | Admin cấu hình chỉ cho phép P2P tại tọa độ GPS văn phòng. | Ngăn chặn rò rỉ dữ liệu ra ngoài khu vực kiểm soát. |
+| **Lớp 1: Cert-Based Auth** | Chỉ thiết bị có **Certificate Doanh nghiệp** mới được tham gia Mesh. | Chống người lạ/hacker trà trộn vào mạng lưới nội bộ. Dù bật Mesh ở sân bay, các thiết bị lạ xung quanh quét được sóng BLE cũng sẽ bị Rust Core từ chối bắt tay (Handshake) ngay ở vòng ngoài, không lãng phí CPU xử lý. |
+| **Lớp 2: Thuật toán Prim (MST)** | Áp dụng **Prim's Algorithm** để xây dựng **Cây khung nhỏ nhất (Minimum Spanning Tree)**. Trọng số cạnh dựa trên RSSI (độ mạnh tín hiệu) và Battery Level của thiết bị trung gian. | Dữ liệu chỉ chảy qua các "cạnh" của cây khung này, loại bỏ hoàn toàn các gói tin trùng lặp, không để dữ liệu bắn loạn xạ gây bão broadcast (Broadcast storm) khi có nhiều nhân viên đứng gần nhau ở ngoài công ty. |
 | **Post-Disaster Sync** | Log chat Offline được lưu tạm (Encrypted). Khi có Internet, tự động đồng bộ về Server. | Đảm bảo tính tuân thủ (Audit Trail) ngay cả khi mất mạng. |
 
 #### D. Use Cases (Selling Points)
@@ -1539,6 +1576,165 @@ Nếu bắt buộc render HTML phức tạp, sử dụng `iframe` sandbox với 
 | **Băng thông** | Mỗi máy tải riêng từ CDN | 1 lần tải về Cluster, phân phối nội bộ |
 | **Rollback** | Khó | Admin giữ bản cũ trên Cluster |
 
+#### F. Ranh giới Kiến trúc: Core App vs. App Packages
+
+> **Lead Dev's Directive:** Chúng ta tuyệt đối không thể để một plugin của bên thứ ba, hay thậm chí của nội bộ, chọc thẳng vào vùng nhớ chứa Master Key hay luồng mã hóa E2EE của TeraChat. Kiến trúc này hoạt động như một **Hệ điều hành thu nhỏ (Operating System for Work)**, trong đó ranh giới giữa Kernel và User-space phải bất khả xâm phạm.
+
+##### 1. Phân định Ranh giới (The Boundaries)
+
+Toàn bộ hệ thống chia thành hai tầng cô lập hoàn toàn:
+
+| Tầng | Tên gọi | Công nghệ | Quyền hạn |
+|---|---|---|---|
+| **Tầng Lõi** | **TeraChat Core (The Fortress)** | Rust + Tauri | Độc quyền kiểm soát hạ tầng mạng (Federated Clusters), mã hóa (Kyber/Dilithium, MLS), quản lý khóa (Hardware-Backed Signing), và CRDT Sync. Mọi payload đều được mã hóa E2EE ngay tại thiết bị. |
+| **Tầng Tiện ích** | **Utility App Packages (`.tapp`)** | WebAssembly (WASM) Sandbox | Chỉ chứa UI Assets (HTML/CSS/JS) và WASM bytecode cho logic ứng dụng. **Không có đặc quyền hệ thống.** |
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  TeraChat Core (The Fortress)               │
+│   ┌───────────┐  ┌──────────────┐  ┌───────────────────┐   │
+│   │  Network  │  │  Crypto E2EE │  │  Key Management   │   │
+│   │ (Clusters)│  │(Kyber/MLS)   │  │ (Secure Enclave)  │   │
+│   └───────────┘  └──────────────┘  └───────────────────┘   │
+│                          ▲                                  │
+│                   API Gateway (IPC)                         │
+│                          │                                  │
+├──────────────────────────┼──────────────────────────────────┤
+│              WASM Sandbox Boundary                          │
+├──────────────────────────┼──────────────────────────────────┤
+│   ┌───────────┐  ┌───────┴──────┐  ┌───────────────────┐   │
+│   │  .tapp A  │  │   .tapp B    │  │     .tapp C       │   │
+│   │(Magic Log)│  │  (Finance)   │  │   (Custom CRM)    │   │
+│   └───────────┘  └──────────────┘  └───────────────────┘   │
+│              Utility App Packages (Zero-Trust)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+##### 2. Cô lập Môi trường Thực thi (Zero-Trust Execution & Storage Isolation)
+
+Mọi tiện ích `.tapp` đều hoạt động trong mô hình **Zero-Trust** — mặc định không được tin tưởng và không có quyền gì trừ những gì đã được cấp phép rõ ràng.
+
+**Runtime Sandbox:**
+
+| Lớp | Cơ chế | Bảo vệ chống |
+|---|---|---|
+| **WASM Container** | App bị giam trong WebAssembly VM, không có syscall trực tiếp tới OS | Truy cập hệ thống file, mạng tùy ý |
+| **Digital Glass Room** | `SetWindowDisplayAffinity` (Windows) + `window.sharingType = .none` (macOS) | Chụp màn hình (Screenshot) |
+| **Input Jammer** | Chặn Global Hooks bàn phím, vô hiệu hóa Clipboard khi app Active | Keylogger, Clipboard hijacking |
+| **Memory Zeroing** | Ghi đè toàn bộ vùng nhớ WASM khi đóng cửa sổ | Memory dump |
+
+**Storage Isolation (Per-App SQLCipher):**
+
+Mọi dữ liệu do tiện ích sinh ra **không được lưu chung** với Core hay các app khác. Mỗi `.tapp` được cấp một vùng DB SQLCipher cục bộ độc lập, mã hóa bằng key riêng:
+
+```
+Key = HKDF(App_ID || User_Key || Salt)
+```
+
+```rust
+// Rust Core — Khởi tạo vùng DB cô lập cho từng App
+pub fn open_app_db(app_id: &str, user_key: &[u8]) -> Result<SqlCipherDb> {
+    let salt = derive_salt(app_id);
+    let app_db_key = hkdf_derive(user_key, app_id.as_bytes(), &salt, 32)?;
+
+    SqlCipherDb::open_encrypted(
+        &format!("apps/{}/data.db", app_id),
+        &app_db_key,
+    )
+}
+```
+
+> [!IMPORTANT]
+> **Isolation Guarantee:** App A không bao giờ đọc được DB của App B, kể cả khi cả hai cùng chạy trên cùng thiết bị. Master Key của Core không bao giờ được expose xuống tầng WASM.
+
+##### 3. Giao tiếp qua Cầu nối Trung gian (IPC & API Gateway)
+
+Các `.tapp` **không được phép** gọi trực tiếp vào logic Core. Mọi tương tác phải đi qua **API Gateway** nội bộ với hệ thống Message Passing kiểm soát nghiêm ngặt:
+
+```
+[.tapp (WASM)]
+      │
+      │  Request (JSON Message)
+      ▼
+[Tauri IPC Bridge]  ──── Permission Check (OPA)
+      │
+      ▼
+[Core API Gateway (Rust)]
+      ├── camera          → OS Camera API
+      ├── ai_gateway      → AI Middleware (PII Filter + Zero-Retention)
+      ├── crm_write       → Private Cluster CRM endpoint
+      └── ❌ crypto_keys  → DENIED — không bao giờ expose
+```
+
+**Strict Permissions (Manifest-Driven):**
+
+Mỗi `.tapp` phải khai báo quyền hạn trong Manifest trước khi được nạp. Core chỉ cấp **đúng những gì Manifest yêu cầu**:
+
+```json
+{
+  "permissions": [
+    "camera",       ✅ Được cấp sau khi đọc Manifest
+    "ai_gateway",   ✅ Được cấp sau khi đọc Manifest
+    "crm_write"     ✅ Được cấp sau khi đọc Manifest
+  ]
+  // crypto_keys, raw_network, os_shell → KHÔNG có trong Manifest → DENIED
+}
+```
+
+**AI Gateway Middleware (PII Protection):**
+
+Khi tiện ích cần dùng API AI bên ngoài, nó **không được tự gọi API**. Toàn bộ request phải đi qua AI Gateway nội bộ:
+
+| Bước | Gateway Action |
+|---|---|
+| **1. Nhận request từ `.tapp`** | Intercept, không forward thẳng |
+| **2. PII Redaction** | Lọc số thẻ, SĐT, CCCD, email nhạy cảm (Regex + NER) |
+| **3. Gắn cờ Zero-Retention** | Header `X-Zero-Retention: true` — EP Provider không được dùng data để train |
+| **4. Forward lên API** | OpenAI / Azure AI / Claude |
+| **5. Sanitize response** | Ammonia filter HTML output trước khi trả về `.tapp` |
+
+##### 4. Cơ chế Phân phối và Kiểm soát Cập nhật (Marketplace Governance)
+
+**Chữ ký số bắt buộc (Mandatory Signing):**
+
+Mọi gói `.tapp` phải được ký số bằng thuật toán **Ed25519** bởi TeraChat Central hoặc CA của chính Doanh nghiệp. Nếu chữ ký không hợp lệ hoặc bị thiếu, **Rust Core từ chối nạp app vào bộ nhớ** — không có ngoại lệ:
+
+```rust
+// Rust Core — Kiểm tra chữ ký trước khi nạp .tapp
+pub fn load_tapp(package: &TappPackage, trusted_keys: &[Ed25519PublicKey]) -> Result<WasmModule> {
+    // 1. Verify chữ ký Ed25519
+    let is_valid = trusted_keys.iter().any(|key| {
+        key.verify(&package.manifest_bytes, &package.signature).is_ok()
+    });
+
+    if !is_valid {
+        return Err(AppError::InvalidSignature(package.app_id.clone()));
+        // → App bị từ chối, KHÔNG được nạp vào RAM
+    }
+
+    // 2. Verify SHA-256 hash của payload
+    let computed_hash = sha256(&package.wasm_bytes);
+    if computed_hash != package.manifest.wasm_hash {
+        return Err(AppError::IntegrityViolation(package.app_id.clone()));
+    }
+
+    // 3. Chỉ sau khi qua 2 bước trên mới nạp vào WASM runtime
+    WasmRuntime::load(&package.wasm_bytes)
+}
+```
+
+**Controlled Sync (Cập nhật qua Admin — Không cho phép Auto-Update từ Internet):**
+
+| Quy tắc | Chi tiết |
+|---|---|
+| **Nguồn cập nhật** | Chỉ từ Private Cluster nội bộ qua LAN/VPN — cấm pull thẳng từ Internet |
+| **Ai phê duyệt** | Admin phải bấm "Sync to Cluster" — không có cập nhật ngầm |
+| **Phương thức** | **Delta Update** — chỉ tải phần thay đổi, tiết kiệm băng thông |
+| **Quét an toàn** | Mỗi bản cập nhật phải qua quét mã độc nội bộ + OPA Policy check trước khi phân phối |
+
+> [!NOTE]
+> **Tác động thực tế:** Dù ngày mai có 1.000 developer viết tiện ích cho TeraChat, Core Engine, Master Key và luồng giải mã E2EE của hệ thống vẫn bất khả xâm phạm. Dữ liệu người dùng hoàn toàn thuộc về họ — lưu trong Private Cluster và mã hóa tại thiết bị.
+
 ### 5.11 Offline First (Local-First, Cloud-Sync)
 
 > **Triết lý:** App mở lên là chạy ngay (Instant-on). Nhân viên làm việc mọi lúc mọi nơi — dữ liệu âm thầm đồng bộ khi có mạng.
@@ -1746,11 +1942,25 @@ Kiến trúc lõi được xây dựng bằng Rust để đảm bảo an toàn b
 * **Print Blocking:** Hook vào Driver in ấn cấp OS để chặn lệnh Print từ App.
 * **Self-Destruct:** File tự hủy sau khi đóng cửa sổ (không lưu cache).
 
+**Zero-Trust Architecture Summary:**
+
+> [!IMPORTANT]
+> Mô hình này thực thi nguyên tắc **"Không tin tưởng mặc định"** đối với mọi `.tapp`, kể cả app nội bộ. Ranh giới bảo vệ được tóm tắt trong 3 tầng:
+>
+> | Tầng | Cơ chế | Bảo đảm |
+> |---|---|---|
+> | **Execution Boundary** | WASM Container không có syscall trực tiếp | App không thể chạm vào OS hay Core |
+> | **Data Boundary** | SQLCipher per-app với key riêng (HKDF) | App không thể đọc DB của app khác hoặc của Core |
+> | **Communication Boundary** | Mọi call đều qua Tauri IPC → Core API Gateway → Permission Check | App không thể bypass quyền đã khai báo trong Manifest |
+>
+> Chi tiết đầy đủ, bao gồm code mẫu nạp `.tapp` và luồng AI Gateway: xem **Section 5.10.F**.
+
 ### 10.3 Smart Approval (Fintech Bridge)
 
 **Engine: Blind Fintech Bridge**
 
 Kiến trúc tách biệt E2EE (TeraChat) và hệ thống thanh toán tập trung (PayPal):
+
 
 * **One-time Binding:** Nhân viên link tài khoản PayPal *một lần duy nhất*. OAuth Token mã hóa và lưu trong Secure Enclave.
 * **PayPal Payouts API:** Lệnh `/bonus` trigger REST call qua Enterprise Relay Server. Server chỉ forward lệnh thanh toán đã ký.

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Business Plan & GTM Strategy</title>
+    <style>
+    
+        :root { --border: #333; --text-secondary: #888; --accent-blue: #60a5fa;
+                --accent-pink: #f472b6; --accent-purple: #a78bfa; --warning: #fb923c; }
+        body { font-family: sans-serif; color: #e2e8f0; background: #0f172a; display: flex; }
+        .sidebar { width: 260px; min-height: 100vh; padding: 1.5rem; background: #1e293b;
+                   position: sticky; top: 0; overflow-y: auto; }
+        .sidebar .brand { color: white; font-weight: bold; font-size: 1.1rem; text-decoration: none;
+                          display: block; margin-bottom: 1rem; }
+        .sidebar .brand span { color: #60a5fa; }
+        .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 0.25rem 0;
+                    font-size: 0.85rem; }
+        .nav-link:hover { color: white; }
+        .nav-header { color: #60a5fa; font-size: 0.75rem; text-transform: uppercase;
+                      letter-spacing: 0.1em; margin: 1rem 0 0.5rem; }
+        .main { flex: 1; padding: 2rem 3rem; max-width: 900px; }
+        h1,h2,h3,h4,h5,h6 { color: white; }
+        h1 { font-size: 2rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.5rem; margin-top: 2.5rem; color: #60a5fa; }
+        h3 { font-size: 1.2rem; color: #a78bfa; }
+        p { line-height: 1.7; color: #cbd5e1; }
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th { background: #1e293b; color: #60a5fa; padding: 0.6rem 1rem; text-align: left; }
+        td { padding: 0.6rem 1rem; border-bottom: 1px solid #334155; color: #cbd5e1; }
+        .tech-box { border-left: 4px solid #60a5fa; padding: 1rem; background: rgba(96,165,250,0.05);
+                    margin: 1rem 0; border-radius: 0 6px 6px 0; }
+        .tech-header { font-weight: bold; margin-bottom: 0.5rem; }
+        ul, ol { color: #cbd5e1; line-height: 1.8; }
+        
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Business Plan & GTM Strategy</span></a>
+    <div class="nav-header">Table of Contents</div><a href="#terachat-v021-business-plan-go-to-market-strategy" class="nav-link" style="">TeraChat V0.2.1 — Business Plan & Go-to-Market Strategy</a>
+<a href="#table-of-contents" class="nav-link" style="padding-left:0.8rem;">TABLE OF CONTENTS</a>
+<a href="#1-business-model-revenue-streams" class="nav-link" style="padding-left:0.8rem;">1. Business Model & Revenue Streams</a>
+<a href="#11-tổng-quan-mô-hình-kinh-doanh" class="nav-link" style="padding-left:0.8rem;">1.1 Tổng quan Mô hình Kinh doanh</a>
+<a href="#12-revenue-streams" class="nav-link" style="padding-left:0.8rem;">1.2 Revenue Streams</a>
+<a href="#13-vòng-quay-dòng-tiền-cash-flow" class="nav-link" style="padding-left:0.8rem;">1.3 Vòng quay Dòng tiền (Cash Flow)</a>
+<a href="#2-competitive-advantage" class="nav-link" style="padding-left:0.8rem;">2. Competitive Advantage</a>
+<a href="#21-data-sovereignty-chủ-quyền-dữ-liệu" class="nav-link" style="padding-left:0.8rem;">2.1 Data Sovereignty (Chủ quyền Dữ liệu)</a>
+<a href="#22-zero-trust-architecture" class="nav-link" style="padding-left:0.8rem;">2.2 Zero-Trust Architecture</a>
+<a href="#23-zero-bandwidth-cost-business-model" class="nav-link" style="padding-left:0.8rem;">2.3 "Zero Bandwidth Cost" Business Model</a>
+<a href="#24-local-first-performance" class="nav-link" style="padding-left:0.8rem;">2.4 Local-First Performance</a>
+<a href="#25-compliance-ready-gov-banking" class="nav-link" style="padding-left:0.8rem;">2.5 Compliance-Ready (Gov & Banking)</a>
+<a href="#3-go-to-market-strategy-operations" class="nav-link" style="padding-left:0.8rem;">3. Go-to-Market Strategy & Operations</a>
+<a href="#31-gtm-phases" class="nav-link" style="padding-left:0.8rem;">3.1 GTM Phases</a>
+<a href="#32-sales-strategy-zone-2-as-enterprise-upsell-hook" class="nav-link" style="padding-left:0.8rem;">3.2 Sales Strategy: Zone 2 as Enterprise Upsell Hook</a>
+<a href="#33-enterprise-onboarding-fast-deploy" class="nav-link" style="padding-left:0.8rem;">3.3 Enterprise Onboarding (Fast Deploy)</a>
+<a href="#34-chốt-đơn-giữ-khách" class="nav-link" style="padding-left:0.8rem;">3.4 Chốt đơn & Giữ khách</a>
+<a href="#4-licensing-ip-strategy-open-core" class="nav-link" style="padding-left:0.8rem;">4. Licensing & IP Strategy (Open-Core)</a>
+<a href="#41-vấn-đề-cần-giải-quyết" class="nav-link" style="padding-left:0.8rem;">4.1 Vấn đề Cần Giải quyết</a>
+<a href="#42-phân-tách-open-core" class="nav-link" style="padding-left:0.8rem;">4.2 Phân tách Open-Core</a>
+<a href="#43-license-strategy-trói-chân-đối-thủ" class="nav-link" style="padding-left:0.8rem;">4.3 License Strategy ("Trói chân" đối thủ)</a>
+<a href="#5-anti-fragmentation-forced-upgrade-strategy" class="nav-link" style="padding-left:0.8rem;">5. Anti-Fragmentation & Forced Upgrade Strategy</a>
+<a href="#51-nút-thắt-thương-mại-subscription-license-không-bán-perpetual" class="nav-link" style="padding-left:0.8rem;">5.1 Nút thắt Thương mại: Subscription License (không bán Perpetual)</a>
+<a href="#52-nút-thắt-bảo-mật-security-deprecation" class="nav-link" style="padding-left:0.8rem;">5.2 Nút thắt Bảo mật: Security Deprecation</a>
+<a href="#53-nút-thắt-giao-thức-protocol-versioning" class="nav-link" style="padding-left:0.8rem;">5.3 Nút thắt Giao thức: Protocol Versioning</a>
+<a href="#54-giải-pháp-kỹ-thuật-local-ota-update-nhanh-an-toàn" class="nav-link" style="padding-left:0.8rem;">5.4 Giải pháp Kỹ thuật: Local OTA Update (Nhanh, An toàn)</a>
+<a href="#6-funding-allocation" class="nav-link" style="padding-left:0.8rem;">6. Funding Allocation</a>
+<a href="#rationale" class="nav-link" style="padding-left:0.8rem;">Rationale</a>
+
+</nav>
+
+<div class="main">
+    <h1 id="terachat-v021-business-plan-go-to-market-strategy">TeraChat V0.2.1 — Business Plan & Go-to-Market Strategy</h1>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Document Owner:</strong> CEO / Co-founders / Business Team</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> Investors (VC), Executives, Sales, Business Development</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Scope:</strong> Business model, revenue, competitive advantage, GTM strategy, licensing, and funding. For product features see <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PRD.md</code>. For technical implementation see <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TechSpec.md</code>.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="table-of-contents">TABLE OF CONTENTS</h2>
+<ol>
+<li><a href="#1-business-model--revenue-streams" style="color:var(--accent-blue);text-decoration:none;">Business Model & Revenue Streams</a></li>
+<li><a href="#2-competitive-advantage" style="color:var(--accent-blue);text-decoration:none;">Competitive Advantage</a></li>
+<li><a href="#3-go-to-market-strategy--operations" style="color:var(--accent-blue);text-decoration:none;">Go-to-Market Strategy & Operations</a></li>
+<li><a href="#4-licensing--ip-strategy-open-core" style="color:var(--accent-blue);text-decoration:none;">Licensing & IP Strategy (Open-Core)</a></li>
+<li><a href="#5-anti-fragmentation--forced-upgrade-strategy" style="color:var(--accent-blue);text-decoration:none;">Anti-Fragmentation & Forced Upgrade Strategy</a></li>
+<li><a href="#6-funding-allocation" style="color:var(--accent-blue);text-decoration:none;">Funding Allocation</a></li>
+</ol>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="1-business-model-revenue-streams">1. Business Model & Revenue Streams</h2>
+<h3 id="11-tổng-quan-mô-hình-kinh-doanh">1.1 Tổng quan Mô hình Kinh doanh</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"Chúng ta không bán dung lượng. Chúng ta bán Sự tự chủ và Bảo mật tuyệt đối."</strong></p>
+<p>TeraChat hoạt động theo mô hình <strong>B2B Enterprise Software</strong> với điều khác biệt cốt lõi: <strong>Doanh nghiệp tự trả tiền cho hạ tầng của họ — TeraChat chỉ bán License phần mềm.</strong></p>
+<p><strong>Kiến trúc "Zero Bandwidth Cost":</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Mô hình truyền thống (Slack, Teams)</th>
+<th>TeraChat</th>
+</tr></thead><tbody>
+<tr>
+<td>Khách hàng dùng Cloud Server của nhà cung cấp</td>
+<td>Khách hàng tự host Private Cluster/VPS của họ</td>
+</tr>
+<tr>
+<td>Chi phí Server tăng theo số User</td>
+<td>Chi phí Server của TeraChat = $0 (Khách hàng tự trả)</td>
+</tr>
+<tr>
+<td>Biên lợi nhuận gộp 60–75%</td>
+<td>Biên lợi nhuận gộp <strong>&gt; 90%</strong></td>
+</tr>
+<tr>
+<td>OPEX phình to theo quy mô</td>
+<td>OPEX <strong>không phình</strong> theo số lượng khách hàng</td>
+</tr>
+</tbody></table></div>
+<p><strong>Kết quả:</strong> Mỗi khách hàng mới thêm → doanh thu tăng, chi phí không tăng theo.</p>
+<h3 id="12-revenue-streams">1.2 Revenue Streams</h3>
+<p><strong>A. Phí cấp phép theo người dùng (Per-Seat License — B2B Subscription)</strong></p>
+<ul>
+<li>Nguồn thu <strong>chính và lớn nhất</strong>.</li>
+<li>Thu phí Subscription theo năm dựa trên số lượng nhân sự.</li>
+<li>Ví dụ pricing: <strong>$5/user/tháng</strong> (trả trước hàng năm).</li>
+<li>Doanh nghiệp nhập Azure AD/LDAP → hệ thống tự map số user → xuất hóa đơn.</li>
+<li>Hợp đồng 1–3 năm, <strong>trả tiền upfront</strong> → dòng tiền dương ngay từ ngày đầu.</li>
+</ul>
+<p><strong>B. Phí Bảo trì & SLA (Maintenance + Service Level Agreement)</strong></p>
+<ul>
+<li>Thu phí bảo trì hàng năm đảm bảo nhận bản vá bảo mật + hỗ trợ kỹ thuật (Tier 2/3).</li>
+<li>Với Chính phủ / Ngân hàng: thu phí <strong>triển khai on-premise ban đầu rất cao</strong> (Professional Services).</li>
+</ul>
+<p><strong>C. Enterprise Add-ons & Marketplace</strong></p>
+<ul>
+<li><strong>AI Module (Magic Logger / RAG):</strong> Tích hợp AI phân tích hóa đơn F&B, văn bản hành chính — không đẩy dữ liệu ra ngoài để train model. Phí module riêng.</li>
+<li><strong>Reseller Mode:</strong> Cấp phép cho công ty IT Service (MSP) đi bán và cài đặt cho chuỗi nhà hàng, bán lẻ. Ăn chia doanh thu với đối tác.</li>
+<li><strong>Compliance Export / Legal Hold:</strong> Tier 3 API (CISO/DPO). Phí cao cho segment Gov/Banking.</li>
+</ul>
+<p><strong>D. Deployment Models & Pricing Tiers</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Model</th>
+<th>Đối tượng</th>
+<th>Hạ tầng</th>
+<th>Ghi chú</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Managed SaaS</strong></td>
+<td>Nhà hàng, SME (Non-Tech)</td>
+<td>TeraChat Cloud</td>
+<td>TeraChat quản lý hạ tầng. Admin công ty chỉ quản lý User.</td>
+</tr>
+<tr>
+<td><strong>On-Premise</strong></td>
+<td>Bank, Gov, Large Enterprise</td>
+<td>Private Server (vật lý/VMware/K8s)</td>
+<td>IT doanh nghiệp tự quản (Helm Chart). Data Sovereignty 100%.</td>
+</tr>
+<tr>
+<td><strong>Reseller</strong></td>
+<td>MSP / IT Service Company</td>
+<td>Khách hàng cuối</td>
+<td>MSP mua License bulk, cài & bảo trì cho chuỗi nhà hàng, shop.</td>
+</tr>
+</tbody></table></div>
+<h3 id="13-vòng-quay-dòng-tiền-cash-flow">1.3 Vòng quay Dòng tiền (Cash Flow)</h3>
+<ul>
+<li>Khách hàng Enterprise B2B ký hợp đồng dài hạn (1–3 năm) và <strong>trả tiền trước (Upfront)</strong>.</li>
+<li>Không gánh chi phí Server/Cloud hàng tháng cho khách → <strong>Positive Cash Flow từ ngày đầu</strong>.</li>
+<li>Dòng tiền này trực tiếp trả lương đội ngũ R&D mà không cần vốn bên ngoài cho giai đoạn đầu.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="2-competitive-advantage">2. Competitive Advantage</h2>
+<h3 id="21-data-sovereignty-chủ-quyền-dữ-liệu">2.1 Data Sovereignty (Chủ quyền Dữ liệu)</h3>
+<p>Đây là lý do duy nhất và đủ để Chính phủ và Ngân hàng mua TeraChat thay vì Slack hoặc Microsoft Teams:</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"Dữ liệu sinh ra ở chi nhánh nào, nằm trên máy chủ vật lý của chi nhánh đó."</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Đối thủ</th>
+<th>Dữ liệu nằm ở đâu</th>
+<th>Rủi ro</th>
+</tr></thead><tbody>
+<tr>
+<td>Slack</td>
+<td>AWS Cloud (Mỹ)</td>
+<td>Vi phạm GDPR, Luật An ninh mạng VN</td>
+</tr>
+<tr>
+<td>Microsoft Teams</td>
+<td>Azure (Global)</td>
+<td>Tương tự</td>
+</tr>
+<tr>
+<td>Zalo</td>
+<td>Máy chủ VNG (VN)</td>
+<td>Không phù hợp nhu cầu bảo mật cao nhất</td>
+</tr>
+<tr>
+<td><strong>TeraChat</strong></td>
+<td><strong>Private Cluster của doanh nghiệp</strong></td>
+<td><strong>Zero-risk về data sovereignty</strong></td>
+</tr>
+</tbody></table></div>
+<h3 id="22-zero-trust-architecture">2.2 Zero-Trust Architecture</h3>
+<ul>
+<li>Không ai, kể cả TeraChat, có thể đọc dữ liệu của khách hàng.</li>
+<li>E2EE tại thiết bị: Server chỉ thấy gói byte mã hóa.</li>
+<li>Kiến trúc "Blind Server": Metadata cũng được bảo vệ (Sealed Sender).</li>
+<li>Open-Core: Khách hàng có thể tự compile và kiểm chứng không có backdoor.</li>
+</ul>
+<h3 id="23-zero-bandwidth-cost-business-model">2.3 "Zero Bandwidth Cost" Business Model</h3>
+<p>Biên lợi nhuận gộp &gt; 90% cho phép:</p>
+<ul>
+<li>Định giá linh hoạt để cạnh tranh với Slack/Teams.</li>
+<li>Đầu tư nhiều hơn vào R&D mà không cần đốt tiền Server.</li>
+<li>Mở rộng sang thị trường mới với rủi ro thấp.</li>
+</ul>
+<h3 id="24-local-first-performance">2.4 Local-First Performance</h3>
+<ul>
+<li>Desktop app mở trong &lt; 500ms không cần Internet.</li>
+<li>Tìm kiếm millisecond (SQLite FTS5) — không gửi query lên Server.</li>
+<li>File lớn qua LAN P2P (~200MB/s) — không tốn băng thông WAN.</li>
+<li>Survival Link: Vẫn hoạt động khi Internet sập hoàn toàn.</li>
+</ul>
+<h3 id="25-compliance-ready-gov-banking">2.5 Compliance-Ready (Gov & Banking)</h3>
+<ul>
+<li>ISO 27001, SOC 2 Type II, GDPR Compliant (roadmap).</li>
+<li>USB Token / SmartCard (PKCS#11) cho Gov-grade signing.</li>
+<li>Tamper-proof Audit Log (Merkle Tree) — yêu cầu pháp lý.</li>
+<li>Legal Hold (đóng băng tài khoản điều tra).</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="3-go-to-market-strategy-operations">3. Go-to-Market Strategy & Operations</h2>
+<h3 id="31-gtm-phases">3.1 GTM Phases</h3>
+<p><strong>Phase 1: Vertical Focus (F&B + Gov)</strong></p>
+<ul>
+<li>Target 2 verticals rõ ràng: Nhà hàng/Cafe chuỗi (dễ bán, Kiosk Mode + Magic Logger) và Cơ quan hành chính (Smart Approval + ký số).</li>
+<li>Sản phẩm demo dễ WOW: chụp ảnh bill → tự động nhập kho.</li>
+</ul>
+<p><strong>Phase 2: Enterprise Expansion</strong></p>
+<ul>
+<li>Banking → Fintech Bridge (Smart Approval, Blind Payout).</li>
+<li>Manufacturing → Survival Link (khi cáp bị cắt nhà máy vẫn hoạt động).</li>
+<li>Multi-national Corp → Federated Private Clusters (data sovereignty liên quốc gia).</li>
+</ul>
+<p><strong>Phase 3: Ecosystem & Marketplace</strong></p>
+<ul>
+<li>Mở Marketplace cho ISV (Independent Software Vendors) viết <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Mini-Apps.</li>
+<li>Revenue share model với developers.</li>
+</ul>
+<h3 id="32-sales-strategy-zone-2-as-enterprise-upsell-hook">3.2 Sales Strategy: Zone 2 as Enterprise Upsell Hook</h3>
+<div class="tech-box" style="border-color:var(--accent-purple);">
+<div class="tech-header" style="color:var(--accent-purple);">🔺 IMPORTANT</div>
+<p><strong>Nút thắt bán hàng cốt lõi:</strong> Nếu doanh nghiệp không enforce Vùng 2 cho Sale/CSKH → dữ liệu khách hàng sẽ mất theo nhân viên nghỉ việc → doanh nghiệp <strong>sẽ không dám mua gói Enterprise</strong>.</p>
+</div>
+<p><strong>Kịch bản bán hàng:</strong></p>
+<ol>
+<li>Demo: Sale dùng Zalo chat với khách → nghỉ việc → mang số Zalo đi → công ty mất khách.</li>
+<li>Solution: TeraChat Vùng 2 → Mọi cuộc hội thoại với khách đều thuộc về công ty, có Audit Log.</li>
+<li>Close: IT Admin deploy On-Premise → Dữ liệu không bao giờ rời văn phòng.</li>
+</ol>
+<p><strong>Reseller Mode (MSP Channel):</strong></p>
+<ul>
+<li>Target: Công ty IT service, hệ thống tích hợp (SI), hãng phần mềm khu vực.</li>
+<li>Model: MSP mua License bulk → cài đặt và bảo trì cho khách hàng cuối (nhà hàng, bán lẻ).</li>
+<li>TeraChat cung cấp: Công cụ triển khai 1 dòng lệnh, tài liệu kỹ thuật, đào tạo chứng chỉ.</li>
+</ul>
+<h3 id="33-enterprise-onboarding-fast-deploy">3.3 Enterprise Onboarding (Fast Deploy)</h3>
+<p><strong>On-Premise (1 lệnh):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>curl -sL install.terachat.com | sudo bash --token=[License_Key]</code></pre></div>
+<p>Máy tính biến thành Private Node trong vài phút. Không cần IT chuyên sâu.</p>
+<p><strong>Cloud Hybrid:</strong> Admin nhập IP + SSH Key VPS → TeraChat tự SSH vào → cài Docker/K8s → bàn giao Admin Console.</p>
+<h3 id="34-chốt-đơn-giữ-khách">3.4 Chốt đơn & Giữ khách</h3>
+<p><strong>Hợp đồng:</strong> 1-3 năm, trả trước. Discount 15–20% cho hợp đồng 3 năm.</p>
+<p><strong>Giữ khách bằng dữ liệu:</strong> Dữ liệu (chat history, CRM, audit log) nằm trong Private Cluster của doanh nghiệp. Chuyển sang đối thủ = mất continuity toàn bộ lịch sử.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="4-licensing-ip-strategy-open-core">4. Licensing & IP Strategy (Open-Core)</h2>
+<h3 id="41-vấn-đề-cần-giải-quyết">4.1 Vấn đề Cần Giải quyết</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Chiến lược</th>
+<th>Rủi ro</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Mã nguồn Đóng</strong> (Zalo, Teams)</td>
+<td>Enterprise (Gov/Bank) không thể tự kiểm chứng backdoor. Đòi hỏi chi phí Audit cao. Mất deal.</td>
+</tr>
+<tr>
+<td><strong>Mã nguồn Mở hoàn toàn</strong> (Matrix, Signal)</td>
+<td>Đối thủ lớn "hút máu" — dùng miễn phí để cạnh tranh trực tiếp mà không đóng góp lại.</td>
+</tr>
+<tr>
+<td><strong>Open-Core (TeraChat)</strong></td>
+<td>✅ Cân bằng: Mở đủ để doanh nghiệp tin tưởng. Đóng đủ để bảo vệ doanh thu.</td>
+</tr>
+</tbody></table></div>
+<h3 id="42-phân-tách-open-core">4.2 Phân tách Open-Core</h3>
+<p><strong>PHẦN BẮT BUỘC MỞ — "Phòng khách" (chứng minh không backdoor):</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Component</th>
+<th>Lý do mở</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Core Cryptography (Rust Core)</strong></td>
+<td>E2EE, hàm băm, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code>, CRDT offline — chứng minh không có backdoor. Gov/Bank tự compile kiểm chứng.</td>
+</tr>
+<tr>
+<td><strong>Client Apps</strong> (Desktop — Win/macOS/Linux)</td>
+<td>Ứng dụng người dùng — chứng minh không thu thập telemetry ngầm.</td>
+</tr>
+<tr>
+<td><strong>Federation Protocol</strong> (P2P/LAN P2P)</td>
+<td>Giao thức truyền tải — chứng minh không route dữ liệu qua server trái phép.</td>
+</tr>
+</tbody></table></div>
+<p><strong>PHẦN BẮT BUỘC ĐÓNG — "Két sắt" (bảo vệ bí mật thương mại):</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Component</th>
+<th>Lý do đóng</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Enterprise Admin Console</strong></td>
+<td>Giá trị cốt lõi để thu tiền: OPA Policy, Vùng 2, LDAP/Azure AD, quản trị phân quyền.</td>
+</tr>
+<tr>
+<td><strong>License Manager & Billing</strong></td>
+<td>Kiểm tra License Key, đếm Seat, giới hạn tính năng theo tier.</td>
+</tr>
+<tr>
+<td><strong>AI Modules</strong> (Magic Logger / RAG Context)</td>
+<td>Bảo vệ thuật toán và lời hứa <em>không dùng dữ liệu khách hàng để train model</em>.</td>
+</tr>
+<tr>
+<td><strong>Deployment Scripts</strong> (K8s/Docker HA)</td>
+<td>Kịch bản auto-scale HA TURN Cluster.</td>
+</tr>
+</tbody></table></div>
+<h3 id="43-license-strategy-trói-chân-đối-thủ">4.3 License Strategy ("Trói chân" đối thủ)</h3>
+<p><strong>AGPLv3 — Cho Core Cryptography & Federation:</strong></p>
+<ul>
+<li>Bất kỳ công ty nào dùng mã nguồn TeraChat để làm <strong>Cloud SaaS</strong> thương mại → <strong>BẮT BUỘC mở ngược toàn bộ mã nguồn của họ</strong>.</li>
+<li>Ngăn chặn triệt để việc đối thủ thương mại "hút máu" Core Engine miễn phí.</li>
+</ul>
+<p><strong>BSL (Business Source License) — Cho một số thành phần khác:</strong></p>
+<ul>
+<li>Source-Available: có thể tham khảo, dùng miễn phí cho cá nhân.</li>
+<li><strong>CẤM</strong> các tổ chức thương mại cạnh tranh trực tiếp trong 3–4 năm đầu.</li>
+<li>Sau thời gian đó → tự chuyển thành Open Source hoàn toàn.</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Tóm lại:</strong> Chúng ta mở cửa phòng khách (Client, Thuật toán mã hóa) để khách hàng thấy nhà sạch và an toàn. Nhưng khóa chặt phòng bếp và két sắt (Admin Console, AI, Tích hợp doanh nghiệp).</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="5-anti-fragmentation-forced-upgrade-strategy">5. Anti-Fragmentation & Forced Upgrade Strategy</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"Sự phân mảnh phiên bản (Version Fragmentation) là căn bệnh kinh điển của phần mềm On-Premise. Chúng ta dùng Kỷ luật Hệ thống và Nút thắt Kiến trúc để điều phối dòng tiền SLA."</strong></p>
+<h3 id="51-nút-thắt-thương-mại-subscription-license-không-bán-perpetual">5.1 Nút thắt Thương mại: Subscription License (không bán Perpetual)</h3>
+<ul>
+<li><strong>Admin Console</strong> cần <strong>License Key</strong> để hoạt động. License có thời hạn (1 năm).</li>
+<li>Khi ngừng gia hạn → Admin Console <strong>khóa tính năng</strong> (không thêm được user, Module AI ngừng, Azure AD Sync lỗi). Hệ thống <strong>không chết</strong> ngay (tránh rủi ro pháp lý).</li>
+<li>Kết quả: Doanh nghiệp bắt buộc phải gia hạn License → tự động nhận bản nâng cấp mới.</li>
+</ul>
+<h3 id="52-nút-thắt-bảo-mật-security-deprecation">5.2 Nút thắt Bảo mật: Security Deprecation</h3>
+<p>Với Gov/Banking, tuân thủ bảo mật là sinh tử:</p>
+<ul>
+<li>Mỗi khi ra phiên bản mới → công bố kèm <strong>CVE / Security Patch notes</strong>. VD: <em>"Bản 2.0 vá lỗ hổng bộ nhớ CRDT. Các bản 1.x sẽ End-of-Life sau 90 ngày."</em></li>
+<li>IT Admin thấy CVE → <strong>bắt buộc tự tải bản mới</strong> để tránh vi phạm compliance nội bộ.</li>
+</ul>
+<h3 id="53-nút-thắt-giao-thức-protocol-versioning">5.3 Nút thắt Giao thức: Protocol Versioning</h3>
+<p><strong>Đòn bẩy kỹ thuật mạnh nhất:</strong></p>
+<ul>
+<li>Chi nhánh A (v2.0) giao tiếp Vùng 2 với Chi nhánh B (v1.0) → Federation Bridge báo lỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Incompatible Protocol Version</code>.</li>
+<li>Kết quả: Muốn các chi nhánh chat được với nhau → <strong>IT Admin buộc phải nâng cấp đồng bộ tất cả lên version mới</strong>.</li>
+<li>Thuật toán mã hóa và định dạng payload <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> <strong>không tương thích ngược</strong>.</li>
+</ul>
+<h3 id="54-giải-pháp-kỹ-thuật-local-ota-update-nhanh-an-toàn">5.4 Giải pháp Kỹ thuật: Local OTA Update (Nhanh, An toàn)</h3>
+<p>Cập nhật không tải từ Server của TeraChat — tải từ <strong>VPS nội bộ của khách hàng</strong>:</p>
+<ol>
+<li>IT Admin tải file Update về cụm VPS Private (kể cả Air-Gapped).</li>
+<li>Admin Console → Bấm "Thả bản cập nhật".</li>
+<li>VPS bắn lệnh ép nâng cấp cho toàn bộ nhân viên qua <strong>LAN</strong> (tốc độ cực cao).</li>
+<li>Nhân viên từ chối nhấn nâng cấp → Client <strong>chối kết nối vào Cluster nội bộ</strong>.</li>
+</ol>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Tóm lại chiến lược Forced Upgrade:</strong> Chúng ta giao quyền kiểm soát mã nguồn và dữ liệu vật lý để lấy niềm tin. Nhưng nắm giữ <strong>License Key, Chuẩn giao thức, và CVE</strong> để điều phối nhịp đập cập nhật và dòng tiền SLA.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="6-funding-allocation">6. Funding Allocation</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Tiền đầu tư (nếu có từ VC) tuyệt đối không đốt vào thuê Server Cloud hay chạy quảng cáo.</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Hạng mục</th>
+<th>Tỷ lệ</th>
+<th>Chi tiết</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Audit & Chứng chỉ Bảo mật</strong></td>
+<td><strong>20%</strong></td>
+<td>Thuê Cure53 (hoặc tương đương) Pen-test E2EE + CRDT. Lấy chứng chỉ ISO 27001, SOC 2 Type II, GDPR Compliance. Đây là điều kiện tiên quyết để close deal Gov/Banking.</td>
+</tr>
+<tr>
+<td><strong>Mở rộng R&D Core</strong></td>
+<td><strong>40%</strong></td>
+<td>Tuyển chuyên gia Rust/C++ tối ưu CRDT Sync và thuật toán mã hóa. Kiến trúc sư hệ thống phân tán. Multi-platform native quality (Win/macOS/Linux/iOS/Android).</td>
+</tr>
+<tr>
+<td><strong>Mạng lưới Đối tác & Reseller</strong></td>
+<td><strong>25%</strong></td>
+<td>Đào tạo và cấp chứng chỉ cho công ty IT nội địa (MSP) đi bán và cài đặt TeraChat cho chuỗi nhà hàng/bán lẻ. Sự kiện B2B, case study thực tế.</td>
+</tr>
+<tr>
+<td><strong>Quỹ Dự phòng</strong></td>
+<td><strong>15%</strong></td>
+<td>Đảm bảo runway tối thiểu <strong>18–24 tháng</strong> trong điều kiện kinh tế xấu nhất.</td>
+</tr>
+</tbody></table></div>
+<h3 id="rationale">Rationale</h3>
+<ul>
+<li><strong>Audit trước</strong> → Không có chứng chỉ → Gov/Bank không mua → doanh thu không đến.</li>
+<li><strong>R&D Core</strong> → Chất lượng phần mềm → Ít bug → Ít SLA penalty → Margin cao hơn.</li>
+<li><strong>Reseller network</strong> → Tiếp cận hàng nghìn SME mà không cần tuyển Sales trực tiếp.</li>
+<li><strong>Không đốt Server</strong> → Biên lợi nhuận bảo toàn → Runway dài hơn.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Tài liệu này chỉ chứa chiến lược kinh doanh, doanh thu, licensing và GTM. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PRD.md</code> cho product features & user flows. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TechSpec.md</code> cho technical implementation.</em></p>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+</body>
+</html>
