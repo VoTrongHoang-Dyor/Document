@@ -489,24 +489,65 @@
                       "subsections": []
                     },
                     {
-                      "id": "c2-tầng-cryptography-salted-mle-chống-kpa",
+                      "id": "c2-tầng-cryptography-salted-mle-chống-kpa-epoch-independent-dedup",
                       "level": 5,
-                      "heading": "C2. Tầng Cryptography — Salted MLE (Chống KPA)",
+                      "heading": "C2. Tầng Cryptography — Salted MLE (Chống KPA + Epoch-Independent Dedup)",
                       "content_blocks": [
                         {
+                          "type": "blockquote",
+                          "alert_type": "note",
+                          "lines": [
+                            "**Lead Dev Fix #2 — Xung đột giữa Salted MLE và MLS Ratchet:** Nếu dùng `Channel_Key` (xoay theo MLS Epoch) làm salt để tính `CAS_Hash`, sau mỗi Epoch Rotation (thêm/bớt thành viên), cùng một file sẽ tạo ra `CAS_Hash` khác hoàn toàn so với lần gửi trước. Deduplication xuyên thời gian thất bại 100%. **Giải pháp:** Tách biệt `Static_Dedup_Key` (bất biến, chỉ dùng để tính hash) với `Channel_Key` (xoay theo Epoch, dùng để mã hóa nội dung)."
+                          ]
+                        },
+                        {
                           "type": "paragraph",
-                          "text": "Với file đi vào nhánh SaltedMLE, thay vì Key = Hash(File) (dễ đoán), hệ thống tiêm Channel_Key (chỉ các thành viên kênh mới giữ trong bộ nhớ thiết bị) vào quá trình sinh key:"
+                          "text": "Sinh Static_Dedup_Key lúc tạo Channel:"
+                        },
+                        {
+                          "type": "code",
+                          "language": "text",
+                          "code": "[Admin tạo Channel / Group]\n       ↓\nChannel khởi tạo MLS TreeKEM Group\n       ↓\nRust Core sinh: Static_Dedup_Key = HKDF-SHA256(Channel_Master_Secret, \"dedup-v1\")\n       ↓\nStatic_Dedup_Key được phân phối bảo mật cho thành viên qua TreeKEM (như Channel_Key)\n       ↓\nKhóa này KHÔNG BAO GIờ rotate theo Epoch Rotation — bất biến suốt vòng đời Channel"
+                        },
+                        {
+                          "type": "paragraph",
+                          "text": "Nguyên tắc phân vai:"
+                        },
+                        {
+                          "type": "table",
+                          "headers": [
+                            "Khóa",
+                            "Mục đích",
+                            "Rotate?"
+                          ],
+                          "rows": [
+                            [
+                              "`Channel_Key` (MLS Epoch)",
+                              "Mã hóa nội dung file (AES-256-GCM)",
+                              "✅ Xoay khi thành viên thay đổi — Forward Secrecy"
+                            ],
+                            [
+                              "`Static_Dedup_Key`",
+                              "Tính `CAS_Hash` (Dedup identifier)",
+                              "❌ Bất biến — đảm bảo Dedup xuyên Epoch"
+                            ]
+                          ]
+                        },
+                        {
+                          "type": "paragraph",
+                          "text": "Với file đi vào nhánh SaltedMLE, thay vì Key = Hash(File) (dễ đoán), hệ thống tiêm Static_Dedup_Key vào quá trình sinh hash và dùng Channel_Key hiện tại cho mã hóa:"
                         },
                         {
                           "type": "code",
                           "language": "rust",
-                          "code": "// Rust Core — Salted MLE Encryption (thay thế MLE cổ điển)\nuse hmac::{Hmac, Mac};\nuse sha2::Sha256;\nuse aes_gcm::{Aes256Gcm, Key, Nonce, aead::Aead};\n\ntype HmacSha256 = Hmac<Sha256>;\n\npub struct SaltedMleResult {\n    pub ciphertext: Vec<u8>,\n    pub cas_hash:   [u8; 32],  // Dùng để check dedup trên Server\n    pub mle_key:    [u8; 32],  // Wrap bằng Public Key người nhận rồi gửi kèm Stub\n}\n\npub fn salted_mle_encrypt(\n    file_content: &[u8],\n    channel_key:  &[u8; 32],  // Channel_Key — chỉ trong RAM thiết bị member\n) -> Result<SaltedMleResult> {\n    // Bước 1: Sinh MLE Key = HMAC-SHA256(channel_key, file_content)\n    // → Hacker biết file gốc nhưng KHÔNG có channel_key → không tính được key\n    let mut mac = HmacSha256::new_from_slice(channel_key)?;\n    mac.update(file_content);\n    let mle_key: [u8; 32] = mac.finalize().into_bytes().into();\n\n    // Bước 2: Mã hóa AES-256-GCM (deterministic nonce từ key để đảm bảo dedup)\n    let nonce_bytes: [u8; 12] = Sha256::digest(&mle_key)[..12].try_into()?;\n    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&mle_key));\n    let ciphertext = cipher.encrypt(Nonce::from_slice(&nonce_bytes), file_content)?;\n\n    // Bước 3: CAS_Hash = SHA-256(ciphertext) — Server chỉ biết hash này, không biết key\n    let cas_hash: [u8; 32] = Sha256::digest(&ciphertext).into();\n\n    Ok(SaltedMleResult { ciphertext, cas_hash, mle_key })\n}"
+                          "code": "// Rust Core — Salted MLE Encryption (nâng cấp với Static_Dedup_Key)\nuse hmac::{Hmac, Mac};\nuse sha2::Sha256;\nuse aes_gcm::{Aes256Gcm, Key, Nonce, aead::Aead};\n\ntype HmacSha256 = Hmac<Sha256>;\n\npub struct SaltedMleResult {\n    pub ciphertext: Vec<u8>,\n    pub cas_hash:   [u8; 32],  // Dùng để check dedup trên Server\n    pub mle_key:    [u8; 32],  // Wrap bằng Public Key người nhận rồi gửi kèm Stub\n}\n\npub fn salted_mle_encrypt(\n    file_content:     &[u8],\n    channel_key:      &[u8; 32],  // Channel_Key hiện tại — dùng cho mã hóa nội dung\n    static_dedup_key: &[u8; 32],  // Static_Dedup_Key — bất biến, dùng cho CAS_Hash\n) -> Result<SaltedMleResult> {\n    // Bước 1: Sinh CAS_Hash bằng STATIC key — nhất quán xuyên mọi MLS Epoch\n    // → Hacker biết file gốc nhưng KHÔNG có static_dedup_key → không tính được Hash\n    let mut mac = HmacSha256::new_from_slice(static_dedup_key)?;\n    mac.update(file_content);\n    let cas_hash: [u8; 32] = mac.finalize().into_bytes().into();\n\n    // Bước 2: Sinh MLE_Key bằng CURRENT Channel_Key — xoay theo Epoch\n    // → Giữ Forward Secrecy: ai không có Channel_Key Epoch hiện tại không giải mã được\n    let mut mac2 = HmacSha256::new_from_slice(channel_key)?;\n    mac2.update(file_content);\n    let mle_key: [u8; 32] = mac2.finalize().into_bytes().into();\n\n    // Bước 3: Mã hóa AES-256-GCM (deterministic nonce từ mle_key để đảm bảo dedup)\n    let nonce_bytes: [u8; 12] = Sha256::digest(&mle_key)[..12].try_into()?;\n    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&mle_key));\n    let ciphertext = cipher.encrypt(Nonce::from_slice(&nonce_bytes), file_content)?;\n\n    Ok(SaltedMleResult { ciphertext, cas_hash, mle_key })\n}"
                         },
                         {
                           "type": "blockquote",
                           "alert_type": "note",
                           "lines": [
-                            "**Tại sao chống KPA?** Hacker biết chính xác `setup_terachat_v2.exe` nhưng **không có `channel_key`** đang nằm trong bộ nhớ RAM của thiết bị thành viên → không tính được `mle_key` → không giải mã được ciphertext."
+                            "**Tại sao chống KPA?** Hacker biết chính xác `setup_terachat_v2.exe` nhưng **không có `static_dedup_key`** đang nằm trong bộ nhớ RAM của thiết bị thành viên → không tính được `cas_hash` → không giải mã được ciphertext.",
+                            "**Dedup xuyên Epoch?** `Static_Dedup_Key` không thay đổi → cùng file gửi lại sau Epoch Rotation → `CAS_Hash` giống hệt → Server trả HIT → không upload lại 150MB nữa ✔"
                           ]
                         }
                       ],
@@ -1618,6 +1659,95 @@
               ],
               "subsections": [
                 {
+                  "id": "phân-tích-lỗ-hổng-nghịch-lý-offline-pki-mesh-qos",
+                  "level": 4,
+                  "heading": "Phân tích lỗ hổng: Nghịch lý Offline PKI / Mesh QoS",
+                  "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Lead Dev Fix #3 — Tắc nghẽn mạng Mesh DTN do Payload của App:** Khi mạng sập, người dùng tiếp tục nhập liệu vào Smart Order và hệ thống cố đẩy file lớn / CRDT blob qua BLE 5.0 (~2 Mbps). Hậu quả: **Broadcast Storm** — toàn bộ pin thiết bị cạn kiệt, tin nhắn văn bản khẩn cấp bị rớt. **Giải pháp:** Triển khai `MeshQosRouter` tại Rust Core, phân luồng ưu tiên ngay khi thiết bị chuyển sang Survival Link."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "a-mesh-qos-traffic-shaping-phân-luồng-ưu-tiên-rust-core",
+                  "level": 4,
+                  "heading": "A. Mesh QoS Traffic Shaping — Phân luồng ưu tiên (Rust Core)",
+                  "content_blocks": [
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Lane",
+                        "Giao thức",
+                        "Loại payload",
+                        "Hành vi khi mạng Mesh"
+                      ],
+                      "rows": [
+                        [
+                          "**Lane 1 — Critical**",
+                          "BLE 5.0 Gossip",
+                          "Text < 4KB, tín hiệu Discovery",
+                          "✅ Truyền ngay lập tức"
+                        ],
+                        [
+                          "**Lane 2 — Bulk**",
+                          "Wi-Fi Direct / AWDL",
+                          "File, CRDT blob, .tapp sync",
+                          "⛔ Queue tại Local DB đến khi có WebRTC Data Channel"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Nguyên tắc hoạt động:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "[Thiết bị chuyển sang Survival Link (Internet sập)]\n       ↓\nMeshQosRouter kích hoạt tại Rust Core\n       ↓\nPhân loại mỗi payload vào Lane:\n  ├─ Text < 4KB / Discovery → Lane 1 (BLE Gossip) → gửi ngay\n  └─ File / CRDT blob / .tapp → Lane 2 → đưa vào Local Queue\n       ↓\nLane 2: Chờ BLE handshake thành công (2 thiết bị tìm thấy nhau)\n       ↓\nTạo Wi-Fi Direct / AWDL Data Channel (~20–40 MB/s)\n       ↓\nDrain toàn bộ Queue Lane 2 qua kênh tốc độ cao → Teardown ngay sau khi xong"
+                    },
+                    {
+                      "type": "code",
+                      "language": "rust",
+                      "code": "// Rust Core — Mesh QoS Router (kích hoạt khi chuyển sang Survival Link)\nuse std::collections::VecDeque;\n\n#[derive(Debug, Clone)]\npub enum MeshLane {\n    /// Lane 1: Tin nhắn khẩn cấp (<4KB) và Discovery — gửi ngay qua BLE Gossip\n    Critical,\n    /// Lane 2: File/CRDT blob/.tapp sync — queue, chờ Wi-Fi Direct kênh tốc độ cao\n    Bulk,\n}\n\npub struct MeshQosRouter {\n    bulk_queue: VecDeque<Vec<u8>>,  // Queue riêng cho Lane 2\n}\n\n/// Phân loại payload vào đúng Lane — gọi trước khi gửi bất kỳ gói tin nào qua Mesh\npub fn classify_payload(payload: &[u8], is_text_message: bool) -> MeshLane {\n    const CRITICAL_THRESHOLD: usize = 4 * 1024;  // 4KB\n    if is_text_message && payload.len() < CRITICAL_THRESHOLD {\n        MeshLane::Critical\n    } else {\n        // File, CRDT blob, .tapp bytecode → Bulk\n        MeshLane::Bulk\n    }\n}\n\nimpl MeshQosRouter {\n    /// Gọi khi nhận payload cần gửi qua Mesh\n    pub fn route(&mut self, payload: Vec<u8>, is_text: bool) -> Option<Vec<u8>> {\n        match classify_payload(&payload, is_text) {\n            // Lane 1: trả về ngay để gửi qua BLE Gossip\n            MeshLane::Critical => Some(payload),\n            // Lane 2: đưa vào Queue, không gửi ngay\n            MeshLane::Bulk => {\n                self.bulk_queue.push_back(payload);\n                None  // Caller không gửi gì qua BLE\n            }\n        }\n    }\n\n    /// Drain Queue Lane 2 sau khi Wi-Fi Direct / AWDL kênh đã thiết lập\n    pub fn drain_bulk_queue(&mut self) -> impl Iterator<Item = Vec<u8>> + '_ {\n        self.bulk_queue.drain(..)\n    }\n\n    /// Gọi khi Internet phục hồi — xóa queue (sẽ sync qua Cluster thay vì Mesh)\n    pub fn clear_on_internet_restore(&mut self) {\n        self.bulk_queue.clear();\n    }\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Kết quả sau khi áp dụng QoS:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Kịch bản",
+                        "Không có QoS",
+                        "Có QoS"
+                      ],
+                      "rows": [
+                        [
+                          "50 thiết bị nhắn tin khẩn cấp qua BLE",
+                          "❌ Broadcast Storm, tin nhắn rớt",
+                          "✅ Text < 4KB được ưu tiên, không nghẽn"
+                        ],
+                        [
+                          "File 5MB chờ sync qua Mesh",
+                          "❌ BLE nghẽn toàn mạng",
+                          "✅ Queue tại Local DB, chờ Wi-Fi Direct"
+                        ],
+                        [
+                          "Pin thiết bị sau 2h Mesh",
+                          "❌ Cạn do Broadcast liên tục",
+                          "✅ Tiết kiệm ~60% (BLE chỉ gửi packet nhỏ)"
+                        ]
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
                   "id": "phân-tích-lỗ-hổng-nghịch-lý-offline-pki",
                   "level": 4,
                   "heading": "Phân tích lỗ hổng: Nghịch lý Offline PKI",
@@ -2168,10 +2298,53 @@
                   "subsections": []
                 },
                 {
-                  "id": "c-crdt-sync-data-plane-vps-blind-storage",
+                  "id": "c-hybrid-event-sourcing-sync-data-plane-vps-blind-storage",
                   "level": 4,
-                  "heading": "C. CRDT Sync — Data Plane → VPS Blind Storage",
+                  "heading": "C. Hybrid Event-Sourcing Sync — Data Plane → VPS Blind Storage",
                   "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Lead Dev Fix #1 — Xung đột CRDT Automerge và Dữ liệu lớn:** Dùng `automerge::create_changeset()` để đẩy toàn bộ State của SQLite lên VPS Blind Storage sẽ làm metadata CRDT (State Vector) phình to theo thời gian — thiết bị Mobile OOM (Out-of-Memory) chỉ sau vài tuần sử dụng CRM hay Smart Order với hàng nghìn bản ghi. **Giải pháp:** Hybrid Event-Sourcing — chỉ dùng CRDT cho metadata/schema; dùng Event Log nhỏ gọn (< 1KB/event) cho dữ liệu thực tế."
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Phân tách vai trò:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Thành phần",
+                        "Công nghệ",
+                        "Mục đích",
+                        "Kích thước"
+                      ],
+                      "rows": [
+                        [
+                          "**App Schema/State**",
+                          "CRDT Automerge",
+                          "Quản lý trạng thái tool, schema phiên bản",
+                          "Nhỏ — vài KB"
+                        ],
+                        [
+                          "**Dữ liệu thực (hàng ngàn bản ghi)**",
+                          "Event Log E2EE",
+                          "Replay vào SQLite local",
+                          "< 1KB/event"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Nguyên tắc Event Log Sync:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "[User thao tác trên Smart Order / CRM .tapp]\n       ↓\nWASM sinh Event nhỏ gọn: INSERT_ORDER_123 {product: \"A\", qty: 10}\n       ↓\nRust Core mã hóa E2EE bằng Company_Key → Event_Blob (< 1KB)\n       ↓\nĐẩy Event_Blob lên VPS Blind Storage (thay vì toàn bộ SQLite state)\n       ↓\nThiết bị khác tải Event_Blob → giải mã → replay vào SQLite local\n       ↓\nGiải quyết xung đột bằng Timestamp + Last-Write-Wins (không cần State Vector khổng lồ)"
+                    },
                     {
                       "type": "paragraph",
                       "text": "Dữ liệu nhập liệu (VD: Smart Order, Magic Logger) không gửi plaintext lên VPS:"
@@ -2179,7 +2352,45 @@
                     {
                       "type": "code",
                       "language": "rust",
-                      "code": "// Rust Core — Encrypted CRDT Sync ngược lên VPS Blind Storage\npub async fn push_app_data(\n    app_id:      &str,\n    local_db:    &SqlCipherDb,\n    company_key: &[u8; 32],     // Company_Key — VPS không có key này\n    cluster:     &ClusterClient,\n) -> Result<()> {\n    // Bước 1: Đọc dữ liệu chưa sync từ SQLCipher local\n    let pending = local_db.get_unsynced_records(app_id)?;\n\n    // Bước 2: Tạo CRDT Automerge changeset\n    let changeset = automerge::create_changeset(&pending)?;\n\n    // Bước 3: Mã hóa bằng Company_Key TRƯỚC khi gửi lên VPS\n    let encrypted_blob = aes_256_gcm::encrypt(&changeset, company_key)?;\n\n    // Bước 4: Đẩy blob mã hóa mù lên VPS — VPS CHỈ thấy ciphertext\n    cluster.push_blob(app_id, &encrypted_blob).await?;\n\n    local_db.mark_synced(app_id)?;\n    Ok(())\n}"
+                      "code": "// Rust Core — Hybrid Event-Sourcing Sync (thay thế CRDT thuần túy)\n// Fix #1: Chỉ CRDT cho metadata. Dữ liệu thực = Event Log nhỏ gọn < 1KB/event\n\n#[derive(Serialize, Deserialize)]\npub struct AppEvent {\n    pub event_id:   Uuid,\n    pub event_type: String,   // \"INSERT_ORDER\", \"UPDATE_INVENTORY\", \"DELETE_RECORD\"\n    pub payload:    Value,    // JSON payload < 1KB\n    pub timestamp:  i64,      // Unix ms — dùng để LWW conflict resolution\n    pub app_id:     String,\n}\n\n/// Sync Event Log E2EE lên VPS Blind Storage\npub async fn push_app_event_log(\n    events:      &[AppEvent],   // Danh sách Event chưa sync (thường < 10 event)\n    company_key: &[u8; 32],     // Company_Key — VPS không có key này\n    cluster:     &ClusterClient,\n    local_db:    &SqlCipherDb,\n) -> Result<()> {\n    // Bước 1: Serialize danh sách Event thành JSON\n    let event_batch = serde_json::to_vec(events)?;\n\n    // Bước 2: Mã hóa batch bằng Company_Key TRƯỚC khi gửi lên VPS\n    // → Kích thước nhỏ: 10 event × 1KB = 10KB (so với CRDT blob hàng chục MB)\n    let encrypted_blob = aes_256_gcm::encrypt(&event_batch, company_key)?;\n\n    // Bước 3: Đẩy blob mã hóa mù lên VPS — VPS CHỈ thấy ciphertext\n    cluster.push_blob(&events[0].app_id, &encrypted_blob).await?;\n\n    // Bước 4: Đánh dấu Event đã sync trong SQLite local\n    local_db.mark_events_synced(events.iter().map(|e| e.event_id).collect())?;\n    Ok(())\n}\n\n/// Thiết bị nhận Event từ VPS → Replay vào SQLite local\npub async fn replay_event_log(\n    app_id:      &str,\n    company_key: &[u8; 32],\n    cluster:     &ClusterClient,\n    local_db:    &SqlCipherDb,\n) -> Result<()> {\n    // Tải Event blobs từ VPS kể từ lần sync cuối\n    let last_sync = local_db.get_last_sync_timestamp(app_id)?;\n    let blobs = cluster.fetch_event_blobs(app_id, last_sync).await?;\n\n    for blob in blobs {\n        // Giải mã Event batch\n        let event_json = aes_256_gcm::decrypt(company_key, &blob)?;\n        let events: Vec<AppEvent> = serde_json::from_slice(&event_json)?;\n\n        // Replay từng Event vào SQLite local (Last-Write-Wins theo timestamp)\n        for event in events {\n            local_db.apply_event(&event)?;\n        }\n    }\n    Ok(())\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "CRDT Automerge chỉ dùng cho Schema/State (không phải dữ liệu):"
+                    },
+                    {
+                      "type": "code",
+                      "language": "rust",
+                      "code": "// CRDT Automerge — Chỉ quản lý metadata: schema version, tool config, field definitions\n// Không bao giờ đẩy hàng nghìn bản ghi SQLite vào Automerge!\npub async fn push_app_schema(\n    app_id:      &str,\n    schema_meta: &AppSchemaMeta,   // Nhỏ: vài KB\n    company_key: &[u8; 32],\n    cluster:     &ClusterClient,\n) -> Result<()> {\n    let changeset = automerge::create_changeset(schema_meta)?;\n    let encrypted_blob = aes_256_gcm::encrypt(&changeset, company_key)?;\n    cluster.push_blob(app_id, &encrypted_blob).await?;\n    Ok(())\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "So sánh RAM usage:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Kịch bản",
+                        "CRDT thuần túy",
+                        "Hybrid Event-Sourcing"
+                      ],
+                      "rows": [
+                        [
+                          "CRM 10.000 bản ghi sau 6 tháng",
+                          "❌ ~500MB RAM (State Vector tích lũy)",
+                          "✅ ~5MB RAM (Event Log nhỏ gọn)"
+                        ],
+                        [
+                          "Smart Order 1.000 đơn/ngày",
+                          "❌ OOM trên Mobile sau vài tuần",
+                          "✅ Chạy mượt, tiết kiệm 95% RAM"
+                        ],
+                        [
+                          "Xung đột dữ liệu",
+                          "CRDT tự giải quyết",
+                          "Last-Write-Wins + Timestamp"
+                        ]
+                      ]
                     },
                     {
                       "type": "paragraph",
@@ -4275,74 +4486,170 @@
                   "type": "blockquote",
                   "alert_type": "note",
                   "lines": [
-                    "**Khái niệm:** AI không phải \"App thụ động\" mà là **Nhân viên ảo** được Admin thêm vào Channel như một user thực. Gọi bằng `@gpt` (hoặc tên Admin đặt). Bot chạy 24/7 trên VPS dưới dạng **Egress Worker cô lập**."
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Admin thiết lập Bot:"
-                },
-                {
-                  "type": "code",
-                  "language": "text",
-                  "code": "Settings → AI Bots → [+ Create Bot]\n  - Tên hiển thị: \"GPT Assistant\"\n  - Tag: @gpt\n  - Model: GPT-4o / Claude 3.5 / Gemini Pro (Admin chọn)\n  - API Key: [+] → chọn \"OpenAI\" từ Vault (Giai đoạn 2 ở trên)\n  - Thêm Bot vào Channel: \"Dev Team\", \"Sales Team\",...\n\nLúc này Bot @gpt được cấp Channel_Key của Channel đó (như user thực)."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Luồng xử lý khi nhân viên gọi Bot:"
-                },
-                {
-                  "type": "code",
-                  "language": "text",
-                  "code": "[Channel \"Dev Team\" — E2EE với Channel_Key]\n\nNhân viên A: \"@gpt tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  → Tin nhắn được mã hóa bằng Channel_Key → bắn lên VPS\n\n[VPS — Egress Worker của @gpt]\n  1. Bot nhận MLS-encrypted message\n  2. Giải mã bằng Channel_Key (Bot đã được cấp khi join Channel)\n     → Đọc: \"tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  3. Unseal API Key:\n     Bot_Private_Key.decrypt(Bot_Bound_Blob) → \"sk-openai-12345\" (trong RAM)\n  4. Gọi HTTPS ra ngoài:\n     POST api.openai.com/chat {\"messages\": [...nội dung...]}\n     Header: Authorization: Bearer sk-openai-12345\n  5. Nhận kết quả tóm tắt từ OpenAI\n  6. DROP(\"sk-openai-12345\") ← xóa API Key ngay khỏi RAM\n  7. Mã hóa câu trả lời bằng Channel_Key\n  8. Bắn tin nhắn vào Channel như \"user @gpt\" đang reply\n\n[Channel \"Dev Team\"]\nNhân viên A thấy: \"@gpt: Tóm tắt TechSpec — Đây là những điểm mạnh:...\""
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Rust — Bot Egress Worker (chạy trên VPS):"
-                },
-                {
-                  "type": "code",
-                  "language": "rust",
-                  "code": "// VPS — Bot Egress Worker: xử lý @mention Event\npub async fn handle_bot_mention(\n    event:       BotMentionEvent,     // { channel_id, encrypted_msg, sender_id }\n    channel_key: &MlsChannelKey,      // Được cấp khi Bot join Channel\n    bot_priv:    &Curve25519PrivKey,  // Bot Private Key — securely stored on VPS\n    cluster:     &ClusterClient,\n) -> Result<()> {\n    // Bước 2: Giải mã tin nhắn bằng Channel_Key\n    let plaintext_msg = mls::decrypt(&event.encrypted_msg, channel_key)?;\n\n    // Bước 3: Giải mã API Key từ Bot_Bound_Blob\n    let bot_bound_blob = cluster.bot_get_bound_key().await?;\n    let api_key = ecies::decrypt(bot_priv, &bot_bound_blob)?;\n\n    // Bước 4: Gọi LLM API\n    let ai_response = llm_client::call_openai(\n        &api_key,\n        &build_prompt(&plaintext_msg),\n    ).await?;\n\n    // Bước 5: Zeroize API Key ngay lập tức\n    api_key.zeroize();\n\n    // Bước 7: Mã hóa + gửi trả lời vào Channel\n    let encrypted_reply = mls::encrypt(&ai_response, channel_key)?;\n    cluster.send_channel_message(&event.channel_id, &encrypted_reply).await?;\n\n    Ok(())\n}"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Bảo mật phân mảnh (Compartmentalization):"
-                },
-                {
-                  "type": "table",
-                  "headers": [
-                    "Kịch bản tấn công",
-                    "Kết quả"
-                  ],
-                  "rows": [
-                    [
-                      "`.tapp` độc hại cố đọc API Key của Bot @gpt",
-                      "Thất bại — Key chỉ mở được bằng Bot_PrivKey riêng"
-                    ],
-                    [
-                      "VPS bị xâm nhập, đọc Bot_Bound_Blob",
-                      "Thất bại — Cần Bot_PrivKey để giải mã (stored securely)"
-                    ],
-                    [
-                      "Nhân viên đọc tin nhắn gửi cho @gpt",
-                      "Thất bại — Giao tiếp qua Channel_Key E2EE"
-                    ],
-                    [
-                      "Admin lộ Vault_Key, kẻ tấn công muốn lấy key",
-                      "Chỉ lấy được API Key gốc — vẫn không thể mạo danh Bot (cần Bot_PrivKey)"
-                    ]
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**Triết lý:** Chat là luồng dữ liệu liên tục (Stream) — không phải kho lưu trữ. TeraVault giải quyết \"Căn bệnh Slack\" bằng cách xây dựng một **Virtual File System (VFS)** chạy song song với khung chat, biến mọi file rải rác trong các channel thành một cây thư mục ngăn nắp — mà không tốn thêm 1 byte dung lượng."
+                    "**Khái niệm:** AI không phải \"App thụ động\" mà là **Nhân viên ảo** được Admin thêm vào Channel như một user thực. Gọi bằng `@gpt` (hoặc tên Admin đặt). Bot chạy 24/7 trên VPS dưới dạng **Egress Worker cô lập trong Trusted Execution Environment (TEE)**.",
+                    "**Lead Dev Fix #4 — Lỗ hổng Zero-Knowledge tại AI Egress Worker:** Kiến trúc ban đầu cấp `Channel_Key` cho Bot Worker trên VPS host — vi phạm trực tiếp nguyên tắc \"Server chỉ luân chuyển gói Byte mã hóa\". Nếu VPS bị root/Memory Dump, hacker đọc được toàn bộ luồng chat. **Giải pháp tiêu chuẩn công nghiệp (Signal đang dùng cho Contact Discovery):** Nhốt AI Worker vào **Secure Enclave** — vùng nhớ phần cứng cách ly mà ngay cả OS host hay Root Admin cũng không đọc được."
                   ]
                 }
               ],
-              "subsections": []
+              "subsections": [
+                {
+                  "id": "a-bản-vá-kiến-trúc-trusted-execution-environment-tee",
+                  "level": 4,
+                  "heading": "A. Bản vá kiến trúc: Trusted Execution Environment (TEE)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "Hardware hỗ trợ (3 lựa chọn — chọn theo VPS provider):"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Platform",
+                        "Công nghệ TEE",
+                        "Nhà cung cấp VPS điển hình"
+                      ],
+                      "rows": [
+                        [
+                          "**Intel SGX**",
+                          "Software Guard Extensions",
+                          "Azure Confidential Computing, Alibaba Cloud"
+                        ],
+                        [
+                          "**AMD SEV**",
+                          "Secure Encrypted Virtualization",
+                          "AWS, Google Cloud, Azure"
+                        ],
+                        [
+                          "**AWS Nitro**",
+                          "Nitro Enclaves",
+                          "Amazon AWS"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Kiến trúc TEE — Phân tách vùng nhớ:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "VPS Host (Ubuntu/Linux)\n├── Host OS (Root Admin có thể truy cập)\n│   ├── VPS Services (nginx, monitoring...)\n│   └── Orchestrator Process (quản lý Enclave — KHÔNG thấy nội dung)\n│\n└── Secure Enclave ← AI Bot Worker chạy trong này\n    ├── RAM hoàn toàn cách ly (CPU mã hóa vùng nhớ bằng hardware key)\n    ├── ❌ Host OS KHÔNG thể đọc RAM của Enclave\n    ├── ❌ Hypervisor KHÔNG thể đọc RAM của Enclave\n    ├── ❌ Root Admin KHÔNG thể memory dump Enclave\n    └── ✅ Chỉ AI Worker process bên trong mới truy cập được"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Luồng Remote Attestation — Client xác minh Enclave thật:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "[Nhân viên A muốn add Bot @gpt vào Channel]\n       ↓\n1. Client yêu cầu VPS: \"Chứng minh Bot đang chạy trong Enclave thật\"\n       ↓\n2. Enclave sinh Ra Quote (CPU certificate):\n   - Đo lường mã nguồn Bot Worker (hash của binary)\n   - Ký bằng Intel/AMD/AWS Root CA (certificate cứng của CPU)\n       ↓\n3. Client verify Quote với Intel/AMD/AWS Attestation Service:\n   - Đúng Enclave? Đúng mã nguồn chưa bị sửa đổi? → OK\n       ↓\n4. Client mã hóa Channel_Key bằng Enclave Public Key:\n   encrypted_key = Enclave_PubKey.encrypt(channel_key)\n       ↓\n5. Gửi encrypted_key lên VPS — Host OS thấy ciphertext, KHÔNG thấy channel_key\n       ↓\n6. Enclave giải mã trong RAM cách ly: channel_key = Enclave_PrivKey.decrypt(encrypted_key)\n       ↓\n7. Enclave đọc tin nhắn → gọi AI API → mã hóa trả lời → gửi vào Channel\n       ↓\n8. Enclave XÓA channel_key khỏi RAM ngay sau mỗi request (zeroize)"
+                    },
+                    {
+                      "type": "code",
+                      "language": "rust",
+                      "code": "// AWS Nitro Enclave — Bot AI Worker (pseudo-code mô phỏng Nitro SDK)\nuse aws_nitro_enclaves_sdk::kms::Client as KmsClient;\nuse zeroize::Zeroize;\n\npub async fn handle_bot_mention_tee(\n    event:       BotMentionEvent,\n    kms_client:  &KmsClient,    // KMS trong Enclave — Host OS không truy cập được\n) -> Result<()> {\n    // Bước 1: Giải mã Channel_Key bằng Enclave Private Key (KMS trong vùng an toàn)\n    // → Plaintext channel_key chỉ tồn tại trong RAM Enclave, KHÔNG bao giờ ra ngoài\n    let mut channel_key = kms_client\n        .decrypt(DecryptRequest::builder()\n            .ciphertext_blob(event.encrypted_channel_key)\n            .build())\n        .await?\n        .plaintext()\n        .to_vec();\n\n    // Bước 2: Giải mã tin nhắn bằng channel_key\n    let plaintext_msg = mls::decrypt(&event.encrypted_msg, &channel_key)?;\n\n    // Bước 3: Unseal API Key từ Vault (cũng trong RAM Enclave)\n    let mut api_key = kms_client\n        .decrypt(DecryptRequest::builder()\n            .ciphertext_blob(event.encrypted_api_key)\n            .build())\n        .await?\n        .plaintext()\n        .to_vec();\n\n    // Bước 4: Gọi LLM API\n    let ai_response = llm_client::call_openai(\n        &api_key,\n        &build_prompt(&plaintext_msg),\n    ).await?;\n\n    // Bước 5: Zeroize CẢ HAI key khỏi RAM Enclave ngay lập tức\n    channel_key.zeroize();\n    api_key.zeroize();\n\n    // Bước 6: Mã hóa + gửi trả lời vào Channel (Enclave yêu cầu Client gửi channel_key mới)\n    let encrypted_reply = mls::encrypt_with_fresh_key(&ai_response, &event.reply_key)?;\n    send_to_cluster(&event.channel_id, &encrypted_reply).await?;\n\n    Ok(())\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Bảo vệ tăng cường so với kiến trúc cũ:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Kịch bản tấn công",
+                        "Kiến trúc cũ (Channel_Key trên VPS)",
+                        "Kiến trúc TEE"
+                      ],
+                      "rows": [
+                        [
+                          "VPS bị root / Memory Dump",
+                          "❌ Đọc được Channel_Key → đọc toàn bộ chat",
+                          "✅ RAM Enclave mã hóa cứng — không thể dump"
+                        ],
+                        [
+                          "Admin VPS độc hại",
+                          "❌ Truy cập process RAM trực tiếp",
+                          "✅ Enclave cách ly hoàn toàn khỏi OS"
+                        ],
+                        [
+                          "Tấn công leo thang đặc quyền",
+                          "❌ Root = đọc được mọi thứ",
+                          "✅ Root OS ≠ quyền truy cập Enclave"
+                        ],
+                        [
+                          "Giả mạo Enclave code",
+                          "N/A",
+                          "✅ Remote Attestation verify CPU cert — phát hiện ngay"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Admin thiết lập Bot:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "Settings → AI Bots → [+ Create Bot]\n  - Tên hiển thị: \"GPT Assistant\"\n  - Tag: @gpt\n  - Model: GPT-4o / Claude 3.5 / Gemini Pro (Admin chọn)\n  - API Key: [+] → chọn \"OpenAI\" từ Vault (Giai đoạn 2 ở trên)\n  - Thêm Bot vào Channel: \"Dev Team\", \"Sales Team\",...\n\nLúc này Bot @gpt được cấp Channel_Key của Channel đó (như user thực)."
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Luồng xử lý khi nhân viên gọi Bot:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "[Channel \"Dev Team\" — E2EE với Channel_Key]\n\nNhân viên A: \"@gpt tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  → Tin nhắn được mã hóa bằng Channel_Key → bắn lên VPS\n\n[VPS — Egress Worker của @gpt]\n  1. Bot nhận MLS-encrypted message\n  2. Giải mã bằng Channel_Key (Bot đã được cấp khi join Channel)\n     → Đọc: \"tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  3. Unseal API Key:\n     Bot_Private_Key.decrypt(Bot_Bound_Blob) → \"sk-openai-12345\" (trong RAM)\n  4. Gọi HTTPS ra ngoài:\n     POST api.openai.com/chat {\"messages\": [...nội dung...]}\n     Header: Authorization: Bearer sk-openai-12345\n  5. Nhận kết quả tóm tắt từ OpenAI\n  6. DROP(\"sk-openai-12345\") ← xóa API Key ngay khỏi RAM\n  7. Mã hóa câu trả lời bằng Channel_Key\n  8. Bắn tin nhắn vào Channel như \"user @gpt\" đang reply\n\n[Channel \"Dev Team\"]\nNhân viên A thấy: \"@gpt: Tóm tắt TechSpec — Đây là những điểm mạnh:...\""
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Rust — Bot Egress Worker (chạy trên VPS):"
+                    },
+                    {
+                      "type": "code",
+                      "language": "rust",
+                      "code": "// VPS — Bot Egress Worker: xử lý @mention Event\npub async fn handle_bot_mention(\n    event:       BotMentionEvent,     // { channel_id, encrypted_msg, sender_id }\n    channel_key: &MlsChannelKey,      // Được cấp khi Bot join Channel\n    bot_priv:    &Curve25519PrivKey,  // Bot Private Key — securely stored on VPS\n    cluster:     &ClusterClient,\n) -> Result<()> {\n    // Bước 2: Giải mã tin nhắn bằng Channel_Key\n    let plaintext_msg = mls::decrypt(&event.encrypted_msg, channel_key)?;\n\n    // Bước 3: Giải mã API Key từ Bot_Bound_Blob\n    let bot_bound_blob = cluster.bot_get_bound_key().await?;\n    let api_key = ecies::decrypt(bot_priv, &bot_bound_blob)?;\n\n    // Bước 4: Gọi LLM API\n    let ai_response = llm_client::call_openai(\n        &api_key,\n        &build_prompt(&plaintext_msg),\n    ).await?;\n\n    // Bước 5: Zeroize API Key ngay lập tức\n    api_key.zeroize();\n\n    // Bước 7: Mã hóa + gửi trả lời vào Channel\n    let encrypted_reply = mls::encrypt(&ai_response, channel_key)?;\n    cluster.send_channel_message(&event.channel_id, &encrypted_reply).await?;\n\n    Ok(())\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Bảo mật phân mảnh (Compartmentalization):"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Kịch bản tấn công",
+                        "Kết quả"
+                      ],
+                      "rows": [
+                        [
+                          "`.tapp` độc hại cố đọc API Key của Bot @gpt",
+                          "Thất bại — Key chỉ mở được bằng Bot_PrivKey riêng"
+                        ],
+                        [
+                          "VPS bị xâm nhập, đọc Bot_Bound_Blob",
+                          "Thất bại — Cần Bot_PrivKey để giải mã (stored securely)"
+                        ],
+                        [
+                          "Nhân viên đọc tin nhắn gửi cho @gpt",
+                          "Thất bại — Giao tiếp qua Channel_Key E2EE"
+                        ],
+                        [
+                          "Admin lộ Vault_Key, kẻ tấn công muốn lấy key",
+                          "Chỉ lấy được API Key gốc — vẫn không thể mạo danh Bot (cần Bot_PrivKey)"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Triết lý:** Chat là luồng dữ liệu liên tục (Stream) — không phải kho lưu trữ. TeraVault giải quyết \"Căn bệnh Slack\" bằng cách xây dựng một **Virtual File System (VFS)** chạy song song với khung chat, biến mọi file rải rác trong các channel thành một cây thư mục ngăn nắp — mà không tốn thêm 1 byte dung lượng."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
             },
             {
               "id": "111-kiến-trúc-teravault-vfs",
