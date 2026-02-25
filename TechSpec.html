@@ -75,7 +75,9 @@
 <a href="#51-ai-integration-gateway" class="nav-link" style="padding-left:0.8rem;">5.1 AI Integration Gateway</a>
 <a href="#52-terachat-marketplace-kiến-trúc-bóc-tách-control-plane-vs-data-plane" class="nav-link" style="padding-left:0.8rem;">5.2 TeraChat Marketplace — Kiến trúc Bóc tách (Control Plane vs. Data Plane)</a>
 <a href="#53-core-app-vs-app-packages-architectural-boundary" class="nav-link" style="padding-left:0.8rem;">5.3 Core App vs. App Packages (Architectural Boundary)</a>
+<a href="#52c-ipc-architecture-control-plane-data-plane-terachat-ipcproto" class="nav-link" style="padding-left:0.8rem;">5.2.C IPC Architecture — Control Plane / Data Plane (terachat_ipc.proto)</a>
 <a href="#54-offline-first-pragmatic-thực-dụng-hóa" class="nav-link" style="padding-left:0.8rem;">5.4 Offline First — Pragmatic (Thực dụng hóa)</a>
+<a href="#54b-offline-double-ratchet-o-dr-stream-cryptography-lan-e2ee" class="nav-link" style="padding-left:0.8rem;">5.4.B Offline Double Ratchet (O-DR) + Stream Cryptography — LAN E2EE</a>
 <a href="#55-crdt-offline-sync-automerge" class="nav-link" style="padding-left:0.8rem;">5.5 CRDT Offline Sync (Automerge)</a>
 <a href="#56-wasm-sandbox-digital-glass-room" class="nav-link" style="padding-left:0.8rem;">5.6 WASM Sandbox & Digital Glass Room</a>
 <a href="#57-smart-approval-fintech-bridge" class="nav-link" style="padding-left:0.8rem;">5.7 Smart Approval (Fintech Bridge)</a>
@@ -2570,6 +2572,186 @@ pub fn handle_vfs_request(
         }
     }
 }</code></pre></div>
+<h3 id="52c-ipc-architecture-control-plane-data-plane-terachat-ipcproto">5.2.C IPC Architecture — Control Plane / Data Plane (terachat_ipc.proto)</h3>
+<div class="tech-box" style="border-color:var(--accent-purple);">
+<div class="tech-header" style="color:var(--accent-purple);">🔺 IMPORTANT</div>
+<p><strong>DevSecOps Alert — JSON/Base64 IPC là tự sát hiệu năng:</strong> Truyền file hàng chục MB giữa WASM và Rust Core qua JSON serialize/deserialize hoặc Base64 qua Web Worker gây OOM ngay lập tức và block UI thread. Giải pháp dứt điểm: <strong>Tách biệt Control Plane (Protobuf siêu nhẹ) và Data Plane (SharedArrayBuffer Zero-Copy).</strong></p>
+</div>
+<p><strong>Nguyên tắc kiến trúc:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Plane</th>
+<th>Cơ chế</th>
+<th>Nội dung</th>
+<th>Kích thước</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Control Plane</strong></td>
+<td>Protobuf qua WASM/Rust channel</td>
+<td>Lệnh, metadata, SQL, offset pointer</td>
+<td>&lt; 50 bytes/message</td>
+</tr>
+<tr>
+<td><strong>Data Plane</strong></td>
+<td>SharedArrayBuffer (mmap vật lý)</td>
+<td>File chunk, record bulk, AI input</td>
+<td>Chunk 2MB, vòng tròn Ring Buffer</td>
+</tr>
+</tbody></table></div>
+<p><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_ipc.proto</code> — Schema chính thức:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>syntax = "proto3";
+package terachat.ipc;
+
+option rust_package = "crate::ipc::schema";
+option optimize_for = SPEED;
+
+// [1] ENVELOPE — Lớp bao bọc mọi IPC call (Control Plane)
+message IpcEnvelope {
+  uint32 request_id = 1;     // Map async/await giữa WASM và Rust
+  uint64 timestamp  = 2;     // Chống Replay Attack trong IPC
+
+  oneof payload {
+    VfsCommand     vfs_cmd  = 3;  // SQLite WASM VFS Bridge
+    StreamControl  stream   = 4;  // File / Data Chunk lớn
+    UtilityAction  utility  = 5;  // Enterprise Utility Tools API
+    IpcResponse    response = 6;  // Phản hồi từ Rust về WASM
+  }
+}
+
+// [2] MEMORY POINTER — Chìa khóa Zero-Copy (Data Plane)
+// Protobuf chỉ mang offset + length — KHÔNG mang data thực
+message MemoryPointer {
+  uint32 offset   = 1;  // Vị trí bắt đầu trong SharedArrayBuffer
+  uint32 length   = 2;  // Độ dài byte
+  uint32 checksum = 3;  // CRC32 — phát hiện Out-of-Bounds Write
+}
+
+// [3] VFS BRIDGE (SQLite I/O)
+message VfsCommand {
+  enum Operation {
+    OP_UNKNOWN  = 0;
+    OP_READ     = 1;
+    OP_WRITE    = 2;
+    OP_SYNC     = 3;
+  }
+  Operation    op        = 1;
+  string       file_path = 2;   // "tapp_storage/tool_a.db"
+  MemoryPointer data_ptr = 3;   // Trỏ vào SAB — không nhúng bytes vào đây
+}
+
+// [4] STREAMING BĂNG THÔNG CAO (File, AI Model input)
+message StreamControl {
+  string stream_id    = 1;
+  uint32 chunk_index  = 2;
+
+  enum StreamState {
+    STATE_START    = 0;
+    STATE_TRANSFER = 1;
+    STATE_EOF      = 2;
+    STATE_ABORT    = 3;
+  }
+  StreamState   state     = 3;
+  MemoryPointer chunk_ptr = 4;  // Chỉ có giá trị ở STATE_TRANSFER
+}
+
+// [5] ENTERPRISE UTILITY TOOLS
+message UtilityAction {
+  string app_id      = 1;   // "tera_crm", "doc_summarizer"
+  string action_name = 2;   // "encrypt_document", "ask_ai"
+  bytes  metadata    = 3;   // JSON/MsgPack request params (siêu nhẹ)
+  MemoryPointer raw_data_ptr = 4;  // File 50MB+ ở Shared Memory
+}
+
+// [6] RESPONSE STANDARD
+message IpcResponse {
+  uint32 status_code    = 1;  // 200 OK | 400 Bad | 500 Rust Panic
+  string error_message  = 2;
+  MemoryPointer result_ptr = 3;  // Kết quả (file đã mã hóa/giải mã) ở SAB
+}</code></pre></div>
+<p><strong>Kịch bản thực tế — Mã hóa file CAD 100MB vào TeraVault (Ring Buffer):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[WASM] Tapp yêu cầu mã hóa file CAD 100MB
+       ↓
+Bước 1 — Chunking (WASM không load cả file):
+  File 100MB → chia thành 50 block × 2MB
+  Block đầu tiên ghi vào SharedArrayBuffer (SAB) cố định 10MB
+  RAM tiêu thụ tối đa: 10MB (Ring Buffer — không cần 100MB)
+
+Bước 2 — Bắn Control Signal (Protobuf ~50 bytes):
+  StreamControl {
+    stream_id: "uuid-abc",
+    chunk_index: 0,
+    state: STATE_TRANSFER,
+    chunk_ptr: { offset: 0, length: 2097152, checksum: 0xDEADBEEF }
+  }
+  → Rust nhận: "Chunk 0 ở offset 0, dài 2MB, CRC32=0xDEADBEEF — xử lý đi"
+
+Bước 3 — Rust Zero-Copy (không sao chép data):
+  Rust đọc con trỏ vật lý SAB[0..2097152]
+  → Validate checksum CRC32 (phát hiện OOB ngay lập tức)
+  → Ném thẳng vào AES-256-GCM không cần copy buffer
+  → Ghi ciphertext vào offset khác trong SAB
+
+Bước 4 — Phản hồi (Protobuf ~30 bytes):
+  IpcResponse { status_code: 200,
+    result_ptr: { offset: 4194304, length: 2097200 } }
+  WASM lấy ciphertext từ SAB[4194304..] → lưu vào TeraVault VFS
+
+Bước 5 — Ring Buffer xoay:
+  Giải phóng slot đã dùng → ghi Block 1 (2MB tiếp theo) vào
+  Lặp lại cho đến Block 49 → hoàn thành 100MB
+  RAM tiêu thụ xuyên suốt: ≤ 10MB</code></pre></div>
+<p><strong>Security Contract — Ba quy tắc BẤT KHẢ XÂM PHẠM:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Quy tắc</th>
+<th>Nội dung</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>ACL per-.tapp</strong></td>
+<td>Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UtilityAction</code> từ bên thứ 3 phải qua ACL Policy tại Rust Core trước khi xử lý</td>
+</tr>
+<tr>
+<td><strong>Key Isolation</strong></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Channel_Key</code> TUYỆT ĐỐI không truyền qua Protobuf lên WASM. WASM chỉ ném data vào SAB và nói "Mã hóa hộ tao". Rust tự dùng Key đang mlock'd trong RAM.</td>
+</tr>
+<tr>
+<td><strong>OOB Boundary Check</strong></td>
+<td>Rust kiểm tra <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">offset + length ≤ SAB_SIZE</code> và validate CRC32 trước mỗi read/write. Vi phạm → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SIGSEGV</code> trap + panic thay vì continue</td>
+</tr>
+</tbody></table></div>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>// Rust Core — IPC Dispatcher với Security Boundary Check
+pub fn dispatch_ipc(envelope: IpcEnvelope, sab: &amp;SharedBuffer) -&gt; IpcResponse {
+    // [Security] Verify timestamp chống Replay Attack
+    if envelope.timestamp &lt; now_ms().saturating_sub(5000) {
+        return IpcResponse::error(400, "Stale IPC request");
+    }
+
+    match envelope.payload {
+        Payload::VfsCmd(cmd) =&gt; {
+            // [Security] Boundary check bắt buộc trước khi đọc SAB
+            let ptr = cmd.data_ptr;
+            if ptr.offset as usize + ptr.length as usize &gt; sab.capacity() {
+                return IpcResponse::error(400, "OOB violation");
+            }
+            if crc32(&amp;sab[ptr.offset..ptr.offset + ptr.length]) != ptr.checksum {
+                return IpcResponse::error(400, "Checksum mismatch");
+            }
+            // Zero-copy: đọc trực tiếp từ SAB, không clone
+            let slice = &amp;sab[ptr.offset as usize..(ptr.offset + ptr.length) as usize];
+            handle_vfs(cmd.op, cmd.file_path, slice)
+        }
+        Payload::Utility(action) =&gt; {
+            // [Security] ACL check — .tapp có quyền gọi action này không?
+            if !acl_policy::check(&amp;action.app_id, &amp;action.action_name) {
+                return IpcResponse::error(403, "ACL denied");
+            }
+            // Key KHÔNG bao giờ đi vào đây từ WASM — Rust tự lấy từ KeyStore
+            let key = keystore::get_company_key();      // mlock'd RAM
+            encrypt_in_place(sab, &amp;action.raw_data_ptr, &amp;key)
+        }
+        _ =&gt; IpcResponse::error(500, "Unknown payload")
+    }
+}</code></pre></div>
 <p><strong>Storage Isolation (Per-App SQLCipher):</strong></p>
 <div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub fn open_app_db(app_id: &amp;str, user_key: &amp;[u8]) -&gt; Result&lt;SqlCipherDb&gt; {
     let salt = derive_salt(app_id);
@@ -2803,6 +2985,243 @@ pub enum TransferState {
 </tr>
 </tbody></table></div>
 <p><strong>Instant-on Guarantee:</strong> Sau lần tải đầu tiên, app mở được trong <strong>&lt; 500ms</strong> không cần mạng.</p>
+<h3 id="54b-offline-double-ratchet-o-dr-stream-cryptography-lan-e2ee">5.4.B Offline Double Ratchet (O-DR) + Stream Cryptography — LAN E2EE</h3>
+<div class="tech-box" style="border-color:var(--accent-purple);">
+<div class="tech-header" style="color:var(--accent-purple);">🔺 IMPORTANT</div>
+<p><strong>Tử huyệt của Signal Protocol khi offline:</strong> X3DH / Signal Protocol bắt buộc kéo PreKeys từ Server trung tâm để khởi tạo phiên. Khi mất Internet, Server chết — không có PreKeys, không thể thiết lập E2EE session giữa A và B trong LAN. <strong>Giải pháp: Out-of-Band Key Exchange qua BLE hoặc QR Code.</strong></p>
+</div>
+<h4 id="a-offline-x3dh-khởi-tạo-khóa-không-cần-server">A. Offline X3DH — Khởi tạo khóa không cần Server</h4>
+<p><strong>Hai trường hợp xác lập danh tính:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Trường hợp</th>
+<th>Điều kiện</th>
+<th>Cơ chế</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Case 1 — Đã từng chat</strong></td>
+<td>A và B đã có session khi còn mạng</td>
+<td>Local DB đã lưu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Identity Key (Ed25519)</code> của nhau. Broadcast <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Ephemeral Key</code> qua Hybrid STUN/BLE để chạy X3DH.</td>
+</tr>
+<tr>
+<td><strong>Case 2 — Chưa từng chat</strong></td>
+<td>Mất mạng hoàn toàn, lần đầu gặp</td>
+<td>QR Code: Máy A hiển thị <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat://lan-handshake?id_key=[Base64]&eph_key=[Base64]&ip=10.x.x.x</code>. Máy B quét → 100% Zero-Trust, không sợ MitM từ máy C cùng mạng.</td>
+</tr>
+</tbody></table></div>
+<p><strong>Luồng QR Handshake (Case 2 — không có Server):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Máy A]                                    [Máy B]
+   │                                          │
+   │─── Hiển thị QR: {id_key, eph_key, ip} ──│
+   │                                          │ (scan QR bằng camera)
+   │                                          │ B nắm chắc Public Key của A
+   │                                          │ Không thể bị máy C đánh chặn
+   │                                          │
+   │◄── TCP Handshake (B kết nối tới ip:port) │
+   │                                          │
+   │─── X3DH Key Exchange ───────────────────►│
+   │    (Shared Secret = X25519)              │
+   │                                          │
+   └──── Double Ratchet bắt đầu ─────────────┘</code></pre></div>
+<h4 id="b-double-ratchet-forward-secrecy-post-compromise-security">B. Double Ratchet — Forward Secrecy + Post-Compromise Security</h4>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌─────────────────────────────────────────────────────────┐
+│  Root Key (root_key) — nhảy mỗi khi đổi hướng gửi      │
+│  ┌──────────────┐    ┌──────────────────────────────┐   │
+│  │ Send Chain   │    │ Recv Chain Key               │   │
+│  │ Key (SCK)    │    │ (RCK)                        │   │
+│  └──────┬───────┘    └────────────┬─────────────────┘   │
+│         │ HKDF                    │ HKDF                 │
+│  Msg 1: message_key_1       Msg 1: message_key_1'        │
+│  Msg 2: message_key_2       Msg 2: message_key_2'        │
+│  ...    (mỗi tin → 1 key riêng, dùng 1 lần)             │
+└─────────────────────────────────────────────────────────┘</code></pre></div>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>// Rust Core — LanRatchetSession
+use zeroize::Zeroize;
+
+struct LanRatchetSession {
+    root_key:       [u8; 32],  // Xoay khi đổi hướng gửi/nhận
+    send_chain_key: [u8; 32],  // Xoay mỗi message gửi đi
+    recv_chain_key: [u8; 32],  // Xoay mỗi message nhận
+}
+
+impl LanRatchetSession {
+    /// Gửi tin nhắn chat hoặc File Metadata — mỗi call tạo message_key mới
+    fn ratchet_encrypt(&amp;mut self, plaintext: &amp;[u8]) -&gt; Vec&lt;u8&gt; {
+        // HKDF "Ratchet" chain key → sinh message_key dùng 1 lần
+        let (next_chain_key, mut message_key) = hkdf_sha256_ratchet(&amp;self.send_chain_key);
+        self.send_chain_key.zeroize();
+        self.send_chain_key = next_chain_key;
+
+        let ciphertext = aes_256_gcm::encrypt(&amp;message_key, plaintext);
+        message_key.zeroize(); // Hủy ngay — Forward Secrecy
+        ciphertext
+    }
+
+    /// Nhận tin nhắn đã được ratchet bởi bên kia
+    fn ratchet_decrypt(&amp;mut self, ciphertext: &amp;[u8]) -&gt; Vec&lt;u8&gt; {
+        let (next_chain_key, mut message_key) = hkdf_sha256_ratchet(&amp;self.recv_chain_key);
+        self.recv_chain_key.zeroize();
+        self.recv_chain_key = next_chain_key;
+
+        let plaintext = aes_256_gcm::decrypt(&amp;message_key, ciphertext);
+        message_key.zeroize();
+        plaintext
+    }
+}</code></pre></div>
+<p><strong>Hai tính chất được đảm bảo bởi Double Ratchet:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tính chất</th>
+<th>Ý nghĩa thực tế</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Forward Secrecy</strong></td>
+<td>Lộ key hôm nay → tin nhắn hôm qua vẫn an toàn (key cũ đã zeroize)</td>
+</tr>
+<tr>
+<td><strong>Post-Compromise Security</strong></td>
+<td>Lộ key hôm nay → tin nhắn ngày mai tự động an toàn (chain key xoay liên tục)</td>
+</tr>
+</tbody></table></div>
+<h4 id="c-tối-ưu-gửi-file-lớn-tách-data-plane-chacha20-poly1305">C. Tối ưu gửi file lớn — Tách Data Plane (ChaCha20-Poly1305)</h4>
+<div class="tech-box" style="border-color:var(--accent-purple);">
+<div class="tech-header" style="color:var(--accent-purple);">🔺 IMPORTANT</div>
+<p><strong>Cảnh báo kiến trúc:</strong> Áp dụng nguyên xi Double Ratchet để gửi file Video 2GB (gọi KDF cho từng chunk 1MB × 2000 lần) sẽ giết CPU thiết bị di động và tốc độ LAN tụt thảm hại. <strong>Giải pháp: Payload-Key Approach — tách Control Plane (Double Ratchet) và Data Plane (ChaCha20-Poly1305 streaming).</strong></p>
+</div>
+<p><strong>Luồng gửi file lớn (Payload-Key Approach):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Giai đoạn 1 — Trao key qua Double Ratchet (1 message duy nhất)]
+Máy A sinh:
+  Ephemeral_File_Key (32 bytes, ngẫu nhiên)
+  File_Nonce         (12 bytes, ngẫu nhiên)
+
+A gửi "File Metadata Message" bằng ratchet_encrypt():
+  {
+    "file_name": "blueprint_v3.cad",
+    "file_size": 2147483648,       ← 2GB
+    "file_hash": "&lt;SHA-256&gt;",
+    "ephemeral_file_key": "&lt;32 bytes&gt;",  ← được bọc bởi message_key của Ratchet
+    "file_nonce": "&lt;12 bytes&gt;"
+  }
+
+B nhận → ratchet_decrypt() → lấy được Ephemeral_File_Key và File_Nonce
+
+─────────────────────────────────────────────────────────────────────────
+[Giai đoạn 2 — Streaming Data (Double Ratchet KHÔNG chạy nữa)]
+A bắt đầu bơm chunks qua TCP/Wi-Fi Direct:
+  Chunk_0 → ChaCha20-Poly1305(Ephemeral_File_Key, File_Nonce, offset=0, data[0..2MB])
+  Chunk_1 → ChaCha20-Poly1305(Ephemeral_File_Key, File_Nonce, offset=2MB, data[2..4MB])
+  ...
+  Chunk_N → ChaCha20-Poly1305(Ephemeral_File_Key, File_Nonce, offset=2N·MB, ...)
+
+Máy B nhận từng chunk → verify Poly1305 MAC → giải mã → ghi vào TeraVault
+
+─────────────────────────────────────────────────────────────────────────
+[Giai đoạn 3 — Cleanup]
+Gửi xong → A và B đều zeroize Ephemeral_File_Key khỏi RAM ngay lập tức</code></pre></div>
+<p><strong>ChaCha20-Poly1305 — Lý do chọn thay AES-GCM cho file streaming:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tiêu chí</th>
+<th>AES-256-GCM</th>
+<th>ChaCha20-Poly1305</th>
+</tr></thead><tbody>
+<tr>
+<td>Yêu cầu phần cứng</td>
+<td>AES-NI instruction (desktop, iPhone chip thế hệ mới)</td>
+<td>Không — pure software, tối ưu ARM/RISC-V</td>
+</tr>
+<tr>
+<td>Tốc độ trên điện thoại tầm thấp</td>
+<td>~200MB/s (nếu có AES-NI) / ~50MB/s (không có)</td>
+<td><strong>~300MB/s</strong> (tất cả thiết bị AR</td>
+</tr>
+<tr>
+<td>Tốc độ LAN thực tế</td>
+<td>50–60MB/s (Wi-Fi Direct)</td>
+<td><strong>60–80MB/s</strong> (Wi-Fi Direct)</td>
+</tr>
+<tr>
+<td>Dùng cho</td>
+<td>Mã hóa tin nhắn, key wrapping</td>
+<td><strong>Streaming file lớn qua LAN</strong></td>
+</tr>
+</tbody></table></div>
+<h4 id="d-lantransferpacketproto-wire-format-qua-tcp-socket">D. LanTransferPacket.proto — Wire Format qua TCP Socket</h4>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>syntax = "proto3";
+package terachat.lan;
+
+// Toàn bộ dữ liệu trên LAN TCP socket — attacker chỉ thấy rác nhị phân
+message LanTransferPacket {
+  oneof packet_type {
+    // Bắt tay X3DH ban đầu (nếu không dùng QR)
+    LanHandshake      init                    = 1;
+
+    // Tin nhắn chat hoặc File Metadata (mã hóa bằng message_key của Double Ratchet)
+    bytes             encrypted_ratchet_msg   = 2;
+
+    // Chunk dữ liệu file (mã hóa ChaCha20-Poly1305 từ Ephemeral_File_Key)
+    FileChunk         encrypted_chunk         = 3;
+
+    // Xác nhận nhận chunk — A biết để tiếp tục gửi
+    ChunkAck          ack                     = 4;
+
+    // Tín hiệu kết thúc stream + final hash để verify toàn vẹn
+    StreamFinalize    finalize                = 5;
+  }
+}
+
+message LanHandshake {
+  bytes identity_key   = 1;   // Ed25519 Public Key
+  bytes ephemeral_key  = 2;   // X25519 Ephemeral Key (X3DH)
+  bytes handshake_sig  = 3;   // Ed25519 Signature của {eph_key || timestamp}
+  uint64 timestamp     = 4;   // Unix ms — chống Replay Attack
+}
+
+message FileChunk {
+  string file_id    = 1;
+  uint64 offset     = 2;   // Byte offset trong file gốc
+  bytes  ciphertext = 3;   // Dữ liệu đã mã hóa ChaCha20-Poly1305
+  bytes  mac        = 4;   // Poly1305 Authentication Tag (16 bytes)
+}
+
+message ChunkAck {
+  string file_id    = 1;
+  uint64 offset     = 2;
+  bool   ok         = 3;   // false → A retry chunk này
+}
+
+message StreamFinalize {
+  string file_id    = 1;
+  bytes  file_hash  = 2;   // SHA-256 của plaintext gốc — B verify sau khi giải mã
+}</code></pre></div>
+<p><strong>Kết quả sau O-DR + ChaCha20 Streaming:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Vấn đề</th>
+<th>Trước</th>
+<th>Sau</th>
+</tr></thead><tbody>
+<tr>
+<td>Khởi tạo E2EE khi mất Internet</td>
+<td>❌ Không thể (X3DH cần Server)</td>
+<td>✅ BLE/QR Out-of-Band Handshake</td>
+</tr>
+<tr>
+<td>Nghe lén trên Wi-Fi LAN</td>
+<td>❌ Plaintext nếu không có TLS</td>
+<td>✅ Double Ratchet mọi tin nhắn</td>
+</tr>
+<tr>
+<td>Gửi file 2GB qua LAN</td>
+<td>❌ Chậm / CPU dies (KDF loop)</td>
+<td>✅ ChaCha20 streaming 60–80MB/s</td>
+</tr>
+<tr>
+<td>File key tồn tại sau transfer</td>
+<td>❌ Có thể còn trong RAM/cache</td>
+<td>✅ Zeroize ngay sau khi xong</td>
+</tr>
+</tbody></table></div>
 <h3 id="55-crdt-offline-sync-automerge">5.5 CRDT Offline Sync (Automerge)</h3>
 <ul>
 <li><strong>Library:</strong> Automerge CRDT (Rust), tích hợp vào Rust Core.</li>

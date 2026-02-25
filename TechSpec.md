@@ -2115,6 +2115,172 @@ pub fn handle_vfs_request(
 }
 ```
 
+### 5.2.C IPC Architecture — Control Plane / Data Plane (terachat_ipc.proto)
+
+> [!IMPORTANT]
+> **DevSecOps Alert — JSON/Base64 IPC là tự sát hiệu năng:** Truyền file hàng chục MB giữa WASM và Rust Core qua JSON serialize/deserialize hoặc Base64 qua Web Worker gây OOM ngay lập tức và block UI thread. Giải pháp dứt điểm: **Tách biệt Control Plane (Protobuf siêu nhẹ) và Data Plane (SharedArrayBuffer Zero-Copy).**
+
+**Nguyên tắc kiến trúc:**
+
+| Plane | Cơ chế | Nội dung | Kích thước |
+|---|---|---|---|
+| **Control Plane** | Protobuf qua WASM/Rust channel | Lệnh, metadata, SQL, offset pointer | < 50 bytes/message |
+| **Data Plane** | SharedArrayBuffer (mmap vật lý) | File chunk, record bulk, AI input | Chunk 2MB, vòng tròn Ring Buffer |
+
+**`terachat_ipc.proto` — Schema chính thức:**
+
+```protobuf
+syntax = "proto3";
+package terachat.ipc;
+
+option rust_package = "crate::ipc::schema";
+option optimize_for = SPEED;
+
+// [1] ENVELOPE — Lớp bao bọc mọi IPC call (Control Plane)
+message IpcEnvelope {
+  uint32 request_id = 1;     // Map async/await giữa WASM và Rust
+  uint64 timestamp  = 2;     // Chống Replay Attack trong IPC
+
+  oneof payload {
+    VfsCommand     vfs_cmd  = 3;  // SQLite WASM VFS Bridge
+    StreamControl  stream   = 4;  // File / Data Chunk lớn
+    UtilityAction  utility  = 5;  // Enterprise Utility Tools API
+    IpcResponse    response = 6;  // Phản hồi từ Rust về WASM
+  }
+}
+
+// [2] MEMORY POINTER — Chìa khóa Zero-Copy (Data Plane)
+// Protobuf chỉ mang offset + length — KHÔNG mang data thực
+message MemoryPointer {
+  uint32 offset   = 1;  // Vị trí bắt đầu trong SharedArrayBuffer
+  uint32 length   = 2;  // Độ dài byte
+  uint32 checksum = 3;  // CRC32 — phát hiện Out-of-Bounds Write
+}
+
+// [3] VFS BRIDGE (SQLite I/O)
+message VfsCommand {
+  enum Operation {
+    OP_UNKNOWN  = 0;
+    OP_READ     = 1;
+    OP_WRITE    = 2;
+    OP_SYNC     = 3;
+  }
+  Operation    op        = 1;
+  string       file_path = 2;   // "tapp_storage/tool_a.db"
+  MemoryPointer data_ptr = 3;   // Trỏ vào SAB — không nhúng bytes vào đây
+}
+
+// [4] STREAMING BĂNG THÔNG CAO (File, AI Model input)
+message StreamControl {
+  string stream_id    = 1;
+  uint32 chunk_index  = 2;
+
+  enum StreamState {
+    STATE_START    = 0;
+    STATE_TRANSFER = 1;
+    STATE_EOF      = 2;
+    STATE_ABORT    = 3;
+  }
+  StreamState   state     = 3;
+  MemoryPointer chunk_ptr = 4;  // Chỉ có giá trị ở STATE_TRANSFER
+}
+
+// [5] ENTERPRISE UTILITY TOOLS
+message UtilityAction {
+  string app_id      = 1;   // "tera_crm", "doc_summarizer"
+  string action_name = 2;   // "encrypt_document", "ask_ai"
+  bytes  metadata    = 3;   // JSON/MsgPack request params (siêu nhẹ)
+  MemoryPointer raw_data_ptr = 4;  // File 50MB+ ở Shared Memory
+}
+
+// [6] RESPONSE STANDARD
+message IpcResponse {
+  uint32 status_code    = 1;  // 200 OK | 400 Bad | 500 Rust Panic
+  string error_message  = 2;
+  MemoryPointer result_ptr = 3;  // Kết quả (file đã mã hóa/giải mã) ở SAB
+}
+```
+
+**Kịch bản thực tế — Mã hóa file CAD 100MB vào TeraVault (Ring Buffer):**
+
+```text
+[WASM] Tapp yêu cầu mã hóa file CAD 100MB
+       ↓
+Bước 1 — Chunking (WASM không load cả file):
+  File 100MB → chia thành 50 block × 2MB
+  Block đầu tiên ghi vào SharedArrayBuffer (SAB) cố định 10MB
+  RAM tiêu thụ tối đa: 10MB (Ring Buffer — không cần 100MB)
+
+Bước 2 — Bắn Control Signal (Protobuf ~50 bytes):
+  StreamControl {
+    stream_id: "uuid-abc",
+    chunk_index: 0,
+    state: STATE_TRANSFER,
+    chunk_ptr: { offset: 0, length: 2097152, checksum: 0xDEADBEEF }
+  }
+  → Rust nhận: "Chunk 0 ở offset 0, dài 2MB, CRC32=0xDEADBEEF — xử lý đi"
+
+Bước 3 — Rust Zero-Copy (không sao chép data):
+  Rust đọc con trỏ vật lý SAB[0..2097152]
+  → Validate checksum CRC32 (phát hiện OOB ngay lập tức)
+  → Ném thẳng vào AES-256-GCM không cần copy buffer
+  → Ghi ciphertext vào offset khác trong SAB
+
+Bước 4 — Phản hồi (Protobuf ~30 bytes):
+  IpcResponse { status_code: 200,
+    result_ptr: { offset: 4194304, length: 2097200 } }
+  WASM lấy ciphertext từ SAB[4194304..] → lưu vào TeraVault VFS
+
+Bước 5 — Ring Buffer xoay:
+  Giải phóng slot đã dùng → ghi Block 1 (2MB tiếp theo) vào
+  Lặp lại cho đến Block 49 → hoàn thành 100MB
+  RAM tiêu thụ xuyên suốt: ≤ 10MB
+```
+
+**Security Contract — Ba quy tắc BẤT KHẢ XÂM PHẠM:**
+
+| Quy tắc | Nội dung |
+|---|---|
+| **ACL per-.tapp** | Mọi `UtilityAction` từ bên thứ 3 phải qua ACL Policy tại Rust Core trước khi xử lý |
+| **Key Isolation** | `Company_Key` / `Channel_Key` TUYỆT ĐỐI không truyền qua Protobuf lên WASM. WASM chỉ ném data vào SAB và nói "Mã hóa hộ tao". Rust tự dùng Key đang mlock'd trong RAM. |
+| **OOB Boundary Check** | Rust kiểm tra `offset + length ≤ SAB_SIZE` và validate CRC32 trước mỗi read/write. Vi phạm → `SIGSEGV` trap + panic thay vì continue |
+
+```rust
+// Rust Core — IPC Dispatcher với Security Boundary Check
+pub fn dispatch_ipc(envelope: IpcEnvelope, sab: &SharedBuffer) -> IpcResponse {
+    // [Security] Verify timestamp chống Replay Attack
+    if envelope.timestamp < now_ms().saturating_sub(5000) {
+        return IpcResponse::error(400, "Stale IPC request");
+    }
+
+    match envelope.payload {
+        Payload::VfsCmd(cmd) => {
+            // [Security] Boundary check bắt buộc trước khi đọc SAB
+            let ptr = cmd.data_ptr;
+            if ptr.offset as usize + ptr.length as usize > sab.capacity() {
+                return IpcResponse::error(400, "OOB violation");
+            }
+            if crc32(&sab[ptr.offset..ptr.offset + ptr.length]) != ptr.checksum {
+                return IpcResponse::error(400, "Checksum mismatch");
+            }
+            // Zero-copy: đọc trực tiếp từ SAB, không clone
+            let slice = &sab[ptr.offset as usize..(ptr.offset + ptr.length) as usize];
+            handle_vfs(cmd.op, cmd.file_path, slice)
+        }
+        Payload::Utility(action) => {
+            // [Security] ACL check — .tapp có quyền gọi action này không?
+            if !acl_policy::check(&action.app_id, &action.action_name) {
+                return IpcResponse::error(403, "ACL denied");
+            }
+            // Key KHÔNG bao giờ đi vào đây từ WASM — Rust tự lấy từ KeyStore
+            let key = keystore::get_company_key();      // mlock'd RAM
+            encrypt_in_place(sab, &action.raw_data_ptr, &key)
+        }
+        _ => IpcResponse::error(500, "Unknown payload")
+    }
+}
+```
+
 **Storage Isolation (Per-App SQLCipher):**
 
 ```rust
@@ -2315,6 +2481,206 @@ pub enum TransferState {
 | Open app offline | Instant-on < 500ms | ✅ Hot Cache, Stub lazy-load |
 
 **Instant-on Guarantee:** Sau lần tải đầu tiên, app mở được trong **< 500ms** không cần mạng.
+
+### 5.4.B Offline Double Ratchet (O-DR) + Stream Cryptography — LAN E2EE
+
+> [!IMPORTANT]
+> **Tử huyệt của Signal Protocol khi offline:** X3DH / Signal Protocol bắt buộc kéo PreKeys từ Server trung tâm để khởi tạo phiên. Khi mất Internet, Server chết — không có PreKeys, không thể thiết lập E2EE session giữa A và B trong LAN. **Giải pháp: Out-of-Band Key Exchange qua BLE hoặc QR Code.**
+
+#### A. Offline X3DH — Khởi tạo khóa không cần Server
+
+**Hai trường hợp xác lập danh tính:**
+
+| Trường hợp | Điều kiện | Cơ chế |
+|---|---|---|
+| **Case 1 — Đã từng chat** | A và B đã có session khi còn mạng | Local DB đã lưu `Identity Key (Ed25519)` của nhau. Broadcast `Ephemeral Key` qua Hybrid STUN/BLE để chạy X3DH. |
+| **Case 2 — Chưa từng chat** | Mất mạng hoàn toàn, lần đầu gặp | QR Code: Máy A hiển thị `terachat://lan-handshake?id_key=[Base64]&eph_key=[Base64]&ip=10.x.x.x`. Máy B quét → 100% Zero-Trust, không sợ MitM từ máy C cùng mạng. |
+
+**Luồng QR Handshake (Case 2 — không có Server):**
+
+```text
+[Máy A]                                    [Máy B]
+   │                                          │
+   │─── Hiển thị QR: {id_key, eph_key, ip} ──│
+   │                                          │ (scan QR bằng camera)
+   │                                          │ B nắm chắc Public Key của A
+   │                                          │ Không thể bị máy C đánh chặn
+   │                                          │
+   │◄── TCP Handshake (B kết nối tới ip:port) │
+   │                                          │
+   │─── X3DH Key Exchange ───────────────────►│
+   │    (Shared Secret = X25519)              │
+   │                                          │
+   └──── Double Ratchet bắt đầu ─────────────┘
+```
+
+#### B. Double Ratchet — Forward Secrecy + Post-Compromise Security
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  Root Key (root_key) — nhảy mỗi khi đổi hướng gửi      │
+│  ┌──────────────┐    ┌──────────────────────────────┐   │
+│  │ Send Chain   │    │ Recv Chain Key               │   │
+│  │ Key (SCK)    │    │ (RCK)                        │   │
+│  └──────┬───────┘    └────────────┬─────────────────┘   │
+│         │ HKDF                    │ HKDF                 │
+│  Msg 1: message_key_1       Msg 1: message_key_1'        │
+│  Msg 2: message_key_2       Msg 2: message_key_2'        │
+│  ...    (mỗi tin → 1 key riêng, dùng 1 lần)             │
+└─────────────────────────────────────────────────────────┘
+```
+
+```rust
+// Rust Core — LanRatchetSession
+use zeroize::Zeroize;
+
+struct LanRatchetSession {
+    root_key:       [u8; 32],  // Xoay khi đổi hướng gửi/nhận
+    send_chain_key: [u8; 32],  // Xoay mỗi message gửi đi
+    recv_chain_key: [u8; 32],  // Xoay mỗi message nhận
+}
+
+impl LanRatchetSession {
+    /// Gửi tin nhắn chat hoặc File Metadata — mỗi call tạo message_key mới
+    fn ratchet_encrypt(&mut self, plaintext: &[u8]) -> Vec<u8> {
+        // HKDF "Ratchet" chain key → sinh message_key dùng 1 lần
+        let (next_chain_key, mut message_key) = hkdf_sha256_ratchet(&self.send_chain_key);
+        self.send_chain_key.zeroize();
+        self.send_chain_key = next_chain_key;
+
+        let ciphertext = aes_256_gcm::encrypt(&message_key, plaintext);
+        message_key.zeroize(); // Hủy ngay — Forward Secrecy
+        ciphertext
+    }
+
+    /// Nhận tin nhắn đã được ratchet bởi bên kia
+    fn ratchet_decrypt(&mut self, ciphertext: &[u8]) -> Vec<u8> {
+        let (next_chain_key, mut message_key) = hkdf_sha256_ratchet(&self.recv_chain_key);
+        self.recv_chain_key.zeroize();
+        self.recv_chain_key = next_chain_key;
+
+        let plaintext = aes_256_gcm::decrypt(&message_key, ciphertext);
+        message_key.zeroize();
+        plaintext
+    }
+}
+```
+
+**Hai tính chất được đảm bảo bởi Double Ratchet:**
+
+| Tính chất | Ý nghĩa thực tế |
+|---|---|
+| **Forward Secrecy** | Lộ key hôm nay → tin nhắn hôm qua vẫn an toàn (key cũ đã zeroize) |
+| **Post-Compromise Security** | Lộ key hôm nay → tin nhắn ngày mai tự động an toàn (chain key xoay liên tục) |
+
+#### C. Tối ưu gửi file lớn — Tách Data Plane (ChaCha20-Poly1305)
+
+> [!IMPORTANT]
+> **Cảnh báo kiến trúc:** Áp dụng nguyên xi Double Ratchet để gửi file Video 2GB (gọi KDF cho từng chunk 1MB × 2000 lần) sẽ giết CPU thiết bị di động và tốc độ LAN tụt thảm hại. **Giải pháp: Payload-Key Approach — tách Control Plane (Double Ratchet) và Data Plane (ChaCha20-Poly1305 streaming).**
+
+**Luồng gửi file lớn (Payload-Key Approach):**
+
+```text
+[Giai đoạn 1 — Trao key qua Double Ratchet (1 message duy nhất)]
+Máy A sinh:
+  Ephemeral_File_Key (32 bytes, ngẫu nhiên)
+  File_Nonce         (12 bytes, ngẫu nhiên)
+
+A gửi "File Metadata Message" bằng ratchet_encrypt():
+  {
+    "file_name": "blueprint_v3.cad",
+    "file_size": 2147483648,       ← 2GB
+    "file_hash": "<SHA-256>",
+    "ephemeral_file_key": "<32 bytes>",  ← được bọc bởi message_key của Ratchet
+    "file_nonce": "<12 bytes>"
+  }
+
+B nhận → ratchet_decrypt() → lấy được Ephemeral_File_Key và File_Nonce
+
+─────────────────────────────────────────────────────────────────────────
+[Giai đoạn 2 — Streaming Data (Double Ratchet KHÔNG chạy nữa)]
+A bắt đầu bơm chunks qua TCP/Wi-Fi Direct:
+  Chunk_0 → ChaCha20-Poly1305(Ephemeral_File_Key, File_Nonce, offset=0, data[0..2MB])
+  Chunk_1 → ChaCha20-Poly1305(Ephemeral_File_Key, File_Nonce, offset=2MB, data[2..4MB])
+  ...
+  Chunk_N → ChaCha20-Poly1305(Ephemeral_File_Key, File_Nonce, offset=2N·MB, ...)
+
+Máy B nhận từng chunk → verify Poly1305 MAC → giải mã → ghi vào TeraVault
+
+─────────────────────────────────────────────────────────────────────────
+[Giai đoạn 3 — Cleanup]
+Gửi xong → A và B đều zeroize Ephemeral_File_Key khỏi RAM ngay lập tức
+```
+
+**ChaCha20-Poly1305 — Lý do chọn thay AES-GCM cho file streaming:**
+
+| Tiêu chí | AES-256-GCM | ChaCha20-Poly1305 |
+|---|---|---|
+| Yêu cầu phần cứng | AES-NI instruction (desktop, iPhone chip thế hệ mới) | Không — pure software, tối ưu ARM/RISC-V |
+| Tốc độ trên điện thoại tầm thấp | ~200MB/s (nếu có AES-NI) / ~50MB/s (không có) | **~300MB/s** (tất cả thiết bị AR |
+| Tốc độ LAN thực tế | 50–60MB/s (Wi-Fi Direct) | **60–80MB/s** (Wi-Fi Direct) |
+| Dùng cho | Mã hóa tin nhắn, key wrapping | **Streaming file lớn qua LAN** |
+
+#### D. LanTransferPacket.proto — Wire Format qua TCP Socket
+
+```protobuf
+syntax = "proto3";
+package terachat.lan;
+
+// Toàn bộ dữ liệu trên LAN TCP socket — attacker chỉ thấy rác nhị phân
+message LanTransferPacket {
+  oneof packet_type {
+    // Bắt tay X3DH ban đầu (nếu không dùng QR)
+    LanHandshake      init                    = 1;
+
+    // Tin nhắn chat hoặc File Metadata (mã hóa bằng message_key của Double Ratchet)
+    bytes             encrypted_ratchet_msg   = 2;
+
+    // Chunk dữ liệu file (mã hóa ChaCha20-Poly1305 từ Ephemeral_File_Key)
+    FileChunk         encrypted_chunk         = 3;
+
+    // Xác nhận nhận chunk — A biết để tiếp tục gửi
+    ChunkAck          ack                     = 4;
+
+    // Tín hiệu kết thúc stream + final hash để verify toàn vẹn
+    StreamFinalize    finalize                = 5;
+  }
+}
+
+message LanHandshake {
+  bytes identity_key   = 1;   // Ed25519 Public Key
+  bytes ephemeral_key  = 2;   // X25519 Ephemeral Key (X3DH)
+  bytes handshake_sig  = 3;   // Ed25519 Signature của {eph_key || timestamp}
+  uint64 timestamp     = 4;   // Unix ms — chống Replay Attack
+}
+
+message FileChunk {
+  string file_id    = 1;
+  uint64 offset     = 2;   // Byte offset trong file gốc
+  bytes  ciphertext = 3;   // Dữ liệu đã mã hóa ChaCha20-Poly1305
+  bytes  mac        = 4;   // Poly1305 Authentication Tag (16 bytes)
+}
+
+message ChunkAck {
+  string file_id    = 1;
+  uint64 offset     = 2;
+  bool   ok         = 3;   // false → A retry chunk này
+}
+
+message StreamFinalize {
+  string file_id    = 1;
+  bytes  file_hash  = 2;   // SHA-256 của plaintext gốc — B verify sau khi giải mã
+}
+```
+
+**Kết quả sau O-DR + ChaCha20 Streaming:**
+
+| Vấn đề | Trước | Sau |
+|---|---|---|
+| Khởi tạo E2EE khi mất Internet | ❌ Không thể (X3DH cần Server) | ✅ BLE/QR Out-of-Band Handshake |
+| Nghe lén trên Wi-Fi LAN | ❌ Plaintext nếu không có TLS | ✅ Double Ratchet mọi tin nhắn |
+| Gửi file 2GB qua LAN | ❌ Chậm / CPU dies (KDF loop) | ✅ ChaCha20 streaming 60–80MB/s |
+| File key tồn tại sau transfer | ❌ Có thể còn trong RAM/cache | ✅ Zeroize ngay sau khi xong |
 
 ### 5.5 CRDT Offline Sync (Automerge)
 
