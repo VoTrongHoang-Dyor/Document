@@ -856,21 +856,64 @@ class NotificationService: UNNotificationServiceExtension {
 
 #### F. Cơ chế Phòng thủ Cấp cao (Dev Notes)
 
-**1. Hybrid Fetch — Vượt rào 4KB APNS**
+**1. Degraded E2EE Push — Cắt bỏ Hybrid Fetch (DevSecOps Fix Alpha)**
 
-Nếu Push Payload lớn hơn 4KB hoặc chứa ảnh thumbnail mã hóa:
+> [!IMPORTANT]
+> **Lead Dev Alpha Fix #4 — Rủi ro iOS NSE Hybrid Fetch:** Gọi HTTP GET, giải mã AES-GCM, và cập nhật Shared Keychain trong 30 giây vòng đời / 24MB RAM khi 4G chập chờn là nguyên nhân số 1 gây **OOM Kill** hoặc **iOS Watchdog Kill** NSE. Kết quả: tin nhắn rớt thông báo bảo mật. **Giải pháp dứt khoát: Cắt bỏ hoàn toàn HTTP GET trong NSE.**
+
+**Quy tắc cứng — NSE Payload Contract:**
+
+| Quy tắc | Nội dung |
+|---|---|
+| **Payload ≤ 4KB tuyệt đối** | Toàn bộ Push Payload (text + metadata) phải fit trong 4KB APNS limit |
+| **Không HTTP GET trong NSE** | NSE không được phép gọi bất kỳ network request nào |
+| **Không Hybrid Fetch** | `message_id`-only payload không được dùng — NSE không biết lấy về từ đâu an toàn |
+| **Push Key trong Keychain** | Payload mã hóa bằng `Push_Key` — Key này đã có trong Shared Keychain từ trước |
+| **Defer file lớn về Main App** | Tin nhắn đính kèm ảnh/file → NSE chỉ hiển thị chuỗi báo hiệu. Main App tải khi user tap |
+
+**Kiến trúc Push Payload mới (≤ 4KB):**
 
 ```text
-APNS payload chỉ gửi: { message_id, chat_id, nonce }
-        ↓
-Extension thức dậy → gọi HTTP GET tới VPS:
-GET /api/v1/push-payload/{message_id}
-Authorization: Bearer <ephemeral_token_30s>
-        ↓
-VPS trả về Encrypted_Push_Blob → Extension giải mã → hiển thị
+[Server muốn thông báo tin nhắn mới cho User B]
+       ↓
+Relay Server tạo Push Payload nhỏ gọn:
+  {
+    "v": 1,
+    "chat_id": "uuid",
+    "sender_display": "Nguyen Van A",     ← tên hiển thị (≤ 64 chars)
+    "preview_ct": "<AES-256-GCM ciphertext của preview text ≤ 200 chars>",
+    "has_attachment": true,               ← nếu có file → NSE không fetch
+    "epoch": 42                           ← MLS Epoch để NSE biết dùng Push Key nào
+  }
+Tổng kích thước: ~500 bytes — nằm gọn trong 4KB APNS limit
+       ↓
+NSE nhận payload → đọc Push_Key từ Shared Keychain (đã có sẵn, không cần network)
+       ↓
+Giải mã preview_ct bằng AES-256-GCM (Push_Key) → chuỗi preview text plain
+       ↓
+NSE gọi contentHandler() với title + body → Zeroize toàn bộ RAM ngay lập tức
 ```
 
-Ephemeral token (30 giây, single-use) được lưu trong Shared Keychain cùng với Push Key.
+**Xử lý tin nhắn có đính kèm (has_attachment = true):**
+
+```text
+NSE hiển thị: "Nguyen Van A vừa gửi một tài liệu"
+             (KHÔNG fetch file, KHÔNG HTTP GET)
+       ↓
+User tap Push → iOS mở Main App (Rust Core)
+       ↓
+Main App tải encrypted blob từ Cluster → giải mã đầy đủ → hiển thị
+```
+
+**NSE Memory footprint sau khi cắt Hybrid Fetch:**
+
+| Thành phần | Trước (Hybrid Fetch) | Sau (Degraded E2EE Push) |
+|---|---|---|
+| HTTP client + TLS stack | ~6MB | ✅ 0MB (không dùng) |
+| Network buffer | ~2MB | ✅ 0MB |
+| AES-GCM decrypt (Push Key only) | ~2MB | ✅ ~2MB |
+| Shared Keychain read | ~1MB | ✅ ~1MB |
+| **Tổng** | **~11MB (rủi ro OOM khi có thêm thư viện)** | **✅ ~4MB (an toàn tuyệt đối dưới 24MB)** |
 
 **2. NSE Memory Budget — Lead Dev Fix #3 (iOS 24MB RAM Constraint)**
 
@@ -1993,31 +2036,83 @@ pub fn decrypt_webhook_payload(
 |---|---|---|
 | **JSON qua Tauri IPC** (cũ) | ~5–10MB/s | Lệnh đơn lẻ, simple commands |
 | **SharedArrayBuffer + Protobuf** (mới) | ~500MB/s | Bulk data (load danh sách, records) |
-| **SQLite WASM + OPFS** (mới) | Trực tiếp trong Sandbox | `.tapp` tự query DB local, Rust Core chỉ encrypt khi nhàn rỗi |
+| **VFS Bridge qua SharedArrayBuffer + Protobuf** (mới — thay OPFS) | ~500MB/s | `.tapp` gửi SQL I/O call xuống Rust Core qua VFS driver; dữ liệu luôn trong SQLCipher |
+
+> [!IMPORTANT]
+> **Lead Dev Alpha Fix #1 — Xung đột WASM Storage / Zero-Knowledge:** OPFS bị trình duyệt/WebView khóa cứng theo origin — Rust Core OS process không thể can thiệp vào file `.db` đang bị WASM lock mà không gây **file corruption** hoặc **block UI thread**. Trích xuất file từ OPFS ra ngoài mỗi vài giây để Rust mã hóa tiêu tốn I/O cực lớn, phá vỡ mục tiêu High-Throughput IPC. **Giải pháp: Tuyệt đối không dùng OPFS cho lưu trữ vĩnh viễn — bơm VFS driver vào SQLite WASM.**
+
+**Kiến trúc VFS Bridge:**
+
+```text
+.tapp WASM (Sandbox)
+  │
+  ├─ SQL query: "INSERT INTO orders VALUES (...)"
+  │
+  └─ Custom VFS Driver (bơm vào SQLite WASM build)
+       │
+       │  Không gọi OS filesystem API
+       │  Thay vào đó: ghi thao tác I/O nhị phân vào SharedArrayBuffer
+       │
+       ↓  SharedArrayBuffer + Protobuf (zero-copy, ~500MB/s)
+  ──────────────────────────────────────────────
+  Rust Core (OS process)
+       │
+       ├─ Nhận Protobuf I/O request từ SharedArrayBuffer
+       ├─ Thực thi Read/Write trực tiếp vào SQLCipher file của App
+       └─ Trả kết quả ngược vào SharedArrayBuffer → WASM nhận
+```
+
+**Kết quả:**
+
+- WASM chỉ chứa logic nghiệp vụ — không bao giờ đụng vào OS filesystem
+- Dữ liệu luôn nằm trong SQLCipher mã hóa của Rust Core — Zero-Knowledge bảo toàn
+- Không file lock conflict, không I/O overhead mã hóa định kỳ
 
 ```rust
-// Rust Core — chia sẻ SharedArrayBuffer vùng nhớ dùng chung với WASM
-// .tapp đọc/ghi nhị phân trực tiếp (Protobuf/FlatBuffers) — không qua JSON
-pub fn allocate_shared_buffer(size_bytes: usize) -> *mut u8 {
-    // Cấp phát vùng nhớ shared — WASM trỏ vào đây qua WASM Memory pointer
-    let layout = std::alloc::Layout::from_size_align(size_bytes, 8).unwrap();
-    unsafe { std::alloc::alloc(layout) }
-    // Rust Core sẽ free vùng này sau khi .tapp xác nhận đọc xong
-}
+// SQLite WASM build — Custom VFS Driver (bơm vào .tapp sandbox)
+// Thay thế hoàn toàn OPFS backend
+// Khi .tapp gọi SQL, VFS này interceptor mọi I/O và đẩy qua SharedArrayBuffer
+
+// Phía WASM (pseudo-code interface):
+//   sqlite3_vfs->xRead(offset, len)  → ghi vào SAB → Rust đọc → trả về data
+//   sqlite3_vfs->xWrite(offset, buf) → ghi vào SAB → Rust nhận → ghi SQLCipher
+
+// Protobuf message contract:
+// message VfsRequest {
+//   enum Op { READ = 0; WRITE = 1; TRUNCATE = 2; SYNC = 3; }
+//   Op op = 1;
+//   uint64 offset = 2;
+//   bytes data = 3;       // chỉ cho WRITE
+//   uint32 read_len = 4;  // chỉ cho READ
+// }
+// message VfsResponse {
+//   bool ok = 1;
+//   bytes data = 2;       // chỉ cho READ response
+// }
 ```
 
 ```rust
-// SQLite WASM (biên dịch vào trong .tapp sandbox)
-// .tapp gọi SQL trực tiếp trong Sandbox — Rust Core chỉ encrypt file DB khi idle
-// Dùng OPFS (Origin Private File System) hoặc VFS ảo của Rust
-const DB_INIT: &str = "
-    PRAGMA journal_mode=WAL;
-    PRAGMA synchronous=NORMAL;
-    CREATE TABLE IF NOT EXISTS crm_records (
-        id TEXT PRIMARY KEY, customer TEXT, amount REAL, synced BOOLEAN
-    );
-";
-// Rust Core định kỳ encrypt toàn bộ file .db này bằng HKDF(App_ID || User_Key)
+// Rust Core — VFS Bridge Handler
+pub fn handle_vfs_request(
+    app_id:  &str,
+    db:      &mut SqlCipherDb,
+    request: VfsRequest,
+) -> Result<VfsResponse> {
+    match request.op {
+        VfsOp::Read => {
+            let data = db.read_at(request.offset, request.read_len as usize)?;
+            Ok(VfsResponse { ok: true, data })
+        }
+        VfsOp::Write => {
+            db.write_at(request.offset, &request.data)?;
+            Ok(VfsResponse { ok: true, data: vec![] })
+        }
+        VfsOp::Sync => {
+            db.fsync()?;
+            Ok(VfsResponse { ok: true, data: vec![] })
+        }
+    }
+}
 ```
 
 **Storage Isolation (Per-App SQLCipher):**
@@ -2117,62 +2212,70 @@ pub struct OfflinePayload {
 
 | Môi trường | Giao thức Discovery | Giao thức Transfer | Ghi chú |
 |---|---|---|---|
-| **LAN công ty (Wi-Fi Router còn chạy, mất WAN)** | **mDNS/Bonjour** | TCP/WebRTC trực tiếp qua IP nội bộ | ✅ iOS + Android + macOS + Windows 100% |
+| **LAN công ty (Wi-Fi Router còn chạy, mất WAN)** | **Hybrid STUN qua Private Cluster** | TCP/WebRTC trực tiếp qua ICE Candidate | ✅ iOS + Android + macOS + Windows — vượt qua AP Isolation |
 | **Hoàn toàn không có Router** | BLE Discovery + **QR-Assisted** | Wi-Fi Direct (sau khi user quét QR) | ⚠️ Cần 1 thao tác quét QR của iOS user |
 
-**Luồng B1 — mDNS/Bonjour (LAN có Router, mất Internet):**
+> [!IMPORTANT]
+> **Lead Dev Alpha Fix #2 — mDNS bị chặn bởi AP Isolation:** ~90% mạng Wi-Fi doanh nghiệp, khách sạn, văn phòng chia sẻ bật **AP Isolation / Client Isolation** và VLAN gắt. mDNS/Bonjour dùng Multicast UDP — Router chặn hoàn toàn gói Multicast giữa các client. Máy A không thể ping Máy B dù ngồi cạnh nhau. mDNS sẽ chết yểu trong thực tế. **Giải pháp: Dùng Private Cluster nội bộ (vẫn còn trên Intranet) làm Signaling Server — không cần Multicast, không cần biết IP trực tiếp.**
+
+**Pha 1 — Hybrid STUN qua Private Cluster (có Intranet, mất WAN):**
 
 ```text
-Bước 1: mDNS Discovery (thay BLE — tương thích 100% mọi OS)
-  ─────────────────────────────────────────────────────────────────────
-  Rust Core phát mDNS service record:
-    _terachat._tcp.local → { user_id, local_ip: "192.168.1.x", port: 48320 }
-  Mọi thiết bị TeraChat trên cùng LAN đều tự nhận diện (iOS/Android/Windows/Mac)
-  → Không cần BLE, không cần iOS permission đặc biệt
+Bước 1: Signaling qua Private Cluster (không cần mDNS)
+  ─────────────────────────────────────────────────────────
+  Cả 2 máy vẫn kết nối được Intranet → Private Cluster VPS nội bộ
+  Máy A gửi lên Cluster: { local_ip: "10.0.1.5", port: 48320,
+                            ice_candidates: [...], ed25519_pubkey }
+  Máy B nhận qua Cluster → trao đổi ICE Candidate
+  → WebRTC dùng ICE để punch-through AP Isolation (STUN/TURN)
+  → Kết nối thẳng P2P ngay cả khi Router bật AP Isolation
 
-Bước 2: Handshake qua TCP (LAN)
-  ─────────────────────────────────────────────────────────────────────
-  Kết nối TCP trực tiếp tới IP nội bộ
-  → Trao đổi Ed25519 Public Key + ECDH ephemeral session key
-  → Xác nhận danh tính bằng TeraChat Certificate
+Bước 2: Handshake (qua WebRTC Data Channel đã thiết lập)
+  ─────────────────────────────────────────────────────────
+  Trao đổi Ed25519 Public Key + ECDH ephemeral session key
+  Xác nhận danh tính bằng TeraChat Certificate
 
-Bước 3: Truyền file qua WebRTC Data Channel (LAN)
-  ─────────────────────────────────────────────────────────────────────
+Bước 3: Truyền file qua WebRTC Data Channel
+  ─────────────────────────────────────────────────────────
   File → Salted MLE / Strict E2EE (theo Heuristics Router)
        → Chunk 1MB → WebRTC Data Channel
-  Tốc độ: 50–100MB/s (LAN full speed)
-  File 1GB → ~10–20 giây
+  Tốc độ: 50–100MB/s (LAN full speed sau STUN punch-through)
 ```
 
-**Luồng B2 — QR-Assisted Wi-Fi Direct (không có Router):**
+**Luồng B2 — QR-Assisted Wi-Fi Direct (mất hoàn toàn Router / Cluster):**
 
 ```text
-Bước 1: Windows/Android tạo Soft-AP ẩn
-  ─────────────────────────────────────────────────────────────────────
+Bước 1: BLE Discovery (thay mDNS khi không có Router)
+  ─────────────────────────────────────────────────────────
+  Máy A phát BLE Advertisement (không cần Router/mDNS)
+  Máy B scan BLE → thấy Máy A → trigger Wi-Fi Direct setup
+
+Bước 2: Windows/Android tạo Soft-AP ẩn
+  ─────────────────────────────────────────────────────────
   Thiết bị A (Windows/Android) bật Soft-AP:
     SSID: "TeraChat-Direct-{random}", WPA3-SAE password sinh ngẫu nhiên
   TeraChat app sinh mã QR chứa:
     { ssid, password, local_ip, port, ed25519_pubkey }
 
-Bước 2: iOS User quét QR (1 thao tác thủ công — KHÔNG thể tránh)
-  ─────────────────────────────────────────────────────────────────────
+Bước 3: iOS User quét QR (1 thao tác thủ công — KHÔNG thể tránh)
+  ─────────────────────────────────────────────────────────
   App iOS pop-up: "Quét mã QR để nhận file từ [User A]"
   iOS join Wi-Fi network qua Network Extension API (Apple cho phép)
   → Handshake Ed25519 + ECDH session key tự động
 
-Bước 3: Truyền file qua WebRTC (Wi-Fi Direct)
-  ─────────────────────────────────────────────────────────────────────
+Bước 4: Truyền file qua WebRTC (Wi-Fi Direct)
+  ─────────────────────────────────────────────────────────
   Tốc độ: 20–40MB/s (Wi-Fi Direct)
   File 1GB → ~30 giây
   Sau khi xong → iOS tự động re-join Wi-Fi cũ
 
-Bước 4: Sync CAS_Hash lên Cluster khi Internet phục hồi
-  ─────────────────────────────────────────────────────────────────────
+Bước 5: Sync CAS_Hash lên Cluster khi Internet phục hồi
+  ─────────────────────────────────────────────────────────
   Máy A hoặc B báo cas_hash lên Cluster
   Cluster: "CAS_Hash đã có rồi!" hoặc lưu bản mới → Zero conflict
 ```
 
-**Rust Core — LocalTransferSession (hỗ trợ cả 2 luồng):**
+**Rust Core — LocalTransferSession (hỗ trợ cả 2 pha):**
 
 ```rust
 pub struct LocalTransferSession {
@@ -2180,20 +2283,23 @@ pub struct LocalTransferSession {
     pub peer_local_ip: Ipv4Addr,
     pub session_key:   [u8; 32],      // ECDH ephemeral key cho tunnel này
     pub state:         TransferState,
-    pub discovery:     DiscoveryMode, // mDNS hoặc QR
+    pub discovery:     DiscoveryMode,
 }
 
 pub enum DiscoveryMode {
-    MdnsLan,       // LAN có Router — tự động 100%, không cần user action
-    QrWifiDirect,  // Không có Router — cần iOS user quét QR 1 lần
+    /// Pha 1: Private Cluster làm Signaling — vượt AP Isolation, tự động 100%
+    HybridStunViaCluster,
+    /// Pha 2: BLE discovery + iOS user quét QR để join Soft-AP
+    BleQrWifiDirect,
 }
 
 pub enum TransferState {
-    Discovering,       // mDNS query hoặc chờ QR scan
-    HandshakePending,  // Đang ECDH key exchange
-    TunnelEstablished, // WebRTC Data Channel sẵn sàng
-    Transferring,      // Đang bơm chunks
-    Completed,         // Xong — sync CAS_Hash lên Cluster khi có mạng
+    Discovering,            // BLE scan hoặc đợi ICE Candidate từ Cluster
+    SignalingViaClusteR,    // Pha 1: trao đổi ICE qua Private Cluster Intranet
+    HandshakePending,       // Đang ECDH key exchange
+    TunnelEstablished,      // WebRTC Data Channel sẵn sàng
+    Transferring,           // Đang bơm chunks
+    Completed,              // Xong — sync CAS_Hash lên Cluster khi có mạng
 }
 ```
 
@@ -2201,9 +2307,10 @@ pub enum TransferState {
 
 | Kịch bản | Giao thức | Kết quả |
 |---|---|---|
-| Đứt WAN, Wi-Fi Router còn chạy, gửi file | mDNS → LAN TCP | ✅ Tự động 100%, không action, 50–100MB/s |
-| Không có Router, gửi file iOS↔Win/Android | QR-Assisted Wi-Fi Direct | ⚠️ 1 lần quét QR, 20–40MB/s |
-| Đứt mạng hoàn toàn, nhắn tin remote | DTN Gossip Relay | ✅ Trễ vài phút nhưng đến nơi |
+| Đứt WAN, Wi-Fi Router còn chạy (AP Isolation bật) | Hybrid STUN qua Private Cluster | ✅ Tự động, vượt AP Isolation, 50–100MB/s |
+| Đứt WAN, Wi-Fi Router còn chạy (AP Isolation tắt) | Hybrid STUN qua Private Cluster | ✅ Tự động, 50–100MB/s (vẫn dùng ICE) |
+| Không có Router (giàn khoan, hầm mỏ), gửi file iOS↔Win/Android | BLE Discovery + QR Wi-Fi Direct | ⚠️ 1 lần quét QR, 20–40MB/s |
+| Đứt mạng hoàn toàn, nhắn tin remote | DTN Gossip Relay (BLE Lane 1) | ✅ Trễ vài phút nhưng đến nơi |
 | Internet phục hồi | Sync CAS_Hash → Cluster | ✅ Zero conflict |
 | Open app offline | Instant-on < 500ms | ✅ Hot Cache, Stub lazy-load |
 
@@ -3345,6 +3452,97 @@ pub async fn handle_bot_mention_tee(
 | Admin VPS độc hại | ❌ Truy cập process RAM trực tiếp | ✅ Enclave cách ly hoàn toàn khỏi OS |
 | Tấn công leo thang đặc quyền | ❌ Root = đọc được mọi thứ | ✅ Root OS ≠ quyền truy cập Enclave |
 | Giả mạo Enclave code | N/A | ✅ Remote Attestation verify CPU cert — phát hiện ngay |
+
+#### B. Tiered AI Worker — Giải quyết nghịch lý TEE vs BYOS (DevSecOps Fix Alpha)
+
+> [!IMPORTANT]
+> **Lead Dev Alpha Fix #3 — Nghịch lý TEE / BYOS On-Premise:** Kiến trúc TEE (AWS Nitro / Intel SGX) yêu cầu phần cứng chuyên dụng. VPS giá rẻ hoặc Bare-metal Server nội bộ của doanh nghiệp SME thường không hỗ trợ TEE/SGX. Nếu **bắt buộc** có TEE → tính năng BYOS `install.terachat.com` thất bại. Nếu bỏ TEE → `Channel_Key` lưu trên RAM VPS thường → Memory Dump vulnerability. **Giải pháp: 2 chế độ triển khai tách biệt rõ ràng.**
+
+| Chế độ | Phần cứng yêu cầu | Mức độ bảo mật | Phù hợp với |
+|---|---|---|---|
+| **Standard (Docker Hardened)** | Bất kỳ VPS/Bare-metal | ✅ Tốt — chịu được tấn công từ xa | SME BYOS, self-hosted thông thường |
+| **Enterprise (TEE Dedicated)** | AWS Nitro / Azure SGX node riêng | ✅✅ Cao nhất — không thể Memory Dump | Tài chính, y tế, chính phủ |
+
+**Chế độ 1 — Standard (Không có TEE):**
+
+```text
+[BYOS Server thông thường — Ubuntu / Debian]
+       ↓
+AI Worker chạy trong Docker container bị khóa cứng đặc quyền:
+  docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE
+             --security-opt=seccomp:ai-worker-seccomp.json
+             --memory=512m --cpus=1
+             terachat/ai-worker:latest
+       ↓
+mlock() toàn bộ Channel_Key + API_Key trong RAM:
+  → Ngăn OS swap Key ra ổ cứng (Swap Defense)
+       ↓
+Xử lý request:
+  1. Nhận Channel_Key (dạng ciphertext mã hóa bằng Worker Public Key)
+  2. Giải mã trong RAM
+  3. Gọi LLM API
+  4. Zeroize Channel_Key + API_Key trong vòng <50ms sau khi xong
+       ↓
+[Rủi ro đã biết và chấp nhận]
+  ├─ Nếu Root VPS bị chiếm: kẻ tấn công CÓ THỂ dump RAM live trong cửa sổ <50ms
+  └─ Xác suất thấp nếu Server hardened đúng cách; ghi rõ trong Security Policy
+```
+
+```rust
+// Rust Core — Standard AI Worker (không có TEE)
+use zeroize::Zeroize;
+use libc;
+
+pub async fn handle_bot_standard_mode(
+    event:      BotMentionEvent,
+    worker_key: &PrivateKey,  // Worker Private Key — chỉ trong RAM, mlock'd
+) -> Result<()> {
+    // mlock toàn bộ vùng nhớ chứa key — ngăn OS swap ra disk
+    unsafe { libc::mlock(worker_key.as_ptr() as *const _, worker_key.len()) };
+
+    // Giải mã Channel_Key bằng Worker Private Key
+    let mut channel_key = worker_key.decrypt(&event.encrypted_channel_key)?;
+
+    // Giải mã tin nhắn + gọi LLM
+    let plaintext_msg = aes_256_gcm::decrypt(&channel_key, &event.encrypted_msg)?;
+    let mut api_key = worker_key.decrypt(&event.encrypted_api_key)?;
+    let response = llm_client::call(&api_key, &plaintext_msg).await?;
+
+    // Zeroize ngay lập tức — bắt buộc trong <50ms
+    channel_key.zeroize();
+    api_key.zeroize();
+
+    // Mã hóa + gửi trả lời
+    let reply = aes_256_gcm::encrypt_with_reply_key(&response, &event.reply_key)?;
+    send_to_cluster(&event.channel_id, &reply).await?;
+    Ok(())
+}
+```
+
+**Chế độ 2 — Enterprise (TEE Gateway tách rời):**
+
+```text
+[Doanh nghiệp tự host Database + Cluster nội bộ]
+       ↓
+Database Server: VPS/Bare-metal thông thường (on-premise)
+       + kết nối tới →
+AI Gateway Node: AWS Nitro Enclave / Azure DCsv3 (SGX) riêng biệt
+       ↓
+Channel_Key KHÔNG bao giờ về Database Server nội bộ
+Channel_Key chỉ gửi thẳng lên AI Gateway (Enclave)
+       ↓
+Enclave xử lý như kiến trúc TEE đã mô tả (Section 10.3.A)
+  → RAM cách ly hoàn toàn, không thể dump kể cả Root Admin cloud provider
+```
+
+**Bảng quyết định triển khai cho Admin:**
+
+| Câu hỏi | Trả lời | Chế độ khuyến nghị |
+|---|---|---|
+| Server có hỗ trợ AWS Nitro / Intel SGX không? | Có | Enterprise TEE |
+| Dữ liệu thuộc ngành tài chính / y tế / chính phủ? | Có | Enterprise TEE (bắt buộc) |
+| SME tự host VPS thông thường? | Có | Standard Docker Hardened |
+| Chấp nhận rủi ro "dump RAM live trong <50ms nếu Root bị chiếm"? | Có | Standard (ghi vào Security Policy) |
 
 **Admin thiết lập Bot:**
 
