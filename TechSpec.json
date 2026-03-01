@@ -43,15 +43,15 @@
           "subsections": []
         },
         {
-          "id": "1-system-architecture",
+          "id": "1-system-architecture-server",
           "level": 2,
-          "heading": "1. System Architecture",
+          "heading": "1. System Architecture  `☁️ Server`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "11-federated-private-clusters",
+              "id": "11-federated-private-clusters-server",
               "level": 3,
-              "heading": "1.1 Federated Private Clusters",
+              "heading": "1.1 Federated Private Clusters  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -127,9 +127,9 @@
               "subsections": []
             },
             {
-              "id": "12-tổng-thể-kiến-trúc-local-first-processing-blind-routing",
+              "id": "12-tổng-thể-kiến-trúc-local-first-processing-blind-routing-laptop-desktop-server",
               "level": 3,
-              "heading": "1.2 Tổng thể Kiến trúc: \"Local-First Processing & Blind Routing\"",
+              "heading": "1.2 Tổng thể Kiến trúc: \"Local-First Processing & Blind Routing\"  `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -153,8 +153,74 @@
                 {
                   "type": "list",
                   "data": [
-                    "Cơ chế: Desktop Background Worker lập chỉ mục toàn bộ tin nhắn đã giải mã bằng SQLite FTS5 (millisecond search). Bản báo cáo phức tạp chạy qua Local Edge RAG (Embedding WASM/Rust).",
+                    "Cơ chế (Desktop): Background Worker lập chỉ mục toàn bộ tin nhắn đã giải mã bằng SQLite FTS5 (millisecond search). Bản báo cáo phức tạp chạy qua Local Edge RAG (Embedding WASM/Rust).",
                     "Bảo đảm: Không metadata nào rò rỉ lên mạng."
+                  ]
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Lead Dev Fix #3 — Giới hạn FTS5 trên Mobile (Apple DAS / Android Doze):** Apple DAS (Duet Activity Sync) và Android Doze Mode **không bao giờ** cho phép tiến trình nền chạy FTS5 Indexing cày nát CPU và Pin. Nếu cố ép, app sẽ bị đưa vào Blacklist tiết kiệm pin của OS. **Hai nền tảng phải có chiến lược lập chỉ mục tìm kiếm tách biệt.**"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Platform-Specific Search Strategy:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Chiến lược",
+                    "Desktop",
+                    "Mobile (iOS / Android)"
+                  ],
+                  "rows": [
+                    [
+                      "**Indexing Mode**",
+                      "Background Worker — chạy liên tục",
+                      "Chỉ khi App Active + cắm sạc, hoặc batch 100 tin nhắn/lần qua `requestIdleCallback`"
+                    ],
+                    [
+                      "**Index Window**",
+                      "Toàn bộ lịch sử",
+                      "**30 ngày gần nhất** (Sliding Window — giống Hot Tier §1.4.B)"
+                    ],
+                    [
+                      "**Search Scope**",
+                      "Local FTS5 full history",
+                      "Local FTS5 cho 30 ngày; tìm kiếm cũ hơn → **Encrypted Blind Search trên Cluster**"
+                    ],
+                    [
+                      "**CPU Budget**",
+                      "Full background CPU",
+                      "Batch nhỏ — không block UI thread"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Mobile — Incremental Foreground Indexer (Rust Core):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust Core — Mobile FTS5 Incremental Indexer\n// Chỉ chạy khi App Active — không bao giờ chạy trong background\npub struct MobileFtsIndexer {\n    batch_size: usize,       // 100 tin nhắn mỗi batch\n    window_days: i64,        // 30 ngày — Sliding Window\n}\n\nimpl MobileFtsIndexer {\n    pub const DEFAULT_BATCH: usize = 100;\n    pub const WINDOW_DAYS:   i64   = 30;\n\n    /// Gọi từ requestIdleCallback (React Native) hoặc khi UI thread nhàn rỗi\n    /// Không bao giờ gọi từ background task / WorkManager job\n    pub fn index_next_batch(&self, db: &mut SqlCipherDb) -> Result<usize> {\n        let cutoff = now_unix() - self.window_days * 86_400;\n        let msgs = db.fetch_unindexed_after(cutoff, self.batch_size)?;\n        let count = msgs.len();\n        for msg in msgs {\n            // Decrypt trên stack — SensitiveBuffer auto-zeroize khi drop\n            let plaintext = decrypt_for_search(&msg)?;\n            db.fts5_insert(msg.id, plaintext.as_slice())?;\n            // plaintext bị zeroize ở đây\n        }\n        Ok(count)\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Mobile — Encrypted Blind Search (Tìm kiếm ngoài 30 ngày):"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "User tìm kiếm từ khóa > 30 ngày trên Mobile:\n       ↓\nRust Core KHÔNG tải toàn bộ history (OOM risk)\n       ↓\nGửi Encrypted Search Token lên Cluster:\n  token = HMAC-SHA256(Company_Search_Key, keyword)\n  → Cluster không biết keyword thực, chỉ thấy token\n       ↓\nCluster TEE (Trusted Execution Environment) so sánh token\nvới Index mã hóa — trả về message_id list\n       ↓\nClient tải và giải mã chỉ các tin khớp (Cold Fetch)"
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bảo mật Blind Search:** Server/Cluster chỉ thấy `HMAC token` — không có plaintext keyword. TEE đảm bảo code chạy trong môi trường isolated, ngay cả Cloud provider không đọc được dữ liệu."
                   ]
                 },
                 {
@@ -181,9 +247,9 @@
               "subsections": []
             },
             {
-              "id": "13-chiến-lược-routing-vùng-chiến-thuật",
+              "id": "13-chiến-lược-routing-vùng-chiến-thuật-server",
               "level": 3,
-              "heading": "1.3 Chiến lược Routing: Vùng Chiến Thuật",
+              "heading": "1.3 Chiến lược Routing: Vùng Chiến Thuật  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -209,9 +275,9 @@
               "subsections": []
             },
             {
-              "id": "14-tiered-storage-architecture-kiến-trúc-lưu-trữ-phân-tầng",
+              "id": "14-tiered-storage-architecture-kiến-trúc-lưu-trữ-phân-tầng-laptop-desktop-server",
               "level": 3,
-              "heading": "1.4 Tiered Storage Architecture — Kiến trúc Lưu trữ Phân tầng",
+              "heading": "1.4 Tiered Storage Architecture — Kiến trúc Lưu trữ Phân tầng  `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -579,7 +645,7 @@
                         {
                           "type": "code",
                           "language": "text",
-                          "code": "[Internet sập → chuyển sang LAN Wi-Fi Direct / Mesh]\n\nUser A gửi file cho User B (cùng channel):\n  1. Client A: Heuristics → SaltedMLE → sinh {ciphertext, cas_hash, mle_key}\n  2. Stream ciphertext trực tiếp sang máy B qua TCP/Wi-Fi Direct (không qua Cluster)\n  3. Máy B nhận, giải mã bằng mle_key (đã có channel_key) → đọc file bình thường\n\nKhi Internet phục hồi:\n  4. Máy A (hoặc B) sync cas_hash lên Cluster\n  5. Cluster: \"CAS_Hash này đã có rồi!\" (máy kia đã up, hoặc máy khác trong channel đã gửi)\n  6. Không conflict, không vi phạm Zero-Knowledge — đồng bộ hoàn hảo ✓"
+                          "code": "[Internet sập → chuyển sang LAN Wi-Fi Direct / Mesh]\n\nUser A gửi file cho User B (cùng channel):\n\n  1. Client A: Heuristics → SaltedMLE → sinh {ciphertext, cas_hash, mle_key}\n  2. Stream ciphertext trực tiếp sang máy B qua TCP/Wi-Fi Direct (không qua Cluster)\n  3. Máy B nhận, giải mã bằng mle_key (đã có channel_key) → đọc file bình thường\n\nKhi Internet phục hồi:\n\n  4. Máy A (hoặc B) sync cas_hash lên Cluster\n  5. Cluster: \"CAS_Hash này đã có rồi!\" (máy kia đã up, hoặc máy khác trong channel đã gửi)\n  6. Không conflict, không vi phạm Zero-Knowledge — đồng bộ hoàn hảo ✓"
                         },
                         {
                           "type": "paragraph",
@@ -643,9 +709,9 @@
           "content_blocks": [],
           "subsections": [
             {
-              "id": "21-key-hierarchy-management-hkms",
+              "id": "21-key-hierarchy-management-hkms-laptop-desktop-mobile-server",
               "level": 3,
-              "heading": "2.1 Key Hierarchy Management (HKMS)",
+              "heading": "2.1 Key Hierarchy Management (HKMS)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -682,9 +748,9 @@
               "subsections": []
             },
             {
-              "id": "22-crypto-shredding",
+              "id": "22-crypto-shredding-laptop-desktop-mobile",
               "level": 3,
-              "heading": "2.2 Crypto-Shredding",
+              "heading": "2.2 Crypto-Shredding  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -728,30 +794,107 @@
               "subsections": []
             },
             {
-              "id": "23-ephemeral-memory-swap-defense",
+              "id": "23-ephemeral-memory-swap-defense-laptop-desktop-mobile",
               "level": 3,
-              "heading": "2.3 Ephemeral Memory & Swap Defense",
+              "heading": "2.3 Ephemeral Memory & Swap Defense  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Lead Dev Fix #2 — `mlock()` bị CẤM trên iOS/Android:** Gọi `mlock()` lạm dụng trên iOS sẽ khiến **Jetsam daemon** \"bắn hạ\" (kill) app ngay lập tức vì vi phạm Memory Footprint Limit. Thêm vào đó, iOS không có Swap-to-disk cho app thứ ba, Android dùng zRAM (không phải swap truyền thống) — `mlock()` không có tác dụng bảo vệ như trên Desktop. **Hai nền tảng phải có chiến lược tách biệt hoàn toàn.**"
+                  ]
+                },
+                {
                   "type": "paragraph",
-                  "text": "RAM Pinning:"
+                  "text": "A. Desktop — RAM Pinning (mlock / VirtualLock):"
                 },
                 {
                   "type": "code",
                   "language": "rust",
-                  "code": "// Rust (cross-platform)\nlibc::mlock(ptr as *const c_void, size);\n// Windows: kernel32::VirtualLock(ptr, size);"
+                  "code": "// Rust (Desktop only — Tauri)\n// Khóa vùng nhớ chứa Key vào RAM vật lý, ngăn kernel swap ra disk\nlibc::mlock(ptr as *const c_void, size);\n// Windows: kernel32::VirtualLock(ptr, size);"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Encrypted Swap Policy: Client kiểm tra BitLocker (Windows) / FileVault (macOS) khi khởi động. Nếu không bật → từ chối khởi chạy."
+                  "text": "Encrypted Swap Policy (Desktop): Client kiểm tra BitLocker (Windows) / FileVault (macOS) khi khởi động. Nếu không bật → từ chối khởi chạy."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "B. Mobile — Aggressive Zeroing & Keychain Enclave (iOS/Android):"
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "Tuyệt đối **không** dùng `mlock()` trên iOS/Android. Chiến lược bảo vệ trên Mobile dựa trên **Zeroize ngay lập tức** và **không giữ key lâu trong RAM app**."
+                  ]
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Nguyên tắc",
+                    "Mô tả",
+                    "Platform"
+                  ],
+                  "rows": [
+                    [
+                      "**Zeroize on Drop**",
+                      "Mọi biến chứa plaintext hoặc Key phải wrap trong `zeroize::Zeroize`. OS có quyền thu hồi RAM nhưng chúng ta đảm bảo RAM bị overwrite bằng `0x00` ngay sau scope",
+                      "iOS & Android"
+                    ],
+                    [
+                      "**Secure Enclave / StrongBox**",
+                      "Key tạm thời phải đẩy vào hardware chip — không giữ lâu trong RAM app",
+                      "iOS: Secure Enclave, Android: StrongBox"
+                    ],
+                    [
+                      "**Không giữ plaintext qua context switch**",
+                      "Mọi biến plaintext phải được zeroize trước bất kỳ `await` hay `suspend` point",
+                      "iOS & Android"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rust Core — ZeroizeGuard Wrapper (Mobile):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust Core — Mobile Memory Pattern (không dùng mlock)\nuse zeroize::{Zeroize, ZeroizeOnDrop};\n\n/// Wrapper bảo vệ cho bất kỳ dữ liệu nhạy cảm nào trên Mobile\n/// Tự động overwrite 0x00 khi Drop — không bị compiler optimize-away\n#[derive(ZeroizeOnDrop)]\npub struct SensitiveBuffer {\n    data: Vec<u8>,\n}\n\nimpl SensitiveBuffer {\n    pub fn new(capacity: usize) -> Self {\n        Self { data: Vec::with_capacity(capacity) }\n    }\n\n    /// Trả về slice đọc; khi scope kết thúc → Zeroize tự động\n    pub fn as_slice(&self) -> &[u8] { &self.data }\n}\n\n/// Ví dụ: giải mã E2EE trên Mobile — plaintext sống tối thiểu nhất có thể\npub fn decrypt_e2ee_mobile(ciphertext: &[u8], key_id: u32) -> Result<SensitiveBuffer> {\n    let key = keystore::get_from_secure_enclave(key_id)?;  // key từ chip\n    let mut plaintext = SensitiveBuffer::new(ciphertext.len());\n    aes_gcm_decrypt_into(ciphertext, &key, &mut plaintext.data)?;\n    // key bị Zeroize ngay khi out-of-scope (ZeroizeOnDrop)\n    Ok(plaintext)\n    // plaintext.data sẽ bị overwrite 0x00 khi caller drop SensitiveBuffer\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Key Storage (Mobile — Thay thế RAM Pinning):"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Desktop",
+                    "Mobile (Thay thế)"
+                  ],
+                  "rows": [
+                    [
+                      "`mlock()` khóa key vào RAM vật lý",
+                      "Key đẩy vào **Secure Enclave** (iOS) / **StrongBox Keymaster** (Android)"
+                    ],
+                    [
+                      "Key nằm trong RAM process",
+                      "Key không bao giờ rời hardware chip"
+                    ],
+                    [
+                      "Protection = ngăn Swap",
+                      "Protection = hardware isolation"
+                    ]
+                  ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "24-hardware-backed-signing",
+              "id": "24-hardware-backed-signing-laptop-desktop-mobile",
               "level": 3,
-              "heading": "2.4 Hardware-Backed Signing",
+              "heading": "2.4 Hardware-Backed Signing  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -810,9 +953,9 @@
               "subsections": []
             },
             {
-              "id": "25-wysiwys-defense-what-you-see-is-what-you-sign",
+              "id": "25-wysiwys-defense-what-you-see-is-what-you-sign-laptop-desktop-mobile",
               "level": 3,
-              "heading": "2.5 WYSIWYS Defense (What You See Is What You Sign)",
+              "heading": "2.5 WYSIWYS Defense (What You See Is What You Sign)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -851,9 +994,9 @@
               "subsections": []
             },
             {
-              "id": "26-remote-attestation-zero-trust-endpoint",
+              "id": "26-remote-attestation-zero-trust-endpoint-mobile-laptop-desktop-server",
               "level": 3,
-              "heading": "2.6 Remote Attestation (Zero-Trust Endpoint)",
+              "heading": "2.6 Remote Attestation (Zero-Trust Endpoint)  `📱 Mobile` `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -909,9 +1052,9 @@
               "subsections": []
             },
             {
-              "id": "27-binary-hardening-obfuscation",
+              "id": "27-binary-hardening-obfuscation-laptop-desktop-mobile",
               "level": 3,
-              "heading": "2.7 Binary Hardening & Obfuscation",
+              "heading": "2.7 Binary Hardening & Obfuscation  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -951,9 +1094,9 @@
               "subsections": []
             },
             {
-              "id": "28-continuous-fuzzing-infrastructure",
+              "id": "28-continuous-fuzzing-infrastructure-server",
               "level": 3,
-              "heading": "2.8 Continuous Fuzzing Infrastructure",
+              "heading": "2.8 Continuous Fuzzing Infrastructure  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -1001,9 +1144,9 @@
               "subsections": []
             },
             {
-              "id": "29-formal-verification-z3-smt-solver",
+              "id": "29-formal-verification-z3-smt-solver-server",
               "level": 3,
-              "heading": "2.9 Formal Verification (Z3 SMT Solver)",
+              "heading": "2.9 Formal Verification (Z3 SMT Solver)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "code",
@@ -1018,9 +1161,9 @@
               "subsections": []
             },
             {
-              "id": "210-rate-limiting-engine-sliding-window",
+              "id": "210-rate-limiting-engine-sliding-window-server",
               "level": 3,
-              "heading": "2.10 Rate Limiting Engine (Sliding Window)",
+              "heading": "2.10 Rate Limiting Engine (Sliding Window)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1034,9 +1177,9 @@
               "subsections": []
             },
             {
-              "id": "211-dlp-multi-sig-quarantine-cryptographic-rbac",
+              "id": "211-dlp-multi-sig-quarantine-cryptographic-rbac-laptop-desktop-server",
               "level": 3,
-              "heading": "2.11 DLP Multi-Sig Quarantine & Cryptographic RBAC",
+              "heading": "2.11 DLP Multi-Sig Quarantine & Cryptographic RBAC  `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1065,15 +1208,15 @@
           ]
         },
         {
-          "id": "3-identity-access",
+          "id": "3-identity-access-server",
           "level": 2,
-          "heading": "3. Identity & Access",
+          "heading": "3. Identity & Access  `☁️ Server`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "31-enterprise-identity-federated-pki",
+              "id": "31-enterprise-identity-federated-pki-server",
               "level": 3,
-              "heading": "3.1 Enterprise Identity (Federated PKI)",
+              "heading": "3.1 Enterprise Identity (Federated PKI)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1129,9 +1272,9 @@
               "subsections": []
             },
             {
-              "id": "32-access-policy-engine-opaabac",
+              "id": "32-access-policy-engine-opaabac-server",
               "level": 3,
-              "heading": "3.2 Access Policy Engine (OPA/ABAC)",
+              "heading": "3.2 Access Policy Engine (OPA/ABAC)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "code",
@@ -1142,9 +1285,9 @@
               "subsections": []
             },
             {
-              "id": "33-geohash-indexing-opa-optimization",
+              "id": "33-geohash-indexing-opa-optimization-server",
               "level": 3,
-              "heading": "3.3 GeoHash Indexing (OPA Optimization)",
+              "heading": "3.3 GeoHash Indexing (OPA Optimization)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1158,9 +1301,9 @@
               "subsections": []
             },
             {
-              "id": "34-enterprise-escrow-key-legal-compliance",
+              "id": "34-enterprise-escrow-key-legal-compliance-server",
               "level": 3,
-              "heading": "3.4 Enterprise Escrow Key (Legal Compliance)",
+              "heading": "3.4 Enterprise Escrow Key (Legal Compliance)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1172,15 +1315,15 @@
           ]
         },
         {
-          "id": "4-communication-protocols",
+          "id": "4-communication-protocols-core",
           "level": 2,
-          "heading": "4. Communication Protocols",
+          "heading": "4. Communication Protocols  `⚙️ Core`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "41-messaging-core-mls-encrypted-mailbox",
+              "id": "41-messaging-core-mls-encrypted-mailbox-core",
               "level": 3,
-              "heading": "4.1 Messaging Core (MLS + Encrypted Mailbox)",
+              "heading": "4.1 Messaging Core (MLS + Encrypted Mailbox)  `⚙️ Core`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1199,7 +1342,7 @@
                 },
                 {
                   "type": "code",
-                  "language": "",
+                  "language": "text",
                   "code": "Sending → Encrypted & Uploaded → Stored on Server → Downloaded by Recipient → ACK Received → Deleted from Server"
                 },
                 {
@@ -1247,9 +1390,9 @@
               "subsections": []
             },
             {
-              "id": "42-ios-push-notification-e2ee-notification-service-extension-nse",
+              "id": "42-ios-push-notification-e2ee-notification-service-extension-nse-mobile",
               "level": 3,
-              "heading": "4.2 iOS Push Notification — E2EE Notification Service Extension (NSE)",
+              "heading": "4.2 iOS Push Notification — E2EE Notification Service Extension (NSE)  `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -1621,9 +1764,129 @@
               ]
             },
             {
-              "id": "43-secure-calling-webrtc-blind-relay",
+              "id": "42b-desktop-background-wake-up-lightweight-daemon-laptop-desktop",
               "level": 3,
-              "heading": "4.3 Secure Calling (WebRTC / Blind Relay)",
+              "heading": "4.2b Desktop Background Wake-up — Lightweight Daemon  `💻 Laptop` `🖥️ Desktop`",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Lead Dev Fix #4 — Desktop Push Notification khi App tắt:** Tài liệu §4.2 thiết kế kỹ lưỡng cho Mobile (iOS NSE, Android FCM) nhưng **bỏ quên hoàn toàn** cách Desktop nhận push khi người dùng tắt hẳn App (click dấu X, tắt xuống khay hệ thống). Desktop không có NSE hay FCM chuẩn hóa thống nhất giữa Windows/macOS/Linux. **Giải pháp: Tách Rust Core thành một tiến trình Daemon độc lập với Tauri UI.**"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Kiến trúc Daemon — Tách biệt khỏi Tauri UI:"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "┌─────────────────────────────────────────────────────────────────┐\n│                       Máy Desktop                               │\n│                                                                 │\n│  ┌────────────────────────┐    ┌──────────────────────────────┐ │\n│  │  TeraChat Daemon       │    │  TeraChat UI (Tauri)         │ │\n│  │  (terachat-daemon)     │    │  (tắt hoàn toàn khi user X) │ │\n│  │                        │    │                              │ │\n│  │  • WebSocket/MQTT      │◄───│  Gọi daemon qua IPC khi     │ │\n│  │  • ~5MB RAM            │    │  user click notification     │ │\n│  │  • Chạy cả khi UI tắt  │    │                              │ │\n│  │  • E2EE decrypt        │    └──────────────────────────────┘ │\n│  │  • OS Native Notif.    │                                     │\n│  └───────────┬────────────┘                                     │\n│              │ WebSocket/MQTT (persistent)                      │\n└──────────────┼──────────────────────────────────────────────────┘\n               ↓\n       VPS Cluster (MQTT Broker / WebSocket Relay)"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Daemon Registration (System Startup):"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Cơ chế đăng ký",
+                    "Ghi chú"
+                  ],
+                  "rows": [
+                    [
+                      "**Windows**",
+                      "Windows Service (`sc create`) hoặc Task Scheduler (ONLOGON)",
+                      "Tauri installer tự đăng ký"
+                    ],
+                    [
+                      "**macOS**",
+                      "`launchd` LaunchAgent (`~/Library/LaunchAgents/com.terachat.daemon.plist`)",
+                      "Auto-start khi login"
+                    ],
+                    [
+                      "**Linux**",
+                      "`systemd` user service (`~/.config/systemd/user/terachat-daemon.service`)",
+                      "`systemctl --user enable`"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rust Daemon — Lightweight Message Loop:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// terachat-daemon/src/main.rs\n// Tiến trình Daemon độc lập — compile riêng biệt với Tauri UI\n// Mục tiêu: < 5MB RAM, < 0.1% CPU khi idle\n\nuse tokio_tungstenite::connect_async;\nuse rust_keystore::KeyStore;\n\n#[tokio::main]\nasync fn main() -> anyhow::Result<()> {\n    // 1. Load key từ OS Keychain (DPAPI/Keychain/SecretService)\n    //    Key không bao giờ hardcode — lấy từ hardware keystore\n    let keystore = KeyStore::open_os_default()?;\n\n    // 2. Kết nối WebSocket/MQTT tới Cluster (persistent, auto-reconnect)\n    let ws_url = keystore.get_cluster_url()?;\n    let (mut ws, _) = connect_async(&ws_url).await?;\n\n    println!(\"[TeraChat Daemon] Connected. Listening for messages...\");\n\n    // 3. Message Loop — cực nhẹ, chỉ 1 thread async\n    while let Some(msg) = ws.next().await {\n        let raw = msg?;\n        if let Ok(payload) = parse_e2ee_payload(&raw.into_data()) {\n            // 4. Giải mã E2EE bằng key trong memory (đã load từ OS Keychain)\n            let key = keystore.get_session_key(&payload.key_id)?;\n            if let Ok(plaintext) = aes_gcm_decrypt(&payload.ciphertext, &key) {\n                // 5. Đẩy OS Native Notification — không cần Tauri UI\n                send_os_notification(&plaintext.sender, &plaintext.preview)?;\n                // 6. Zeroize plaintext ngay lập tức\n                key.zeroize();\n            }\n        }\n    }\n    Ok(())\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "OS Native Notification (Platform-Specific):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust — Cross-platform OS Notification (không cần Tauri UI)\npub fn send_os_notification(sender: &str, preview: &str) -> Result<()> {\n    #[cfg(target_os = \"windows\")]\n    {\n        // Windows Toast Notification (WinRT API)\n        windows_toast::notify(sender, preview)?;\n    }\n    #[cfg(target_os = \"macos\")]\n    {\n        // macOS UNUserNotificationCenter (via objc bridge)\n        macos_notif::post(sender, preview)?;\n    }\n    #[cfg(target_os = \"linux\")]\n    {\n        // libnotify (D-Bus)\n        notify_rust::Notification::new()\n            .summary(sender)\n            .body(preview)\n            .show()?;\n    }\n    Ok(())\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Daemon ↔ Tauri UI Wake-up (khi user click notification):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Daemon: khi user click → gửi IPC signal để mở Tauri UI\n// Sử dụng Unix socket (macOS/Linux) hoặc Named Pipe (Windows)\npub fn wake_tauri_ui(channel_id: &str) -> Result<()> {\n    let ipc = LocalIpc::connect(\"terachat-daemon\")?;\n    ipc.send(&DaemonWakeSignal {\n        action: WakeAction::OpenChannel,\n        channel_id: channel_id.to_string(),\n    })?;\n    // Nếu Tauri UI chưa chạy → spawn process: terachat --deeplink channel://uuid\n    Ok(())\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "RAM Budget Breakdown:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Thành phần",
+                    "RAM tiêu thụ"
+                  ],
+                  "rows": [
+                    [
+                      "tokio async runtime",
+                      "~1.5MB"
+                    ],
+                    [
+                      "WebSocket/TLS stack",
+                      "~1.5MB"
+                    ],
+                    [
+                      "Key cache (OS Keychain ref)",
+                      "~0.5MB"
+                    ],
+                    [
+                      "E2EE decrypt buffer (per-message, reused)",
+                      "~1.0MB"
+                    ],
+                    [
+                      "**Tổng Daemon**",
+                      "**~4.5MB**"
+                    ]
+                  ]
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Daemon không lưu tin nhắn.** Chức năng duy nhất: nhận E2EE payload → giải mã preview → gửi OS notification → xóa plaintext. DB sync, FTS5 index, và CRDT merge chỉ xảy ra khi Tauri UI được mở."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "43-secure-calling-webrtc-blind-relay-laptop-desktop-mobile-server",
+              "level": 3,
+              "heading": "4.3 Secure Calling (WebRTC / Blind Relay)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "list",
@@ -1642,9 +1905,9 @@
               "subsections": []
             },
             {
-              "id": "44-survival-link-blewi-fi-direct-mesh-network",
+              "id": "44-survival-link-blewi-fi-direct-mesh-network-laptop-desktop-mobile",
               "level": 3,
-              "heading": "4.4 Survival Link (BLE/Wi-Fi Direct Mesh Network)",
+              "heading": "4.4 Survival Link (BLE/Wi-Fi Direct Mesh Network)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -1688,60 +1951,151 @@
                     "Chỉ khi User bấm [BẬT] mới mở ăng-ten BLE.",
                     "Auto-Teardown: Khi Internet trở lại → tắt Mesh, quay về E2EE Relay."
                   ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Text (BLE Flooding): Gossip Protocol, Chunking vào BLE Advertisement packet, relay nhảy cóc A→B→C. Security: E2EE (MLS) vẫn áp dụng."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "File Transfer (Wi-Fi Direct):"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "BLE: Phát signal \"Tôi có file 5MB, Hash=XYZ\"",
-                    "BLE: Handshake thỏa thuận",
-                    "Tạo Soft AP",
-                    "Transfer qua TCP/IP (~50MB/s trên LAN Gigabit)",
-                    "Teardown ngay để tiết kiệm pin"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Enterprise Security (Cert-Based Auth + Prim's MST):"
-                },
-                {
-                  "type": "table",
-                  "headers": [
-                    "Feature",
-                    "Mô tả"
-                  ],
-                  "rows": [
-                    [
-                      "**Cert-Based Auth**",
-                      "Chỉ thiết bị có Certificate Doanh nghiệp được tham gia Mesh."
-                    ],
-                    [
-                      "**Prim's Algorithm (MST)**",
-                      "Xây dựng Cây khung nhỏ nhất từ RSSI + Battery Level. Loại bỏ trùng lặp, ngăn Broadcast Storm."
-                    ],
-                    [
-                      "**Post-Disaster Sync**",
-                      "Chat log offline (Encrypted) → tự động sync về Server khi có Internet."
-                    ],
-                    [
-                      "**Offline TTL**",
-                      "Session Key tự hết hạn sau 24h không kết nối được Server — khóa cứng app ngay cả khi Mesh còn hoạt động."
-                    ],
-                    [
-                      "**Gossip CRL**",
-                      "Danh sách đen (CRL) lan truyền peer-to-peer qua Mesh, loại thiết bị bị revoke trong vài giây sau khi bất kỳ node nào bắt được Internet."
-                    ]
-                  ]
                 }
               ],
               "subsections": [
+                {
+                  "id": "a-teralink-multipath-app-layer-mlo-multi-link-operation-core",
+                  "level": 4,
+                  "heading": "A. TeraLink Multipath — App-Layer MLO (Multi-Link Operation)  `⚙️ Core`",
+                  "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Dev Fix #1 — Từ \"Fallback\" sang \"Multipath\":** Cơ chế hiện tại buộc hệ thống chờ timeout 15s mới chuyển mạng. Trong thực tế mạng chập chờn (cell handover, Wi-Fi roaming), người dùng trải nghiệm 15 giây freeze mỗi lần. **Cảm hứng Wi-Fi 7 MLO:** Thay vì chờ mạng A chết hẳn mới nhảy sang B, Rust Core duy trì **3 socket ngầm song song** và gửi các gói tin nhỏ (CRDT events < 1KB) qua **tất cả đường cùng lúc**. Bên nào đến trước thì nhận — bản đến sau bị drop bởi Bloom Filter."
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Kiến trúc TeraLink Multipath:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "text",
+                      "code": "┌──────────────────────────────────────────────────────────────┐\n│                    Rust Core — TeraLink                       │\n│                                                              │\n│  AppEvent (CRDT < 1KB)                                       │\n│       │                                                      │\n│       │  nhân bản → gửi song song                           │\n│       ├───────────────────────────────────────────────────►  │\n│       │         Socket 1: 4G/5G (WAN)                       │\n│       ├───────────────────────────────────────────────────►  │\n│       │         Socket 2: Wi-Fi Intranet                     │\n│       └───────────────────────────────────────────────────►  │\n│                 Socket 3: BLE Mesh Lane 1                    │\n│                                                              │\n│  Bên nhận: Bloom Filter Dedup — bản copy đến sau bị DROP    │\n└──────────────────────────────────────────────────────────────┘"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Quy tắc áp dụng Multipath:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Loại payload",
+                        "Multipath?",
+                        "Lý do"
+                      ],
+                      "rows": [
+                        [
+                          "`AppEvent` / CRDT event (< 1KB)",
+                          "✅ Gửi 3 đường đồng thời",
+                          "Gói nhỏ, overhead negligible, latency = 0ms"
+                        ],
+                        [
+                          "File chunk (> 64KB)",
+                          "❌ Chỉ dùng kênh tốc độ cao",
+                          "Nhân bản file lớn sẽ lãng phí băng thông BLE"
+                        ],
+                        [
+                          "E2EE key exchange",
+                          "✅ Gửi 3 đường",
+                          "Quan trọng, phải đến nơi nhanh nhất"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Rust Core — TeraLinkMultipath:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "rust",
+                      "code": "// Rust Core — TeraLink Multipath (App-Layer MLO)\n// Cảm hứng: Wi-Fi 7 Simultaneous Multi-Link Operation\nuse bloom::{BloomFilter, ASMS};\n\npub struct TeraLinkMultipath {\n    /// Bloom Filter lưu packet_id đã xử lý — chống xử lý bản copy đến sau\n    /// False positive rate ~0.1% với 10,000 packets (chấp nhận được)\n    dedup_filter: BloomFilter,\n    socket_wan:   Option<TcpStream>,    // 4G/5G WAN\n    socket_lan:   Option<TcpStream>,    // Wi-Fi Intranet\n    socket_ble:   Option<BleChannel>,  // BLE Mesh Lane 1\n}\n\nimpl TeraLinkMultipath {\n    /// Gửi AppEvent (CRDT < 1KB) song song qua tất cả đường khả dụng\n    /// Không chờ một đường chết hẳn mới gửi đường khác\n    pub fn send_multipath(&self, event: &AppEvent) -> MultiPathResult {\n        let packet = event.serialize_with_id(); // packet_id = UUID v4\n        let mut sent_paths = 0u8;\n\n        // Gửi đồng thời — không block lẫn nhau\n        if let Some(ref wan) = self.socket_wan {\n            if wan.send_nonblocking(&packet).is_ok() { sent_paths |= 0b001; }\n        }\n        if let Some(ref lan) = self.socket_lan {\n            if lan.send_nonblocking(&packet).is_ok() { sent_paths |= 0b010; }\n        }\n        if let Some(ref ble) = self.socket_ble {\n            if ble.send_nonblocking(&packet).is_ok() { sent_paths |= 0b100; }\n        }\n\n        MultiPathResult { sent_paths }\n    }\n\n    /// Gọi khi nhận được packet — Bloom Filter loại duplicate\n    pub fn dedup_on_receive(&mut self, packet: &[u8]) -> Option<AppEvent> {\n        let packet_id = extract_packet_id(packet);\n        // Nếu đã xử lý rồi → drop bản copy đến sau\n        if self.dedup_filter.contains(&packet_id) {\n            return None;\n        }\n        self.dedup_filter.insert(&packet_id);\n        AppEvent::deserialize(packet).ok()\n    }\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Kết quả:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Kịch bản",
+                        "Không có Multipath",
+                        "Có TeraLink Multipath"
+                      ],
+                      "rows": [
+                        [
+                          "Cell handover (4G → 5G)",
+                          "❌ Freeze 15s timeout",
+                          "✅ BLE/Wi-Fi đã gửi xong trong giây đó"
+                        ],
+                        [
+                          "Wi-Fi roaming (AP A → AP B)",
+                          "❌ Freeze 15s timeout",
+                          "✅ 4G WAN đã backup ngay lập tức"
+                        ],
+                        [
+                          "Mạng chập chờn (jitter cao)",
+                          "❌ Packet loss rõ ràng",
+                          "✅ 3 đường → xác suất mất gói ≈ 0%"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Text (BLE Flooding): Gossip Protocol, Chunking vào BLE Advertisement packet, relay nhảy cóc A→B→C. Security: E2EE (MLS) vẫn áp dụng."
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "File Transfer (Wi-Fi Direct):"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "BLE: Phát signal \"Tôi có file 5MB, Hash=XYZ\"",
+                        "BLE: Handshake thỏa thuận",
+                        "Tạo Soft AP",
+                        "Transfer qua TCP/IP (~50MB/s trên LAN Gigabit)",
+                        "Teardown ngay để tiết kiệm pin"
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Enterprise Security (Cert-Based Auth + Prim's MST):"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Feature",
+                        "Mô tả"
+                      ],
+                      "rows": [
+                        [
+                          "**Cert-Based Auth**",
+                          "Chỉ thiết bị có Certificate Doanh nghiệp được tham gia Mesh."
+                        ],
+                        [
+                          "**Prim's Algorithm (MST)**",
+                          "Xây dựng Cây khung nhỏ nhất từ RSSI + Battery Level. Loại bỏ trùng lặp, ngăn Broadcast Storm."
+                        ],
+                        [
+                          "**Post-Disaster Sync**",
+                          "Chat log offline (Encrypted) → tự động sync về Server khi có Internet."
+                        ],
+                        [
+                          "**Offline TTL**",
+                          "Session Key tự hết hạn sau 24h không kết nối được Server — khóa cứng app ngay cả khi Mesh còn hoạt động."
+                        ],
+                        [
+                          "**Gossip CRL**",
+                          "Danh sách đen (CRL) lan truyền peer-to-peer qua Mesh, loại thiết bị bị revoke trong vài giây sau khi bất kỳ node nào bắt được Internet."
+                        ]
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
                 {
                   "id": "phân-tích-lỗ-hổng-nghịch-lý-offline-pki-mesh-qos",
                   "level": 4,
@@ -1825,6 +2179,101 @@
                           "Pin thiết bị sau 2h Mesh",
                           "❌ Cạn do Broadcast liên tục",
                           "✅ Tiết kiệm ~60% (BLE chỉ gửi packet nhỏ)"
+                        ]
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "b-dynamic-contextual-slicing-app-level-network-slicing-core",
+                  "level": 4,
+                  "heading": "B. Dynamic Contextual Slicing — App-Level Network Slicing  `⚙️ Core`",
+                  "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Dev Fix #2 — Từ 2 Lane cứng sang 3 Slice động:** `MeshQosRouter` hiện tại chỉ phân biệt Critical / Bulk — quá cứng nhắc khi nhiều `.tapp` doanh nghiệp cùng chạy. **Cảm hứng 5G Network Slicing + Wi-Fi 6 OFDMA:** Chia băng thông Mesh nội bộ thành 3 \"lát cắt ảo\" với SLA riêng biệt, tương tự như 5G phân chia mạng cho IoT/Streaming/Realtime."
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "3 Slice và SLA tương ứng:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Slice",
+                        "Tên 5G tương đương",
+                        "Loại payload",
+                        "Priority",
+                        "Hành vi"
+                      ],
+                      "rows": [
+                        [
+                          "**Slice 1 — URLLC**",
+                          "Ultra-Reliable Low Latency",
+                          "Smart Approval, Discovery Ping (< 500 bytes)",
+                          "🔴 Tuyệt đối — cướp luồng",
+                          "Gửi ngay lập tức, preempt mọi tiến trình khác"
+                        ],
+                        [
+                          "**Slice 2 — eMBB**",
+                          "Enhanced Mobile Broadband",
+                          "File Wi-Fi Direct, media chunk",
+                          "🟡 Cao",
+                          "Queue và drain ngay khi kênh tốc độ cao thiết lập"
+                        ],
+                        [
+                          "**Slice 3 — mMTC**",
+                          "Massive Machine Type Comm.",
+                          "Event Sourcing CRM, Smart Order batch",
+                          "🟢 Thấp",
+                          "Gom batch 100 events → gửi 1 lần → tiết kiệm pin"
+                        ]
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Rust Core — DynamicSliceRouter:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "rust",
+                      "code": "// Rust Core — Dynamic Contextual Slice Router\n// Cảm hứng: 5G Network Slicing + Wi-Fi 6 OFDMA\n// Thay thế MeshQosRouter 2-Lane bằng 3-Slice có SLA động\nuse std::collections::VecDeque;\n\n#[derive(Debug, Clone, PartialEq)]\npub enum NetworkSlice {\n    /// URLLC: Smart Approval, Discovery Ping — < 500 bytes, preempt all\n    Urllc,\n    /// eMBB: File transfer, bulk data via Wi-Fi Direct\n    Embb,\n    /// mMTC: Event Sourcing batch — tích lũy, gửi 1 lần mỗi 100 events\n    Mmtc,\n}\n\npub struct DynamicSliceRouter {\n    embb_queue: VecDeque<Vec<u8>>,\n    mmtc_batch: Vec<Vec<u8>>,           // Gom đủ 100 mới gửi\n    mmtc_batch_limit: usize,            // Mặc định: 100\n}\n\nimpl DynamicSliceRouter {\n    pub const MMTC_BATCH_LIMIT: usize = 100;\n\n    /// Phân loại payload theo App Context (loại .tapp + kích thước)\n    pub fn classify(payload: &[u8], app_ctx: &AppContext) -> NetworkSlice {\n        match app_ctx.app_type {\n            // Smart Approval / Discovery — độ trễ 0 là tối thượng\n            AppType::SmartApproval | AppType::Discovery if payload.len() < 512 => {\n                NetworkSlice::Urllc\n            }\n            // Event Sourcing (CRM, Smart Order) — batch để tiết kiệm pin\n            AppType::EventSourcing | AppType::SmartOrder => NetworkSlice::Mmtc,\n            // File, AI input, bulk — dùng kênh tốc độ cao\n            _ if payload.len() > 64 * 1024 => NetworkSlice::Embb,\n            // Sub-4KB text/control → URLLC mặc định\n            _ => NetworkSlice::Urllc,\n        }\n    }\n\n    /// Route payload theo Slice — trả về Some(payload) nếu cần gửi ngay\n    pub fn route(&mut self, payload: Vec<u8>, app_ctx: &AppContext) -> SliceDecision {\n        match Self::classify(&payload, app_ctx) {\n            // Slice 1 URLLC: gửi ngay, preempt mọi thứ\n            NetworkSlice::Urllc => SliceDecision::SendImmediate(payload),\n\n            // Slice 2 eMBB: queue, chờ Wi-Fi Direct\n            NetworkSlice::Embb => {\n                self.embb_queue.push_back(payload);\n                SliceDecision::Queued\n            }\n\n            // Slice 3 mMTC: gom batch — chỉ gửi khi đủ 100 events\n            NetworkSlice::Mmtc => {\n                self.mmtc_batch.push(payload);\n                if self.mmtc_batch.len() >= self.mmtc_batch_limit {\n                    let batch = std::mem::take(&mut self.mmtc_batch);\n                    SliceDecision::SendBatch(batch) // gửi 100 events 1 lần\n                } else {\n                    SliceDecision::Buffering(self.mmtc_batch.len())\n                }\n            }\n        }\n    }\n}\n\npub enum SliceDecision {\n    SendImmediate(Vec<u8>),    // URLLC — gửi ngay\n    Queued,                    // eMBB — vào queue chờ Wi-Fi Direct\n    SendBatch(Vec<Vec<u8>>),   // mMTC — đủ 100, gửi batch\n    Buffering(usize),          // mMTC — đang tích lũy (n/100)\n}"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Kết quả so sánh:"
+                    },
+                    {
+                      "type": "table",
+                      "headers": [
+                        "Kịch bản",
+                        "2-Lane cũ",
+                        "3-Slice mới"
+                      ],
+                      "rows": [
+                        [
+                          "Smart Approval Mesh trong nhà kho",
+                          "✅ Lane 1 (OK)",
+                          "✅ URLLC — nhanh hơn, preempt file sync"
+                        ],
+                        [
+                          "File 500MB đang sync qua BLE",
+                          "❌ Nghẽn Lane 2 cả mạng",
+                          "✅ eMBB queue, chờ Wi-Fi Direct"
+                        ],
+                        [
+                          "CRM Event Sourcing (1000 records)",
+                          "❌ Gửi từng cái một",
+                          "✅ mMTC batch 100 → tiết kiệm 90% battery overhead"
+                        ],
+                        [
+                          "3 .tapp cùng chạy",
+                          "❌ Dẫm chân nhau",
+                          "✅ Mỗi .tapp đi đúng Slice — không nghẽn cổ chai"
                         ]
                       ]
                     }
@@ -1995,9 +2444,9 @@
               ]
             },
             {
-              "id": "45-external-messaging-sandbox-isolated-webview-container",
+              "id": "45-external-messaging-sandbox-isolated-webview-container-laptop-desktop-mobile",
               "level": 3,
-              "heading": "4.5 External Messaging Sandbox (Isolated WebView Container)",
+              "heading": "4.5 External Messaging Sandbox (Isolated WebView Container)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2012,7 +2461,7 @@
                 },
                 {
                   "type": "code",
-                  "language": "",
+                  "language": "text",
                   "code": "┌────────────────────────────────────────────────────────────────┐\n│                  TeraChat Workspace Container                  │\n│  ┌──────────────────────────┐  ┌────────────────────────────┐ │\n│  │   TeraChat Core (E2EE)   │  │  External Messaging Panel  │ │\n│  │   (Rust + Tauri IPC)     │  │  (Isolated BrowserView)    │ │\n│  │                          │  │  ┌──────────┐ ┌─────────┐  │ │\n│  │  Company_Key: [SECURED]  │  │  │ Zalo Web │ │TG Web   │  │ │\n│  │  MLS Sessions: [SEALED]  │  │  └──────────┘ └─────────┘  │ │\n│  └──────────────────────────┘  └────────────────────────────┘ │\n│            ▲  NO IPC BRIDGE  ▼                                 │\n│  ┌─────────────────────────────────────────────────────────┐  │\n│  │          DLP Smart Clipboard Controller (Rust)          │  │\n│  └─────────────────────────────────────────────────────────┘  │\n└────────────────────────────────────────────────────────────────┘\n                   External App Traffic → Internet (Direct)\n                   Internal Traffic → Private Cluster ONLY"
                 },
                 {
@@ -2085,9 +2534,9 @@
               "subsections": []
             },
             {
-              "id": "46-dlp-smart-clipboard-controller-anti-data-exfiltration",
+              "id": "46-dlp-smart-clipboard-controller-anti-data-exfiltration-laptop-desktop",
               "level": 3,
-              "heading": "4.6 DLP Smart Clipboard Controller (Anti-Data-Exfiltration)",
+              "heading": "4.6 DLP Smart Clipboard Controller (Anti-Data-Exfiltration)  `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2148,7 +2597,82 @@
                 },
                 {
                   "type": "paragraph",
-                  "text": "DLP Hard Rules Summary:"
+                  "text": "E. Mobile DLP — In-App Controls & OS Flags  📱 Mobile"
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Lead Dev Fix #5 — DLP trên Mobile:** iOS Sandbox nghiêm cấm app đọc ngầm Clipboard của hệ thống hoặc hook vào tiến trình khác. Desktop `ClipboardController` (§4.6.B) **không thể áp dụng trên Mobile**. Rào chắn DLP phải đặt ở **hành vi Sao chép (Copy)** bên trong TeraChat, không phải ở Paste. Thêm vào đó, Screen Recording phải được chặn ở cấp OS flag."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "1. Chặn Screen Capture / Screen Recording — Cấp phần cứng:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Cơ chế",
+                    "Hiệu lực"
+                  ],
+                  "rows": [
+                    [
+                      "**Android**",
+                      "`FLAG_SECURE` (WindowManager)",
+                      "Chặn hoàn toàn Screenshot + Screen Recording từ cấp phần cứng"
+                    ],
+                    [
+                      "**iOS**",
+                      "Lắng nghe `UIScreen.capturedDidChangeNotification`",
+                      "Phủ View đen ngay khi bắt đầu quay màn hình"
+                    ]
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "kotlin",
+                  "code": "// Android — FLAG_SECURE (Khởi tạo khi Activity tạo)\n// Chặn Screenshot / Screen Recording ở cấp phần cứng — không thể bypass từ userland\noverride fun onCreate(savedInstanceState: Bundle?) {\n    super.onCreate(savedInstanceState)\n    window.setFlags(\n        WindowManager.LayoutParams.FLAG_SECURE,\n        WindowManager.LayoutParams.FLAG_SECURE\n    )\n}"
+                },
+                {
+                  "type": "code",
+                  "language": "swift",
+                  "code": "// iOS — Screen Recording Detection + Overlay\n// Lắng nghe event UIScreen.capturedDidChangeNotification\nclass ScreenProtectionManager {\n    private var overlayWindow: UIWindow?\n\n    func startMonitoring() {\n        NotificationCenter.default.addObserver(\n            self,\n            selector: #selector(screenCaptureStatusDidChange),\n            name: UIScreen.capturedDidChangeNotification,\n            object: nil\n        )\n    }\n\n    @objc private func screenCaptureStatusDidChange() {\n        if UIScreen.main.isCaptured {\n            // Phủ View đen toàn màn hình ngay lập tức\n            showSecurityOverlay()\n        } else {\n            // Gỡ overlay khi dừng quay\n            hideSecurityOverlay()\n        }\n    }\n\n    private func showSecurityOverlay() {\n        let overlay = UIWindow(frame: UIScreen.main.bounds)\n        overlay.windowLevel = .alert + 1\n        let vc = UIViewController()\n        vc.view.backgroundColor = .black\n        // Hiển thị logo công ty tùy chọn (không lộ nội dung nhạy cảm)\n        overlay.rootViewController = vc\n        overlay.makeKeyAndVisible()\n        overlayWindow = overlay\n    }\n\n    private func hideSecurityOverlay() {\n        overlayWindow?.isHidden = true\n        overlayWindow = nil\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "2. Clipboard Mobile — In-App Copy Restriction:"
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "Không thể can thiệp vào hành vi Paste của user trên app khác (Zalo/Telegram) như Desktop. Thay vào đó, **chặn hành vi Copy** từ Text Node trong TeraChat Mobile."
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "typescript",
+                  "code": "// React Native — Vô hiệu hóa Copy từ SecureText component\n// Admin có thể bật cờ OPA `allow_copy: true` để mở khóa trong context cụ thể\ninterface SecureTextProps {\n  children: string;\n  allowCopy?: boolean;  // Mặc định false — Admin kiểm soát qua OPA\n}\n\nfunction SecureText({ children, allowCopy = false }: SecureTextProps) {\n  return (\n    <Text\n      selectable={allowCopy}           // false = không thể bôi đen + copy\n      contextMenuHidden={!allowCopy}   // true = ẩn menu Copy/Paste\n      onLongPress={() => {\n        if (!allowCopy) {\n          // Hiển thị cảnh báo DLP thay vì menu Copy\n          showDlpWarning(\"Chính sách công ty không cho phép sao chép nội dung này\");\n        }\n      }}\n    >\n      {children}\n    </Text>\n  );\n}"
+                },
+                {
+                  "type": "code",
+                  "language": "swift",
+                  "code": "// iOS — Custom UITextView không cho Copy (nếu Admin không bật allow_copy)\nclass SecureTextView: UITextView {\n    var allowCopy: Bool = false  // Mặc định: Cấm Copy\n\n    // Override menu actions — chặn copy/cut/paste nếu không được phép\n    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {\n        if !allowCopy && (action == #selector(copy(_:)) || action == #selector(cut(_:))) {\n            return false\n        }\n        return super.canPerformAction(action, withSender: sender)\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "3. OPA Policy cho Mobile DLP:"
+                },
+                {
+                  "type": "code",
+                  "language": "rego",
+                  "code": "package terachat.mobile_dlp\n\n# Admin bật allow_copy cho kênh/dept cụ thể\nallow_copy {\n    input.user.attributes.department == input.policy.copy_allowed_depts[_]\n    input.channel.sensitivity_level != \"HIGH\"\n}\n\n# Mặc định: Cấm Copy hoàn toàn nếu không có policy cho phép\ndefault allow_copy = false"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "DLP Hard Rules Summary (cập nhật — bao gồm Mobile):"
                 },
                 {
                   "type": "table",
@@ -2156,38 +2680,44 @@
                     "Hành động",
                     "Vùng 1 (Nội bộ)",
                     "Vùng 2 (Federation)",
-                    "External Sandbox"
+                    "External Sandbox",
+                    "Mobile"
                   ],
                   "rows": [
                     [
                       "Chat text",
                       "✅ E2EE",
                       "✅ E2EE + Audit Log",
-                      "✅ (App ngoài tự xử lý)"
+                      "✅ (App ngoài tự xử lý)",
+                      "✅ E2EE"
                     ],
                     [
                       "File nội bộ",
                       "✅",
                       "❌ > 1MB",
-                      "❌ Drag & Drop bị chặn"
+                      "❌ Drag & Drop bị chặn",
+                      "✅ (On-demand)"
                     ],
                     [
                       "Copy nội bộ → Paste ngoài",
                       "N/A",
                       "N/A",
-                      "❌ Clipboard Controller"
+                      "❌ Clipboard Controller",
+                      "❌ SecureText (Copy blocked)"
                     ],
                     [
                       "Screen Share",
                       "✅",
                       "❌",
-                      "N/A"
+                      "N/A",
+                      "❌ FLAG_SECURE / Overlay"
                     ],
                     [
                       "Audio/Video",
                       "✅ WebRTC",
                       "❌",
-                      "N/A"
+                      "N/A",
+                      "✅ WebRTC"
                     ]
                   ]
                 }
@@ -2197,15 +2727,15 @@
           ]
         },
         {
-          "id": "5-platform-feature-modules-technical",
+          "id": "5-platform-feature-modules-technical-laptop-desktop-mobile",
           "level": 2,
-          "heading": "5. Platform Feature Modules (Technical)",
+          "heading": "5. Platform Feature Modules (Technical)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "51-ai-integration-gateway",
+              "id": "51-ai-integration-gateway-core-server",
               "level": 3,
-              "heading": "5.1 AI Integration Gateway",
+              "heading": "5.1 AI Integration Gateway  `⚙️ Core` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -2329,9 +2859,9 @@
               ]
             },
             {
-              "id": "52-terachat-marketplace-kiến-trúc-bóc-tách-control-plane-vs-data-plane",
+              "id": "52-terachat-marketplace-kiến-trúc-bóc-tách-control-plane-vs-data-plane-core-laptop-desktop",
               "level": 3,
-              "heading": "5.2 TeraChat Marketplace — Kiến trúc Bóc tách (Control Plane vs. Data Plane)",
+              "heading": "5.2 TeraChat Marketplace — Kiến trúc Bóc tách (Control Plane vs. Data Plane)  `⚙️ Core` `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2573,7 +3103,7 @@
                         {
                           "type": "code",
                           "language": "text",
-                          "code": "[Admin cài .tapp \"AI Summarize\"]\n  1. Admin nhập OPENAI_API_KEY vào cài đặt .tapp trên máy Admin\n  2. Rust Core mã hóa Key bằng Company_Key → push Ciphertext lên VPS\n     VPS lưu blob mà không biết Key là gì (Zero-Knowledge)\n\n[Nhân viên A mở app \"AI Summarize\"]\n  3. Rust Core kéo API Key Ciphertext từ VPS về → giải mã trong RAM\n  4. WASM App xây dựng Request Payload:\n       {\"text\": \"Tóm tắt hợp đồng...\"} (KHÔNG tự gọi network)\n  5. WASM gọi FFI: host_call_external_api(url, payload)\n  6. Rust Core kiểm tra Permission Manifest → đính kèm API Key (RAM)\n     → Gọi HTTPS trực tiếp đến api.openai.com\n  7. OpenAI trả kết quả → Rust Core forward về WASM → hiển thị\n     VPS không biết nội dung câu hỏi, không biết API Key ✓"
+                          "code": "[Admin cài .tapp \"AI Summarize\"]\n\n  1. Admin nhập OPENAI_API_KEY vào cài đặt .tapp trên máy Admin\n  2. Rust Core mã hóa Key bằng Company_Key → push Ciphertext lên VPS\n     VPS lưu blob mà không biết Key là gì (Zero-Knowledge)\n\n[Nhân viên A mở app \"AI Summarize\"]\n\n  3. Rust Core kéo API Key Ciphertext từ VPS về → giải mã trong RAM\n  4. WASM App xây dựng Request Payload:\n       {\"text\": \"Tóm tắt hợp đồng...\"} (KHÔNG tự gọi network)\n\n  5. WASM gọi FFI: host_call_external_api(url, payload)\n  6. Rust Core kiểm tra Permission Manifest → đính kèm API Key (RAM)\n     → Gọi HTTPS trực tiếp đến api.openai.com\n\n  7. OpenAI trả kết quả → Rust Core forward về WASM → hiển thị\n     VPS không biết nội dung câu hỏi, không biết API Key ✓"
                         },
                         {
                           "type": "paragraph",
@@ -2602,7 +3132,7 @@
                         {
                           "type": "code",
                           "language": "text",
-                          "code": "[Thiết bị A — LAN, không có Internet]\n  1. WASM App tạo Request Payload\n  2. Rust Core mã hóa Payload bằng Session Key (TLS ephemeral)\n     → Đóng gói thành Egress_Ticket {encrypted_payload, target_url}\n  3. Gửi Egress_Ticket lên VPS qua kênh mTLS nội bộ\n\n[VPS Egress Module — Tiến trình riêng biệt, RAM-only]\n  4. Giải mã Egress_Ticket trong RAM (không ghi xuống DB)\n  5. Đính kèm API Key từ .env VPS\n  6. Gọi HTTPS ra ngoài (OpenAI, Cổng thanh toán, ERP...)\n  7. Nhận kết quả → forward ngược lại cho Thiết bị A\n  8. Xóa tất cả khỏi RAM — không có audit log nội dung\n\n[Bảo mật Egress Module]\n  • Ephemerality: Không persist bất kỳ dữ liệu nào\n  • Rate Limit: OPA kiểm soát số request/phút mỗi .tapp\n  • Allow-list URL: Chỉ kết nối domain được khai báo trong Manifest"
+                          "code": "[Thiết bị A — LAN, không có Internet]\n\n  1. WASM App tạo Request Payload\n  2. Rust Core mã hóa Payload bằng Session Key (TLS ephemeral)\n     → Đóng gói thành Egress_Ticket {encrypted_payload, target_url}\n\n  3. Gửi Egress_Ticket lên VPS qua kênh mTLS nội bộ\n\n[VPS Egress Module — Tiến trình riêng biệt, RAM-only]\n\n  4. Giải mã Egress_Ticket trong RAM (không ghi xuống DB)\n  5. Đính kèm API Key từ .env VPS\n  6. Gọi HTTPS ra ngoài (OpenAI, Cổng thanh toán, ERP...)\n  7. Nhận kết quả → forward ngược lại cho Thiết bị A\n  8. Xóa tất cả khỏi RAM — không có audit log nội dung\n\n[Bảo mật Egress Module]\n  • Ephemerality: Không persist bất kỳ dữ liệu nào\n  • Rate Limit: OPA kiểm soát số request/phút mỗi .tapp\n  • Allow-list URL: Chỉ kết nối domain được khai báo trong Manifest"
                         }
                       ],
                       "subsections": []
@@ -2622,7 +3152,7 @@
                         {
                           "type": "code",
                           "language": "text",
-                          "code": "[Thiết lập một lần khi cài .tapp Jira]\n  1. Client sinh cặp khóa riêng cho .tapp: (Webhook_PubKey, Webhook_PrivKey)\n  2. Webhook_PubKey cung cấp cho Jira làm \"địa chỉ mã hóa\"\n  3. Webhook_PrivKey lưu trong SQLCipher cục bộ của thiết bị\n\n[Khi Jira có Task mới]\n  4. Jira mã hóa nội dung bằng Webhook_PubKey (Curve25519 ECIES)\n  5. Jira POST ciphertext đến: https://relay.company.vps/webhook/{app_id}\n  6. VPS lưu blob vào bảng SQL của .tapp đó (VPS hoàn toàn mù)\n\n[Thiết bị nhân viên sync về]\n  7. Rust Core kéo blob Webhook về\n  8. Giải mã bằng Webhook_PrivKey (trong SQLCipher local) → đọc nội dung\n     \"Sếp vừa giao task mới trên Jira: Viết báo cáo Q1\""
+                          "code": "[Thiết lập một lần khi cài .tapp Jira]\n\n  1. Client sinh cặp khóa riêng cho .tapp: (Webhook_PubKey, Webhook_PrivKey)\n  2. Webhook_PubKey cung cấp cho Jira làm \"địa chỉ mã hóa\"\n  3. Webhook_PrivKey lưu trong SQLCipher cục bộ của thiết bị\n\n[Khi Jira có Task mới]\n\n  4. Jira mã hóa nội dung bằng Webhook_PubKey (Curve25519 ECIES)\n  5. Jira POST ciphertext đến: https://relay.company.vps/webhook/{app_id}\n  6. VPS lưu blob vào bảng SQL của .tapp đó (VPS hoàn toàn mù)\n\n[Thiết bị nhân viên sync về]\n\n  7. Rust Core kéo blob Webhook về\n  8. Giải mã bằng Webhook_PrivKey (trong SQLCipher local) → đọc nội dung\n     \"Sếp vừa giao task mới trên Jira: Viết báo cáo Q1\""
                         },
                         {
                           "type": "paragraph",
@@ -2726,9 +3256,9 @@
               ]
             },
             {
-              "id": "53-core-app-vs-app-packages-architectural-boundary",
+              "id": "53-core-app-vs-app-packages-architectural-boundary-core-laptop-desktop",
               "level": 3,
-              "heading": "5.3 Core App vs. App Packages (Architectural Boundary)",
+              "heading": "5.3 Core App vs. App Packages (Architectural Boundary)  `⚙️ Core` `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -2759,7 +3289,7 @@
                 },
                 {
                   "type": "code",
-                  "language": "",
+                  "language": "text",
                   "code": "┌─────────────────────────────────────────────────────────────┐\n│                  TeraChat Core (The Fortress)               │\n│   ┌───────────┐  ┌──────────────┐  ┌───────────────────┐   │\n│   │  Network  │  │  Crypto E2EE │  │  Key Management   │   │\n│   │ (Clusters)│  │(Kyber/MLS)   │  │ (Secure Enclave)  │   │\n│   └───────────┘  └──────────────┘  └───────────────────┘   │\n│                       API Gateway (IPC)                     │\n├─────────────────── WASM Sandbox Boundary ───────────────────┤\n│   ┌───────────┐  ┌──────────────┐  ┌───────────────────┐   │\n│   │  .tapp A  │  │   .tapp B    │  │     .tapp C       │   │\n│   └───────────┘  └──────────────┘  └───────────────────┘   │\n│              Utility App Packages (Zero-Trust)              │\n└─────────────────────────────────────────────────────────────┘"
                 },
                 {
@@ -2849,9 +3379,9 @@
               "subsections": []
             },
             {
-              "id": "52c-ipc-architecture-control-plane-data-plane-terachat-ipcproto",
+              "id": "52c-ipc-architecture-control-plane-data-plane-terachat-ipcproto-core-laptop-desktop",
               "level": 3,
-              "heading": "5.2.C IPC Architecture — Control Plane / Data Plane (terachat_ipc.proto)",
+              "heading": "5.2.C IPC Architecture — Control Plane / Data Plane (terachat_ipc.proto)  `⚙️ Core` `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2957,9 +3487,106 @@
               "subsections": []
             },
             {
-              "id": "54-offline-first-pragmatic-thực-dụng-hóa",
+              "id": "52d-mobile-ipc-jsi-memory-pointers-react-native-dart-ffi-mobile",
               "level": 3,
-              "heading": "5.4 Offline First — Pragmatic (Thực dụng hóa)",
+              "heading": "5.2.D Mobile IPC — JSI Memory Pointers (React Native / Dart FFI)  `📱 Mobile`",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Lead Dev Fix #1 — Lỗ hổng SharedArrayBuffer trên iOS WKWebView:** Kiến trúc `SharedArrayBuffer + Protobuf` (~500MB/s) tại §5.2.C **chỉ khả thi trên Desktop (Tauri + Chromium)**. Safari/WKWebView trên iOS có chính sách `COOP` (Cross-Origin Opener Policy) và `COEP` (Cross-Origin Embedder Policy) cực kỳ khắt khe. Việc cấp quyền `SharedArrayBuffer` cho file cục bộ (`file://` hoặc custom scheme) trên iOS gần như bất khả thi hoặc thiếu ổn định. Nếu fallback về Base64 qua WebView Bridge trên Mobile, UI thread sẽ bị block hoàn toàn. **Giải pháp: Bỏ qua hoàn toàn WebView Bridge, thay bằng JSI / Dart FFI Memory Pointers.**"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "So sánh kiến trúc IPC theo nền tảng:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Nền tảng",
+                    "Cơ chế IPC",
+                    "Throughput",
+                    "Ghi chú"
+                  ],
+                  "rows": [
+                    [
+                      "**Desktop (Tauri)**",
+                      "`SharedArrayBuffer + Protobuf` (§5.2.C)",
+                      "~500MB/s",
+                      "WV2/WebKit Desktop hỗ trợ COOP/COEP"
+                    ],
+                    [
+                      "**Mobile iOS (RN)**",
+                      "**React Native JSI — C++ Shared Memory Pointer**",
+                      "~400MB/s",
+                      "Bỏ qua WebView Bridge, trực tiếp vào Rust FFI"
+                    ],
+                    [
+                      "**Mobile Android (RN)**",
+                      "**React Native JSI — C++ Shared Memory Pointer**",
+                      "~400MB/s",
+                      "Không phụ thuộc Chromium WebView sandbox"
+                    ],
+                    [
+                      "**Mobile (Flutter)**",
+                      "**Dart FFI — `Pointer<Uint8>` trực tiếp**",
+                      "~400MB/s",
+                      "Dart Isolate giao tiếp Rust qua C-ABI"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Kiến trúc JSI Memory Pointer (React Native):"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "[.tapp Logic / React Native JS Engine (Hermes / JSC)]\n       │\n       │  React Native JSI — KHÔNG qua WebView Bridge\n       │  JS gọi C++ Host Object trực tiếp trong process\n       ↓\n[JSI Host Object — C++ (Rust FFI wrapper)]\n       │\n       ├─ Cấp phát vùng nhớ C++ dùng chung: malloc(50MB)\n       │  → Trả về raw pointer dưới dạng JSI ArrayBuffer\n       │\n       ↓  Rust FFI đọc trực tiếp raw pointer (zero-copy)\n[Rust Core (libterachat.a)]\n       │\n       ├─ Ném data thẳng vào AES-256-GCM (không serialize/deserialize)\n       └─ Ghi ciphertext ngược lại vùng nhớ dùng chung"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rust FFI Interface (C-ABI — Mobile):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust Core — Mobile FFI Entry Point (C-ABI)\n// Biên dịch thành libterachat.a cho iOS/Android\n\n/// Mobile gọi hàm này qua JSI/Dart FFI khi cần mã hóa\n/// `ptr` là raw pointer vào vùng nhớ dùng chung (JSI ArrayBuffer / Dart malloc)\n/// Không serialize, không copy — zero-overhead\n#[no_mangle]\npub unsafe extern \"C\" fn terachat_encrypt_inplace(\n    ptr:     *mut u8,   // con trỏ vùng nhớ dùng chung\n    len:     usize,     // độ dài byte của plaintext\n    key_id:  u32,       // ID của key trong Secure Enclave — không truyền key thực\n) -> i32 {              // 0 = OK, -1 = Error\n    // 1. Lấy key từ Secure Enclave theo key_id (key không bao giờ ra ngoài chip)\n    let key = match keystore::get_key_by_id(key_id) {\n        Ok(k)  => k,\n        Err(_) => return -1,\n    };\n\n    // 2. Đọc slice trực tiếp từ pointer — zero-copy\n    let plaintext = std::slice::from_raw_parts(ptr, len);\n\n    // 3. AES-256-GCM encrypt (output ghi lại vào cùng vùng nhớ)\n    let nonce = generate_nonce();\n    match aes_gcm_encrypt_inplace(ptr, len, &key, &nonce) {\n        Ok(ciphertext_len) => ciphertext_len as i32,\n        Err(_) => -1,\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "React Native JSI Host Object (C++):"
+                },
+                {
+                  "type": "code",
+                  "language": "cpp",
+                  "code": "// JSI Host Object — bridge giữa Hermes JS Engine và Rust Core\n// Chạy trong process của app — không có IPC overhead\n\nclass TerachatEncryptObject : public jsi::HostObject {\npublic:\n    // JS gọi: terachat.encrypt(arrayBuffer, keyId)\n    jsi::Value get(jsi::Runtime& rt, const jsi::PropNameID& name) override {\n        if (name.utf8(rt) == \"encrypt\") {\n            return jsi::Function::createFromHostFunction(rt, name, 2,\n                [](jsi::Runtime& rt, const jsi::Value&,\n                   const jsi::Value* args, size_t) -> jsi::Value {\n                    // Lấy raw pointer từ ArrayBuffer — không copy\n                    auto buf = args[0].getObject(rt).getArrayBuffer(rt);\n                    uint8_t* ptr = buf.data(rt);\n                    size_t   len = buf.size(rt);\n                    uint32_t keyId = (uint32_t)args[1].getNumber();\n\n                    // Gọi thẳng Rust FFI — zero-copy\n                    int result = terachat_encrypt_inplace(ptr, len, keyId);\n                    return jsi::Value(result);\n                }\n            );\n        }\n        return jsi::Value::undefined();\n    }\n};"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Dart FFI Interface (Flutter):"
+                },
+                {
+                  "type": "code",
+                  "language": "dart",
+                  "code": "// Flutter — Dart FFI trực tiếp vào Rust libterachat.a\nimport 'dart:ffi';\nimport 'dart:typed_data';\n\nfinal DynamicLibrary _lib = DynamicLibrary.open('libterachat.so');\n\ntypedef TerachatEncryptC = Int32 Function(Pointer<Uint8>, IntPtr, Uint32);\ntypedef TerachatEncryptDart = int Function(Pointer<Uint8>, int, int);\n\nfinal terachatEncryptInplace = _lib\n    .lookup<NativeFunction<TerachatEncryptC>>('terachat_encrypt_inplace')\n    .asFunction<TerachatEncryptDart>();\n\n/// Gọi khi .tapp cần mã hóa file 50MB — không serialize, không base64\nFuture<void> encryptFile(Uint8List data, int keyId) async {\n    // Cấp phát vùng nhớ native trong C heap\n    final ptr = malloc.allocate<Uint8>(data.length);\n    // Copy data vào native memory một lần duy nhất\n    ptr.asTypedList(data.length).setAll(0, data);\n\n    // Rust xử lý in-place — không copy thêm\n    final result = terachatEncryptInplace(ptr, data.length, keyId);\n    if (result < 0) throw Exception('Encryption failed');\n\n    // Zeroize và giải phóng sau khi xong\n    ptr.asTypedList(data.length).fillRange(0, data.length, 0);\n    malloc.free(ptr);\n}"
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Nguyên tắc bất biến trên Mobile:** Key (Company_Key / Channel_Key) **không bao giờ truyền qua JSI/FFI**. JS/Dart chỉ truyền `key_id` (số nguyên). Rust Core tự lấy key thực từ Secure Enclave/StrongBox theo ID — key không rời khỏi hardware chip."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "54-offline-first-pragmatic-thực-dụng-hóa-laptop-desktop-mobile",
+              "level": 3,
+              "heading": "5.4 Offline First — Pragmatic (Thực dụng hóa)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3013,7 +3640,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "[VPS Cluster sập — Internet gián đoạn]\n\nUser A gửi tin nhắn cho User B:\n  1. Rust Core đóng gói Offline_Payload:\n       { recipient_pubkey: B_pub, e2ee_payload, ttl_hours: 24 }\n  2. Broadcast Offline_Payload tới bất kỳ thiết bị TeraChat nào kết nối được\n       (qua 3G/4G chập chờn, Wi-Fi khách, LAN nội bộ)\n  3. Thiết bị trung gian C (\"Relay Node mù\") lưu tạm Offline_Payload\n       — Không giải mã được vì không có Private Key của B\n       — Tự động forward khi dò thấy đường dẫn đến B\n  4. Khi Server phục hồi hoặc B online trực tiếp:\n       Relay Node đẩy Payload đến B\n  5. B gửi ACK ngược lại mạng lưới\n       → Tất cả Relay Node tự xóa bản nháp, giải phóng RAM"
+                      "code": "[VPS Cluster sập — Internet gián đoạn]\n\nUser A gửi tin nhắn cho User B:\n\n  1. Rust Core đóng gói Offline_Payload:\n       { recipient_pubkey: B_pub, e2ee_payload, ttl_hours: 24 }\n\n  2. Broadcast Offline_Payload tới bất kỳ thiết bị TeraChat nào kết nối được\n       (qua 3G/4G chập chờn, Wi-Fi khách, LAN nội bộ)\n\n  3. Thiết bị trung gian C (\"Relay Node mù\") lưu tạm Offline_Payload\n       — Không giải mã được vì không có Private Key của B\n       — Tự động forward khi dò thấy đường dẫn đến B\n\n  4. Khi Server phục hồi hoặc B online trực tiếp:\n       Relay Node đẩy Payload đến B\n\n  5. B gửi ACK ngược lại mạng lưới\n       → Tất cả Relay Node tự xóa bản nháp, giải phóng RAM"
                     },
                     {
                       "type": "paragraph",
@@ -3184,9 +3811,9 @@
               ]
             },
             {
-              "id": "54b-offline-double-ratchet-o-dr-stream-cryptography-lan-e2ee",
+              "id": "54b-offline-double-ratchet-o-dr-stream-cryptography-lan-e2ee-laptop-desktop-mobile",
               "level": 3,
-              "heading": "5.4.B Offline Double Ratchet (O-DR) + Stream Cryptography — LAN E2EE",
+              "heading": "5.4.B Offline Double Ratchet (O-DR) + Stream Cryptography — LAN E2EE  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3385,9 +4012,179 @@
               ]
             },
             {
-              "id": "55-crdt-offline-sync-automerge",
+              "id": "54c-payload-puncturing-khả-năng-phục-hồi-luồng-file-core-laptop-desktop-mobile",
               "level": 3,
-              "heading": "5.5 CRDT Offline Sync (Automerge)",
+              "heading": "5.4.C Payload Puncturing — Khả năng phục hồi luồng file  `⚙️ Core` `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Dev Fix #3 — Cảm hứng Wi-Fi 7 Puncturing:** Wi-Fi 7 bỏ qua các phần phổ tần bị nhiễu (ví dụ: lò vi sóng đang chạy làm nhiễu 2.4GHz) thay vì hạ toàn bộ băng thông. Tương tự, khi stream file 2GB qua Wi-Fi Direct trong môi trường nhà máy/kho nhiễu sóng, TCP socket sẽ rớt và toàn bộ stream phải gửi lại nếu bị timeout. **Giải pháp: `PuncturingStream` — đánh dấu chunk bị nhiễu là \"Punctured\", tiếp tục bơm chunk tiếp mà không ngắt kết nối; vá chunk bị thủng ở cuối phiên.**"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Nguyên lý Puncturing:"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "Stream file 2GB = 1024 chunk × 2MB\n\n  Chunk  1 → ✅ OK\n  Chunk  2 → ✅ OK\n  ...\n  Chunk 45 → ❌ Nhiễu sóng (lò vi sóng / can nhiễu RF)\n               → KHÔNG hủy kết nối\n               → Đánh dấu \"Punctured\", tiếp tục\n  Chunk 46 → ✅ OK\n  Chunk 47 → ✅ OK\n  ...\n  Chunk 1024 → ✅ OK\n\n  Sau khi stream xong:\n    Bước phục hồi: Chunk 45 được gửi lại qua BLE Lane 1\n    hoặc chờ nhiễu qua → Wi-Fi Direct \"vá\" lại cuối phiên\n    → File toàn vẹn 100%, không cần resend từ đầu"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rust Core — PuncturingStream:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust Core — Payload Puncturing Stream\n// Cảm hứng: Wi-Fi 7 Preamble Puncturing\n// Môi trường mục tiêu: nhà máy, kho hàng, giàn khoan — nhiều can nhiễu RF\n\nuse std::collections::BitVec;\n\npub struct PuncturingStream {\n    total_chunks:    usize,\n    chunk_size:      usize,           // Mặc định 2MB\n    /// Bitmap trạng thái: true = đã nhận, false = Punctured hoặc chưa\n    received_bitmap: BitVec,\n    /// Các chunk bị thủng — sẽ phục hồi sau khi stream chính xong\n    punctured_ids:   Vec<usize>,\n}\n\nimpl PuncturingStream {\n    pub fn new(file_size: usize, chunk_size: usize) -> Self {\n        let total = (file_size + chunk_size - 1) / chunk_size;\n        Self {\n            total_chunks: total,\n            chunk_size,\n            received_bitmap: BitVec::from_elem(total, false),\n            punctured_ids:   Vec::new(),\n        }\n    }\n\n    /// Gọi khi nhận được chunk — trả về true nếu stream vẫn tiếp tục bình thường\n    pub fn on_chunk_received(&mut self, chunk_id: usize) -> StreamAction {\n        self.received_bitmap.set(chunk_id, true);\n        if self.is_complete() {\n            StreamAction::Complete\n        } else {\n            StreamAction::Continue\n        }\n    }\n\n    /// Gọi khi chunk timeout / lỗi RF — đánh dấu Punctured, KHÔNG drop kết nối\n    pub fn on_chunk_failed(&mut self, chunk_id: usize) -> StreamAction {\n        self.punctured_ids.push(chunk_id);\n        // Tiếp tục bơm chunk tiếp — không ngắt stream\n        StreamAction::ContinueWithPuncture { pending_repair: self.punctured_ids.len() }\n    }\n\n    /// Sau khi main stream hoàn tất — phục hồi các chunk bị thủng\n    pub fn recovery_plan(&self) -> RecoveryPlan {\n        RecoveryPlan {\n            chunk_ids:   self.punctured_ids.clone(),\n            via_channel: if self.punctured_ids.len() <= 3 {\n                // Ít chunk → gửi qua BLE Lane 1 ngay\n                RecoveryChannel::BleLane1\n            } else {\n                // Nhiều chunk → chờ Wi-Fi Direct reconnect để vá hàng loạt\n                RecoveryChannel::WifiDirectRepatch\n            },\n        }\n    }\n\n    pub fn is_complete(&self) -> bool {\n        self.received_bitmap.all() && self.punctured_ids.is_empty()\n    }\n}\n\npub enum StreamAction {\n    Continue,\n    ContinueWithPuncture { pending_repair: usize },\n    Complete,\n}\n\npub struct RecoveryPlan {\n    pub chunk_ids:   Vec<usize>,\n    pub via_channel: RecoveryChannel,\n}\n\npub enum RecoveryChannel {\n    BleLane1,          // Ít chunk (<= 3) → gửi qua BLE ngay\n    WifiDirectRepatch, // Nhiều chunk → chờ kênh tốc độ cao\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Kết quả trong môi trường công nghiệp:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Kịch bản",
+                    "TCP truyền thống",
+                    "PuncturingStream"
+                  ],
+                  "rows": [
+                    [
+                      "Lò vi sóng làm nhiễu 2.4GHz giữa chừng",
+                      "❌ TCP timeout → gửi lại từ đầu",
+                      "✅ Bỏ qua chunk 45, tiếp tục từ 46"
+                    ],
+                    [
+                      "Crane/forklift RF interference 10 giây",
+                      "❌ Stream drop, phải restart",
+                      "✅ Đánh \"Punctured\", vá sau"
+                    ],
+                    [
+                      "File 2GB trong nhà kho nhiễu nặng",
+                      "❌ Có thể thất bại hoàn toàn",
+                      "✅ Phục hồi từng chunk rời, đảm bảo toàn vẹn"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "54d-ntn-data-mules-human-satellite-network-core-laptop-desktop-mobile",
+              "level": 3,
+              "heading": "5.4.D NTN Data Mules — Human Satellite Network  `⚙️ Core` `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Dev Fix #4 — Cảm hứng 6G NTN (Non-Terrestrial Networks):** Chế độ Survival Link hiện tại dựa vào hop-by-hop giữa các thiết bị gần nhau. Nếu 2 tòa nhà của công ty cách xa nhau và cả 2 đều mất Internet hoàn toàn, Mesh bị đứt đoạn — không có đường truyền. **Giải pháp: Biến thiết bị di động của nhân viên đang di chuyển thành \"vệ tinh LEO di động\" (Data Mule)**. Khi nhân viên A đi từ Tòa nhà 1 sang Tòa nhà 2, thiết bị tự động thu thập `OfflinePayload` từ Tòa nhà 1 và xả chúng vào Mesh của Tòa nhà 2 khi đến nơi."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Kiến trúc Data Mule:"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "[Tòa nhà 1 — Mesh còn sống, mất WAN]        [Tòa nhà 2 — Mesh còn sống, mất WAN]\n       │                                              │\n  Thiết bị A, B, C                            Thiết bị D, E, F\n  (OfflinePayload cho user D, E)              (OfflinePayload cho user A, B)\n       │                                              │\n       │  Nhân viên Minh đi từ Tòa 1 → Tòa 2        │\n       │                                              │\n  Device Minh                               Device Minh\n  ┌──────────────┐                         ┌──────────────┐\n  │ BLE Scan     │                         │ BLE Scan     │\n  │ Thu thập     │  [Di chuyển vật lý]     │ Xả payload   │\n  │ OfflinePayload│  ═══════════════════► │ vào Mesh T2  │\n  │ (E2EE sealed)│                         │              │\n  └──────────────┘                         └──────────────┘"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Cập nhật OfflinePayload với Data Mule flag:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust Core — OfflinePayload cập nhật (Data Mule extension)\n#[derive(Serialize, Deserialize, Clone)]\npub struct OfflinePayload {\n    pub payload_id:       Uuid,\n    pub recipient_pubkey: PublicKey,     // Ed25519 — chỉ người nhận giải mã được\n    pub e2ee_ciphertext:  Vec<u8>,       // Relay Node / Data Mule hoàn toàn mù\n    pub created_at:       i64,\n    pub ttl_hours:        u8,            // Mặc định 24h\n    pub hop_count:        u8,            // Max 7 hop\n    pub ack_received:     bool,\n\n    // === Data Mule Extension (mới) ===\n    /// true → payload này có thể được thu thập và vận chuyển vật lý\n    pub mule_eligible:    bool,\n    /// Số lần đã được Data Mule vận chuyển (để audit trail)\n    pub mule_relay_count: u8,            // Max 3 lần vận chuyển vật lý\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rust Core — DataMuleManager:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Rust Core — Data Mule Manager\n// Kích hoạt khi thiết bị chuyển sang \"Di chuyển\" (GPS velocity > 0.5m/s hoặc cell ID thay đổi)\npub struct DataMuleManager {\n    /// Cache payload đang mang theo — toàn bộ E2EE sealed\n    carried_payloads: Vec<OfflinePayload>,\n    /// Max dung lượng Data Mule (tránh thiết bị bị ăn hết RAM)\n    max_carry_bytes:  usize,             // Mặc định 50MB\n    current_bytes:    usize,\n}\n\nimpl DataMuleManager {\n    /// Gọi khi BLE scan thấy payload cần vận chuyển\n    /// Data Mule KHÔNG biết nội dung — chỉ thấy recipient_pubkey + encrypted blob\n    pub fn collect_for_transport(&mut self, payload: OfflinePayload) -> CollectResult {\n        // Kiểm tra quota\n        if self.current_bytes + payload.e2ee_ciphertext.len() > self.max_carry_bytes {\n            return CollectResult::QuotaExceeded;\n        }\n        // Chỉ collect payload đủ điều kiện và chưa quá số lần relay\n        if !payload.mule_eligible || payload.mule_relay_count >= 3 {\n            return CollectResult::NotEligible;\n        }\n        self.current_bytes += payload.e2ee_ciphertext.len();\n        self.carried_payloads.push(payload);\n        CollectResult::Collected\n    }\n\n    /// Gọi khi thiết bị bước vào vùng Mesh mới (BLE scan thấy device lạ)\n    /// Xả tất cả payload phù hợp vào Mesh cục bộ\n    pub fn deliver_on_arrival(&mut self, local_mesh: &mut MeshNode) -> usize {\n        let mut delivered = 0;\n        self.carried_payloads.retain(|payload| {\n            // Thử deliver — Mesh sẽ route tới recipient nếu họ ở đây\n            if local_mesh.inject_payload(payload).is_ok() {\n                delivered += 1;\n                self.current_bytes -= payload.e2ee_ciphertext.len();\n                false // xóa khỏi carried list\n            } else {\n                true  // giữ lại để deliver ở vùng Mesh tiếp theo\n            }\n        });\n        delivered\n    }\n}\n\npub enum CollectResult {\n    Collected,\n    QuotaExceeded,\n    NotEligible,\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Bảo mật Data Mule:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Mối lo ngại",
+                    "Giải pháp"
+                  ],
+                  "rows": [
+                    [
+                      "Data Mule đọc nội dung tin nhắn",
+                      "❌ Bất khả thi — `e2ee_ciphertext` chỉ người nhận giải mã được bằng Private Key"
+                    ],
+                    [
+                      "Data Mule giả mạo payload",
+                      "❌ Payload có chữ ký Ed25519 của người gửi — Rust Core verify trước khi inject"
+                    ],
+                    [
+                      "Data Mule xóa payload cố tình",
+                      "Mỗi payload có `payload_id` — người gửi biết khi nào ACK không về (retry qua Mule khác)"
+                    ],
+                    [
+                      "Tràn RAM thiết bị Data Mule",
+                      "`max_carry_bytes = 50MB` — collect từ chối khi vượt quota"
+                    ],
+                    [
+                      "Mule bị compromise leak metadata",
+                      "`recipient_pubkey` là định danh ephemeral — không link được với danh tính thực"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Kết quả — Kịch bản 2 tòa nhà mất WAN:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Thời điểm",
+                    "Trạng thái"
+                  ],
+                  "rows": [
+                    [
+                      "09:00 — WAN sập cả 2 tòa nhà",
+                      "Mesh nội bộ mỗi tòa hoạt động bình thường"
+                    ],
+                    [
+                      "09:15 — Nhân viên Minh rời Tòa 1",
+                      "Device thu thập 3 OfflinePayload cho người ở Tòa 2"
+                    ],
+                    [
+                      "09:30 — Minh đến Tòa 2",
+                      "Device xả 3 payload vào Mesh Tòa 2 → người nhận nhận tin"
+                    ],
+                    [
+                      "09:30 — Minh mang phản hồi về",
+                      "Device thu thập payload từ Tòa 2 cho người ở Tòa 1"
+                    ],
+                    [
+                      "10:00 — WAN phục hồi",
+                      "Data Mule fallback không cần thiết — sync lại qua Cluster"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "55-crdt-offline-sync-automerge-laptop-desktop-mobile",
+              "level": 3,
+              "heading": "5.5 CRDT Offline Sync (Automerge)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3403,9 +4200,9 @@
               "subsections": []
             },
             {
-              "id": "56-wasm-sandbox-digital-glass-room",
+              "id": "56-wasm-sandbox-digital-glass-room-core-laptop-desktop",
               "level": 3,
-              "heading": "5.6 WASM Sandbox & Digital Glass Room",
+              "heading": "5.6 WASM Sandbox & Digital Glass Room  `⚙️ Core` `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3522,9 +4319,9 @@
               "subsections": []
             },
             {
-              "id": "57-smart-approval-fintech-bridge",
+              "id": "57-smart-approval-fintech-bridge-laptop-desktop-mobile",
               "level": 3,
-              "heading": "5.7 Smart Approval (Fintech Bridge)",
+              "heading": "5.7 Smart Approval (Fintech Bridge)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3552,9 +4349,9 @@
               "subsections": []
             },
             {
-              "id": "58-desktop-transport-lan-p2p",
+              "id": "58-desktop-transport-lan-p2p-laptop-desktop",
               "level": 3,
-              "heading": "5.8 Desktop Transport (LAN P2P)",
+              "heading": "5.8 Desktop Transport (LAN P2P)  `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -3593,9 +4390,9 @@
               "subsections": []
             },
             {
-              "id": "59-desktop-feature-modules",
+              "id": "59-desktop-feature-modules-laptop-desktop",
               "level": 3,
-              "heading": "5.9 Desktop Feature Modules",
+              "heading": "5.9 Desktop Feature Modules  `💻 Laptop` `🖥️ Desktop`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3637,15 +4434,15 @@
           ]
         },
         {
-          "id": "6-operations-deployment",
+          "id": "6-operations-deployment-server",
           "level": 2,
-          "heading": "6. Operations & Deployment",
+          "heading": "6. Operations & Deployment  `☁️ Server`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "61-observability-pipeline-lgtm-stack",
+              "id": "61-observability-pipeline-lgtm-stack-server",
               "level": 3,
-              "heading": "6.1 Observability Pipeline (LGTM Stack)",
+              "heading": "6.1 Observability Pipeline (LGTM Stack)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3697,9 +4494,9 @@
               "subsections": []
             },
             {
-              "id": "62-kubernetes-deployment",
+              "id": "62-kubernetes-deployment-server",
               "level": 3,
-              "heading": "6.2 Kubernetes Deployment",
+              "heading": "6.2 Kubernetes Deployment  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3708,7 +4505,7 @@
                 {
                   "type": "code",
                   "language": "yaml",
-                  "code": "# values-production-5k.yaml\nrelay:\n  replicaCount: 3\n  autoscaling: { minReplicas: 3, maxReplicas: 15, targetCPU: 70 }\n  resources: { requests: { cpu: \"500m\", mem: \"512Mi\" }, limits: { cpu: \"2000m\", mem: \"2Gi\" } }\n  affinity:\n    podAntiAffinity:\n      requiredDuringSchedulingIgnoredDuringExecution:\n        - topologyKey: \"kubernetes.io/hostname\"\n\nsignaling:\n  replicaCount: 3\n  sessionAffinity: { enabled: true, timeoutSeconds: 3600 }\n\niam:\n  provider: \"keycloak-sidecar\"\n  config: { scimEnabled: true, syncInterval: \"30s\" }\n\npostgresql-ha:\n  postgresql: { repmgr: { enabled: true } }\n  pgpool: { replicaCount: 2 }\n\ningress:\n  annotations:\n    nginx.ingress.kubernetes.io/limit-rps: \"100\"\n    nginx.ingress.kubernetes.io/whitelist-source-range: \"10.0.0.0/8\""
+                  "code": "# values-production-5k.yaml\nrelay:\n  replicaCount: 3\n  autoscaling: { minReplicas: 3, maxReplicas: 15, targetCPU: 70 }\n  resources: { requests: { cpu: \"500m\", mem: \"512Mi\" }, limits: { cpu: \"2000m\", mem: \"2Gi\" } }\n  affinity:\n    podAntiAffinity:\n      requiredDuringSchedulingIgnoredDuringExecution:\n\n        - topologyKey: \"kubernetes.io/hostname\"\n\nsignaling:\n  replicaCount: 3\n  sessionAffinity: { enabled: true, timeoutSeconds: 3600 }\n\niam:\n  provider: \"keycloak-sidecar\"\n  config: { scimEnabled: true, syncInterval: \"30s\" }\n\npostgresql-ha:\n  postgresql: { repmgr: { enabled: true } }\n  pgpool: { replicaCount: 2 }\n\ningress:\n  annotations:\n    nginx.ingress.kubernetes.io/limit-rps: \"100\"\n    nginx.ingress.kubernetes.io/whitelist-source-range: \"10.0.0.0/8\""
                 },
                 {
                   "type": "code",
@@ -3748,9 +4545,9 @@
               "subsections": []
             },
             {
-              "id": "63-security-governance-day-2-ops",
+              "id": "63-security-governance-day-2-ops-core-server",
               "level": 3,
-              "heading": "6.3 Security Governance (Day-2 Ops)",
+              "heading": "6.3 Security Governance (Day-2 Ops)  `⚙️ Core` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3767,9 +4564,9 @@
               "subsections": []
             },
             {
-              "id": "64-flexible-infrastructure-byos-bring-your-own-storage",
+              "id": "64-flexible-infrastructure-byos-bring-your-own-storage-laptop-desktop-mobile-server",
               "level": 3,
-              "heading": "6.4 Flexible Infrastructure (BYOS — Bring Your Own Storage)",
+              "heading": "6.4 Flexible Infrastructure (BYOS — Bring Your Own Storage)  `💻 Laptop` `🖥️ Desktop` `📱 Mobile` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3820,7 +4617,7 @@
                 {
                   "type": "code",
                   "language": "yaml",
-                  "code": "# MinIO Deployment trong Helm Chart\nminio:\n  enabled: true\n  mode: distributed          # Cluster mode cho HA\n  replicas: 4                # Erasure Coding 4+4\n  persistence:\n    size: 10Ti               # Có thể thay đổi linh hoạt\n  buckets:\n    - name: terachat-media    # File stubs + actual files\n    - name: terachat-logs     # Encrypted audit logs\n    - name: terachat-backup   # Encrypted DB backups\n  lifecycle:\n    # Tự động chuyển file cũ > 1 năm sang COLD tier (HDD chậm)\n    cold_tier_after_days: 365"
+                  "code": "# MinIO Deployment trong Helm Chart\nminio:\n  enabled: true\n  mode: distributed          # Cluster mode cho HA\n  replicas: 4                # Erasure Coding 4+4\n  persistence:\n    size: 10Ti               # Có thể thay đổi linh hoạt\n  buckets:\n\n    - name: terachat-media    # File stubs + actual files\n    - name: terachat-logs     # Encrypted audit logs\n    - name: terachat-backup   # Encrypted DB backups\n  lifecycle:\n    # Tự động chuyển file cũ > 1 năm sang COLD tier (HDD chậm)\n    cold_tier_after_days: 365"
                 },
                 {
                   "type": "blockquote",
@@ -3833,9 +4630,9 @@
               "subsections": []
             },
             {
-              "id": "65-interoperability-esb",
+              "id": "65-interoperability-esb-server",
               "level": 3,
-              "heading": "6.5 Interoperability & ESB",
+              "heading": "6.5 Interoperability & ESB  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3861,28 +4658,28 @@
           ]
         },
         {
-          "id": "7-business-api-integrations",
+          "id": "7-business-api-integrations-server",
           "level": 2,
-          "heading": "7. Business API & Integrations",
+          "heading": "7. Business API & Integrations  `☁️ Server`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "71-api-gateway-architecture",
+              "id": "71-api-gateway-architecture-server",
               "level": 3,
-              "heading": "7.1 API Gateway Architecture",
+              "heading": "7.1 API Gateway Architecture  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "code",
-                  "language": "",
+                  "language": "text",
                   "code": "REST API | WebSocket | Webhook Engine\n     ↓         ↓              ↓\n  Authentication & Authorization (OAuth 2.0 + API Key + mTLS + OPA)\n                    ↓\n             E2EE Bridge Layer (Bot KeyPair → MLS Group)\n                    ↓\n              TeraChat Core (Rust)"
                 }
               ],
               "subsections": []
             },
             {
-              "id": "72-tiered-api-packages",
+              "id": "72-tiered-api-packages-server",
               "level": 3,
-              "heading": "7.2 Tiered API Packages",
+              "heading": "7.2 Tiered API Packages  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -3923,22 +4720,22 @@
               "subsections": []
             },
             {
-              "id": "73-rest-api-endpoints",
+              "id": "73-rest-api-endpoints-server",
               "level": 3,
-              "heading": "7.3 REST API Endpoints",
+              "heading": "7.3 REST API Endpoints  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "code",
-                  "language": "",
+                  "language": "text",
                   "code": "# MESSAGING\nPOST   /api/v1/messages\nPOST   /api/v1/messages/card\nGET    /api/v1/messages/{channel_id}\nDELETE /api/v1/messages/{msg_id}         # Crypto-Shred\n\n# CHANNELS\nPOST   /api/v1/channels\nPUT    /api/v1/channels/{id}/members\nPOST   /api/v1/channels/{id}/topics\n\n# WORKFLOWS\nPOST   /api/v1/workflows/approval\nPOST   /api/v1/workflows/slash-command\nGET    /api/v1/workflows/{id}/status\n\n# COMPLIANCE (Tier 3)\nPOST   /api/v1/compliance/export         # GDPR export\nPOST   /api/v1/compliance/legal-hold\nGET    /api/v1/compliance/audit-trail\n\n# BOT MANAGEMENT (Tier 4)\nPOST   /api/v1/bots\nPUT    /api/v1/bots/{id}/permissions\nPOST   /api/v1/bots/{id}/miniapp"
                 }
               ],
               "subsections": []
             },
             {
-              "id": "74-e2ee-bridge-for-bots",
+              "id": "74-e2ee-bridge-for-bots-server",
               "level": 3,
-              "heading": "7.4 E2EE Bridge for Bots",
+              "heading": "7.4 E2EE Bridge for Bots  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -3969,9 +4766,9 @@
               "subsections": []
             },
             {
-              "id": "75-pre-built-connectors",
+              "id": "75-pre-built-connectors-server",
               "level": 3,
-              "heading": "7.5 Pre-built Connectors",
+              "heading": "7.5 Pre-built Connectors  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3981,9 +4778,9 @@
               "subsections": []
             },
             {
-              "id": "76-scim-20-identity-sync",
+              "id": "76-scim-20-identity-sync-server",
               "level": 3,
-              "heading": "7.6 SCIM 2.0 Identity Sync",
+              "heading": "7.6 SCIM 2.0 Identity Sync  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -4002,9 +4799,9 @@
               "subsections": []
             },
             {
-              "id": "77-chatops-secure-tunneling",
+              "id": "77-chatops-secure-tunneling-server",
               "level": 3,
-              "heading": "7.7 ChatOps & Secure Tunneling",
+              "heading": "7.7 ChatOps & Secure Tunneling  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4017,9 +4814,9 @@
               "subsections": []
             },
             {
-              "id": "78-inter-org-federation-hệ-thống-liên-tổ-chức",
+              "id": "78-inter-org-federation-hệ-thống-liên-tổ-chức-server",
               "level": 3,
-              "heading": "7.8 Inter-org Federation (Hệ thống Liên tổ chức)",
+              "heading": "7.8 Inter-org Federation (Hệ thống Liên tổ chức)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4389,15 +5186,15 @@
           ]
         },
         {
-          "id": "8-mobile-architecture",
+          "id": "8-mobile-architecture-mobile",
           "level": 2,
-          "heading": "8. Mobile Architecture",
+          "heading": "8. Mobile Architecture  `📱 Mobile`",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "81-tech-stack",
+              "id": "81-tech-stack-mobile",
               "level": 3,
-              "heading": "8.1 Tech Stack",
+              "heading": "8.1 Tech Stack  `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -4411,9 +5208,9 @@
               "subsections": []
             },
             {
-              "id": "82-background-execution-wake-up-ping",
+              "id": "82-background-execution-wake-up-ping-mobile",
               "level": 3,
-              "heading": "8.2 Background Execution (Wake-up Ping)",
+              "heading": "8.2 Background Execution (Wake-up Ping)  `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -4432,9 +5229,9 @@
               "subsections": []
             },
             {
-              "id": "83-kiosk-mode-shared-device-auth",
+              "id": "83-kiosk-mode-shared-device-auth-mobile",
               "level": 3,
-              "heading": "8.3 Kiosk Mode (Shared Device Auth)",
+              "heading": "8.3 Kiosk Mode (Shared Device Auth)  `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -4456,9 +5253,9 @@
               "subsections": []
             },
             {
-              "id": "84-apple-app-in-app-ban-marketplace-workaround",
+              "id": "84-apple-app-in-app-ban-marketplace-workaround-mobile",
               "level": 3,
-              "heading": "8.4 Apple App-in-App Ban (Marketplace Workaround)",
+              "heading": "8.4 Apple App-in-App Ban (Marketplace Workaround)  `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -4474,9 +5271,9 @@
           ]
         },
         {
-          "id": "9-security-threat-matrix",
+          "id": "9-security-threat-matrix-laptop-desktop-mobile-server",
           "level": 2,
-          "heading": "9. Security Threat Matrix",
+          "heading": "9. Security Threat Matrix  `💻 Laptop` `🖥️ Desktop` `📱 Mobile` `☁️ Server`",
           "content_blocks": [
             {
               "type": "table",
@@ -4568,9 +5365,9 @@
           "subsections": []
         },
         {
-          "id": "10-enterprise-utility-tools",
+          "id": "10-enterprise-utility-tools-laptop-desktop-mobile",
           "level": 2,
-          "heading": "10. Enterprise Utility Tools",
+          "heading": "10. Enterprise Utility Tools  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -4619,9 +5416,9 @@
           ],
           "subsections": [
             {
-              "id": "101-smart-order-entry-sdk-fsm-event-sourcing-fbkiosk",
+              "id": "101-smart-order-entry-sdk-fsm-event-sourcing-fbkiosk-core-laptop-desktop-mobile",
               "level": 3,
-              "heading": "10.1 Smart Order Entry SDK (FSM + Event Sourcing — F&B/Kiosk)",
+              "heading": "10.1 Smart Order Entry SDK (FSM + Event Sourcing — F&B/Kiosk)  `⚙️ Core` `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4656,7 +5453,7 @@
                     },
                     {
                       "type": "code",
-                      "language": "",
+                      "language": "text",
                       "code": "[IDLE] → /order → [STEP_1: Bàn] → ⎵⎵ → [STEP_2: Món] → ⎵⎵ → [STEP_3: SL] → ⎵⎵ → [DONE]\n                        ↓ /⎵⎵ (skip)         ↓ /⎵⎵ (skip)        ↓ /⎵⎵ (skip)\n                    [NULL_STEP_1]          [NULL_STEP_2]       [NULL_STEP_3]"
                     },
                     {
@@ -4800,7 +5597,7 @@
                   "content_blocks": [
                     {
                       "type": "code",
-                      "language": "",
+                      "language": "text",
                       "code": "Nhập liệu (WASM FSM) → Local SQLCipher DB\n        ↓ bấm GỬI / Mark as Ordered\nMã hóa Company_Key (MLS) → Sync Queue\n        ├── Có mạng  → Private Cluster\n        └── Mất mạng → Retry tự động"
                     },
                     {
@@ -4818,9 +5615,9 @@
               ]
             },
             {
-              "id": "102-e2ee-secret-vault-quản-lý-api-key-tập-trung-kms",
+              "id": "102-e2ee-secret-vault-quản-lý-api-key-tập-trung-kms-core",
               "level": 3,
-              "heading": "10.2 E2EE Secret Vault — Quản lý API Key Tập trung (KMS)",
+              "heading": "10.2 E2EE Secret Vault — Quản lý API Key Tập trung (KMS)  `⚙️ Core`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4839,7 +5636,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "Admin vào: Settings → Integrations → API Vault → [+ Add Key]\n  Nhập: \"OpenAI\" + \"sk-openai-12345\"\n\nRust Core trên máy Admin:\n  1. Sinh Vault_Key (AES-256, chỉ sync giữa các Admin qua E2EE)\n  2. encrypted_blob = AES-256-GCM(Vault_Key, \"sk-openai-12345\")\n  3. Push encrypted_blob lên VPS với nhãn: { key_name: \"OpenAI\", blob: \"...\" }\n\nKết quả: VPS lưu một danh sách { \"OpenAI\", \"Jira\", \"Stripe\" }\n         nhưng KHÔNG biết nội dung thực (chỉ thấy ciphertext mù)"
+                      "code": "Admin vào: Settings → Integrations → API Vault → [+ Add Key]\n  Nhập: \"OpenAI\" + \"sk-openai-12345\"\n\nRust Core trên máy Admin:\n\n  1. Sinh Vault_Key (AES-256, chỉ sync giữa các Admin qua E2EE)\n  2. encrypted_blob = AES-256-GCM(Vault_Key, \"sk-openai-12345\")\n  3. Push encrypted_blob lên VPS với nhãn: { key_name: \"OpenAI\", blob: \"...\" }\n\nKết quả: VPS lưu một danh sách { \"OpenAI\", \"Jira\", \"Stripe\" }\n         nhưng KHÔNG biết nội dung thực (chỉ thấy ciphertext mù)"
                     },
                     {
                       "type": "paragraph",
@@ -4865,7 +5662,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "Admin bấm [+] trong cài đặt Bot @gpt → chọn \"OpenAI\" từ danh sách Vault\n\nMáy Client Admin thực hiện (trong RAM — không ghi disk, không qua VPS):\n  1. Kéo encrypted_blob (\"OpenAI\") từ VPS về RAM\n  2. Giải mã: api_key = AES-256-GCM.decrypt(Vault_Key, encrypted_blob)\n             → \"sk-openai-12345\" (chỉ tồn tại trong RAM, <100ms)\n  3. Lấy Bot_Public_Key của @gpt (được sinh khi Bot khởi tạo)\n  4. Bot_Bound_Blob = Curve25519_ECIES.encrypt(Bot_Public_Key, api_key)\n  5. DROP(api_key)  ← xóa ngay khỏi RAM\n  6. Push Bot_Bound_Blob lên VPS: \"Lưu vào config của @gpt\"\n\nKết quả: VPS lưu Bot_Bound_Blob — CHỈ mở được bằng Bot_Private_Key\n         VPS không biết api_key thực sự là gì\n         Admin không phải nhập lại key"
+                      "code": "Admin bấm [+] trong cài đặt Bot @gpt → chọn \"OpenAI\" từ danh sách Vault\n\nMáy Client Admin thực hiện (trong RAM — không ghi disk, không qua VPS):\n\n  1. Kéo encrypted_blob (\"OpenAI\") từ VPS về RAM\n  2. Giải mã: api_key = AES-256-GCM.decrypt(Vault_Key, encrypted_blob)\n             → \"sk-openai-12345\" (chỉ tồn tại trong RAM, <100ms)\n\n  3. Lấy Bot_Public_Key của @gpt (được sinh khi Bot khởi tạo)\n  4. Bot_Bound_Blob = Curve25519_ECIES.encrypt(Bot_Public_Key, api_key)\n  5. DROP(api_key)  ← xóa ngay khỏi RAM\n  6. Push Bot_Bound_Blob lên VPS: \"Lưu vào config của @gpt\"\n\nKết quả: VPS lưu Bot_Bound_Blob — CHỈ mở được bằng Bot_Private_Key\n         VPS không biết api_key thực sự là gì\n         Admin không phải nhập lại key"
                     },
                     {
                       "type": "paragraph",
@@ -4893,9 +5690,9 @@
               ]
             },
             {
-              "id": "103-ai-virtual-employee-bot-mention-trong-channel-e2ee-aware",
+              "id": "103-ai-virtual-employee-bot-mention-trong-channel-e2ee-aware-server",
               "level": 3,
-              "heading": "10.3 AI Virtual Employee — Bot `@mention` trong Channel (E2EE-Aware)",
+              "heading": "10.3 AI Virtual Employee — Bot `@mention` trong Channel (E2EE-Aware)  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4957,7 +5754,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "[Nhân viên A muốn add Bot @gpt vào Channel]\n       ↓\n1. Client yêu cầu VPS: \"Chứng minh Bot đang chạy trong Enclave thật\"\n       ↓\n2. Enclave sinh Ra Quote (CPU certificate):\n   - Đo lường mã nguồn Bot Worker (hash của binary)\n   - Ký bằng Intel/AMD/AWS Root CA (certificate cứng của CPU)\n       ↓\n3. Client verify Quote với Intel/AMD/AWS Attestation Service:\n   - Đúng Enclave? Đúng mã nguồn chưa bị sửa đổi? → OK\n       ↓\n4. Client mã hóa Channel_Key bằng Enclave Public Key:\n   encrypted_key = Enclave_PubKey.encrypt(channel_key)\n       ↓\n5. Gửi encrypted_key lên VPS — Host OS thấy ciphertext, KHÔNG thấy channel_key\n       ↓\n6. Enclave giải mã trong RAM cách ly: channel_key = Enclave_PrivKey.decrypt(encrypted_key)\n       ↓\n7. Enclave đọc tin nhắn → gọi AI API → mã hóa trả lời → gửi vào Channel\n       ↓\n8. Enclave XÓA channel_key khỏi RAM ngay sau mỗi request (zeroize)"
+                      "code": "[Nhân viên A muốn add Bot @gpt vào Channel]\n       ↓\n\n1. Client yêu cầu VPS: \"Chứng minh Bot đang chạy trong Enclave thật\"\n       ↓\n\n2. Enclave sinh Ra Quote (CPU certificate):\n   - Đo lường mã nguồn Bot Worker (hash của binary)\n   - Ký bằng Intel/AMD/AWS Root CA (certificate cứng của CPU)\n       ↓\n\n3. Client verify Quote với Intel/AMD/AWS Attestation Service:\n   - Đúng Enclave? Đúng mã nguồn chưa bị sửa đổi? → OK\n       ↓\n\n4. Client mã hóa Channel_Key bằng Enclave Public Key:\n   encrypted_key = Enclave_PubKey.encrypt(channel_key)\n       ↓\n\n5. Gửi encrypted_key lên VPS — Host OS thấy ciphertext, KHÔNG thấy channel_key\n       ↓\n\n6. Enclave giải mã trong RAM cách ly: channel_key = Enclave_PrivKey.decrypt(encrypted_key)\n       ↓\n\n7. Enclave đọc tin nhắn → gọi AI API → mã hóa trả lời → gửi vào Channel\n       ↓\n\n8. Enclave XÓA channel_key khỏi RAM ngay sau mỗi request (zeroize)"
                     },
                     {
                       "type": "code",
@@ -5043,7 +5840,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "[BYOS Server thông thường — Ubuntu / Debian]\n       ↓\nAI Worker chạy trong Docker container bị khóa cứng đặc quyền:\n  docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE\n             --security-opt=seccomp:ai-worker-seccomp.json\n             --memory=512m --cpus=1\n             terachat/ai-worker:latest\n       ↓\nmlock() toàn bộ Channel_Key + API_Key trong RAM:\n  → Ngăn OS swap Key ra ổ cứng (Swap Defense)\n       ↓\nXử lý request:\n  1. Nhận Channel_Key (dạng ciphertext mã hóa bằng Worker Public Key)\n  2. Giải mã trong RAM\n  3. Gọi LLM API\n  4. Zeroize Channel_Key + API_Key trong vòng <50ms sau khi xong\n       ↓\n[Rủi ro đã biết và chấp nhận]\n  ├─ Nếu Root VPS bị chiếm: kẻ tấn công CÓ THỂ dump RAM live trong cửa sổ <50ms\n  └─ Xác suất thấp nếu Server hardened đúng cách; ghi rõ trong Security Policy"
+                      "code": "[BYOS Server thông thường — Ubuntu / Debian]\n       ↓\nAI Worker chạy trong Docker container bị khóa cứng đặc quyền:\n  docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE\n             --security-opt=seccomp:ai-worker-seccomp.json\n             --memory=512m --cpus=1\n             terachat/ai-worker:latest\n       ↓\nmlock() toàn bộ Channel_Key + API_Key trong RAM:\n  → Ngăn OS swap Key ra ổ cứng (Swap Defense)\n       ↓\nXử lý request:\n\n  1. Nhận Channel_Key (dạng ciphertext mã hóa bằng Worker Public Key)\n  2. Giải mã trong RAM\n  3. Gọi LLM API\n  4. Zeroize Channel_Key + API_Key trong vòng <50ms sau khi xong\n       ↓\n[Rủi ro đã biết và chấp nhận]\n  ├─ Nếu Root VPS bị chiếm: kẻ tấn công CÓ THỂ dump RAM live trong cửa sổ <50ms\n  └─ Xác suất thấp nếu Server hardened đúng cách; ghi rõ trong Security Policy"
                     },
                     {
                       "type": "code",
@@ -5057,7 +5854,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "[Doanh nghiệp tự host Database + Cluster nội bộ]\n       ↓\nDatabase Server: VPS/Bare-metal thông thường (on-premise)\n       + kết nối tới →\nAI Gateway Node: AWS Nitro Enclave / Azure DCsv3 (SGX) riêng biệt\n       ↓\nChannel_Key KHÔNG bao giờ về Database Server nội bộ\nChannel_Key chỉ gửi thẳng lên AI Gateway (Enclave)\n       ↓\nEnclave xử lý như kiến trúc TEE đã mô tả (Section 10.3.A)\n  → RAM cách ly hoàn toàn, không thể dump kể cả Root Admin cloud provider"
+                      "code": "[Doanh nghiệp tự host Database + Cluster nội bộ]\n       ↓\nDatabase Server: VPS/Bare-metal thông thường (on-premise)\n\n       + kết nối tới →\nAI Gateway Node: AWS Nitro Enclave / Azure DCsv3 (SGX) riêng biệt\n       ↓\nChannel_Key KHÔNG bao giờ về Database Server nội bộ\nChannel_Key chỉ gửi thẳng lên AI Gateway (Enclave)\n       ↓\nEnclave xử lý như kiến trúc TEE đã mô tả (Section 10.3.A)\n  → RAM cách ly hoàn toàn, không thể dump kể cả Root Admin cloud provider"
                     },
                     {
                       "type": "paragraph",
@@ -5100,7 +5897,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "Settings → AI Bots → [+ Create Bot]\n  - Tên hiển thị: \"GPT Assistant\"\n  - Tag: @gpt\n  - Model: GPT-4o / Claude 3.5 / Gemini Pro (Admin chọn)\n  - API Key: [+] → chọn \"OpenAI\" từ Vault (Giai đoạn 2 ở trên)\n  - Thêm Bot vào Channel: \"Dev Team\", \"Sales Team\",...\n\nLúc này Bot @gpt được cấp Channel_Key của Channel đó (như user thực)."
+                      "code": "Settings → AI Bots → [+ Create Bot]\n\n  - Tên hiển thị: \"GPT Assistant\"\n  - Tag: @gpt\n  - Model: GPT-4o / Claude 3.5 / Gemini Pro (Admin chọn)\n  - API Key: [+] → chọn \"OpenAI\" từ Vault (Giai đoạn 2 ở trên)\n  - Thêm Bot vào Channel: \"Dev Team\", \"Sales Team\",...\n\nLúc này Bot @gpt được cấp Channel_Key của Channel đó (như user thực)."
                     },
                     {
                       "type": "paragraph",
@@ -5109,7 +5906,7 @@
                     {
                       "type": "code",
                       "language": "text",
-                      "code": "[Channel \"Dev Team\" — E2EE với Channel_Key]\n\nNhân viên A: \"@gpt tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  → Tin nhắn được mã hóa bằng Channel_Key → bắn lên VPS\n\n[VPS — Egress Worker của @gpt]\n  1. Bot nhận MLS-encrypted message\n  2. Giải mã bằng Channel_Key (Bot đã được cấp khi join Channel)\n     → Đọc: \"tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  3. Unseal API Key:\n     Bot_Private_Key.decrypt(Bot_Bound_Blob) → \"sk-openai-12345\" (trong RAM)\n  4. Gọi HTTPS ra ngoài:\n     POST api.openai.com/chat {\"messages\": [...nội dung...]}\n     Header: Authorization: Bearer sk-openai-12345\n  5. Nhận kết quả tóm tắt từ OpenAI\n  6. DROP(\"sk-openai-12345\") ← xóa API Key ngay khỏi RAM\n  7. Mã hóa câu trả lời bằng Channel_Key\n  8. Bắn tin nhắn vào Channel như \"user @gpt\" đang reply\n\n[Channel \"Dev Team\"]\nNhân viên A thấy: \"@gpt: Tóm tắt TechSpec — Đây là những điểm mạnh:...\""
+                      "code": "[Channel \"Dev Team\" — E2EE với Channel_Key]\n\nNhân viên A: \"@gpt tóm tắt file TechSpec và liệt kê điểm mạnh\"\n  → Tin nhắn được mã hóa bằng Channel_Key → bắn lên VPS\n\n[VPS — Egress Worker của @gpt]\n\n  1. Bot nhận MLS-encrypted message\n  2. Giải mã bằng Channel_Key (Bot đã được cấp khi join Channel)\n     → Đọc: \"tóm tắt file TechSpec và liệt kê điểm mạnh\"\n\n  3. Unseal API Key:\n     Bot_Private_Key.decrypt(Bot_Bound_Blob) → \"sk-openai-12345\" (trong RAM)\n\n  4. Gọi HTTPS ra ngoài:\n     POST api.openai.com/chat {\"messages\": [...nội dung...]}\n     Header: Authorization: Bearer sk-openai-12345\n\n  5. Nhận kết quả tóm tắt từ OpenAI\n  6. DROP(\"sk-openai-12345\") ← xóa API Key ngay khỏi RAM\n  7. Mã hóa câu trả lời bằng Channel_Key\n  8. Bắn tin nhắn vào Channel như \"user @gpt\" đang reply\n\n[Channel \"Dev Team\"]\nNhân viên A thấy: \"@gpt: Tóm tắt TechSpec — Đây là những điểm mạnh:...\""
                     },
                     {
                       "type": "paragraph",
@@ -5162,9 +5959,9 @@
               ]
             },
             {
-              "id": "111-kiến-trúc-teravault-vfs",
+              "id": "111-kiến-trúc-teravault-vfs-laptop-desktop-server",
               "level": 3,
-              "heading": "11.1 Kiến trúc TeraVault (VFS)",
+              "heading": "11.1 Kiến trúc TeraVault (VFS)  `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -5172,16 +5969,16 @@
                 },
                 {
                   "type": "code",
-                  "language": "",
+                  "language": "text",
                   "code": "┌─────────────────────────────────────────────────────────────────┐\n│                     TeraChat Workspace                          │\n│  ┌────────────────────────┐    ┌───────────────────────────┐   │\n│  │   Chat Stream (Live)   │    │  TeraVault (VFS Panel)    │   │\n│  │                        │◄──►│  📁 Dự án Alpha           │   │\n│  │  #general: [file.pdf]  │    │    📁 Hợp đồng 2026       │   │\n│  │  #finance: [report.xls]│    │      📄 file.pdf ← link   │   │\n│  │  #rd: [blueprint.dwg]  │    │    📁 Bản vẽ kỹ thuật     │   │\n│  └────────────────────────┘    │      📄 blueprint.dwg     │   │\n│          Drag & Drop ──────────►  📁 Phòng Kế Toán          │   │\n│                                │      📄 report.xls        │   │\n│                                └───────────────────────────┘   │\n│  Cluster Storage: [file.pdf blob] [report.xls blob] [...]      │\n│  (1 bản vật lý duy nhất mỗi file — TeraVault chỉ là index)    │\n└─────────────────────────────────────────────────────────────────┘"
                 }
               ],
               "subsections": []
             },
             {
-              "id": "112-database-schema-teravault-vfs-layer",
+              "id": "112-database-schema-teravault-vfs-layer-laptop-desktop-server",
               "level": 3,
-              "heading": "11.2 Database Schema (TeraVault VFS Layer)",
+              "heading": "11.2 Database Schema (TeraVault VFS Layer)  `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "code",
@@ -5192,9 +5989,9 @@
               "subsections": []
             },
             {
-              "id": "113-hành-vi-tính-năng",
+              "id": "113-hành-vi-tính-năng-laptop-desktop-mobile",
               "level": 3,
-              "heading": "11.3 Hành vi & Tính năng",
+              "heading": "11.3 Hành vi & Tính năng  `💻 Laptop` `🖥️ Desktop` `📱 Mobile`",
               "content_blocks": [],
               "subsections": [
                 {
@@ -5286,9 +6083,9 @@
               ]
             },
             {
-              "id": "114-access-control-permissions",
+              "id": "114-access-control-permissions-server",
               "level": 3,
-              "heading": "11.4 Access Control & Permissions",
+              "heading": "11.4 Access Control & Permissions  `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "code",
@@ -5299,9 +6096,9 @@
               "subsections": []
             },
             {
-              "id": "115-tổng-kết-teravault-vs-slack-files",
+              "id": "115-tổng-kết-teravault-vs-slack-files-laptop-desktop-server",
               "level": 3,
-              "heading": "11.5 Tổng kết: TeraVault vs Slack Files",
+              "heading": "11.5 Tổng kết: TeraVault vs Slack Files  `💻 Laptop` `🖥️ Desktop` `☁️ Server`",
               "content_blocks": [
                 {
                   "type": "table",
@@ -5349,6 +6146,373 @@
                 }
               ],
               "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "11-phân-loại-kỹ-thuật-theo-nền-tảng-triển-khai",
+          "level": 2,
+          "heading": "11. PHÂN LOẠI KỸ THUẬT THEO NỀN TẢNG TRIỂN KHAI",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "111-client-side-technology-runtime-environment",
+              "level": 3,
+              "heading": "11.1 Client-Side Technology & Runtime Environment",
+              "content_blocks": [],
+              "subsections": [
+                {
+                  "id": "rust-core-tauri-ffi",
+                  "level": 4,
+                  "heading": "Rust Core (Tauri / FFI)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻 🖥"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Biên dịch native thành thư viện tĩnh (librustcore.a cho iOS, .so cho Android) hoặc DLL/dylib cho Desktop. Quản lý toàn bộ State, Cryptography và Networking chung một lõi. Nhờ cấp phát bộ nhớ an toàn (Zero-cost abstractions), tốc độ giải mã E2EE đạt < 5ms, không gây \"nghẽn\" Main UI Thread của React Native hay Flutter.",
+                        "Hạn chế: Trên iOS không hỗ trợ JIT dynamic execution khiến một số tính năng WASM phải fallback; trên Android yêu cầu quản lý luồng qua JNI boundary khắt khe để tránh thất thoát bộ nhớ (Memory leak) do Collector của Java/Kotlin không với tới. Laptop phải bắt sự kiện Lid-close để tự ép flush ghi đĩa trước khi Sleep."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "embedded-database-sqlcipher",
+                  "level": 4,
+                  "heading": "Embedded Database (SQLCipher)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻 🖥"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Database nhúng tại Client mã hóa bằng AES-256 transparent. Mọi text, metadata, danh bạ đều được lưu tại File system local. Tận dụng SQLite FTS5 engine để index và truy vấn Full-Text Search trong dưới 50 mili-giây ngay trên ổ đĩa của người dùng.",
+                        "Hạn chế: Các hệ điều hành Mobile (Apple DAS / Android Doze) hạn chế tài nguyên ngầm khắt khe. Việc duy trì Indexing nền sẽ bị OS kill ngay, do đó FTS search buộc phải vô hiệu hóa trên Mobile. Storage Window trên Mobile chỉ an toàn ở mức 7 ngày / 2.000 tin nhắn, trong khi Desktop có thể lưu tới tối đa dung lượng ổ cứng."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "wasm-sandbox-runtime-wasmtime",
+                  "level": 4,
+                  "heading": "WASM Sandbox Runtime (Wasmtime)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "💻 🖥"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Recommended",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Môi trường thực thi bảo mật cho ứng dụng tiện ích nội bộ (.tapp) và OPA Security Policies. Bằng cơ chế Sandbox chuẩn, WASM Core cắt đứt toàn bộ tương tác file system và network trực tiếp. Giảm tải cho máy chủ bằng cách cho Client tự tính toán Logic trước khi đồng bộ (Local Edge Compute).",
+                        "Hạn chế: Bị cấm hoàn toàn trên iOS do App Store Guidelines 2.5.2 (không chạy mã Dynamic JIT download từ server). Do đó, luồng UI động phải bị phân rã sang cấu trúc JSON thuần tĩnh (Adaptive Cards) để App Mobile tự render tĩnh, giảm độ linh hoạt."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "desktop-super-node-terashare-247-local-seeder",
+                  "level": 4,
+                  "heading": "Desktop Super Node (TeraShare 24/7 Local Seeder)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "🖥"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Optional",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Hệ thống kết nối nội bộ P2P tận dụng các máy Desktop (cắm nguồn 24/7) làm máy chủ trung chuyển (Super Node). Hỗ trợ tải file tốc độ Gbps trong LAN mà không cần vòng qua Server ngoài Internet.",
+                        "Hạn chế: Trực tiếp chống chỉ định với Mobile (bị OS kill app) và Laptop (vì sẽ tự động ngắt kết nối khi gập màn hình / Sleep / Hibernate). Không thể ứng dụng trên Server thuần do thiếu cơ chế NAT Traversal trực diện vào mạng WLAN văn phòng."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "battery-aware-processing-wake-lock-throttling",
+                  "level": 4,
+                  "heading": "Battery-Aware Processing & Wake-lock Throttling",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Thiết kế cốt lõi dành riêng cho thiết bị phụ thuộc Pin hữu hạn (Laptop/Mobile). Tính năng tự động Tạm dừng FTS5 Indexing, hạ Bitrate WebRTC từ 720p xuống 360p, và giãn chu kỳ ping BLE khi OS báo mức Pin dưới 20%.",
+                        "Hạn chế: Các OS (Windows/Linux) quản lý Power State bằng các API cực kỳ phân mảnh (như Lid-close event hay ACPI poll), yêu cầu Native Interop phức tạp để gọi đúng lúc. Chạy Desktop cắm sạc không cần kích hoạt kỹ thuật này."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "hardware-bound-encryption-secure-enclave-tpm-20-strongbox",
+                  "level": 4,
+                  "heading": "Hardware Bound Encryption (Secure Enclave / TPM 2.0 / StrongBox)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻 🖥"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Chống lại các rủi ro nhân bản Private Key thông qua việc sinh và niêm phong cặp khóa mật mã sâu bên trong chip phần cứng. Khi cần ký số (Authentication / Code Signing), CPU gửi instruction cho Enclave tính toán và chỉ trả về Chữ ký, nội dung Private Key không bao giờ lọt ra RAM của OS. Giúp chống Disk Cloning trên Desktop và Root/Jailbreak dump trên Mobile.",
+                        "Hạn chế: API cấp phát khác biệt hoàn toàn (NCryptSignHash trên Win, SecKey trên macOS, NDK KeyStore trên Android). Rất khó maintain mã nguồn. Các chip này chủ yếu chỉ hỗ trợ thuât toán ECC P-256 phổ thông thay vì Curve25519 hay Ed25519 tiên tiến."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
+            },
+            {
+              "id": "112-middleware-security-layer",
+              "level": 3,
+              "heading": "11.2 Middleware & Security Layer",
+              "content_blocks": [],
+              "subsections": [
+                {
+                  "id": "opa-policy-engine-rego",
+                  "level": 4,
+                  "heading": "OPA Policy Engine (Rego)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "💻 🖥 ☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Đánh giá cấp quyền phân tán ABAC (Attribute-Based Access Control). Cùng một tệp Policy (Quy tắc) được deploy cho Gateways ở Server (viết bằng Go) và biên dịch sang WASM đẩy xuống Desktop/Laptop. Hệ thống Client có thể tự Block hành vi lệnh Paste (DLP) ngay tại UI thread cục bộ với thời gian quyết định < 1ms thay vì phải gửi request hỏi Server.",
+                        "Hạn chế: Cấu trúc Bundle Rego thường phình to. Phải nạp vào RAM trước khi Execute, tác động lớn đến memory footprint trên điện thoại di động do bị OS giới hạn (< 200MB background), do đó không triển khai OPA rule phức tạp trên Mobile Apps."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "message-layer-security-mls-protocol",
+                  "level": 4,
+                  "heading": "Message Layer Security (MLS) Protocol",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻 🖥 ☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Giao thức IETF chuẩn hóa E2EE cho nhắn tin đa nhóm. Cơ chế TreeKEM giải quyết bài toán mã hóa O(N) truyền thống, cung cấp khả năng Rotation Epoch mã hóa cho nhóm lên đến hàng chục nghìn người với chi phí O(log N).",
+                        "Hạn chế: Quá trình Tree Rotation phụ thuộc vào tính toán đồng thời giữa các Nodes. Bắt buộc Server phải vận hành dịch vụ trung gian Delivery Service để gom Commit blob. Các tài khoản Offline lâu ngày cần cơ chế Cross-sign dự phòng từ Desktop ủy quyền chữ ký qua nhánh Mobile."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
+            },
+            {
+              "id": "113-network-layer",
+              "level": 3,
+              "heading": "11.3 Network Layer",
+              "content_blocks": [],
+              "subsections": [
+                {
+                  "id": "webrtc-dtls-srtp-p2p",
+                  "level": 4,
+                  "heading": "WebRTC (DTLS-SRTP P2P)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻 🖥 ☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Recommended",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Truyền tải video call và audio call Peer-to-Peer trực tiếp hai nhánh. Giao thức đã có mã hóa DTLS tích hợp. Server Cluster đóng vai trò TURN Server chuyển tiếp băng thông UDP/TCP, không có Certificate can thiệp giải mã nội dung stream.",
+                        "Hạn chế: Ngốn băng thông mạng và năng lượng giải mã luồng codec H.264/VP8. Bắt buộc triển khai hệ thống Battery Aware: Tự ép hạ chất lượng Bitrate (Auto Downgrade) 720p xuống 360p khi hệ điều hành báo cáo mức Pin <20%."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "bluetooth-low-energy-ble-50-off-grid-mesh",
+                  "level": 4,
+                  "heading": "Bluetooth Low Energy (BLE 5.0) Off-grid Mesh",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "📱 💻 🖥"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Optional",
+                        "Cross-platform: Có",
+                        "Lý do phù hợp: Hạ tầng liên lạc khẩn cấp (LAN-only offline survivability). Desktop đóng vai trò Super Node sử dụng module Wi-Fi/Bluetooth tạo Local Mesh. Cứu rỗi tín hiệu cho toàn văn phòng khi đường Uplink Internet bị ngắt hoàn toàn.",
+                        "Hạn chế: API quét và Advertise BLE cực kỳ khắt khe từ phía OS. iOS giới hạn Bandwidth dưới 10Kbps trên custom services. Android đòi quyền ACCESS_FINE_LOCATION vi phạm trải nghiệm gốc. Laptop bắt buộc phải tự động throttle (giãn cách) interval ping BLE khi không cắm sạc nhằm bảo toàn tuổi thọ pin."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
+            },
+            {
+              "id": "114-backend-server-technology",
+              "level": 3,
+              "heading": "11.4 Backend Server Technology",
+              "content_blocks": [],
+              "subsections": [
+                {
+                  "id": "rust-tokio-async-relay-server-blind-routing",
+                  "level": 4,
+                  "heading": "Rust Tokio Async Relay Server (Blind Routing)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Không (Thiết kế Native Linux System)",
+                        "Lý do phù hợp: Cơ chế đa luồng cực nhẹ không bị khóa (Async Non-block). Phục vụ định tuyến WebSocket với mốc 10.000 concurrent connection chỉ hao tốn vài trăm MB RAM trong Docker Container. Vì đây là hệ thống Zero-Knowledge, Server bản chất là một bộ định tuyến trung chuyển bản mã E2EE mù hoàn toàn (Blind Relay).",
+                        "Hạn chế: Triển khai DevOps yêu cầu build tĩnh file binary (x86_64-unknown-linux-musl) để nhét vừa Alpine/Scratch docker image. Memory footprint rất nhạy cảm với network I/O buffer bloat, cần tinh chỉnh OS tcp_rmem và wmem."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "federation-bridge-mtls-boundary-auth",
+                  "level": 4,
+                  "heading": "Federation Bridge (mTLS Boundary Auth)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Không",
+                        "Lý do phù hợp: Dịch vụ Edge Proxy kết nối Liên cụm doanh nghiệp (HQ tới Subsidiary). Hai chiều kết nối đóng dấu bằng Mutual TLS (mTLS) tự sinh certificate Exchange offline, không đi qua máy chủ CA công cộng để tránh rò rỉ siêu dữ liệu đường hầm.",
+                        "Hạn chế: Yêu cầu hạ tầng VPS phải có IP tĩnh thuần (Public IPv4) để mapping cấu hình Firewall chặt chẽ. Độ trễ (Latency) giao tiếp tăng do Forward Secrecy phải thông qua tối thiểu 2 trạm tiếp sóng mTLS."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
+            },
+            {
+              "id": "115-data-storage-infrastructure",
+              "level": 3,
+              "heading": "11.5 Data Storage & Infrastructure",
+              "content_blocks": [],
+              "subsections": [
+                {
+                  "id": "postgresql-ha-metadata-store",
+                  "level": 4,
+                  "heading": "PostgreSQL HA (Metadata Store)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Không",
+                        "Lý do phù hợp: RDBMS trung tâm chuyên quản lý User Identity, cấu trúc phòng ban (Organization Map) và danh sách Payload Ciphertext theo quan hệ Id. Khả năng Replica High Availability dùng cho quy mô Cluster ngang vững chắc.",
+                        "Hạn chế: Toàn bộ bản ghi cấu trúc nội dung đã bị mã hóa E2EE, do đó PostgreSQL không thể thực thi Full-Text Search. Nó hoạt động với tư cách \"Mục lục Mù\", chỉ chứa ID Metadata thay vì text plaintext."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "minio-ceph-cas-object-storage",
+                  "level": 4,
+                  "heading": "MinIO / Ceph (CAS Object Storage)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Recommended",
+                        "Cross-platform: Không",
+                        "Lý do phù hợp: Lưu trữ file dung lượng lớn như tài liệu đính kèm. Khả năng Content-Addressable Storage (CAS) chia cắt và lưu các file với khóa ID chính là chuỗi SHA-256 của nội dung. Cho phép Deduplication loại bỏ 100% tệp trùng lặp.",
+                        "Hạn chế: Chiếm hữu Bandwidth và dung lượng ổ cứng lớn nhất trong kiến trúc triển khai Cloud. Khi setup vật lý trên HPE/Dell (Bare-metal), cần thiết lập RAID hoặc Software Defined Storage để chống Data Rotting/Bit Flip ngầm."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "trusted-execution-environment-aws-nitro-sgx",
+                  "level": 4,
+                  "heading": "Trusted Execution Environment (AWS Nitro / SGX)",
+                  "content_blocks": [
+                    {
+                      "type": "paragraph",
+                      "text": "☁ 🗄"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Priority: Core",
+                        "Cross-platform: Không",
+                        "Lý do phù hợp: Thiết lập khoang cách ly CPU vật lý (In-Memory Sandbox Host). Các AI Proxy Egress thực thi tác vụ giải mã tạm thời nằm trong phân vùng RAM bị mã hóa Key cấp từ Microcode Hardware. Dịch vụ lưu trữ máy chủ (VPS Admin) kể cả chiếm được quyền Root cũng không lấy được Secret hay Memory Dump trong Enclave này.",
+                        "Hạn chế: Trói buộc chặt chẽ Vendor Lock-in (chỉ có thể mua Azure Confidential Compute / AWS Nitro EC2). Vô cùng khó lập trình và rà soát bug hệ thống vì không có công cụ GDB tiêu chuẩn. Phải phối hợp Remote Attestation Certificate giữa Desktop Client và Server Boot."
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Tài liệu này chỉ chứa thông tin kỹ thuật phân lớp hệ thống. Tham khảo hệ thống UI và tính năng kinh doanh trong các đặc tả tương ứng."
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
             }
           ]
         }
