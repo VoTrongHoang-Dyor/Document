@@ -6,40 +6,366 @@
     <title>TeraChat — Product Requirements Document</title>
     <style>
     
-        :root { --border: #333; --text-secondary: #888; --accent-blue: #60a5fa;
-                --accent-pink: #f472b6; --accent-purple: #a78bfa; --warning: #fb923c; }
-        body { font-family: sans-serif; color: #e2e8f0; background: #0f172a; display: flex; }
-        .sidebar { width: 260px; min-height: 100vh; padding: 1.5rem; background: #1e293b;
-                   position: sticky; top: 0; overflow-y: auto; }
-        .sidebar .brand { color: white; font-weight: bold; font-size: 1.1rem; text-decoration: none;
-                          display: block; margin-bottom: 1rem; }
-        .sidebar .brand span { color: #60a5fa; }
-        .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 0.25rem 0;
-                    font-size: 0.85rem; }
-        .nav-link:hover { color: white; }
-        .nav-header { color: #60a5fa; font-size: 0.75rem; text-transform: uppercase;
-                      letter-spacing: 0.1em; margin: 1rem 0 0.5rem; }
-        .main { flex: 1; padding: 2rem 3rem; max-width: 900px; }
-        h1,h2,h3,h4,h5,h6 { color: white; }
-        h1 { font-size: 2rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
-        h2 { font-size: 1.5rem; margin-top: 2.5rem; color: #60a5fa; }
-        h3 { font-size: 1.2rem; color: #a78bfa; }
-        p { line-height: 1.7; color: #cbd5e1; }
-        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
-        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-        th { background: #1e293b; color: #60a5fa; padding: 0.6rem 1rem; text-align: left; }
-        td { padding: 0.6rem 1rem; border-bottom: 1px solid #334155; color: #cbd5e1; }
-        .tech-box { border-left: 4px solid #60a5fa; padding: 1rem; background: rgba(96,165,250,0.05);
-                    margin: 1rem 0; border-radius: 0 6px 6px 0; }
-        .tech-header { font-weight: bold; margin-bottom: 0.5rem; }
-        ul, ol { color: #cbd5e1; line-height: 1.8; }
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            /* Grid Layout */
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            /* Removed grid-specific width here as it's defined in grid-template-columns */
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky; /* Changed from fixed */
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        /* ... (navigation styles remain same) ... */
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        #nav-link-style { display: none; } /* Placeholder for grep match if needed, logic unchanged */
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        /* Main Content */
+        .main {
+            /* Removed margin-left and width calcs */
+            padding: 4rem 4rem; 
+            max-width: 100%; 
+            width: 100%;
+            /* Reading Mode Optimization */
+            margin: 0 auto; 
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
         
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        /* Scenario Cards */
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%; /* Safety */
+        }
+        
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+        
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        /* Tech Specs */
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto; /* Allow scroll if content bursts */
+        }
+        
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tech-header::before {
+            content: "⚙️ UNDER THE HOOD";
+            margin-right: 0.5rem;
+        }
+
+
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto; /* Enable horizontal scroll */
+            margin: 1rem 0;
+            display: block; /* Ensure block formatting context */
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+        }
+        /* Target the table inside the wrapper */
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px; /* Force min width to trigger scroll on small screens */
+        }
+        
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        /* Fix horizontal overflow */
+        pre { 
+            white-space: pre-wrap; 
+            word-wrap: break-word; /* Better wrapping */
+            overflow-x: auto; 
+            max-width: 100%; 
+        }
+
+        /* Mobile / Vertical View Mode */
+        @media (max-width: 900px) {
+            body { 
+                grid-template-columns: 1fr; /* Switch to single column */
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative; /* Back to normal flow */
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem; /* Reduce padding on mobile */
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+    
+    
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
     </style>
 </head>
 <body>
 
 <nav class="sidebar">
     <a href="#" class="brand">TeraChat <span>Product Requirements Document</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
     <div class="nav-header">Table of Contents</div><a href="#terachat-v021-product-requirements-document-prd" class="nav-link" style="">TeraChat V0.2.1 — Product Requirements Document (PRD)</a>
 <a href="#table-of-contents" class="nav-link" style="padding-left:0.8rem;">TABLE OF CONTENTS</a>
 <a href="#1-product-vision-scope" class="nav-link" style="padding-left:0.8rem;">1. Product Vision & Scope</a>
@@ -75,6 +401,7 @@
 <a href="#revised-roadmap-prioritized-actions" class="nav-link" style="padding-left:0.8rem;">Revised Roadmap (Prioritized Actions)</a>
 <a href="#use-case-selling-points" class="nav-link" style="padding-left:0.8rem;">Use Case Selling Points</a>
 
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
 
 <div class="main">
@@ -720,6 +1047,51 @@ Hệ thống Timestamping &amp; Lock Document</code></pre></div>
         <p>TeraChat Enterprise OS &copy; 2026</p>
     </div>
 </div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
 
 </body>
 </html>

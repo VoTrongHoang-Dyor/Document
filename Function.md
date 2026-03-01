@@ -102,6 +102,7 @@ TeraChat là **nền tảng giao tiếp doanh nghiệp nội bộ** (Enterprise 
 ### 2.2 End User (Employee)
 
 **Quyền hạn:**
+
 - Gửi/nhận tin nhắn (text, file, voice) trong Channel được thêm vào
 - Tìm kiếm lịch sử tin nhắn cục bộ (FTS5)
 - Gọi thoại/video với thành viên có quyền
@@ -119,6 +120,7 @@ TeraChat là **nền tảng giao tiếp doanh nghiệp nội bộ** (Enterprise 
 | External Messaging Sandbox | Phải được Admin cho phép qua OPA |
 
 **Bị giới hạn:**
+
 - Không thêm/xóa Bot khỏi Channel
 - Không xem tin nhắn Channel khác (kể cả cùng công ty)
 - Không tắt DLP chặn clipboard
@@ -371,12 +373,14 @@ Rate Limiting áp dụng: Sliding Window 100 req/phút/client.
 ### 3.8 DLP Multi-Sig Quarantine (A4) + Smart Clipboard (S6)
 
 **DLP Multi-Sig Quarantine:**
+
 - Trigger: OPA intercept khi file từ phòng R&D gửi sang Vùng 2 (bên ngoài)
 - Client sinh `File_Key`, mã hóa E2EE cho Recipient + N Supervisors
 - M-of-N ký Phê duyệt bằng Secure Enclave → Release
 - Không đủ chữ ký trong TTL → file bị xóa, Audit Log ghi
 
 **DLP Smart Clipboard:**
+
 - Ngăn copy text từ cửa sổ nội bộ sang app bên ngoài (phát hiện app đích qua IPC)
 - Phát hiện `SYSTEM_ALERT_WINDOW` (overlay) → vô hiệu hóa Smart Approval
 - Clipboard được mã hóa trong bộ nhớ — app bên ngoài chỉ thấy ciphertext rác
