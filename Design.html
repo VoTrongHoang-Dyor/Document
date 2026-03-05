@@ -576,14 +576,15 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)</code></pre></div>
 <li>Accent: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code></li>
 </ul>
 <h3 id="mesh-mode">Mesh Mode</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">⚠️ <strong>Adaptive UI Degradation (Chống ccan pin):</strong> Khi kích hoạt Mesh Mode, Engine Glassmorphism PHẢI tự động tắt. Quy tắc bắt buộc: Khi biến <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--mode: mesh</code> được set, toàn bộ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">backdrop-filter</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">box-shadow</code>, và CSS <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">animation</code> vô điều kiện phải bị disable.</p>
 <ul>
-<li>Background: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code></li>
-<li>Glass: blur 20px, dark navy</li>
-<li>Text sáng: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#E2E8F0</code></li>
-<li>Radar pulse animation trên Logo</li>
-<li>Banner top: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – 12 nodes connected"</code></li>
+<li><strong>Background:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code> solid (OLED Black — tắt pixel cưỡng bức, không GPU composite layer)</li>
+<li><strong>Glass:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">backdrop-filter: none</code> — thay bằng mã màu phẳng (Flat Dark) <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.06)</code> không blur</li>
+<li><strong>Text sáng:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#E2E8F0</code></li>
+<li><strong>Radar — Event-driven SVG</strong> (không dùng CSS loop): Biểu tượng radar là SVG tĩnh, chỉ thay đổi opacity (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0.3 → 1.0 → 0.3</code>) khi Loo iRust Core dispatch tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MESH_PACKET_RECEIVED</code>. Không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">setInterval</code> hay <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">animation: pulse infinite</code>.</li>
+<li><strong>Banner top:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – N nodes connected"</code> (cập nhật mỗi lần node join/leave, không animate liên tục)</li>
 </ul>
-<p><strong>Transition:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fade 0.3s</code></p>
+<p><strong>Transition:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fade 0.1s</code> (rút ngắn từ 0.3s để giảm GPU frame render khi chuyển sang Mesh Mode)</p>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="4-micro-animations-motion">4. Micro-Animations & Motion</h2>
 <div class="comparison-table"><table>
@@ -617,7 +618,7 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)</code></pre></div>
 </tr>
 <tr>
 <td>Mesh radar pulse</td>
-<td>CSS loop animation, interval 2s</td>
+<td>Event-driven SVG opacity change (Rust dispatch <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MESH_PACKET_RECEIVED</code>)</td>
 </tr>
 <tr>
 <td>File loading</td>

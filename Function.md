@@ -1,12 +1,12 @@
-
 ### 1. Chức năng dành cho Quản trị viên (Admin)
 
 Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệu và thiết lập các hàng rào bảo mật. Các chức năng chính bao gồm:
 
 * **Quản lý Khóa và Định danh (KMS & Identity):**
-* Thiết lập ban đầu với `KMS Bootstrap`, trong đó Admin phải quản lý `Master Key` (ví dụ: in ra giấy hoặc lưu file `.terakey`) để tránh thảm họa "Zero-Access".
-* Phát hành `Invite Token` (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt `Epoch Rotation` và `Remote Wipe` (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.
-* Nắm giữ `Enterprise Escrow Key` (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.
+  * Thiết lập ban đầu với `KMS Bootstrap`, trong đó Admin phải quản lý `Master Key` (ví dụ: in ra giấy hoặc lưu file `.terakey`) để tránh thảm họa "Zero-Access".
+  * Phát hành `Invite Token` (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt `Epoch Rotation` và `Remote Wipe` (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.
+  * Nắm giữ `Enterprise Escrow Key` (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.
+  * **Thu hồi & Cấp lại Định danh (Social Escrow Fallback):** Khi nhân viên mất thiết bị mà Server đang sập, Admin có thể — khi Server trở lại — Revoke `Device_Key` cũ và kích hoạt Re-provision qua SCIM 2.0 để cấp định danh mới cho thiết bị thay thế.
 
 * **Thiết lập Chính sách Bảo mật (OPA Policy & DLP):**
 * Định nghĩa các chính sách truy cập qua OPA Engine, bao gồm giới hạn tốc độ (Rate Limiting) theo phòng ban, thời gian lưu trữ tin nhắn (TTL), và quyền hiển thị ứng dụng.
@@ -35,8 +35,10 @@ Người dùng được trải nghiệm một môi trường làm việc bảo m
 * Tìm kiếm toàn văn bản (Full-text search) siêu tốc độ bằng SQLite FTS5 tại máy trạm mà không làm rò rỉ siêu dữ liệu (Zero-Knowledge Search).
 
 * **Làm việc Ngoại tuyến & Mạng Lưới (Mesh/Offline-First):**
-* Chủ động kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct khi hệ thống mất Internet để tiếp tục nhắn tin khẩn cấp.
-* Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường hoàn toàn không có mạng LAN hay Wi-Fi Router.
+  * Chủ động kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct khi hệ thống mất Internet để tiếp tục nhắn tin khẩn cấp.
+  * Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường hoàn toàn không có mạng LAN hay Wi-Fi Router.
+  * **Kích hoạt / Hủy Social Escrow (Phân mảnh khóa):** Vào Settings → Security → Social Escrow để phân mảnh `Device_Key` bằng Shamir 3-of-5, chọn 3-5 đồng nghiệp tin cậy để giữ mảnh Key. Có thể thu hồi bất kỳ lúc nào.
+  * **Phê duyệt / Từ chối BLE SOS Recovery:** Khi nhận Toast thông báo đồng nghiệp yêu cầu phục hồi khóa, xác nhận bằng Biometrics để gửi lại mảnh Key từ Secure Enclave. Hoặc từ chối với 1-tap.
 
 * **Quản lý Không gian làm việc và File (TeraVault):**
 * Sắp xếp, kéo thả file từ khung chat vào một cây thư mục ảo (Virtual File System) ngăn nắp mà không làm nhân bản dung lượng file.

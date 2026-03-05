@@ -222,22 +222,143 @@
                         "📱💻🖥️ Cơ chế Stream Pumping vận chuyển trực tiếp payload từ đĩa cứng xuống Network Socket thông qua Lõi Rust Proxy.",
                         "📱💻🖥️ Áp dụng kỹ thuật mmap bypass vùng nhớ Sandbox WASM nhằm triệt tiêu hoàn toàn rủi ro OOM-Kill khi giải quyết tệp hàng GB."
                       ]
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "IPC Zero-Copy Architecture"
-                    },
-                    {
-                      "type": "list",
-                      "data": [
-                        "💻🖥️ Phân bổ vùng nhớ SharedArrayBuffer kết hợp Ring Buffer 10MB đạt ngưỡng thông lượng ~500MB/s nhằm vượt rào thông lượng IPC.",
-                        "📱 Tham chiếu React Native trực diện thông qua C++ JSI Pointer nhằm vượt luồng thắt cổ chai của WebView Bridge truyền thống.",
-                        "📱 Tích hợp chuẩn Dart FFI TypedData hỗ trợ giao thức Zero-Copy thẳng vào giao diện vùng nhớ C ABI."
-                      ]
                     }
                   ],
                   "subsections": []
+                }
+              ]
+            },
+            {
+              "id": "610-rust-semantic-state-transition-firewall-chống-tiêm-nhiễm-trạng-thái-rác",
+              "level": 3,
+              "heading": "6.10 Rust Semantic State Transition Firewall (Chống Tiêm nhiễm Trạng thái Rác)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Kẻ tấn công có thể inject CRDT event hợp lệ về mặt cú pháp nhưng chứa payload ngữ nghĩa độc hại (ví dụ: event chèn `admin_role` cho user thường) hoặc phá vỡ quan hệ nhân quả của DAG. Không có lớp validation ngữ nghĩa, event này sẽ merge thẳng vào SQLite mà không bị chặn."
+                  ]
                 },
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱 Rust-based Semantic Validation Pipeline: Mọi CRDT event — dù đến từ Server, Peer, hay chính Local App — đều phải đi qua một Pipeline xác thực tại Lõi Rust trước khi được ghi vào SQLite WAL. Pipeline gồm 3 bước: (1) Schema Validation, (2) Causal Integrity Check, (3) Cryptographic ACL Enforcement. Bất kỳ bước nào thất bại → event bị Drop() ngay lập tức và ghi log vào Audit Trail.",
+                    "💻📱 DAG Causal Integrity Check (HLC / Vector Clock): Lõi Rust kiểm tra event mới có parent_hash và vector_clock hợp lệ trong Causal DAG hiện tại. Nếu event cố tình bỏ qua predecessor (ví dụ: nhảy cóc để override một message đã xóa), → từ chối với lỗi CAUSAL_VIOLATION. Sử dụng Hybrid Logical Clock (HLC) để giải quyết race condition multi-device.",
+                    "💻📱 Hard-coded Cryptographic ACL Enforcement: Mỗi loại CRDT event (AddMember, RevokeKey, UpdateRole) được liên kết với một required_signing_key_role được hard-code tại Lõi Rust. Ví dụ: event GRANT_ADMIN PHẢI được ký bởi Company_Key cấp Admin — nếu ký bởi User Key → ACL_VIOLATION, Firewall bắn cờ SUSPICIOUS_EVENT lên Audit Trail.",
+                    "💻📱 Zero-copy Schema Validation: Trước khi decode toàn bộ event, Lõi Rust sử dụng flatbuffers hoặc capnproto để xác thực header schema tại chỗ (in-place), không cần allocate heap. Reject event có kích thước bất thường (> MAX_EVENT_SIZE) hoặc field type sai ngay tại tầng này — tránh parser amplification attack."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "611-deterministic-local-audit-boomerang-penalty-xác-thực-lời-buộc-tội-phản-pháo",
+              "level": 3,
+              "heading": "6.11 Deterministic Local Audit & Boomerang Penalty (Xác thực Lời buộc tội / Phản pháo)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Sau khi Byzantine Shun được kích hoạt, hệ thống cần cơ chế xác thực nội bộ để tránh oan sai — và phải phạt node cáo buộc sai để ngăn lạm dụng cơ chế Shun như một vũ khí."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱 Rust State Transition Firewall (Semantic Validation): Pipeline State Firewall tại Lõi Rust (đã mô tả tại 6.10) đồng thời hoạt động như bộ máy kiểm toán nội bộ: mỗi lần reject event, Firewall ghi lại (Node_ID, rejection_reason, hlc_timestamp) vào Audit Log — không ghi lên Server, chỉ lưu locally và tổng hợp vào Proof_Bundle nếu được yêu cầu.",
+                    "💻📱 Slashed Trust / Boomerang Penalty Logic: Khi hệ thống nhận đủ 2 Proof_Bundle (theo OCPM) nhưng sau khi xác minh, kết luận cáo buộc là sai (ví dụ: signature hợp lệ, HLC trong ngưỡng), Lõi Rust tự động áp dụng Trust Score Penalty cho node cáo buộc sai: điểm trust bị trừ, cần thêm Proof_Bundle ở các lần Shun tiếp theo. Sau 3 lần cáo buộc sai → node tự động bị Quarantine khỏi quyền bỏ phiếu Shun trong 72h.",
+                    "💻📱 Independent Edge Audit Pipeline: Mỗi Super Node (Desktop) duy trì một pipeline kiểm toán độc lập, thu thập bằng chứng từ nhiều Leaf Node và cross-validate trước khi forward Shun lên Gossip. Không có single-point-of-failure trong quá trình cáo buộc.",
+                    "💻📱 Deterministic Behavioral Verification: Lõi Rust so sánh hành vi quan sát được của node bị cáo buộc với baseline hành vi hợp lệ (state machine determinism check): nếu cùng một input cho ra output khác nhau giữa 2 lần quan sát → cờ NON_DETERMINISTIC_BEHAVIOR, nâng độ tin cậy cho cáo buộc."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "612-two-tier-state-squashing-causal-stability-horizon-chống-log-phình-to-database-trên-mobile",
+              "level": 3,
+              "heading": "6.12 Two-Tier State Squashing & Causal Stability Horizon (Chống Log Phình to Database trên Mobile)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Sau thời gian dài hoạt động, DAG tích lũy hàng ngàn CRDT event nhỏ gây phình to SQLite trên thiết bị Mobile. Cần compact mà không phá vỡ causal consistency hay mất dữ liệu."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Kiến trúc Two-Tier SQLite: Tách biệt hai database: hot_dag.db (Append-Only, chứa raw CRDT event mới nhất, < 7 ngày) và cold_state.db (Squashed Key-Value, chứa state đã flatten, không giữ history). Lõi Rust ghi mới vào hot_dag.db; UI đọc từ cold_state.db kết hợp truy vấn live từ hot_dag.db qua UNION.",
+                    "📱 Operation Squashing: Lõi Rust nhóm các chuỗi sự kiện CREATE → EDIT_1 → EDIT_2 → ... → EDIT_N trên cùng một entity thành một bản ghi Squashed duy nhất trong cold_state.db. Không cần giữ intermediate state, tiết kiệm tối đa 80% dung lượng so với raw DAG.",
+                    "💻📱🖥️ Causal Stability Frontier (Global/Local) via Vector Clock: Lõi Rust xuất hiện định kỳ, tính toán Causal Stability Frontier — tập hợp event đã được tất cả peer xác nhận (ACK) trong Mesh, không thể có event mới chèn vào trước frontier. Chỉ event nằm sau frontier mới được Squash — đảm bảo không Squash event chưa được đồng bộ.",
+                    "📱 Background Pruning với CPU Throttling: Tiến trình Squash chạy qua requestIdleCallback (iOS: BGProcessingTask) với giới hạn 50ms CPU/batch. Nếu pin < 20% → tự động Suspend Pruning cho đến khi cắm sạc."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "613-zero-knowledge-snapshot-sync-cold-state-bootstrapping-chống-lạc-trôi-nhân-quả-orphan-dag",
+              "level": 3,
+              "heading": "6.13 Zero-Knowledge Snapshot Sync — Cold State Bootstrapping (Chống Lạc trôi Nhân quả & Orphan DAG)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Thiết bị offline dài ngày sẽ có DAG lỗi thời (hàng nghìn event sau Causal Stability Frontier). Replay toàn bộ event log tốn RAM và thời gian $O(N)$ — không khả thi trên Mobile. Cold State Bootstrap giải quyết bằng $O(1)$ từ Snapshot."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 Final Materialized State Snapshot (Squashed Event Logs): Server hoặc Super Node định kỳ xuất Snapshot — bản chụp cold_state.db tại thời điểm Causal Stability Frontier — không chứa CRDT event thô, chỉ chứa final materialized state của từng entity. Thiết bị reconnect tải Snapshot thay vì replay toàn bộ log.",
+                    "📱💻 TeraVault VFS (Content-Addressable Storage / CAS UUID): Mỗi Snapshot được định danh bằng CAS_UUID = SHA-256(snapshot_content) và lưu trong TeraVault VFS. Thiết bị chỉ cần verify hash để xác nhận tính toàn vẹn mà không cần tải lại nếu đã có local cache trùng UUID.",
+                    "☁️📱💻🖥️ Epoch-Keyed Parquet/SQLite Backups: Snapshot được export theo định dạng Parquet (lớn, dành cho Desktop/Server) hoặc SQLite (compact, dành cho Mobile), đặt tên theo epoch_N.snapshot. Thiết bị chỉ tải epoch_current.snapshot → bỏ qua toàn bộ intermediate history.",
+                    "📱💻🖥️ Độ phức tạp Phục hồi $O(1)$: Sau khi tải Snapshot, Lõi Rust ghi trực tiếp vào cold_state.db qua INSERT OR REPLACE trong một transaction duy nhất. Tổng thời gian bootstrap cố định bất kể số lượng event lịch sử."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "614-stream-based-hydration-direct-to-disk-io-chống-oom-kill-khi-ghi-db",
+              "level": 3,
+              "heading": "6.14 Stream-based Hydration & Direct-to-Disk I/O (Chống OOM-Kill khi Ghi DB)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Việc tải Snapshot lớn vào RAM trước khi ghi DB sẽ gây OOM-Kill trên Mobile (giới hạn 150-200MB foreground). Stream Hydration giải quyết bằng cách ghi trực tiếp theo từng chunk mà không giữ toàn bộ payload trên heap."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ SharedArrayBuffer / JSI C++ Shared Memory IPC: Dữ liệu Snapshot chảy từ Network Layer → Lõi Rust qua SharedArrayBuffer / JSI C++ Shared Memory (Zero-copy) — không allocate heap cho toàn bộ payload, chỉ giữ window 2MB tại một thời điểm.",
+                    "📱💻🖥️ 2MB Chunked AES-256-GCM Streaming Decryption: Lõi Rust giải mã Snapshot theo từng chunk 2MB, xác thực GCM Tag từng chunk độc lập trước khi flush xuống disk — nếu chunk nào lỗi thì rollback chỉ chunk đó, không phải toàn bộ quá trình.",
+                    "📱💻🖥️ Direct-to-Disk SQLite INSERT OR REPLACE (cold_state.db): Mỗi chunk được parse và ghi thẳng vào cold_state.db qua BEGIN IMMEDIATE TRANSACTION → INSERT OR REPLACE → COMMIT mà không đi qua in-memory buffer. WAL mode đảm bảo atomic write ngay cả khi process bị kill giữa chừng.",
+                    "📱 Background Task Hydration (requestIdleCallback): Toàn bộ pipeline Stream Hydration chạy trong BGProcessingTask (iOS) / WorkManager (Android) với CPU budget 80ms/iteration. Nếu foreground app cần CPU → tự động Yield, tiếp tục ở iteration tiếp theo mà không mất dữ liệu nhờ WAL checkpoint."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "IPC Zero-Copy Architecture"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "💻🖥️ Phân bổ vùng nhớ SharedArrayBuffer kết hợp Ring Buffer 10MB đạt ngưỡng thông lượng ~500MB/s nhằm vượt rào thông lượng IPC.",
+                    "📱 Tham chiếu React Native trực diện thông qua C++ JSI Pointer nhằm vượt luồng thắt cổ chai của WebView Bridge truyền thống.",
+                    "📱 Tích hợp chuẩn Dart FFI TypedData hỗ trợ giao thức Zero-Copy thẳng vào giao diện vùng nhớ C ABI."
+                  ]
+                }
+              ],
+              "subsections": [
                 {
                   "id": "in-memory-encryption-no-plaintext-on-disk",
                   "level": 4,
@@ -611,7 +732,12 @@
                         "Background (NSE): Vô hiệu hóa LRU Cache. Chỉ nạp module Micro-Crypto với Footprint tĩnh ~4MB. Luồng xử lý: Nhận payload (<4KB) → giải mã trực tiếp → đẩy thông báo → gọi Drop() ngay lập tức để giải phóng RAM dưới ngưỡng 24MB.",
                         "📱 Tuyệt đối không dùng mlock() — Jetsam OOM-Kill app ngay lập tức.",
                         "📱 ZeroizeOnDrop (RAII): Mọi biến plaintext wrap trong zeroize::Zeroize. Không giữ plaintext qua bất kỳ await hay suspend point.",
-                        "📱 FTS5 Indexing: Chỉ khi App Active + cắm sạc, hoặc batch 100 tin/lần qua requestIdleCallback. Index Window: 30 ngày gần nhất.",
+                        "📱 FTS5 Indexing — Adaptive Micro-Batch (Chống Jetsam OOM-Kill):",
+                        "NSE TUYỆT ĐỐI CẤM kích hoạt FTS5 Tokenizer. NSE chỉ ghi raw Blob mã hóa vào Append-Only table (is_indexed = false), không phân tích cú pháp.",
+                        "Main App (Foreground): Sau khi Mesh reconnect và CRDT merge hoàn tất, Lõi Rust mới khởi động Indexer qua Background Task API — không chạy ngay lập tức.",
+                        "Batch size: 50 tin nhắn/batch, cách nhau 500ms (tránh CPU burst spike).",
+                        "Circuit Breaker: Nếu RAM App chạm 80% hạn mức Foreground OS → Indexer tự Suspend() → resume ở applicationDidBecomeActive tiếp theo.",
+                        "Index Window: 30 ngày gần nhất. Đánh đổi: Tin nhắn nhận trong Mesh có thể chậm xuất hiện trong search 1-2s, nhưng App không bao giờ bị Jetsam kill.",
                         "📱 Tìm kiếm >30 ngày (Encrypted Blind Search): Rust Core gửi HMAC-SHA256(Company_Search_Key, keyword) token lên Cluster TEE — Server không biết keyword thực, trả về message_id list — Client tải và giải mã chỉ các tin khớp.",
                         "📱 iOS Background Delegate (Cold Data Sync — KHÔNG phải App Update): Khi Foreground → TCP/WSS Pumping. Khi Background → ngắt WebSocket. VPS đóng gói file đính kèm / lịch sử tin nhắn Ciphertext thành file tĩnh 50MB, sinh One-time Pre-Signed URL, giao cho NSURLSession Background Transfer (iOS, isDiscretionary = true) để OS tự tải.",
                         "OS tải xong → đánh thức App 30s → Rust dùng mmap + Hardware AES-NI giải mã toàn khối \\<40ms → unlink file tạm."
@@ -641,10 +767,8 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱 Khởi chạy Rust Core Lightweight Mode (chỉ nạp module Cryptography) để kìm hãm RAM footprint < 10MB dưới ngưỡng an toàn NSE.",
-                        "📱 Thiết lập cơ chế Shared App Group đồng bộ xuyên suốt cơ cấu SQLite giữa tiến trình NSE và Main App.",
-                        "📱 Gán cờ is_vectorized đánh dấu phân luồng dữ liệu chờ ưu tiên xử lý AI.",
-                        "📱 Lắng nghe trigger BGProcessingTask để thực thi quá trình batch-indexing âm thầm khi thiết bị ở trạng thái nhàn rỗi (idle)."
+                        "📱 Pha 1 — Write (NSE, realtime): Khởi chạy Rust Core Lightweight Mode (chỉ nạp module Cryptography) để kìm hãm RAM footprint < 10MB dưới ngưỡng an toàn NSE. Chỉ ghi Blob vào inbox.sqlite với is_indexed = false. Tuyệt đối không gọi bất kỳ FTS5 API nào.",
+                        "📱 Pha 2 — Index (Main App, deferred): Thiết lập cơ chế Shared App Group đồng bộ SQLite giữa NSE và Main App. Gán cờ is_vectorized đánh dấu dữ liệu chờ AI. Lắng nghe trigger BGProcessingTask để batch-index âm thầm khi thiết bị idle, với Circuit Breaker tự Suspend() khi RAM > 80%."
                       ]
                     }
                   ],

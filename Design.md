@@ -81,13 +81,15 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)
 
 ### Mesh Mode
 
-- Background: `#0F172A`
-- Glass: blur 20px, dark navy
-- Text sáng: `#E2E8F0`
-- Radar pulse animation trên Logo
-- Banner top: `"Mesh Active – 12 nodes connected"`
+> ⚠️ **Adaptive UI Degradation (Chống ccan pin):** Khi kích hoạt Mesh Mode, Engine Glassmorphism PHẢI tự động tắt. Quy tắc bắt buộc: Khi biến `--mode: mesh` được set, toàn bộ `backdrop-filter`, `box-shadow`, và CSS `animation` vô điều kiện phải bị disable.
 
-**Transition:** `fade 0.3s`
+- **Background:** `#0F172A` solid (OLED Black — tắt pixel cưỡng bức, không GPU composite layer)
+- **Glass:** `backdrop-filter: none` — thay bằng mã màu phẳng (Flat Dark) `rgba(255,255,255,0.06)` không blur
+- **Text sáng:** `#E2E8F0`
+- **Radar — Event-driven SVG** (không dùng CSS loop): Biểu tượng radar là SVG tĩnh, chỉ thay đổi opacity (`0.3 → 1.0 → 0.3`) khi Loo iRust Core dispatch tín hiệu `MESH_PACKET_RECEIVED`. Không có `setInterval` hay `animation: pulse infinite`.
+- **Banner top:** `"Mesh Active – N nodes connected"` (cập nhật mỗi lần node join/leave, không animate liên tục)
+
+**Transition:** `fade 0.1s` (rút ngắn từ 0.3s để giảm GPU frame render khi chuyển sang Mesh Mode)
 
 ---
 
@@ -101,7 +103,7 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)
 | Pin .tapp to Rail | Slide-down 0.2s, fade-in |
 | Panel open (Info, Smart Action) | Slide từ phải 0.25s |
 | Hover icon (Rail) | Scale 1.05, highlight 5% — 0.1s |
-| Mesh radar pulse | CSS loop animation, interval 2s |
+| Mesh radar pulse | Event-driven SVG opacity change (Rust dispatch `MESH_PACKET_RECEIVED`) |
 | File loading | BlurHash → fade-in 0.3s |
 | Loading spinner | 60fps SVG spin |
 | Toast notification | Slide từ top-right, auto dismiss 3s |

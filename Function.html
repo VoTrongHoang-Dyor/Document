@@ -368,6 +368,7 @@
 <li>Thiết lập ban đầu với <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KMS Bootstrap</code>, trong đó Admin phải quản lý <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Master Key</code> (ví dụ: in ra giấy hoặc lưu file <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.terakey</code>) để tránh thảm họa "Zero-Access".</li>
 <li>Phát hành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Invite Token</code> (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Epoch Rotation</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Remote Wipe</code> (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.</li>
 <li>Nắm giữ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise Escrow Key</code> (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.</li>
+<li><strong>Thu hồi & Cấp lại Định danh (Social Escrow Fallback):</strong> Khi nhân viên mất thiết bị mà Server đang sập, Admin có thể — khi Server trở lại — Revoke <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> cũ và kích hoạt Re-provision qua SCIM 2.0 để cấp định danh mới cho thiết bị thay thế.</li>
 </ul>
 <ul>
 <li><strong>Thiết lập Chính sách Bảo mật (OPA Policy & DLP):</strong></li>
@@ -400,6 +401,8 @@
 <li><strong>Làm việc Ngoại tuyến & Mạng Lưới (Mesh/Offline-First):</strong></li>
 <li>Chủ động kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct khi hệ thống mất Internet để tiếp tục nhắn tin khẩn cấp.</li>
 <li>Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường hoàn toàn không có mạng LAN hay Wi-Fi Router.</li>
+<li><strong>Kích hoạt / Hủy Social Escrow (Phân mảnh khóa):</strong> Vào Settings → Security → Social Escrow để phân mảnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> bằng Shamir 3-of-5, chọn 3-5 đồng nghiệp tin cậy để giữ mảnh Key. Có thể thu hồi bất kỳ lúc nào.</li>
+<li><strong>Phê duyệt / Từ chối BLE SOS Recovery:</strong> Khi nhận Toast thông báo đồng nghiệp yêu cầu phục hồi khóa, xác nhận bằng Biometrics để gửi lại mảnh Key từ Secure Enclave. Hoặc từ chối với 1-tap.</li>
 </ul>
 <ul>
 <li><strong>Quản lý Không gian làm việc và File (TeraVault):</strong></li>
