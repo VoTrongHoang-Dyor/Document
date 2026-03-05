@@ -438,6 +438,52 @@
                     "📱💻🖥️ Lazy UI Hydration (Lazy Sync): Thay vì nạp toàn phần, Lõi Rust chỉ cấp phát 20 tin nhắn gần nhất chuyển thẳng qua màn hình qua con trỏ bộ nhớ (Memory Pointer). Phần còn lại sẽ được kéo dãn tải thông qua cơ chế cuộn động (Infinite Scroll).",
                     "📱💻🖥️ Control Plane Signaling (MERGE_COMPLETE): Không dùng Bridge để đẩy dữ liệu thô (raw data). Ngay sau khi batching xuống disk xong, Lõi bắn tín hiệu sự kiện siêu nhẹ MERGE_COMPLETE qua Control Plane. UI nhận tín hiệu và tự chủ động query trực tiếp dữ liệu mới, loại bỏ hoàn toàn JSON rác trên IPC."
                   ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "618-hiệu-suất-truyền-dữ-liệu-an-toàn-sang-sandbox-read-only-memory-handoff",
+              "level": 3,
+              "heading": "6.18 Hiệu suất Truyền Dữ liệu An toàn Sang Sandbox (Read-Only Memory Handoff)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Lõi Rust giải mã hộ Sandbox, nhưng nếu chép đè dữ liệu cục bộ sang môi trường Sandbox qua cầu giao tiếp thông thường (Base64 / JSON) sẽ tốn kém RAM gấp đôi và làm chậm quá trình render."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 JSI C++ Native Pointer (Đâm thẳng luồng nhận): Trên môi trường Mobile (iOS/Android), dữ liệu sau khi giải mã được truyền thẳng vào luồng nhận của Sandbox thông qua Native Pointer (JSI). Bỏ qua hoàn toàn JavaScript Bridge, loại bỏ chi phí Serialization.",
+                    "💻🖥️ SharedArrayBuffer mmap Vật lý (Zero-Copy 500MB/s): Trên Desktop, Lõi Rust cấp phát vùng nhớ mmap vật lý và chia sẻ quyền truy cập thông qua SharedArrayBuffer cho .tapp. Thông lượng đạt ngưỡng ~500MB/s mà không tốn công chép (copy) byte nào sang heap của V8 Engine.",
+                    "📱💻🖥️ Decrypted Ephemeral Buffer Cờ PROT_READ: Để ngăn chặn .tapp chọc ngoáy (mutate) làm hỏng dữ liệu gốc hoặc tiêm mã độc thực thi ngược lại Lõi Rust, vùng nhớ đệm giao lại cho Sandbox được kernel thiết lập tĩnh cờ PROT_READ. Mọi hành vi ghi đè (Write) hay thực thi (Execute) sẽ lập tức bị OS ném SIGSEGV (Segmentation Fault) và chém chết Sandbox."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "619-rào-cản-chính-sách-wx-trên-ios-wasm-interpreter-aot-data-centric-execution",
+              "level": 3,
+              "heading": "6.19 Rào cản Chính sách W^X trên iOS (WASM Interpreter & AOT Data-Centric Execution)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Hệ điều hành iOS áp đặt chính sách W^X (Write XOR Execute) cực kỳ hà khắc: một vùng nhớ không bao giờ được phép vừa Ghi vừa Thực thi. Máy ảo WASM thông thường đòi hỏi JIT (Just-In-Time) compilation liên tục ghi mã máy mới vào RAM rồi thực thi — dẫn đến việc iOS lập tức crash app."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 WASM Interpreter Mode (Thông dịch phi JIT): Triển khai động cơ WASM dưới chế độ Thông dịch (Interpreter) hoàn toàn thay vì Biên dịch trực tiếp (JIT) trên màn chạy. Logic của .tapp được đọc và phân tích dưới dạng dữ liệu tĩnh, giúp lách qua khe cửa W^X của Apple một cách hợp lệ mà không vi phạm nguyên tắc bảo mật.",
+                    "📱 Ahead-of-Time (AOT) Compilation Nạp sẵn: Đối với những core logic cực kỳ nặng của .tapp, ta đóng gói và biên dịch sẵn mã tĩnh (AOT compiler) từ giai đoạn build app. Giữ hiệu suất thực thi ngang tầm Native ở các tác vụ lõi mà WASM Interpreter làm quá chậm.",
+                    "📱 JSI HostObject Phân rã Memory Domain: Sử dụng HostObject của kiến trúc React Native JSI để cô lập hoàn toàn Vùng nhớ Dữ liệu (Data Memory) và Vùng mã Tuyến lệnh (Executable Memory). Đảm bảo không có bất kỳ vector nào có thể nhồi shellcode thông qua đầu vào dữ liệu để tấn công Lõi Rust."
+                  ]
                 },
                 {
                   "type": "paragraph",

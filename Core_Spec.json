@@ -2228,6 +2228,98 @@
               "subsections": []
             },
             {
+              "id": "515-split-brain-đa-cấp-và-tụt-hậu-epoch-causal-fast-forward-frontier-discovery",
+              "level": 3,
+              "heading": "5.15 Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Khi mạng tách làm nhiều đảo (Split-brain), mỗi đảo tiến hóa state DAG và xoay khóa MLS Epoch độc lập. Khi nối lại, các node bị tụt hậu quá sâu không thể giải mã lịch sử chặn giữa và phân xử xung đột."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ Gossip Protocol Lan truyền Vector Clock (Frontier Discovery): Các node liên tục trao đổi Vector Clock qua giao thức Gossip để nhận diện \"Frontier\" (biên giới cập nhật mới nhất) của các hòn đảo mạng.",
+                    "📱💻🖥️ Xác định Hash_Frontier Cao nhất: Thông qua việc so sánh độ ưu tiên của Hybrid Logical Clocks (HLC) giữa các đảo, hệ thống tìm ra Hash_Frontier mang Vector Clock trội nhất làm mốc hội tụ.",
+                    "📱💻🖥️ Cryptographic Fast-Forward nhảy vọt Epoch N+2: Cho phép các node bị tụt hậu (từ Epoch N-k) bỏ qua việc giải mã tuần tự từng tin nhắn chặn giữa. Thay vào đó, node tái đồng bộ DAG state mới nhất (Fast-Forward), sau đó trực tiếp hấp thụ Update_Path của MLS TreeKEM để cập nhật ngay lập tức lên Epoch hiện tại (N+2)."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "516-phân-nhánh-dữ-liệu-ghost-merge-tie-breaker-v2",
+              "level": 3,
+              "heading": "5.16 Phân nhánh Dữ liệu Ghost Merge (Tie-Breaker V2)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Quá trình merge hai nhánh DAG khổng lồ (Ví dụ: Nhánh 1 từ Desktop, Nhánh 2 từ Mobile) đòi hỏi năng lực tính toán cực lớn. Giao phó cho 1 node yếu có thể làm OOM toàn bộ tiến trình."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ Tie-Breaker Hash Election (Bầu Leader V2): Thay vì bầu 1 leader duy nhất cho toàn mạng, Tie-Breaker V2 dùng thuật toán BLAKE3 deterministic để bầu chọn cục bộ giữa 2 nhánh đang merge. Node chịu tải sẽ là node có năng lực phần cứng phù hợp nhất theo phân bổ Hash.",
+                    "📱💻🖥️ Deterministic Merge (Sáp nhập Nhánh N & N+2): Thuật toán tự động sáp nhập Nhánh 1 (Epoch N+2) và Nhánh 2 (Epoch N) dựa trên quan hệ nhân quả (causality) của đồ thị DAG, loại bỏ hoàn toàn các event trùng lặp (Idempotent Merge).",
+                    "💻🖥️ Rayon Thread Pool Xử lý Đa luồng: Phân rã tiến trình duyệt đồ thị DAG và tính toán HLC conflict resolution xuống Thread Pool của Rayon. Giúp tận dụng 100% tài nguyên CPU đa nhân trên Desktop/Server, tránh nghẽn luồng chính (Main Event Loop) của Lõi Rust."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "517-bảo-toàn-tính-vẹn-toàn-audit-trail-append-only-immutable-hash-chain",
+              "level": 3,
+              "heading": "5.17 Bảo toàn Tính vẹn toàn Audit Trail (Append-Only Immutable Hash Chain)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Các cuộc gộp nhánh DAG (merge) thường phải tổ chức lại lịch sử. Kẻ tấn công có thể lợi dụng lúc merge để chèn, xóa hoặc thay đổi (rollback) nhật ký thao tác (Audit Log) nhằm che giấu dấu vết."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ Append-Only Tuyệt đối không Rollback: Mọi sự kiện (Tin nhắn, Xóa, Sửa, Rời nhóm, Đổi quyền) đều là các mắt xích gắn chặt vào chuỗi băm (Hash Chain) một chiều. Cơ chế Append-Only cấm tuyệt đối việc rollback hay chỉnh sửa dữ liệu quá khứ.",
+                    "📱💻🖥️ Cấu trúc DAG Tham chiếu Phân nhánh (Tombstone References): Các phân nhánh đứt gãy hoặc sự kiện bị xóa không bao giờ bị xóa bỏ vật lý khỏi DB ngay lập tức. Chúng được lưu dưới dạng các nút tham chiếu mới (Tombstone Stub) móc nối vào DAG, bảo toàn hoàn hảo đường đi của dữ liệu.",
+                    "📱💻🖥️ Byzantine Fault Tolerance Hồi phục Frontier Hợp lệ: Mạng duy trì một \"Frontier\" hợp lệ và có khả năng tự chữa lành (Self-healing). Mọi thao tác dối trá bẻ cong lịch sử sẽ lập tức bị mạng lật tẩy và reject thông qua việc xác thực bắt buộc bằng chữ ký Ed25519 của tác giả trên từng mắt xích."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "518-chống-rò-rỉ-company-key-qua-wasm-sandbox-off-sandbox-decryption",
+              "level": 3,
+              "heading": "5.18 Chống Rò rỉ `Company_Key` qua WASM Sandbox (Off-Sandbox Decryption)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Mini-App (.tapp) chạy trong WASM Sandbox là mã nguồn bên ngoài (3rd party). Nếu cấp thẳng `Company_Key` vào Sandbox để Mini-App tự giải mã Data, mã độc có thể lén lút tuồn Key ra ngoài qua các API fetch ngầm."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "💻🖥️ mlock() Ngăn chặn Swap xuống Đĩa: Lõi Rust ghim cứng (pin) vùng nhớ chứa plaintext Key vào RAM vật lý bằng lệnh syscall mlock(), chống lại cơ chế Paging của OS lén ghi tạm Key xuống ổ cứng (nơi Malware dễ dàng rà quét).",
+                    "📱💻🖥️ OPA Policy Engine Đánh giá Quyền truy cập: Lõi Rust chặn toàn bộ quyền tự giải mã của .tapp. Mọi yêu cầu truy xuất dữ liệu từ Sandbox phải đi qua OPA (Open Policy Agent). OPA đối chiếu Manifest của .tapp với Data Classification trước khi Lõi Rust đứng ra giải mã hộ.",
+                    "📱💻🖥️ ZeroizeOnDrop (RAII) Ghi đè 0x00: Ngay sau khi Lõi Rust giải mã xong vùng dữ liệu được cấp phép, mọi biến nhớ chứa Plaintext Key dùng trong phiên đó sẽ tự động kích hoạt zeroize (hủy diệt bằng chuỗi số 0x00) ngay khoảnh khắc ra khỏi scope, xóa sạch tàn dư khỏi RAM."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
               "id": "44-hybrid-pq-kem-kyber768-điểm-neo-lượng-tử",
               "level": 3,
               "heading": "4.4 Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử",
