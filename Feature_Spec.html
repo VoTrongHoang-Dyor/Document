@@ -386,7 +386,7 @@
 <a href="#8-large-file-handling-advanced-sync" class="nav-link" style="padding-left:0.8rem;">8. Large File Handling & Advanced Sync</a>
 <a href="#81-xử-lý-file-khổng-lồ-mmap-blake3-segmented-merkle-local-http-streaming" class="nav-link" style="padding-left:0.8rem;">8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Local HTTP Streaming</a>
 <a href="#82-đồng-bộ-crdt-bằng-hybrid-logical-clocks-hlc-khi-offline" class="nav-link" style="padding-left:0.8rem;">8.2 Đồng bộ CRDT bằng Hybrid Logical Clocks (HLC) — Khi Offline</a>
-<a href="#83-teravault-vfs-kéo-thả-cas-ref-mapping" class="nav-link" style="padding-left:0.8rem;">8.3 TeraVault VFS — Kéo thả (cas_ref mapping)</a>
+<a href="#83-teravault-vfs-quản-lý-thư-mục-và-sao-chép-file-không-tốn-bộ-nhớ" class="nav-link" style="padding-left:0.8rem;">8.3 TeraVault VFS — Quản lý thư mục và Sao chép file không tốn bộ nhớ</a>
 <a href="#84-cas-hash-dedup-trong-offline-mesh" class="nav-link" style="padding-left:0.8rem;">8.4 CAS_Hash Dedup trong Offline Mesh</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
@@ -804,6 +804,12 @@
 <li>📱💻🖥️ Bổ sung cột <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">extended_data</code> kiểu BLOB/JSONB đóng vai trò thùng chứa linh hoạt cho các thuộc tính chưa được định nghĩa trong Schema hiện tại.</li>
 <li>📱💻🖥️ Ban hành quy trình <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Deferred Migration</code> sử dụng script <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ALTER TABLE</code> kết hợp trích xuất dữ liệu từ JSON ngầm để tái cấu trúc khối dữ liệu sau mỗi đợt nâng cấp OS.</li>
 <li>📱💻🖥️ Vận hành hệ thống đồng bộ CRDT Event Log kết hợp Hybrid Logical Clocks (HLC) để giữ vững tính nhân quả chặt chẽ bất chấp sự chênh lệch phiên bản giữa các thiết bị.</li>
+</ul>
+<h4 id="tìm-kiếm-toàn-văn-search-bảo-toàn-e2ee">Tìm kiếm toàn văn (Search) bảo toàn E2EE</h4>
+<ul>
+<li>📱 <strong>Hybrid Full-Text Search (FTS) Indexing:</strong> Kích hoạt SQLite FTS5 để lập chỉ mục (indexing) trọn vẹn dải metadata tĩnh ngay tại không gian cục bộ (Local) của thiết bị.</li>
+<li>☁️ Khai thác Engine PostgreSQL FTS (tsvector) chuyên trách quản lý và phân luồng chuỗi chỉ mục rải rác tập trung hoàn toàn tại hệ thống kho Server trung tâm.</li>
+<li>📱 Ứng dụng cơ chế mù Blind Search kết hợp thuật toán băm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HMAC-SHA256</code> để truy vấn tìm kiếm ngầm định mà tuyệt đối không rò rỉ từ khóa nguyên bản.</li>
 </ul>
 <h4 id="kiến-trúc-sqlcipher-backed-hybrid-virtual-tables-lưu-trữ-tìm-kiếm-hỗn-hợp-e2ee">Kiến trúc SQLCipher-backed Hybrid Virtual Tables (Lưu trữ Tìm kiếm Hỗn hợp E2EE)</h4>
 <ul>
@@ -1350,6 +1356,12 @@
 <li>📱 Quản trị vòng đời Fixed-Size Ring Buffer (2MB/4MB) cấp phát tĩnh tại ngăn xếp RAM không gian người dùng (User-space).</li>
 <li>📱 Tiêm cơ chế catch lỗi văng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EIO/EPERM</code> để thực thi Graceful Abort và WAL Rollback ngay tích tắc khi thiết bị khóa màn hình (Data Protection Lock).</li>
 </ul>
+<h4 id="tối-ưu-hóa-truy-xuất-tệp-tin-hạng-nặng-pipelined-segmented-merkle-streaming">Tối ưu hóa truy xuất tệp tin hạng nặng (Pipelined Segmented Merkle Streaming)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Xác thực Phân mảnh Hiện đại:</strong> Chia nhỏ file dung lượng khổng lồ thành nhiều <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SegmentedMerkleBlock</code> để phân rã tiến trình xác thực tệp từng phần, triệt tiêu viễn cảnh đóng băng (Freeze) giao diện UI.</li>
+<li>📱💻🖥️ <strong>Cơ chế Lazy-Load:</strong> Kích hoạt thuộc tính tải trễ tĩnh (Lazy-load) chỉ tự động phân phát gói tin dữ liệu đúng vào thời điểm phát sinh yêu cầu truy xuất thực tế từ bộ nhớ.</li>
+<li>📱 Cắm chốt hệ thống giải mã thời gian thực (On-the-fly) luân chuyển ngầm qua chốt Local HTTP Server ẩn danh để phát trực tiếp nội dung truyền thông đa phương tiện mượt mà.</li>
+</ul>
 <h4 id="blake3-segmented-merkle-tree-xác-thực-chunk-không-freeze-ui">BLAKE3 Segmented Merkle Tree — Xác thực Chunk không Freeze UI</h4>
 <ul>
 <li>📱💻🖥️ <strong>Pipelined Segmented Merkle:</strong> Chia file thành Macro-Block 64MB. Rust băm BLAKE3 Macro-Block #1 (&lt;50ms) → gửi Root Hash qua Control Plane → nhồi chunks vào Data Plane → đồng thời băm Macro-Block #2. <strong>O(1) Initial Latency</strong> bất kể kích thước file.</li>
@@ -1406,16 +1418,19 @@
 <li>⚠️ <strong>RAM Circuit Breaker:</strong> Tín hiệu CHOKE tự động phân rã lưới Mesh, ngăn chặn nạp dữ liệu vào bộ đệm Out-of-Order khi RAM vượt ngưỡng an toàn (Ví dụ: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">8MB Buffer / 24MB Limit</code> trên iOS NSE) để tránh Jetsam OOM-Kill.</li>
 <li>⚠️ CRDT Write Local-First &lt; 5ms. Garbage Collection Epoch &lt; 50ms. RAM Buffer Out-of-Order Event &lt; 8MB.</li>
 </ul>
-<h3 id="83-teravault-vfs-kéo-thả-cas-ref-mapping">8.3 TeraVault VFS — Kéo thả (cas_ref mapping)</h3>
-<h4 id="nguyên-lý-không-nhân-bản-file">Nguyên lý: Không nhân bản file</h4>
+<h3 id="83-teravault-vfs-quản-lý-thư-mục-và-sao-chép-file-không-tốn-bộ-nhớ">8.3 TeraVault VFS — Quản lý thư mục và Sao chép file không tốn bộ nhớ</h3>
+<h4 id="virtual-file-system-vfs-zero-copy-pointer-mapping">Virtual File System (VFS) Zero-Copy Pointer Mapping</h4>
 <ul>
-<li>💻🖥️ TeraVault <strong>không copy file</strong> — toàn bộ cây thư mục ảo là bảng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings</code> (pointer <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code> → blob vật lý duy nhất trên Cluster).</li>
-</ul>
-<h4 id="drag-drop-chat-teravault-folder">Drag & Drop — Chat → TeraVault Folder</h4>
-<ul>
-<li>💻🖥️ Frontend gửi IPC: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault::pin_file(cas_ref, target_folder_id, display_name)</code> → Rust tạo thêm bản ghi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings</code> trỏ về cùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code>. File xuất hiện ở thư mục đích <strong>mà không bị sao chép</strong>.</li>
+<li>📱💻🖥️ <strong>Ánh xạ Không gian Ảo:</strong> Duy trì bảng ánh xạ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings</code> liên kết trực tiếp con trỏ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code> với siêu dữ liệu metadata logic để tránh nhân bản khối dữ liệu.</li>
+<li>📱💻🖥️ <strong>IPC Pinning Command:</strong> Triển khai lệnh IPC siêu nhẹ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault::pin_file</code> trực tiếp thực thi thao tác ghim file phi vật lý vào cấu trúc cây thư mục.</li>
+<li>📱💻🖥️ <strong>Hiệu năng $O(1)$:</strong> Đảm bảo tốc độ xử lý $O(1)$ cho mọi thao tác cốt lõi gồm Copy, Move và Pin với độ trễ phản hồi thấp dưới ngưỡng hẹp 5ms.</li>
 <li>💻🖥️ E2EE không bị ảnh hưởng — <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">File_Key</code> vẫn nguyên vẹn. TeraVault chỉ quản lý metadata.</li>
-<li>📱 <strong>Auto-Mapping:</strong> Khi file gửi vào Channel → Rust Core tự tạo bản ghi ánh xạ vào thư mục mặc định tương ứng Channel.</li>
+</ul>
+<h4 id="tự-động-phân-loại-tài-liệu-auto-classification">Tự động phân loại tài liệu (Auto-Classification)</h4>
+<ul>
+<li>📱💻 <strong>Context-Aware Auto-Mapping Topology:</strong> Thiết lập cơ chế tự động ánh xạ thông minh định tuyến file thẳng từ luồng Chat nguyên bản vào Thư mục Cấp 1 (Auto) tương ứng với tên định danh của Channel.</li>
+<li>📱💻🖥️ Duy trì toàn vẹn cấu trúc cây thư mục logic đóng vai trò độc lập, không xâm lấn hay đụng độ với tầng cơ sở mã hóa vật lý ở cấp thấp.</li>
+<li>📱💻🖥️ Tích hợp hệ thống Tagging đánh nhãn động lực tự động được lập chỉ mục (index) để khuếch đại tốc độ rà quét và truy vấn luồng metadata.</li>
 </ul>
 <h4 id="cấu-trúc-folder">Cấu trúc Folder</h4>
 <div class="comparison-table"><table>

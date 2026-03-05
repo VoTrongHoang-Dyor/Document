@@ -319,6 +319,12 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 - 📱💻🖥️ Ban hành quy trình `Deferred Migration` sử dụng script `ALTER TABLE` kết hợp trích xuất dữ liệu từ JSON ngầm để tái cấu trúc khối dữ liệu sau mỗi đợt nâng cấp OS.
 - 📱💻🖥️ Vận hành hệ thống đồng bộ CRDT Event Log kết hợp Hybrid Logical Clocks (HLC) để giữ vững tính nhân quả chặt chẽ bất chấp sự chênh lệch phiên bản giữa các thiết bị.
 
+#### Tìm kiếm toàn văn (Search) bảo toàn E2EE
+
+- 📱 **Hybrid Full-Text Search (FTS) Indexing:** Kích hoạt SQLite FTS5 để lập chỉ mục (indexing) trọn vẹn dải metadata tĩnh ngay tại không gian cục bộ (Local) của thiết bị.
+- ☁️ Khai thác Engine PostgreSQL FTS (tsvector) chuyên trách quản lý và phân luồng chuỗi chỉ mục rải rác tập trung hoàn toàn tại hệ thống kho Server trung tâm.
+- 📱 Ứng dụng cơ chế mù Blind Search kết hợp thuật toán băm `HMAC-SHA256` để truy vấn tìm kiếm ngầm định mà tuyệt đối không rò rỉ từ khóa nguyên bản.
+
 #### Kiến trúc SQLCipher-backed Hybrid Virtual Tables (Lưu trữ Tìm kiếm Hỗn hợp E2EE)
 
 - 📱💻🖥️ Sử dụng SQLCipher với chuẩn mã hóa AES-256-GCM bọc toàn bộ tệp `.sqlite` duy nhất.
@@ -773,6 +779,12 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 - 📱 Quản trị vòng đời Fixed-Size Ring Buffer (2MB/4MB) cấp phát tĩnh tại ngăn xếp RAM không gian người dùng (User-space).
 - 📱 Tiêm cơ chế catch lỗi văng `EIO/EPERM` để thực thi Graceful Abort và WAL Rollback ngay tích tắc khi thiết bị khóa màn hình (Data Protection Lock).
 
+#### Tối ưu hóa truy xuất tệp tin hạng nặng (Pipelined Segmented Merkle Streaming)
+
+- 📱💻🖥️ **Xác thực Phân mảnh Hiện đại:** Chia nhỏ file dung lượng khổng lồ thành nhiều `SegmentedMerkleBlock` để phân rã tiến trình xác thực tệp từng phần, triệt tiêu viễn cảnh đóng băng (Freeze) giao diện UI.
+- 📱💻🖥️ **Cơ chế Lazy-Load:** Kích hoạt thuộc tính tải trễ tĩnh (Lazy-load) chỉ tự động phân phát gói tin dữ liệu đúng vào thời điểm phát sinh yêu cầu truy xuất thực tế từ bộ nhớ.
+- 📱 Cắm chốt hệ thống giải mã thời gian thực (On-the-fly) luân chuyển ngầm qua chốt Local HTTP Server ẩn danh để phát trực tiếp nội dung truyền thông đa phương tiện mượt mà.
+
 #### BLAKE3 Segmented Merkle Tree — Xác thực Chunk không Freeze UI
 
 - 📱💻🖥️ **Pipelined Segmented Merkle:** Chia file thành Macro-Block 64MB. Rust băm BLAKE3 Macro-Block #1 (<50ms) → gửi Root Hash qua Control Plane → nhồi chunks vào Data Plane → đồng thời băm Macro-Block #2. **O(1) Initial Latency** bất kể kích thước file.
@@ -830,17 +842,20 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 - ⚠️ **RAM Circuit Breaker:** Tín hiệu CHOKE tự động phân rã lưới Mesh, ngăn chặn nạp dữ liệu vào bộ đệm Out-of-Order khi RAM vượt ngưỡng an toàn (Ví dụ: `8MB Buffer / 24MB Limit` trên iOS NSE) để tránh Jetsam OOM-Kill.
 - ⚠️ CRDT Write Local-First < 5ms. Garbage Collection Epoch < 50ms. RAM Buffer Out-of-Order Event < 8MB.
 
-### 8.3 TeraVault VFS — Kéo thả (cas_ref mapping)
+### 8.3 TeraVault VFS — Quản lý thư mục và Sao chép file không tốn bộ nhớ
 
-#### Nguyên lý: Không nhân bản file
+#### Virtual File System (VFS) Zero-Copy Pointer Mapping
 
-- 💻🖥️ TeraVault **không copy file** — toàn bộ cây thư mục ảo là bảng `vault_file_mappings` (pointer `cas_ref` → blob vật lý duy nhất trên Cluster).
-
-#### Drag & Drop — Chat → TeraVault Folder
-
-- 💻🖥️ Frontend gửi IPC: `vault::pin_file(cas_ref, target_folder_id, display_name)` → Rust tạo thêm bản ghi `vault_file_mappings` trỏ về cùng `cas_ref`. File xuất hiện ở thư mục đích **mà không bị sao chép**.
+- 📱💻🖥️ **Ánh xạ Không gian Ảo:** Duy trì bảng ánh xạ `vault_file_mappings` liên kết trực tiếp con trỏ `cas_ref` với siêu dữ liệu metadata logic để tránh nhân bản khối dữ liệu.
+- 📱💻🖥️ **IPC Pinning Command:** Triển khai lệnh IPC siêu nhẹ `vault::pin_file` trực tiếp thực thi thao tác ghim file phi vật lý vào cấu trúc cây thư mục.
+- 📱💻🖥️ **Hiệu năng $O(1)$:** Đảm bảo tốc độ xử lý $O(1)$ cho mọi thao tác cốt lõi gồm Copy, Move và Pin với độ trễ phản hồi thấp dưới ngưỡng hẹp 5ms.
 - 💻🖥️ E2EE không bị ảnh hưởng — `File_Key` vẫn nguyên vẹn. TeraVault chỉ quản lý metadata.
-- 📱 **Auto-Mapping:** Khi file gửi vào Channel → Rust Core tự tạo bản ghi ánh xạ vào thư mục mặc định tương ứng Channel.
+
+#### Tự động phân loại tài liệu (Auto-Classification)
+
+- 📱💻 **Context-Aware Auto-Mapping Topology:** Thiết lập cơ chế tự động ánh xạ thông minh định tuyến file thẳng từ luồng Chat nguyên bản vào Thư mục Cấp 1 (Auto) tương ứng với tên định danh của Channel.
+- 📱💻🖥️ Duy trì toàn vẹn cấu trúc cây thư mục logic đóng vai trò độc lập, không xâm lấn hay đụng độ với tầng cơ sở mã hóa vật lý ở cấp thấp.
+- 📱💻🖥️ Tích hợp hệ thống Tagging đánh nhãn động lực tự động được lập chỉ mục (index) để khuếch đại tốc độ rà quét và truy vấn luồng metadata.
 
 #### Cấu trúc Folder
 

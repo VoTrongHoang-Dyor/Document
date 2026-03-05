@@ -1244,6 +1244,12 @@
 <li>📱💻🖥️ <strong>Crypto-Shredding:</strong> Thực hiện xóa Key Encryption Key (KEK) của DB cũ trong Secure Enclave/TPM, biến các byte còn sót lại thành dữ liệu rác không thể giải mã. Tuyệt đối không gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">VACUUM</code>.</li>
 <li>📱💻 <strong>Storage Ring-Buffer (TeraVault VFS):</strong> Pre-allocated blob (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TeraCache.blob</code> — 500MB Mobile, 5GB Desktop). Crypto-Shredding đánh dấu offset = <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FREE_SPACE</code>. File mới overwrite trực tiếp — Zero I/O Delete, Zero Wear-Leveling.</li>
 </ul>
+<h4 id="chống-trùng-lặp-dữ-liệu-vật-lý-storage-bloat">Chống trùng lặp dữ liệu vật lý (Storage Bloat)</h4>
+<ul>
+<li>☁️🗄️ <strong>Content-Addressable Storage (CAS) Deduplication:</strong> Khai thác mã băm BLAKE3 để định danh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CAS_Hash</code> nguyên bản của từng thực thể vật lý, ngăn chặn khởi tạo lại tài nguyên lưu trữ.</li>
+<li>☁️🗄️ Quản lý lưu trữ tập trung khối <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Encrypted_Blob</code> trên nền tảng Blind Storage (MinIO) dựa hoàn toàn trên chuỗi hash thay vì đường dẫn định tuyến tĩnh như hệ thống truyền thống.</li>
+<li>☁️🗄️ Vận hành cơ chế Deduplication tự động đối chiếu băm nhằm trực tiếp cắt giảm mạnh mẽ 40–60% dung lượng lưu trữ thực tế trên toàn bộ cụm Server.</li>
+</ul>
 <h4 id="memory-defense">Memory Defense</h4>
 <ul>
 <li>💻🖥️ <strong>Desktop/Server:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">VirtualLock()</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code>. Kiểm tra BitLocker/FileVault khi khởi động — từ chối nếu không bật.</li>

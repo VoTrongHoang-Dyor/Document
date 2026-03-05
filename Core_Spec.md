@@ -575,6 +575,12 @@
 - 📱💻🖥️ **Crypto-Shredding:** Thực hiện xóa Key Encryption Key (KEK) của DB cũ trong Secure Enclave/TPM, biến các byte còn sót lại thành dữ liệu rác không thể giải mã. Tuyệt đối không gọi `VACUUM`.
 - 📱💻 **Storage Ring-Buffer (TeraVault VFS):** Pre-allocated blob (`TeraCache.blob` — 500MB Mobile, 5GB Desktop). Crypto-Shredding đánh dấu offset = `FREE_SPACE`. File mới overwrite trực tiếp — Zero I/O Delete, Zero Wear-Leveling.
 
+#### Chống trùng lặp dữ liệu vật lý (Storage Bloat)
+
+- ☁️🗄️ **Content-Addressable Storage (CAS) Deduplication:** Khai thác mã băm BLAKE3 để định danh `CAS_Hash` nguyên bản của từng thực thể vật lý, ngăn chặn khởi tạo lại tài nguyên lưu trữ.
+- ☁️🗄️ Quản lý lưu trữ tập trung khối `Encrypted_Blob` trên nền tảng Blind Storage (MinIO) dựa hoàn toàn trên chuỗi hash thay vì đường dẫn định tuyến tĩnh như hệ thống truyền thống.
+- ☁️🗄️ Vận hành cơ chế Deduplication tự động đối chiếu băm nhằm trực tiếp cắt giảm mạnh mẽ 40–60% dung lượng lưu trữ thực tế trên toàn bộ cụm Server.
+
 #### Memory Defense
 
 - 💻🖥️ **Desktop/Server:** `VirtualLock()` / `mlock()`. Kiểm tra BitLocker/FileVault khi khởi động — từ chối nếu không bật.

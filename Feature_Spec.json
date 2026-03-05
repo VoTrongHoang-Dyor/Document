@@ -918,6 +918,22 @@
                   "subsections": []
                 },
                 {
+                  "id": "tìm-kiếm-toàn-văn-search-bảo-toàn-e2ee",
+                  "level": 4,
+                  "heading": "Tìm kiếm toàn văn (Search) bảo toàn E2EE",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Hybrid Full-Text Search (FTS) Indexing: Kích hoạt SQLite FTS5 để lập chỉ mục (indexing) trọn vẹn dải metadata tĩnh ngay tại không gian cục bộ (Local) của thiết bị.",
+                        "☁️ Khai thác Engine PostgreSQL FTS (tsvector) chuyên trách quản lý và phân luồng chuỗi chỉ mục rải rác tập trung hoàn toàn tại hệ thống kho Server trung tâm.",
+                        "📱 Ứng dụng cơ chế mù Blind Search kết hợp thuật toán băm HMAC-SHA256 để truy vấn tìm kiếm ngầm định mà tuyệt đối không rò rỉ từ khóa nguyên bản."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
                   "id": "kiến-trúc-sqlcipher-backed-hybrid-virtual-tables-lưu-trữ-tìm-kiếm-hỗn-hợp-e2ee",
                   "level": 4,
                   "heading": "Kiến trúc SQLCipher-backed Hybrid Virtual Tables (Lưu trữ Tìm kiếm Hỗn hợp E2EE)",
@@ -2114,6 +2130,22 @@
                   "subsections": []
                 },
                 {
+                  "id": "tối-ưu-hóa-truy-xuất-tệp-tin-hạng-nặng-pipelined-segmented-merkle-streaming",
+                  "level": 4,
+                  "heading": "Tối ưu hóa truy xuất tệp tin hạng nặng (Pipelined Segmented Merkle Streaming)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ Xác thực Phân mảnh Hiện đại: Chia nhỏ file dung lượng khổng lồ thành nhiều SegmentedMerkleBlock để phân rã tiến trình xác thực tệp từng phần, triệt tiêu viễn cảnh đóng băng (Freeze) giao diện UI.",
+                        "📱💻🖥️ Cơ chế Lazy-Load: Kích hoạt thuộc tính tải trễ tĩnh (Lazy-load) chỉ tự động phân phát gói tin dữ liệu đúng vào thời điểm phát sinh yêu cầu truy xuất thực tế từ bộ nhớ.",
+                        "📱 Cắm chốt hệ thống giải mã thời gian thực (On-the-fly) luân chuyển ngầm qua chốt Local HTTP Server ẩn danh để phát trực tiếp nội dung truyền thông đa phương tiện mượt mà."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
                   "id": "blake3-segmented-merkle-tree-xác-thực-chunk-không-freeze-ui",
                   "level": 4,
                   "heading": "BLAKE3 Segmented Merkle Tree — Xác thực Chunk không Freeze UI",
@@ -2269,36 +2301,39 @@
               ]
             },
             {
-              "id": "83-teravault-vfs-kéo-thả-cas-ref-mapping",
+              "id": "83-teravault-vfs-quản-lý-thư-mục-và-sao-chép-file-không-tốn-bộ-nhớ",
               "level": 3,
-              "heading": "8.3 TeraVault VFS — Kéo thả (cas_ref mapping)",
+              "heading": "8.3 TeraVault VFS — Quản lý thư mục và Sao chép file không tốn bộ nhớ",
               "content_blocks": [],
               "subsections": [
                 {
-                  "id": "nguyên-lý-không-nhân-bản-file",
+                  "id": "virtual-file-system-vfs-zero-copy-pointer-mapping",
                   "level": 4,
-                  "heading": "Nguyên lý: Không nhân bản file",
+                  "heading": "Virtual File System (VFS) Zero-Copy Pointer Mapping",
                   "content_blocks": [
                     {
                       "type": "list",
                       "data": [
-                        "💻🖥️ TeraVault không copy file — toàn bộ cây thư mục ảo là bảng vault_file_mappings (pointer cas_ref → blob vật lý duy nhất trên Cluster)."
+                        "📱💻🖥️ Ánh xạ Không gian Ảo: Duy trì bảng ánh xạ vault_file_mappings liên kết trực tiếp con trỏ cas_ref với siêu dữ liệu metadata logic để tránh nhân bản khối dữ liệu.",
+                        "📱💻🖥️ IPC Pinning Command: Triển khai lệnh IPC siêu nhẹ vault::pin_file trực tiếp thực thi thao tác ghim file phi vật lý vào cấu trúc cây thư mục.",
+                        "📱💻🖥️ Hiệu năng $O(1)$: Đảm bảo tốc độ xử lý $O(1)$ cho mọi thao tác cốt lõi gồm Copy, Move và Pin với độ trễ phản hồi thấp dưới ngưỡng hẹp 5ms.",
+                        "💻🖥️ E2EE không bị ảnh hưởng — File_Key vẫn nguyên vẹn. TeraVault chỉ quản lý metadata."
                       ]
                     }
                   ],
                   "subsections": []
                 },
                 {
-                  "id": "drag-drop-chat-teravault-folder",
+                  "id": "tự-động-phân-loại-tài-liệu-auto-classification",
                   "level": 4,
-                  "heading": "Drag & Drop — Chat → TeraVault Folder",
+                  "heading": "Tự động phân loại tài liệu (Auto-Classification)",
                   "content_blocks": [
                     {
                       "type": "list",
                       "data": [
-                        "💻🖥️ Frontend gửi IPC: vault::pin_file(cas_ref, target_folder_id, display_name) → Rust tạo thêm bản ghi vault_file_mappings trỏ về cùng cas_ref. File xuất hiện ở thư mục đích mà không bị sao chép.",
-                        "💻🖥️ E2EE không bị ảnh hưởng — File_Key vẫn nguyên vẹn. TeraVault chỉ quản lý metadata.",
-                        "📱 Auto-Mapping: Khi file gửi vào Channel → Rust Core tự tạo bản ghi ánh xạ vào thư mục mặc định tương ứng Channel."
+                        "📱💻 Context-Aware Auto-Mapping Topology: Thiết lập cơ chế tự động ánh xạ thông minh định tuyến file thẳng từ luồng Chat nguyên bản vào Thư mục Cấp 1 (Auto) tương ứng với tên định danh của Channel.",
+                        "📱💻🖥️ Duy trì toàn vẹn cấu trúc cây thư mục logic đóng vai trò độc lập, không xâm lấn hay đụng độ với tầng cơ sở mã hóa vật lý ở cấp thấp.",
+                        "📱💻🖥️ Tích hợp hệ thống Tagging đánh nhãn động lực tự động được lập chỉ mục (index) để khuếch đại tốc độ rà quét và truy vấn luồng metadata."
                       ]
                     }
                   ],

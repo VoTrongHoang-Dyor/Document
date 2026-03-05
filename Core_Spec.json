@@ -1627,6 +1627,22 @@
                   "subsections": []
                 },
                 {
+                  "id": "chống-trùng-lặp-dữ-liệu-vật-lý-storage-bloat",
+                  "level": 4,
+                  "heading": "Chống trùng lặp dữ liệu vật lý (Storage Bloat)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "☁️🗄️ Content-Addressable Storage (CAS) Deduplication: Khai thác mã băm BLAKE3 để định danh CAS_Hash nguyên bản của từng thực thể vật lý, ngăn chặn khởi tạo lại tài nguyên lưu trữ.",
+                        "☁️🗄️ Quản lý lưu trữ tập trung khối Encrypted_Blob trên nền tảng Blind Storage (MinIO) dựa hoàn toàn trên chuỗi hash thay vì đường dẫn định tuyến tĩnh như hệ thống truyền thống.",
+                        "☁️🗄️ Vận hành cơ chế Deduplication tự động đối chiếu băm nhằm trực tiếp cắt giảm mạnh mẽ 40–60% dung lượng lưu trữ thực tế trên toàn bộ cụm Server."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
                   "id": "memory-defense",
                   "level": 4,
                   "heading": "Memory Defense",
