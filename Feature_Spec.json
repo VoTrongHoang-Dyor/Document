@@ -344,6 +344,29 @@
                     "📱💻🖥️ Direct-to-Disk SQLite INSERT OR REPLACE (cold_state.db): Mỗi chunk được parse và ghi thẳng vào cold_state.db qua BEGIN IMMEDIATE TRANSACTION → INSERT OR REPLACE → COMMIT mà không đi qua in-memory buffer. WAL mode đảm bảo atomic write ngay cả khi process bị kill giữa chừng.",
                     "📱 Background Task Hydration (requestIdleCallback): Toàn bộ pipeline Stream Hydration chạy trong BGProcessingTask (iOS) / WorkManager (Android) với CPU budget 80ms/iteration. Nếu foreground app cần CPU → tự động Yield, tiếp tục ở iteration tiếp theo mà không mất dữ liệu nhờ WAL checkpoint."
                   ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "615-cross-platform-deterministic-byte-ordering-chống-sai-lệch-xác-thực-đa-nền-tảng",
+              "level": 3,
+              "heading": "6.15 Cross-Platform Deterministic Byte Ordering (Chống Sai lệch Xác thực Đa nền tảng)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** ARM (Mobile) dùng Little-Endian, x86 Server dùng Little-Endian nhưng network stack chuẩn Big-Endian — một trường `uint64` serialize khác nhau giữa nền tảng sẽ khiến Ed25519 signature xác thực fail mặc dù nội dung logic giống nhau, gây reject oan các packet hợp lệ."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ Deterministic Protobuf Serialization (Fixed Byte Order): Lõi Rust bắt buộc dùng Protobuf với field encoding chuẩn (varint Little-Endian, fixed64 Little-Endian theo spec proto3) cho tất cả cross-device payload. Nghiêm cấm dùng native u64::to_ne_bytes() (native-endian) trong bất kỳ struct nào giao tiếp cross-platform. CI pipeline tự động lint detect to_ne_bytes trong file mesh_*.rs.",
+                    "📱💻 Rust Core FFI (C++ / Dart) Unified Data Plane: Khi dữ liệu đi qua FFI boundary (Rust → C++ JSI / Dart FFI), Lõi Rust serialize thành &[u8] Protobuf binary — không giao tiếp qua raw struct pointer (tránh ABI struct padding khác nhau giữa compiler). C++/Dart nhận &[u8] và parse lại qua Protobuf client library riêng, đảm bảo cùng byte order.",
+                    "💻🖥️ CRC32 / AES-256-GCM Integrity Check: Mỗi cross-platform packet append CRC32(payload_bytes) — 4 bytes Little-Endian — ở cuối trước khi đóng gói AES-256-GCM. Receiver kiểm tra CRC32 trước khi verify Ed25519 signature, phát hiện sớm byte corruption do Endianness mismatch mà không tốn CPU cho asymmetric verify."
+                  ]
                 },
                 {
                   "type": "paragraph",

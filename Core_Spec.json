@@ -1768,6 +1768,52 @@
               "subsections": []
             },
             {
+              "id": "591-single-frame-binary-serialization-for-mesh-recovery-chống-phân-mảnh-ble-50",
+              "level": 3,
+              "heading": "5.9.1 Single-Frame Binary Serialization for Mesh Recovery (Chống Phân mảnh BLE 5.0)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** BLE 4.2 MTU tối đa 251 bytes buộc phải phân mảnh L2CAP nếu payload lớn hơn — gây mất gói, thứ tự sai và tăng overhead. Trong kịch cảnh khôi phục khẩn cấp (SOS Beacon, Social Escrow shard), mỗi byte thừa đều là rủi ro."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ Protobuf Binary Encoding (Không Metadata): Mọi Mesh Recovery payload (SOS Beacon, Welcome_Packet, Shun command) được serialize bằng Protobuf Binary (không phải JSON/CBOR) với schema tối giản — chỉ giữ các field bắt buộc. Ví dụ: một Social Escrow shard request chỉ ~80 bytes (Node_ID 16B + Epoch 8B + Signature 64B + padding), nằm gọn trong một BLE frame đơn.",
+                    "📱 Native BLE Extended Advertising (Zero Fragmentation): Trên thiết bị hỗ trợ BLE 5.0, Lõi Rust yêu cầu OS sử dụng Extended Advertising PDU (payload tối đa 255 bytes/frame, không cần L2CAP chunking) thay vì Legacy Advertising. Payload Recovery được nhét vào một PDU duy nhất → loại bỏ hoàn toàn xác suất mất mảnh.",
+                    "📱💻🖥️ Hardware-bound Ed25519 Signing (Secure Enclave / StrongBox): Mỗi Recovery frame được ký bằng Device_Identity_Key trực tiếp trong Secure Enclave/StrongBox — signature 64 bytes append vào cuối payload trước khi gửi. Receiver xác thực signature trước khi decode bất kỳ byte nào khác, ngăn frame giả mạo tiêu tốn CPU."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "592-zero-knowledge-metadata-masking-in-mesh-broadcast-chống-rò-rỉ-siêu-dữ-liệu-qua-sóng-vô-tuyến",
+              "level": 3,
+              "heading": "5.9.2 Zero-Knowledge Metadata Masking in Mesh Broadcast (Chống Rò rỉ Siêu dữ liệu qua Sóng vô tuyến)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Mọi BLE Advertising đều broadcast `Node_ID` hoặc `Device_ID` dưới dạng plaintext trong Manufacturer Specific Data — kẻ tấn công có thể thu thập traffic, map danh tính người dùng mà không cần bẻ mã hóa nội dung."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Blinded Device_ID (16-byte Physical Identifier): Thay vì dùng Device MAC hoặc Node_ID thật, Lõi Rust sinh một Blinded_ID = HMAC-SHA256(Device_Identity_Key, Epoch_Slot_Index)[0:16] — thay đổi mỗi 5 phút theo Epoch_Slot_Index. Kẻ quan sát ngoài không thể link hai Beacon từ cùng thiết bị giữa hai Epoch.",
+                    "📱💻🖥️ Curve25519 Identity Public Key Exchange: Khi hai thiết bị muốn xác thực lẫn nhau (không phải broadcast mở), Lõi Rust thực hiện ECDH Curve25519 One-Pass — trao đổi ephemeral public key qua BLE Scan Response, giải ECDH ra Shared_Secret, dùng làm channel key cho phiên L2CAP kế tiếp. Không bao giờ dùng static key trong giao tiếp Layer 2.",
+                    "📱 Sealed Sender Protocol for Mesh Signal Plane: Mọi CRDT event, Shun command, và SOS payload gửi qua Mesh được bọc trong Sealed Sender — receiver chỉ biết nội dung sau khi giải mã, không biết sender trước khi mở gói. Kẻ relay trung gian (Super Node) forward blindly mà không đọc được Node_ID của người gửi thật."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
               "id": "510-mesh-anti-spam-dos-resilience",
               "level": 3,
               "heading": "5.10 Mesh Anti-Spam & DoS Resilience",

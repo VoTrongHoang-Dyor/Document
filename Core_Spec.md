@@ -38,8 +38,6 @@
 - ☁️ **Fallback Admin (khi Server khả dụng trở lại):** Admin Console → User Management → `[Revoke Device_Key cũ]` + `[Re-provision]` → Lõi Rust cấp Identity mới qua SCIM 2.0.
 - 📱 **Bảo vệ chống lạm dụng:** Beacon BLE SOS phải được ký bởi chứng chỉ Enterprise CA hợp lệ. Đồng nghiệp chỉ thấy yêu cầu từ người trong cùng **organizational unit (OU)**. Mỗi `user_id` chỉ được phép phát SOS **1 lần/24h** để chống replay attack.
 
-
-
 | In-Scope | Out-of-Scope |
 |---|---|
 | Messaging E2EE (MLS IETF RFC 9420) | Lưu plaintext trên Server |
@@ -132,7 +130,6 @@
 - 📱💻 Đồng bộ mã băm (Hash) xuyên suốt mọi bản cập nhật JMM qua giao thức Gossip lan truyền trên toàn tuyến mạng Mesh.
 - 📱💻 Khóa chặt cờ No-Exception Rule buộc Lõi Rust đối soát đối xứng Hash của JMM với sổ cái chung trước thời khắc nạp module.
 
-
 #### Thực thi Mã độc trong Module Mật mã (WASM Capability-Based Sandboxing)
 
 > ⚠️ **Kiến trúc WASM Runtime Kép (Dual-Engine WASM):** iOS áp đặt chính sách `W^X` (Write XOR Execute) nghiêm cấm JIT Runtime. Lõi Rust PHẢI tự động phát hiện Platform và chọn Engine phù hợp.
@@ -157,8 +154,6 @@
 - 💻🖥️ Kích hoạt cờ `cranelift_nan_canonicalization` trong Wasmtime để chuẩn hóa mọi bit pattern của biến thể NaN hiểm hóc.
 - 📱💻🖥️ Vô hiệu hóa `relaxed_simd` và phần cứng SIMD để nhổ bỏ tận rễ các phép toán phụ thuộc vi kiến trúc vật lý.
 - 📱 Thực thi `js-flags` (`--no-wasm-simd`) qua JSI để đồng bộ cứng hành vi runtime chuẩn xác trên nền tảng Mobile.
-
-
 
 #### Dictator Choke-Point via Host-Binding Proxy (Sandbox Network Escape)
 
@@ -384,11 +379,13 @@
 - ☁️ Thỏa thuận trao đổi **Pre-shared Key (PSK)** phân mảnh qua `inventory.ini` thiết lập đường hầm xác thực nguyên thủy.
 
 #### Hardware-Attested mTLS Tunneling (Đường hầm mTLS Bootstrap)
+
 - 📱💻☁️ Thiết lập đường hầm mTLS hai chiều sử dụng Root CA doanh nghiệp đã ghim (pinned) trong Secure Enclave/TPM thiết bị Admin.
 - 📱💻☁️ Tích hợp cơ chế **Remote Attestation** (qua Apple App Attest / Android Play Integrity) để đảm bảo chỉ những thiết bị nguyên bản (không root/jailbreak) mới được quyền thiết lập kênh truyền tin với VPS.
 - 📱 Sử dụng mã QR **chỉ để truyền tải** cấu hình định tuyến (IP/Port). Tuyệt đối không chứa dữ liệu nhạy cảm hay Token bên trong QR code để khóa chặt rủi ro giả mạo OOB.
 
 #### Enclave-Bound Master Key (Hardware Pinning)
+
 - 📱💻🖥️ Master Key (`.terakey`) được sinh ra và gói gọn (wrapped) trực tiếp bên trong không gian Secure Enclave/StrongBox, tuyệt đối không bao giờ được phép export sang filesystem hay RAM của OS.
 - 📱 Yêu cầu **User Presence** (Biometric/PIN) mỗi khi cần ký giải mã Bootstrap Token, vô hiệu hóa việc sử dụng khóa tự động kể cả khi thiết bị đã được mở khóa.
 - 📱💻 Định danh chéo thiết bị thông qua Hardware-ID Binding để ràng buộc Master Key chỉ có hiệu lực duy nhất trên phần cứng thiết bị Admin chỉ định.
@@ -588,6 +585,7 @@
 - 📱 Cơ chế Opportunistic Tear-down ngắt kênh Data Plane ngay sau khi truyền tệp thành công nhằm bảo toàn năng lượng pin thiết bị.
 
 #### Shadow-Drop via System-level Steganography (Chống OPA chặn tố giác)
+
 - 📱💻🖥️ Nhúng payload mã hóa chứa bằng chứng hoặc tin nhắn tố giác vào cấu trúc gói tin `CRDT_Garbage_Collection_Log` hoặc `System_Telemetry`.
 - 📱💻🖥️ Tận dụng đường hầm mTLS Federation Bridge để đẩy dữ liệu xuyên qua lớp chặn lọc OPA tại Gateway của chi nhánh.
 - ☁️ Màng lọc "Magic Bytes" tại máy chủ HQ thực hiện bóc tách (De-capsulation) dữ liệu tố giác khỏi luồng hệ thống.
@@ -668,6 +666,22 @@
 - 📱💻 Áp dụng thuật toán JCAS Spatial-Aware Routing (A*) thiết lập biểu đồ 3D tọa độ thiết bị trực tiếp trên RAM để tối ưu hóa nút mạng, giảm thiểu tình trạng "phát sóng rác".
 - 📱💻 Điều tiết cấu hình Opportunistic Wakeup chủ động kích hoạt năng lượng định tuyến khi payload có nhu cầu di chuyển tệp thực, hạ tần suất Beacon xuống 1 lần/5 phút ở trạng thái Standby.
 
+### 5.9.1 Single-Frame Binary Serialization for Mesh Recovery (Chống Phân mảnh BLE 5.0)
+
+> **Bài toán:** BLE 4.2 MTU tối đa 251 bytes buộc phải phân mảnh L2CAP nếu payload lớn hơn — gây mất gói, thứ tự sai và tăng overhead. Trong kịch cảnh khôi phục khẩn cấp (SOS Beacon, Social Escrow shard), mỗi byte thừa đều là rủi ro.
+
+- 📱💻🖥️ **Protobuf Binary Encoding (Không Metadata):** Mọi Mesh Recovery payload (SOS Beacon, `Welcome_Packet`, Shun command) được serialize bằng Protobuf Binary (không phải JSON/CBOR) với schema tối giản — chỉ giữ các field bắt buộc. Ví dụ: một Social Escrow shard request chỉ ~80 bytes (Node_ID 16B + Epoch 8B + Signature 64B + padding), nằm gọn trong một BLE frame đơn.
+- 📱 **Native BLE Extended Advertising (Zero Fragmentation):** Trên thiết bị hỗ trợ BLE 5.0, Lõi Rust yêu cầu OS sử dụng **Extended Advertising PDU** (payload tối đa 255 bytes/frame, không cần L2CAP chunking) thay vì Legacy Advertising. Payload Recovery được nhét vào một PDU duy nhất → loại bỏ hoàn toàn xác suất mất mảnh.
+- 📱💻🖥️ **Hardware-bound Ed25519 Signing (Secure Enclave / StrongBox):** Mỗi Recovery frame được ký bằng `Device_Identity_Key` trực tiếp trong Secure Enclave/StrongBox — signature 64 bytes append vào cuối payload trước khi gửi. Receiver xác thực signature trước khi decode bất kỳ byte nào khác, ngăn frame giả mạo tiêu tốn CPU.
+
+### 5.9.2 Zero-Knowledge Metadata Masking in Mesh Broadcast (Chống Rò rỉ Siêu dữ liệu qua Sóng vô tuyến)
+
+> **Bài toán:** Mọi BLE Advertising đều broadcast `Node_ID` hoặc `Device_ID` dưới dạng plaintext trong Manufacturer Specific Data — kẻ tấn công có thể thu thập traffic, map danh tính người dùng mà không cần bẻ mã hóa nội dung.
+
+- 📱 **Blinded Device_ID (16-byte Physical Identifier):** Thay vì dùng Device MAC hoặc `Node_ID` thật, Lõi Rust sinh một `Blinded_ID = HMAC-SHA256(Device_Identity_Key, Epoch_Slot_Index)[0:16]` — thay đổi mỗi 5 phút theo `Epoch_Slot_Index`. Kẻ quan sát ngoài không thể link hai Beacon từ cùng thiết bị giữa hai Epoch.
+- 📱💻🖥️ **Curve25519 Identity Public Key Exchange:** Khi hai thiết bị muốn xác thực lẫn nhau (không phải broadcast mở), Lõi Rust thực hiện ECDH Curve25519 One-Pass — trao đổi ephemeral public key qua BLE Scan Response, giải ECDH ra `Shared_Secret`, dùng làm channel key cho phiên L2CAP kế tiếp. Không bao giờ dùng static key trong giao tiếp Layer 2.
+- 📱 **Sealed Sender Protocol for Mesh Signal Plane:** Mọi CRDT event, Shun command, và SOS payload gửi qua Mesh được bọc trong **Sealed Sender** — receiver chỉ biết nội dung sau khi giải mã, không biết sender trước khi mở gói. Kẻ relay trung gian (Super Node) forward blindly mà không đọc được `Node_ID` của người gửi thật.
+
 ### 5.10 Mesh Anti-Spam & DoS Resilience
 
 #### Chống Sybil & Broadcast Storm qua mPoW (Micro Proof-of-Work Hashcash Defense)
@@ -730,7 +744,6 @@
 - 💻📱 **24h Temporal Validation Window:** Lõi Rust duy trì một Bloom Filter lưu `Evidence_Hash` trong 24h. Bất kỳ `Proof_Bundle` có hash đã tồn tại trong Bloom Filter → từ chối ngay với lỗi `EVIDENCE_REPLAYED`. Bloom Filter tự xóa sạch mỗi 24h để tránh tích lũy bộ nhớ.
 - 📱 **Monotonic Hardware Counter Binding:** Trên iOS (Secure Enclave), mỗi `Proof_Bundle` được gắn thêm giá trị từ **Monotonic Counter** của Secure Enclave — bộ đếm phần cứng không thể đặt lại (rollback-proof). Nếu Counter trong Proof_Bundle thấp hơn giá trị hiện tại của thiết bị phát hiện → cờ `COUNTER_ROLLBACK`, reject.
 
-
 #### Quản lý Danh tính & Hạn mức Mesh (Hardware-bound Offline Trust Tokens)
 
 - 📱💻🖥️ Neo chặn chữ ký số Ed25519 trực tiếp vào phần cứng (Secure Enclave/StrongBox) bảo vệ định danh mạng Mesh nguyên thủy.
@@ -770,8 +783,6 @@
 - 📱💻🖥️ **Peer-to-Peer Identity Validation:** Sau khi nhận `Welcome_Packet`, Lõi Rust xác thực `Device_Identity_Key` qua cross-reference với `Enterprise_CA` certificate đã lưu local. Nếu Certificate hết hạn hoặc đã revoked (Shun List) → từ chối induction, yêu cầu Admin re-provision.
 
 ### 5.11 WebRTC Blind Relay (TURN)
-
-
 
 - 📱💻🖥️ **Signaling:** Trao đổi SDP qua kênh chat MLS (E2EE channel).
 - ☁️ **Transport:** SRTP — E2EE Audio/Video. TURN Server chỉ relay UDP mã hóa — không nắm Key.
@@ -868,11 +879,13 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 💻🖥️☁️🗄️ **mlock() Hardening:** Desktop/Server dùng `mmap` + cờ `MAP_LOCKED | MAP_CONCEAL`. Bảo vệ RAM khỏi Swap file trong khoảng 2ms tồn tại của Key.
 
 #### HQ-Audit Zero-Knowledge Identity (Bảo vệ người tố giác)
+
 - 📱💻 Thiết lập Hardcoded `HQ_Audit_PubKey` tại Client để mã hóa dữ liệu tố giác ngay từ nguồn.
 - 📱💻 Kích hoạt cơ chế sinh Ephemeral Keypair (Khóa dùng một lần) để loại bỏ hoàn toàn `User_ID` và `Device_ID` khỏi gói tin.
 - ☁️ Lưu trữ `HQ_Audit_PrivateKey` trong HSM/Secure Enclave biệt lập tại Ban Kiểm soát HQ.
 
 #### Out-of-Band Domain Fronting & Mesh Fallback (Chống Firewall DPI/Ngắt ngầm)
+
 - 📱💻 Áp dụng kỹ thuật Domain Fronting ngụy trang SNI/Host header qua các CDN lớn (Cloudflare/Microsoft) để bypass DPI.
 - 📱💻 Tự động chuyển đổi định tuyến sang mạng Wi-Fi/4G cá nhân (Mesh-to-Internet Fallback) khi phát hiện Federation Bridge bị admin ngắt.
 - 📱💻 Phân đoạn tệp tin (Chunking) kết hợp mã hóa AEAD để thay đổi hình thái gói tin trước các bộ lọc kích thước dữ liệu.
