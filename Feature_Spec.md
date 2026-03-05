@@ -12,7 +12,52 @@
 
 ---
 
+## 0. Data Object Catalog (Danh mục Đối tượng Dữ liệu — Client Side)
+
+> Mỗi object liệt kê dưới đây là một **đơn vị dữ liệu** cụ thể tại tầng Client (Mobile/Desktop/WASM) với schema, vòng đời, và ràng buộc bảo mật riêng biệt. Các giải thuật (IPC, Hydration, Sync) chỉ là *operations* tác động lên những object này.
+
+### 💾 Domain: Local Storage Objects
+
+| Object | Kiểu | Nơi lưu | Vòng đời | Section Spec |
+|---|---|---|---|---|
+| `cold_state.db` | SQLite (SQLCipher) | Disk — permanent | Exists until Crypto-Shred | §6.2 |
+| `cold_state_shadow.db` | SQLite (temp) | Disk — transient | Exists only during Hydration batch, deleted after POSIX rename | §6.14.1 |
+| `hot_dag.db` | SQLite WAL (append-only) | Disk — permanent | Grows monotonically, compacted by Squashing | §6.12 |
+| `Hydration_Checkpoint` | `{Snapshot_CAS_UUID, last_chunk_index}` | `hot_dag.db` key-value | Overwritten per chunk flush | §6.14.1 |
+| `Tombstone_Stub` | `{entity_id, hlc, type=DELETED}` | `cold_state.db` | Permanent, never physically deleted | §6.12 |
+| `Merged_Vector_Clock` | Map<Node_ID, Logical_Counter> | `hot_dag.db` | Updated on every DAG merge operation | §6.12 |
+
+### 🪟 Domain: UI Rendering Objects
+
+| Object | Kiểu | Nơi lưu | Vòng đời | Section Spec |
+|---|---|---|---|---|
+| `Zero_Byte_Stub` | `{entity_id, blur_hash, metadata}` | RAM / `cold_state.db` | Rendered immediately on scroll, replaced on hydration | §6.5 |
+| `Blur_hash_Thumbnail` | 30-50 byte encoded string | `cold_state.db` | Persistent, pre-computed at send-time | §6.5 |
+| `Viewport_Cursor` | `{top_message_id, bottom_message_id}` | RAM (ephemeral) | Alive for scroll session | §6.8 |
+| `MERGE_COMPLETE_Event` | Control Plane Signal `{batch_id}` | IPC channel only | Fire-and-forget, not persisted | §6.17 |
+
+### 🔐 Domain: Secure Ephemeral Memory Objects
+
+| Object | Kiểu | Nơi lưu | Vòng đời | Section Spec |
+|---|---|---|---|---|
+| `Decrypted_Chunk_2MB` | Raw bytes (plaintext) | RAM — `ZeroizeOnDrop` | Alive for 1 chunk decrypt cycle, then zeroed | §6.14.1 |
+| `Ephemeral_Buffer_PROT_READ` | mmap region with `PROT_READ` flag | Virtual memory | Duration of WASM Sandbox session | §6.18 |
+| `Ring_Buffer_2MB` | Fixed-size circular byte buffer | User-space RAM | Statically allocated, reused in streaming loop | §8.1 |
+| `ChunkKey` | AES-256-GCM per-chunk key | Rust `ZeroizeOnDrop` struct | One chunk lifetime (~2MB), zero-on-drop | §6.14.1 |
+
+### 📡 Domain: IPC & Sync Signal Objects
+
+| Object | Kiểu | Nơi lưu | Vòng đời | Section Spec |
+|---|---|---|---|---|
+| `Control_Plane_Signal` | Protobuf ≤ 50 bytes | SharedArrayBuffer / JSI | Fire-and-forget | §6.1 |
+| `Data_Plane_Payload` | Raw bytes | SharedArrayBuffer / Dart FFI TypedData | Duration of transfer | §6.1 |
+| `Snapshot_CAS_UUID` | UUID v4 (content-addressed) | `hot_dag.db` | Stable reference to a materialized state snapshot | §6.13, §6.14.1 |
+| `File_Chunk_AD` | `{File_ID, Chunk_Index, Byte_Offset}` | AEAD Associated Data (in-flight) | Per chunk encryption/decryption | §8.1 |
+
+---
+
 ## 6. Client Data Plane
+
 
 ### 6.1 IPC Bridge Architecture
 

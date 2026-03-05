@@ -348,6 +348,11 @@
 
     <div class="nav-header">Table of Contents</div><a href="#feature-specmd-terachat-v022" class="nav-link" style="">Feature_Spec.md — TeraChat V0.2.2</a>
 <a href="#table-of-contents" class="nav-link" style="padding-left:0.8rem;">TABLE OF CONTENTS</a>
+<a href="#0-data-object-catalog-danh-mục-đối-tượng-dữ-liệu-client-side" class="nav-link" style="padding-left:0.8rem;">0. Data Object Catalog (Danh mục Đối tượng Dữ liệu — Client Side)</a>
+<a href="#-domain-local-storage-objects" class="nav-link" style="padding-left:0.8rem;">💾 Domain: Local Storage Objects</a>
+<a href="#-domain-ui-rendering-objects" class="nav-link" style="padding-left:0.8rem;">🪟 Domain: UI Rendering Objects</a>
+<a href="#-domain-secure-ephemeral-memory-objects" class="nav-link" style="padding-left:0.8rem;">🔐 Domain: Secure Ephemeral Memory Objects</a>
+<a href="#-domain-ipc-sync-signal-objects" class="nav-link" style="padding-left:0.8rem;">📡 Domain: IPC & Sync Signal Objects</a>
 <a href="#6-client-data-plane" class="nav-link" style="padding-left:0.8rem;">6. Client Data Plane</a>
 <a href="#61-ipc-bridge-architecture" class="nav-link" style="padding-left:0.8rem;">6.1 IPC Bridge Architecture</a>
 <a href="#112-zero-byte-app-stubs-wasm" class="nav-link" style="padding-left:0.8rem;">11.2 "Zero-Byte" App Stubs (WASM)</a>
@@ -397,6 +402,175 @@
 <li><a href="#6-client-data-plane" style="color:var(--accent-blue);text-decoration:none;">Client Data Plane</a></li>
 <li><a href="#7-ecosystem--integration" style="color:var(--accent-blue);text-decoration:none;">Ecosystem & Integration</a></li>
 </ol>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="0-data-object-catalog-danh-mục-đối-tượng-dữ-liệu-client-side">0. Data Object Catalog (Danh mục Đối tượng Dữ liệu — Client Side)</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Mỗi object liệt kê dưới đây là một <strong>đơn vị dữ liệu</strong> cụ thể tại tầng Client (Mobile/Desktop/WASM) với schema, vòng đời, và ràng buộc bảo mật riêng biệt. Các giải thuật (IPC, Hydration, Sync) chỉ là <em>operations</em> tác động lên những object này.</p>
+<h3 id="-domain-local-storage-objects">💾 Domain: Local Storage Objects</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Object</th>
+<th>Kiểu</th>
+<th>Nơi lưu</th>
+<th>Vòng đời</th>
+<th>Section Spec</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code></td>
+<td>SQLite (SQLCipher)</td>
+<td>Disk — permanent</td>
+<td>Exists until Crypto-Shred</td>
+<td>§6.2</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state_shadow.db</code></td>
+<td>SQLite (temp)</td>
+<td>Disk — transient</td>
+<td>Exists only during Hydration batch, deleted after POSIX rename</td>
+<td>§6.14.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code></td>
+<td>SQLite WAL (append-only)</td>
+<td>Disk — permanent</td>
+<td>Grows monotonically, compacted by Squashing</td>
+<td>§6.12</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Hydration_Checkpoint</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{Snapshot_CAS_UUID, last_chunk_index}</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> key-value</td>
+<td>Overwritten per chunk flush</td>
+<td>§6.14.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Tombstone_Stub</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{entity_id, hlc, type=DELETED}</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code></td>
+<td>Permanent, never physically deleted</td>
+<td>§6.12</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Merged_Vector_Clock</code></td>
+<td>Map&lt;Node_ID, Logical_Counter&gt;</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code></td>
+<td>Updated on every DAG merge operation</td>
+<td>§6.12</td>
+</tr>
+</tbody></table></div>
+<h3 id="-domain-ui-rendering-objects">🪟 Domain: UI Rendering Objects</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Object</th>
+<th>Kiểu</th>
+<th>Nơi lưu</th>
+<th>Vòng đời</th>
+<th>Section Spec</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Zero_Byte_Stub</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{entity_id, blur_hash, metadata}</code></td>
+<td>RAM / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code></td>
+<td>Rendered immediately on scroll, replaced on hydration</td>
+<td>§6.5</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Blur_hash_Thumbnail</code></td>
+<td>30-50 byte encoded string</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code></td>
+<td>Persistent, pre-computed at send-time</td>
+<td>§6.5</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Viewport_Cursor</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{top_message_id, bottom_message_id}</code></td>
+<td>RAM (ephemeral)</td>
+<td>Alive for scroll session</td>
+<td>§6.8</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MERGE_COMPLETE_Event</code></td>
+<td>Control Plane Signal <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{batch_id}</code></td>
+<td>IPC channel only</td>
+<td>Fire-and-forget, not persisted</td>
+<td>§6.17</td>
+</tr>
+</tbody></table></div>
+<h3 id="-domain-secure-ephemeral-memory-objects">🔐 Domain: Secure Ephemeral Memory Objects</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Object</th>
+<th>Kiểu</th>
+<th>Nơi lưu</th>
+<th>Vòng đời</th>
+<th>Section Spec</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Decrypted_Chunk_2MB</code></td>
+<td>Raw bytes (plaintext)</td>
+<td>RAM — <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code></td>
+<td>Alive for 1 chunk decrypt cycle, then zeroed</td>
+<td>§6.14.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Ephemeral_Buffer_PROT_READ</code></td>
+<td>mmap region with <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PROT_READ</code> flag</td>
+<td>Virtual memory</td>
+<td>Duration of WASM Sandbox session</td>
+<td>§6.18</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Ring_Buffer_2MB</code></td>
+<td>Fixed-size circular byte buffer</td>
+<td>User-space RAM</td>
+<td>Statically allocated, reused in streaming loop</td>
+<td>§8.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ChunkKey</code></td>
+<td>AES-256-GCM per-chunk key</td>
+<td>Rust <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> struct</td>
+<td>One chunk lifetime (~2MB), zero-on-drop</td>
+<td>§6.14.1</td>
+</tr>
+</tbody></table></div>
+<h3 id="-domain-ipc-sync-signal-objects">📡 Domain: IPC & Sync Signal Objects</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Object</th>
+<th>Kiểu</th>
+<th>Nơi lưu</th>
+<th>Vòng đời</th>
+<th>Section Spec</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Control_Plane_Signal</code></td>
+<td>Protobuf ≤ 50 bytes</td>
+<td>SharedArrayBuffer / JSI</td>
+<td>Fire-and-forget</td>
+<td>§6.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Data_Plane_Payload</code></td>
+<td>Raw bytes</td>
+<td>SharedArrayBuffer / Dart FFI TypedData</td>
+<td>Duration of transfer</td>
+<td>§6.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Snapshot_CAS_UUID</code></td>
+<td>UUID v4 (content-addressed)</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code></td>
+<td>Stable reference to a materialized state snapshot</td>
+<td>§6.13, §6.14.1</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">File_Chunk_AD</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{File_ID, Chunk_Index, Byte_Offset}</code></td>
+<td>AEAD Associated Data (in-flight)</td>
+<td>Per chunk encryption/decryption</td>
+<td>§8.1</td>
+</tr>
+</tbody></table></div>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="6-client-data-plane">6. Client Data Plane</h2>
 <h3 id="61-ipc-bridge-architecture">6.1 IPC Bridge Architecture</h3>

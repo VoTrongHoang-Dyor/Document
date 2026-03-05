@@ -18,6 +18,269 @@
       ],
       "subsections": [
         {
+          "id": "0-data-object-catalog-danh-mục-đối-tượng-dữ-liệu",
+          "level": 2,
+          "heading": "0. Data Object Catalog (Danh mục Đối tượng Dữ liệu)",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "Mỗi object liệt kê dưới đây là một **đơn vị dữ liệu** độc lập có schema, vòng đời, và ràng buộc bảo mật rõ ràng. Các thuật toán (xem Section 4–5) chỉ là *operations* tác động lên những object này."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "-domain-cryptographic-identity",
+              "level": 3,
+              "heading": "🔑 Domain: Cryptographic Identity",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Object",
+                    "Kiểu",
+                    "Nơi lưu",
+                    "Vòng đời",
+                    "Section Spec"
+                  ],
+                  "rows": [
+                    [
+                      "`DeviceIdentityKey`",
+                      "Ed25519 Key Pair",
+                      "Secure Enclave / StrongBox",
+                      "Permanent (hardware-bound)",
+                      "§4.3"
+                    ],
+                    [
+                      "`Company_Key`",
+                      "AES-256-GCM Root Key",
+                      "HKMS (wrapped by DeviceKey)",
+                      "Per-workspace, rotated on member exit",
+                      "§4.1"
+                    ],
+                    [
+                      "`Epoch_Key`",
+                      "MLS Leaf Key",
+                      "In-memory only (`mlock`)",
+                      "Per MLS Epoch, zeroized on rotation",
+                      "§4.2"
+                    ],
+                    [
+                      "`ChunkKey`",
+                      "AES-256-GCM Ephemeral",
+                      "Rust `ZeroizeOnDrop` struct",
+                      "Alive for 1 chunk (~2MB), then zeroized",
+                      "§5.18"
+                    ],
+                    [
+                      "`Session_Key`",
+                      "ECDH Curve25519 Derived",
+                      "RAM (ephemeral)",
+                      "Per session, zeroized after disconnect",
+                      "§5.10.2"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "-domain-mls-session-objects",
+              "level": 3,
+              "heading": "📦 Domain: MLS Session Objects",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Object",
+                    "Kiểu",
+                    "Nơi lưu",
+                    "Vòng đời",
+                    "Section Spec"
+                  ],
+                  "rows": [
+                    [
+                      "`KeyPackage`",
+                      "MLS RFC 9420 Struct",
+                      "Server (public) / Local DB",
+                      "Refreshed periodically",
+                      "§4.2"
+                    ],
+                    [
+                      "`Welcome_Packet`",
+                      "ECIES-encrypted payload",
+                      "Encrypted in-flight",
+                      "Single use, consumed on join",
+                      "§5.10.2"
+                    ],
+                    [
+                      "`TreeKEM_Update_Path`",
+                      "MLS tree delta",
+                      "In-memory, broadcast",
+                      "Per epoch rotation",
+                      "§5.14, §5.15"
+                    ],
+                    [
+                      "`Epoch_Ratchet`",
+                      "Sequence counter",
+                      "`hot_dag.db`",
+                      "Monotonically increasing",
+                      "§4.2"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "-domain-mesh-network-objects",
+              "level": 3,
+              "heading": "🌐 Domain: Mesh Network Objects",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Object",
+                    "Kiểu",
+                    "Nơi lưu",
+                    "Vòng đời",
+                    "Section Spec"
+                  ],
+                  "rows": [
+                    [
+                      "`BLE_Stealth_Beacon`",
+                      "31-byte BLE Adv PDU",
+                      "Broadcast-only (air)",
+                      "Ephemeral per scan cycle",
+                      "§5.9.3"
+                    ],
+                    [
+                      "`Identity_Commitment`",
+                      "`HMAC(R, PK_identity)[0:8]`",
+                      "Embedded in Beacon",
+                      "Per session nonce",
+                      "§5.9.3"
+                    ],
+                    [
+                      "`Shun_Record`",
+                      "`{Node_ID, Ed25519_Sig, HLC}`",
+                      "`hot_dag.db` broadcast",
+                      "Until node is rehabilitated",
+                      "§5.10"
+                    ],
+                    [
+                      "`MergeCandidate`",
+                      "`{Node_ID, BLAKE3_Hash, HLC}`",
+                      "RAM only",
+                      "Duration of Split-brain resolution",
+                      "§5.12, §5.16"
+                    ],
+                    [
+                      "`Hash_Frontier`",
+                      "`{Vector_Clock, Root_Hash}`",
+                      "`hot_dag.db`",
+                      "Updated on every Gossip round",
+                      "§5.15"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "-domain-dag-state-objects",
+              "level": 3,
+              "heading": "📊 Domain: DAG State Objects",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Object",
+                    "Kiểu",
+                    "Nơi lưu",
+                    "Vòng đời",
+                    "Section Spec"
+                  ],
+                  "rows": [
+                    [
+                      "`CRDT_Event`",
+                      "Typed append-only log entry",
+                      "`hot_dag.db` (WAL)",
+                      "Permanent (Append-Only)",
+                      "§5.10.1"
+                    ],
+                    [
+                      "`HLC_Timestamp`",
+                      "`{wall_clock, logical_counter}`",
+                      "Embedded in every Event",
+                      "Attached to event, immutable",
+                      "§5.14"
+                    ],
+                    [
+                      "`Tombstone_Stub`",
+                      "`{entity_id, hlc, type=DELETED}`",
+                      "`cold_state.db`",
+                      "Permanent (never physically deleted)",
+                      "§5.10.1, §5.17"
+                    ],
+                    [
+                      "`Proof_Bundle`",
+                      "`{Ed25519_Sig, HLC, Evidence}`",
+                      "Encrypted broadcast",
+                      "Until dispute resolved",
+                      "§5.10.3"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "-domain-recovery-audit-objects",
+              "level": 3,
+              "heading": "🔧 Domain: Recovery & Audit Objects",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Object",
+                    "Kiểu",
+                    "Nơi lưu",
+                    "Vòng đời",
+                    "Section Spec"
+                  ],
+                  "rows": [
+                    [
+                      "`Snapshot_CAS`",
+                      "Content-Addressable Hash",
+                      "`TeraVault VFS`",
+                      "Permanent",
+                      "§5.10.2, §6.13"
+                    ],
+                    [
+                      "`Hydration_Checkpoint`",
+                      "`{Snapshot_CAS_UUID, last_chunk_index}`",
+                      "`hot_dag.db`",
+                      "Overwritten on each successful chunk",
+                      "§6.14.1"
+                    ],
+                    [
+                      "`Monotonic_Counter`",
+                      "TPM 2.0 hardware counter",
+                      "TPM chip register",
+                      "Hardware-bound, tamper-evident",
+                      "§4.5"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
           "id": "1-system-overview",
           "level": 2,
           "heading": "1. System Overview",
