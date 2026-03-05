@@ -814,6 +814,29 @@
 - 📱💻 Cấu hình `OOB_Mesh_Ratchet`: Bypass luồng online nếu `Is_Mesh = True`. Sinh `Mesh_Session_Key` qua quá trình X3DH đã thiết lập trước.
 - 📱💻 Thiết lập CRDT Vector Clock. Khi reconnect Internet, trigger hàm Rust hợp nhất (merge) Mesh State vào Online State. Zeroize RAM ngay sau khi merge để chống OOM do jump KDF.
 
+### 5.12 Phân xử Phi tập trung Hậu phân mảnh mạng (Tie-Breaker Hash Election)
+
+> **Bài toán:** Khi mạng bị phân mảnh (Split-brain) và sau đó kết nối lại, cần có một cơ chế bầu chọn tự động (Leader Election) để quyết định ai là người điều phối việc merge dữ liệu mà không cần sự can thiệp của Server trung tâm.
+
+- 📱💻🖥️ **Tie-Breaker Hash Election (Bầu cử Dictator Tất định):** Sử dụng BLAKE3 Hashing để định danh trọng số Node. Node có mã băm cao nhất (Max Hash) sẽ được thăng cấp làm Merge Dictator điều phối quá trình sáp nhập. Quyết định này là tất định (deterministic) trên mọi node, không cần vòng lặp vote tốn thời gian.
+- 📱💻🖥️ **Failover Cơ chế Listener Kế nhiệm:** Giám sát liên tục trạng thái của Dictator. Nếu Dictator rớt mạng (timeout), node có trọng số Hash cao thứ hai sẽ lập tức takeover vai trò Listener kế nhiệm trong thời gian <10ms, đảm bảo tiến trình sáp nhập không bị gián đoạn.
+
+### 5.13 Rust Asynchronous Concurrency Architecture (Ngăn chặn Đóng băng UI / ANR)
+
+> **Bài toán:** Khi nhận và sáp nhập hàng lượng lớn sự kiện DAG từ Mesh, nếu tải quá nặng sẽ gây treo UI (ANR trên Android, khựng frame trên iOS). Cần phân rã triệt để luồng tính toán lõi ra khỏi luồng render.
+
+- 📱💻🖥️ **Tokio Runtime Xử lý IPC/IO (<5ms/loop):** Lõi Rust nhúng bộ lập lịch Tokio async runtime để hứng luồng sự kiện I/O và IPC siêu nhẹ. Giao tiếp qua SharedArrayBuffer (Desktop) hoặc JSI (Mobile), mỗi vòng lặp Event Loop chỉ chiếm <5ms, không bao giờ block.
+- 💻🖥️ **Rayon Thread Pool Thực thi Tính toán DAG Đa lõi:** Đối với các tác vụ sáp nhập CRDT phức tạp ($O(N \log N)$), Lõi Rust đẩy xuống Rayon xử lý song song trên nhiều CPU bounds. Tránh nghẽn một nhân, tối đa hóa thông lượng thuật toán duyệt đồ thị.
+- 📱💻🖥️ **Hardware Crypto Acceleration (AES-NI / ARM NEON):** Luồng MLS Crypto Worker được phân lập riêng biệt, truy xuất trực tiếp tập lệnh phần cứng để mã hóa/giải mã. Không tranh chấp tài nguyên với luồng xử lý I/O và UI rendering.
+
+### 5.14 Deterministic State Convergence (Hội tụ Trạng thái Toàn mạng lưới)
+
+> **Bài toán:** Trong môi trường phân tán P2P, các bản cập nhật có thể đến không theo thứ tự. Tới cuối cùng, toàn bộ các node bắt buộc phải hội tụ về một trạng thái thống nhất một cách tuyệt đối (Strong Eventual Consistency).
+
+- 📱💻🖥️ **Hybrid Logical Clocks (HLC) & Hash(Node_ID) Last-Write-Wins:** Kết hợp đồng hồ lai HLC và hàm băm `Hash(Node_ID)` làm cơ chế phân xử LWW (Last-Write-Wins) khi xảy ra xung đột đồng thời. Đảm bảo kết quả merge luôn giống hệt nhau trên mọi thiết bị tham gia.
+- 📱💻🖥️ **Ed25519 Digital Signature Xác thực Bản vá Sáp nhập:** Mỗi thao tác thay đổi state (merge patch) đều phải kèm chữ ký mã hóa Ed25519 của người tạo. Các node khác xác thực chữ ký trước khi apply vào DAG cục bộ, ngăn chặn chèn trạng thái độc hại.
+- 📱💻🖥️ **TreeKEM Update Path Tái cấu trúc Cây khóa Epoch N+2:** Sau khi trạng thái DAG hội tụ thành công, Lõi Rust phát yêu cầu Update Path để tái cấu trúc lại nhóm bảo mật MLS ở Epoch mới (N+2), phục hồi tính Forward Secrecy kịp thời hậu phân mảnh mạng.
+
 ---
 
 ### 4.4 Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử

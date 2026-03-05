@@ -415,6 +415,29 @@
                     "💻📱 Giải mã Ciphertext chỉ sau khi khớp C_trunc: Hai bước tách biệt — (1) Trial Matching để xác định PK_identity_peer, (2) ECDH Curve25519 lấy Shared_Secret → giải mã Ciphertext. Không bao giờ cố giải mã Ciphertext trước khi có match → tránh CPU exhaustion attack.",
                     "📱 Peer-to-Peer Trust Activation → Welcome_Packet: Sau khi xác định được peer hợp lệ (match + verify), Lõi Rust dẫn xuất Session_Key từ Shared_Secret và phát Welcome_Packet (MLS Epoch Key) qua BLE L2CAP encrypted channel. Toàn bộ luồng này xảy ra trong <50ms từ khi nhận Beacon đến khi peer được chấp nhận vào Mesh."
                   ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "617-micro-batched-hydration-lazy-ui-sync-chống-nghẽn-cổ-chai-sqlite-và-quá-tải-giao-diện",
+              "level": 3,
+              "heading": "6.17 Micro-batched Hydration & Lazy UI Sync (Chống Nghẽn cổ chai SQLite và Quá tải Giao diện)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** SQLite dễ bị thắt cổ chai khi dump dữ liệu số lượng lớn, đẩy trực tiếp toàn bộ dữ liệu qua cầu IPC sẽ làm tràn bộ nhớ và sập luồng UI."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻🖥️ DB Lock Yielding kết hợp SQLite WAL: Chia nhỏ giao dịch sáp nhập thành các batch nhỏ (Micro-batching) cấu hình tối đa 500 records/batch. Nhả khóa (Lock Yielding) giữa mỗi batch để các tiến trình read/write khác có cơ hội chen ngang, tận dụng tối đa kiến trúc WAL.",
+                    "📱💻🖥️ Lazy UI Hydration (Lazy Sync): Thay vì nạp toàn phần, Lõi Rust chỉ cấp phát 20 tin nhắn gần nhất chuyển thẳng qua màn hình qua con trỏ bộ nhớ (Memory Pointer). Phần còn lại sẽ được kéo dãn tải thông qua cơ chế cuộn động (Infinite Scroll).",
+                    "📱💻🖥️ Control Plane Signaling (MERGE_COMPLETE): Không dùng Bridge để đẩy dữ liệu thô (raw data). Ngay sau khi batching xuống disk xong, Lõi bắn tín hiệu sự kiện siêu nhẹ MERGE_COMPLETE qua Control Plane. UI nhận tín hiệu và tự chủ động query trực tiếp dữ liệu mới, loại bỏ hoàn toàn JSON rác trên IPC."
+                  ]
                 },
                 {
                   "type": "paragraph",
