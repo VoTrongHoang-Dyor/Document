@@ -367,6 +367,30 @@
                     "📱💻 Rust Core FFI (C++ / Dart) Unified Data Plane: Khi dữ liệu đi qua FFI boundary (Rust → C++ JSI / Dart FFI), Lõi Rust serialize thành &[u8] Protobuf binary — không giao tiếp qua raw struct pointer (tránh ABI struct padding khác nhau giữa compiler). C++/Dart nhận &[u8] và parse lại qua Protobuf client library riêng, đảm bảo cùng byte order.",
                     "💻🖥️ CRC32 / AES-256-GCM Integrity Check: Mỗi cross-platform packet append CRC32(payload_bytes) — 4 bytes Little-Endian — ở cuối trước khi đóng gói AES-256-GCM. Receiver kiểm tra CRC32 trước khi verify Ed25519 signature, phát hiện sớm byte corruption do Endianness mismatch mà không tốn CPU cho asymmetric verify."
                   ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "616-on-trial-matching-stealth-discovery-nhận-diện-nút-ẩn-danh-trong-ghost-mesh",
+              "level": 3,
+              "heading": "6.16 O(N) Trial Matching & Stealth Discovery (Nhận diện Nút Ẩn danh trong Ghost Mesh)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Bài toán:** Khi nhận Stealth Beacon chỉ chứa `C_trunc = HMAC(R, PK_identity)[0:8]`, thiết bị cần xác định \"đây có phải đồng nghiệp trong tổ chức không?\" mà không có `Node_ID` rõ ràng. Phải giải quyết trong <3ms để không block BLE scan loop."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱 O(N) Trial Matching tại Lõi Rust: Lõi Rust duyệt danh bạ tổ chức (Company Directory, tối đa ~10.000 nhân sự) lưu trong cold_state.db. Với mỗi entry PK_identity_i, tính C_test = HMAC-SHA256(R, PK_identity_i)[0:8] và so sánh với C_trunc từ Beacon. Nếu match → xác định được danh tính peer.",
+                    "💻📱 Tối ưu HMAC < 3ms / 10.000 nhân sự: Sử dụng Hardware AES-NI (x86) / ARM NEON (Mobile) để vectorize tính toán HMAC hàng loạt. Với chip hiện đại, mỗi HMAC-SHA256 tốn ~1µs → 10.000 phép tính = ~10ms trên một core đơn. Lõi Rust parallelizes trên 2-4 core → đạt <3ms. Kết quả cache vào RAM trong Epoch hiện tại để tránh tính lại.",
+                    "💻📱 Giải mã Ciphertext chỉ sau khi khớp C_trunc: Hai bước tách biệt — (1) Trial Matching để xác định PK_identity_peer, (2) ECDH Curve25519 lấy Shared_Secret → giải mã Ciphertext. Không bao giờ cố giải mã Ciphertext trước khi có match → tránh CPU exhaustion attack.",
+                    "📱 Peer-to-Peer Trust Activation → Welcome_Packet: Sau khi xác định được peer hợp lệ (match + verify), Lõi Rust dẫn xuất Session_Key từ Shared_Secret và phát Welcome_Packet (MLS Epoch Key) qua BLE L2CAP encrypted channel. Toàn bộ luồng này xảy ra trong <50ms từ khi nhận Beacon đến khi peer được chấp nhận vào Mesh."
+                  ]
                 },
                 {
                   "type": "paragraph",

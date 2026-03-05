@@ -682,6 +682,24 @@
 - 📱💻🖥️ **Curve25519 Identity Public Key Exchange:** Khi hai thiết bị muốn xác thực lẫn nhau (không phải broadcast mở), Lõi Rust thực hiện ECDH Curve25519 One-Pass — trao đổi ephemeral public key qua BLE Scan Response, giải ECDH ra `Shared_Secret`, dùng làm channel key cho phiên L2CAP kế tiếp. Không bao giờ dùng static key trong giao tiếp Layer 2.
 - 📱 **Sealed Sender Protocol for Mesh Signal Plane:** Mọi CRDT event, Shun command, và SOS payload gửi qua Mesh được bọc trong **Sealed Sender** — receiver chỉ biết nội dung sau khi giải mã, không biết sender trước khi mở gói. Kẻ relay trung gian (Super Node) forward blindly mà không đọc được `Node_ID` của người gửi thật.
 
+### 5.9.3 Stealth Wake-up Protocol — Metadata Anonymization (Chống Rò rỉ Ngữ cảnh & Vị trí Vật lý)
+
+> **Bài toán:** Ngay cả khi nội dung BLE Advertising được mã hóa, định danh thiết bị (MAC address, static `Node_ID`) vẫn lộ ra trong Layer 2 header. Kẻ tấn công thu thập Beacon theo thời gian có thể vẽ bản đồ vị trí vật lý của toàn bộ nhân viên trong tòa nhà.
+
+- 📱 **Resolvable Private Address (RPA) — OS-level MAC Rotation:** Lõi Rust yêu cầu CoreBluetooth / BluetoothLeScanner sử dụng **Resolvable Private Address** theo chuẩn BT spec 5.3: MAC vật lý xoay vòng mỗi 15 phút, được dẫn xuất từ `IRK` (Identity Resolving Key) lưu trong Secure Enclave. Peer được ủy quyền giải `RPA` → `real MAC` bằng `IRK` — kẻ ngoài không thể track.
+- 💻📱 **Identity Commitment ($C = \text{HMAC}(R, PK_{identity})$):** Thay vì broadcast `Node_ID` thật, thiết bị tính `C = HMAC-SHA256(R, PK_identity)[0:8]` (8 bytes truncated), trong đó `R` là Nonce ngẫu nhiên mỗi phiên. `C` đại diện cho danh tính ngắn hạn — peer biết `PK_identity` có thể verify, kẻ ngoài không thể link `C` với người dùng thật vì `R` thay đổi liên tục.
+- 💻📱 **Ephemeral Key Derivation (Per-session):** Cho mỗi phiên phát sóng mới, Lõi Rust sinh `EphemeralKey_session = HKDF(Device_Identity_Key, R || Session_Index)`. Khóa này chỉ sống trong RAM (không ghi disk) và tự hủy sau 5 phút hoặc khi phiên kết thúc — đảm bảo Forward Secrecy tại Layer 2.
+- 📱 **Single-frame Stealth Payload (`Nonce + C_trunc + Ciphertext`):** Payload BLE Advertising có cấu trúc cố định 3 trường: `[8B Nonce R] + [8B C_trunc] + [N bytes Ciphertext]`. Tổng ≤ 31B cho Legacy Advertising hoặc ≤ 255B cho Extended Advertising. Không có field nào chứa thông tin định danh tĩnh.
+
+### 5.9.4 Darknet Signal Plane — Ghost Mesh (Chống Tấn công Theo dõi & Phân tích Lưu lượng)
+
+> **Bài toán:** Kẻ tấn công tinh vi có thể phân tích pattern lưu lượng (timing, frequency, payload size) ngay cả khi không giải mã được nội dung — từ đó suy ra ai đang giao tiếp với ai, khi nào, tại đâu.
+
+- 📱 **White Noise via Continuous Nonce Rotation:** Lõi Rust phát đều đặn **Dummy Beacon** (payload ngẫu nhiên, kích thước ngẫu nhiên trong [20, 80] bytes) xen kẽ với Beacon thật theo tỉ lệ configurable (mặc định 3 Dummy : 1 Real). Nonce `R` thay đổi mỗi Beacon — kẻ quan sát không thể phân biệt Beacon thật với nhiễu trắng.
+- 📱 **Sealed Sender Extended to Physical Mesh Layer:** Áp dụng Sealed Sender không chỉ ở Layer 5 (CRDT / App) mà xuống tận Layer 2 BLE: mỗi BLE packet chỉ chứa `C_trunc` (identity commitment) làm "địa chỉ gửi" — không có trường `from_node_id` dưới bất kỳ hình thức nào trong Advertising PDU.
+- 💻📱 **O(1) Edge Noise Filter (trước Rust Pipeline):** Tại điểm tiếp nhận BLE, một bộ lọc Bloom Filter nhỏ (4KB) kiểm tra nhanh `C_trunc` — nếu không khớp bất kỳ entry nào trong danh bạ đã biết → Drop ngay tại tầng Edge mà không nạp vào Rust Pipeline. Chi phí lọc $O(1)$, không tiêu tốn CPU cho Dummy Beacons.
+- 📱 **Static Identity Elimination trong mọi Broadcast:** Audit toàn bộ BLE Advertising PDU: nghiêm cấm xuất hiện `Device_MAC thật`, `Node_ID`, `User_ID`, `Company_ID` dưới bất kỳ encoding nào (hex, base64, protobuf field). CI pipeline tự động scan Advertising payload template để phát hiện static field trước khi merge.
+
 ### 5.10 Mesh Anti-Spam & DoS Resilience
 
 #### Chống Sybil & Broadcast Storm qua mPoW (Micro Proof-of-Work Hashcash Defense)
