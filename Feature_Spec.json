@@ -267,6 +267,53 @@
               "content_blocks": [],
               "subsections": [
                 {
+                  "id": "tối-ưu-hóa-kích-thước-lõi-biên-dịch-app-size-optimization",
+                  "level": 4,
+                  "heading": "Tối ưu hóa Kích thước Lõi Biên dịch (App Size Optimization)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻 Cấu hình biên dịch Rust tĩnh với cờ opt-level = 'z', bật Link-Time Optimization (lto = true) và panic = 'abort' nhằm gọt dũa dung lượng binary core rớt từ ~30MB xuống sát ngưỡng ~4MB.",
+                        "📱 Yêu cầu hệ thống tước bỏ toàn bộ Symbol (Strip Symbols) trong quá trình Release Build để tiết kiệm không gian gói cài đặt di động (.ipa/.apk)."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "split-payload-pipeline-chống-trễ-ipc-và-rớt-khung-hình",
+                  "level": 4,
+                  "heading": "Split-Payload Pipeline (Chống Trễ IPC và Rớt khung hình)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ Skeleton Extraction: Giới hạn lượng dữ liệu hiển thị trích xuất chỉ ~10KB (gồm message_id, text_preview) để bảo đảm ngân sách thời gian xử lý chặn ở mức $16\\text{ms}$, duy trì tốc độ 60/120fps.",
+                        "📱💻🖥️ Phân tách rạch ròi: Quy hoạch Control Plane và Data Plane độc lập qua schema terachat_ipc.proto.",
+                        "📱💻🖥️ Unidirectional State Sync: Giao diện UI chủ động kéo (pull) snapshot trạng thái thay vì hứng JSON đẩy (push) trực tiếp mệt mỏi từ Lõi."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "truyền-tải-vector-embedding-background-zero-copy-memory-pumping",
+                  "level": 4,
+                  "heading": "Truyền tải Vector Embedding (Background Zero-Copy Memory Pumping)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 JSI C++ Native Pointer (iOS): Bắn thẳng con trỏ bộ nhớ vật lý chứa 3MB Vector Embeddings vào Background Thread xuyên qua JSI, bypass hoàn toàn cổ chai Bridge của React Native.",
+                        "💻🖥️ SharedArrayBuffer (Desktop/Web): Sử dụng mmap vật lý cho phép hệ Web Worker truy cập Zero-copy trực diện vào kho dữ liệu 3MB.",
+                        "📱💻🖥️ Cô lập tác vụ AI: Điều hướng Web Worker / Dart Isolate gánh vác các phép toán Vector ngoài luồng Main Thread để chống đóng băng UI giao diện."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
                   "id": "desktop-sharedarraybuffer-protobuf",
                   "level": 4,
                   "heading": "Desktop — SharedArrayBuffer + Protobuf",
@@ -550,25 +597,41 @@
               "id": "614-stream-based-hydration-direct-to-disk-io-chống-oom-kill-khi-ghi-db",
               "level": 3,
               "heading": "6.14 Stream-based Hydration & Direct-to-Disk I/O (Chống OOM-Kill khi Ghi DB)",
-              "content_blocks": [
+              "content_blocks": [],
+              "subsections": [
                 {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**Bài toán:** Việc tải Snapshot lớn vào RAM trước khi ghi DB sẽ gây OOM-Kill trên Mobile (giới hạn 150-200MB foreground). Stream Hydration giải quyết bằng cách ghi trực tiếp theo từng chunk mà không giữ toàn bộ payload trên heap."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻🖥️ SharedArrayBuffer / JSI C++ Shared Memory IPC: Dữ liệu Snapshot chảy từ Network Layer → Lõi Rust qua SharedArrayBuffer / JSI C++ Shared Memory (Zero-copy) — không allocate heap cho toàn bộ payload, chỉ giữ window 2MB tại một thời điểm.",
-                    "📱💻🖥️ 2MB Chunked AES-256-GCM Streaming Decryption: Lõi Rust giải mã Snapshot theo từng chunk 2MB, xác thực GCM Tag từng chunk độc lập trước khi flush xuống disk — nếu chunk nào lỗi thì rollback chỉ chunk đó, không phải toàn bộ quá trình.",
-                    "📱💻🖥️ Direct-to-Disk SQLite INSERT OR REPLACE (cold_state.db): Mỗi chunk được parse và ghi thẳng vào cold_state.db qua BEGIN IMMEDIATE TRANSACTION → INSERT OR REPLACE → COMMIT mà không đi qua in-memory buffer. WAL mode đảm bảo atomic write ngay cả khi process bị kill giữa chừng.",
-                    "📱 Background Task Hydration (requestIdleCallback): Toàn bộ pipeline Stream Hydration chạy trong BGProcessingTask (iOS) / WorkManager (Android) với CPU budget 80ms/iteration. Nếu foreground app cần CPU → tự động Yield, tiếp tục ở iteration tiếp theo mà không mất dữ liệu nhờ WAL checkpoint."
-                  ]
+                  "id": "đồng-bộ-hóa-hoạt-cảnh-và-bơm-dữ-liệu-animation-sync",
+                  "level": 4,
+                  "heading": "Đồng bộ hóa Hoạt cảnh và Bơm dữ liệu (Animation-Sync)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ Animation ACK & Post-Render Hydration: Cấu trúc luồng Control Plane Signaling đợi Native UI bắn tín hiệu UI_ANIMATION_COMPLETE mới kích hoạt luồng Hydrate nhồi dữ liệu nặng.",
+                        "📱💻🖥️ Zero-Byte Stubs Barrier: Render ngay lập tức mã BlurHash (<5KB) cực nhẹ để duy trì cảm giác phản hồi thị giác trong lúc màn nhung hoạt cảnh (Slide/Fade) đang diễn ra.",
+                        "📱💻🖥️ Async Event Loop: Vận hành vòng lặp sự kiện bất đồng bộ duy trì chuẩn phản hồi IPC siêu nhẹ dưới ngưỡng hẹp $5\\text{ms}$."
+                      ]
+                    },
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Bài toán:** Việc tải Snapshot lớn vào RAM trước khi ghi DB sẽ gây OOM-Kill trên Mobile (giới hạn 150-200MB foreground). Stream Hydration giải quyết bằng cách ghi trực tiếp theo từng chunk mà không giữ toàn bộ payload trên heap."
+                      ]
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ SharedArrayBuffer / JSI C++ Shared Memory IPC: Dữ liệu Snapshot chảy từ Network Layer → Lõi Rust qua SharedArrayBuffer / JSI C++ Shared Memory (Zero-copy) — không allocate heap cho toàn bộ payload, chỉ giữ window 2MB tại một thời điểm.",
+                        "📱💻🖥️ 2MB Chunked AES-256-GCM Streaming Decryption: Lõi Rust giải mã Snapshot theo từng chunk 2MB, xác thực GCM Tag từng chunk độc lập trước khi flush xuống disk — nếu chunk nào lỗi thì rollback chỉ chunk đó, không phải toàn bộ quá trình.",
+                        "📱💻🖥️ Direct-to-Disk SQLite INSERT OR REPLACE (cold_state.db): Mỗi chunk được parse và ghi thẳng vào cold_state.db qua BEGIN IMMEDIATE TRANSACTION → INSERT OR REPLACE → COMMIT mà không đi qua in-memory buffer. WAL mode đảm bảo atomic write ngay cả khi process bị kill giữa chừng.",
+                        "📱 Background Task Hydration (requestIdleCallback): Toàn bộ pipeline Stream Hydration chạy trong BGProcessingTask (iOS) / WorkManager (Android) với CPU budget 80ms/iteration. Nếu foreground app cần CPU → tự động Yield, tiếp tục ở iteration tiếp theo mà không mất dữ liệu nhờ WAL checkpoint."
+                      ]
+                    }
+                  ],
+                  "subsections": []
                 }
-              ],
-              "subsections": []
+              ]
             },
             {
               "id": "6141-atomic-shadow-hydration-torn-write-prevention-bù-nước-tạo-bóng-nguyên-tử",
@@ -1178,6 +1241,22 @@
               "content_blocks": [],
               "subsections": [
                 {
+                  "id": "mesh-aware-radar-pulse-visualization-trực-quan-hóa-trạng-thái-mesh",
+                  "level": 4,
+                  "heading": "Mesh-Aware Radar Pulse Visualization (Trực quan hóa Trạng thái Mesh)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Radar Pulse Scan: Hiệu ứng Radar Pulse màu #0F172A quét từ dưới lên trên UI, báo hiệu trực quan cho người dùng rằng dữ liệu đang được đồng bộ hóa từ mạng lưới P2P/Offline Mesh thay vì Cloud.",
+                        "📱💻🖥️ Control Plane Signals (StateChanged): Lõi Rust áp dụng Unidirectional State Sync, chỉ bắn tín hiệu StateChanged qua IPC thay vì đẩy toàn bộ cục JSON cồng kềnh. Giao diện (Renderer) sẽ tự động trigger fetch phần dữ liệu thay đổi để giữ độ mượt mà tuyệt đối.",
+                        "📱 Off-screen Rendering Culling: Sử dụng kiến trúc FlatList / SliverList bẩm sinh loại bỏ (Cull) việc render các tin nhắn nằm ngoài Viewport hiện tại (tránh nghẽn luồng UI do dồn ứ tin nhắn Mesh)."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
                   "id": "zero-byte-stubs-metadata-rendering-virtual-metadata-mapping-lazy-load-ui-architecture",
                   "level": 4,
                   "heading": "Zero-Byte Stubs & Metadata Rendering (Virtual Metadata Mapping & Lazy-load UI Architecture)",
@@ -1448,6 +1527,51 @@
               "heading": "6.9 OS Lifecycle & Background Memory Security",
               "content_blocks": [],
               "subsections": [
+                {
+                  "id": "đánh-thức-lõi-rust-qua-apnsfcm-sleep-wake-up-ở-online-mode",
+                  "level": 4,
+                  "heading": "Đánh thức Lõi Rust qua APNs/FCM (Sleep & Wake-up ở Online Mode)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Silent Push Sync: Lồng ghép cờ sync_needed vào APNs (iOS) hoặc FCM (Android) Push Notification ở chế độ ưu tiên ngầm (Background). Bơm luồng sinh khí đánh thức Lõi Rust trong đúng 30 giây để khẩn trương kéo (Pull) toàn bộ dữ liệu mới từ VPS trước khi bị hệ điều hành đóng băng trở lại."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "đánh-thức-theo-sự-kiện-người-dùng-user-initiated-event-driven-wake-up",
+                  "level": 4,
+                  "heading": "Đánh thức theo Sự kiện Người dùng (User-Initiated Event-Driven Wake-up)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Local Notification Bridge: Sử dụng High-Priority Local Notification làm cầu nối tương tác khẩn khi nhận diện thiết bị chuyển Network_State == Offline.",
+                        "📱 Khởi phát lệnh IPC_Command thông qua JSI/FFI đánh thức Lõi Core từ trạng thái Foreground, cấp phát ngân sách RAM cực nhỏ (<5MB) chỉ để nạp lại Device_Key và xử lý Mesh."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "hardware-root-of-trust-biometric-unlock-mở-khóa-sinh-trắc-học-phần-cứng",
+                  "level": 4,
+                  "heading": "Hardware Root-of-Trust Biometric Unlock (Mở khóa Sinh trắc học Phần cứng)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Native Hardware Enclave API: Ứng dụng gọi trực tiếp API Native kSecAccessControlBiometryCurrentSet (iOS) hoặc StrongBox (Android) để giải phóng Device_Key khỏi Secure Enclave/Keystore.",
+                        "📱💻🖥️ Zero-Trust SQLite Guard: Lõi Rust chặn toàn luồng (I/O block) mọi truy vấn đến file cold_state.db và hot_dag.db cho đến khi nhận được xác thực thành công từ Hardware Root-of-Trust. Ngăn chặn triệt để đọc lén dữ liệu qua luồng ngầm.",
+                        "📱💻🖥️ Cryptographic PIN Fallback Dialpad: Bàn phím nhập mã PIN dự phòng trượt nhẹ trên nền Skeleton UI, đảm bảo logic xử lý PIN diễn ra an toàn, xóa sạch (ZeroizeOnDrop) plaintext PIN khỏi RAM ngay lập tức mà không ghi log hay truyền qua Bridge."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
                 {
                   "id": "rò-rỉ-qua-os-snapshot-secure-screen-masking-blurhash-overlay",
                   "level": 4,

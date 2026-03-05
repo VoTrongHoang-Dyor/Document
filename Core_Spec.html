@@ -1015,6 +1015,11 @@
 <td>Gateway E2EE hóa dữ liệu SAP/Jira/CRM trước khi đẩy xuống Client.</td>
 </tr>
 </tbody></table></div>
+<h4 id="xử-lý-đồng-thời-lớn-concurrency-trên-server">Xử lý Đồng thời Lớn (Concurrency) trên Server</h4>
+<ul>
+<li>☁️🗄️ <strong>Asynchronous Rust + io_uring:</strong> Loại bỏ hoàn toàn mô hình "1 Thread / 1 Connection" cũ kỹ trên hệ thống VPS. Kích hoạt Runtime Tokio kết hợp API io_uring của Linux kernel để tối ưu I/O.</li>
+<li>☁️🗄️ <strong>Siêu Đồng thời Siêu nhẹ:</strong> Mỗi kết nối WebSocket mã hóa từ Client chỉ chiếm khoảng ~2KB RAM hờ. Máy chủ chỉ giải quyết việc nhận mảng byte mã hóa (Ciphertext) và định tuyến nó qua hàng đợi Pub/Sub (Redis hoặc NATS JetStream), cho phép một VPS 4GB RAM gánh ~500.000 kết nối đồng thời.</li>
+</ul>
 <h4 id="blind-relay-egress-gateway-mode-e2">Blind Relay Egress Gateway (Mode E2)</h4>
 <ul>
 <li>☁️🗄️ Cấu trúc Egress Proxy (Mode E2) luân chuyển dữ liệu qua Ephemeral Pipe trong không gian RAM máy chủ.</li>
@@ -1028,6 +1033,11 @@
 <li>☁️ Tự động kích hoạt trạng thái "Suspend" (Circuit Breaker) cho các ứng dụng vi phạm Latency &gt;1500ms hoặc ngưỡng CPU Spike &gt;30%.</li>
 </ul>
 <h3 id="33-cơ-sở-hạ-tầng-triển-khai-devops-infrastructure-devops-deployments">3.3 Cơ sở Hạ tầng & Triển khai DevOps (Infrastructure & DevOps Deployments)</h3>
+<h4 id="triển-khai-vpsserver-vật-lý-1-chạm-enterprise-b2b">Triển khai VPS/Server Vật lý 1 Chạm (Enterprise B2B)</h4>
+<ul>
+<li>☁️🗄️ <strong>Immutability & Docker Compose:</strong> Đóng gói nguyên cụm Server (Blind Relay Server, PostgreSQL quản lý metadata, NATS Pub/Sub) vào duy nhất một tệp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">docker-compose.yml</code>.</li>
+<li>☁️🗄️ <strong>1-Touch Scripting:</strong> Khách hàng doanh nghiệp hoặc MSP chỉ cần chạy lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">curl -sSL https://terachat.io/install.sh | bash</code> trên Ubuntu. Tiến trình tự tải cấu hình, xin Let's Encrypt SSL/TLS, và dựng trọn vẹn cụm hạ tầng an toàn trong 45 giây.</li>
+</ul>
 <h4 id="thiết-quân-luật-hệ-điều-hành-os-hardening">Thiết quân luật Hệ điều hành (OS Hardening)</h4>
 <ul>
 <li>☁️🗄️ Tắt hoàn toàn phân vùng Swap trên cấp độ OS nhằm triệt tiêu độ trễ, đảm bảo tiến trình Kubelet vận hành ổn định không gián đoạn.</li>
@@ -1323,6 +1333,13 @@
 <td>~50–100m</td>
 </tr>
 </tbody></table></div>
+<h4 id="mesh-network-kiểu-bitchatbriar-delay-tolerant-networking-dtn">Mesh Network kiểu Bitchat/Briar (Delay-Tolerant Networking - DTN)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Store-and-Forward Gossip Protocol (Text):</strong> Khi mất mạng lưới (Offline), tin nhắn CRDT (&lt;1KB) mã hóa bằng khóa bảo mật đích được truyền đa bước ("nhảy cóc") qua các Router Trung gian (Mesh Nodes). Node bị cấm đọc nội dung nhưng cho phép lưu trữ tạm thời và phát kết tiếp thông lượng cho đến đỉnh đích.</li>
+<li>📱💻🖥️ <strong>Direct-Link Only Media (File/Video):</strong> Trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Mesh Mode</code>, Lõi Rust đóng băng công năng định tuyến multi-hop đối với mọi tệp tin nặng nề. Dữ liệu băng thông cao bắt buộc giao dịch P2P Wi-Fi Aware khép kín chỉ khi 2 máy chạm bán kính trực diện (&lt; 20 mét). Khung UI hiển thị "Chỉ gửi file khi ở gần".</li>
+<li>📱 <strong>Passive Network Sensing (Cảm biến Mạng Thụ động):</strong> Vận dụng bộ ngắm OS Native (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NWPathMonitor</code> iOS / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ConnectivityManager</code> Android) để bắt sự kiện luồng sóng tắt / mở Baseband. Đánh thức Tầng Logic Swift/Kotlin thay vì rượt vòng lặp dò quét tiêu pin điên cuồng ở lớp Lõi Rust, kéo mức Base Energy Consumption sát 0.</li>
+<li>📱💻🖥️ <strong>BLE Duty-Cycle Management:</strong> Răm rắp duy trì thuật toán vắt kiệt cường độ xung quét BLE: Tỉnh lược 200ms Advertising/Scanning xen lẫn 800ms chu kỳ Sleep để giảm hỏa 80% công suất tải ăn nguồn. Kết cấu Heartbeat Advertising rời rạc kết nạp linh động MTU Fragmentation cực hẹp.</li>
+</ul>
 <h4 id="tối-ưu-hóa-băng-thông-mạng-lưới-sinh-tồn-hybrid-multipath-transport-plane">Tối ưu hóa Băng thông Mạng lưới Sinh tồn (Hybrid Multipath Transport Plane)</h4>
 <h4 id="phân-tách-kênh-truyền-dẫn-và-gossip-discovery-hybrid-multipath-transport-plane">Phân tách kênh Truyền dẫn và Gossip Discovery (Hybrid Multipath Transport Plane)</h4>
 <ul>
@@ -1444,6 +1461,12 @@
 <li>📱 <strong>Static Identity Elimination trong mọi Broadcast:</strong> Audit toàn bộ BLE Advertising PDU: nghiêm cấm xuất hiện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_MAC thật</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Node_ID</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">User_ID</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_ID</code> dưới bất kỳ encoding nào (hex, base64, protobuf field). CI pipeline tự động scan Advertising payload template để phát hiện static field trước khi merge.</li>
 </ul>
 <h3 id="510-mesh-anti-spam-dos-resilience">5.10 Mesh Anti-Spam & DoS Resilience</h3>
+<h4 id="tấn-công-sybil-trên-mạng-mesh-chống-spam-oom">Tấn công Sybil trên mạng Mesh (Chống Spam & OOM)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Fixed-Size Relay Ring Buffer:</strong> Cố định bộ đệm dạng vòng tròn tĩnh trên Shared Memory giới hạn RAM chuyên chứa tin nhảy cóc đa chiều, ngăn chặn phình to tràn bộ nhớ (OOM).</li>
+<li>📱💻🖥️ <strong>Identity-Bound QoS & Edge Defense:</strong> Áp ráp OPA Engine tự quy chiếu hạn ngạch tốc độ (Rate Limiting) theo định lượng tín nhiệm người dùng. Lớp bảo hệ MAC ngoại biên được xác thực bởi Sealed Sender + MLS khóa chặt yêu cầu bừa bãi.</li>
+<li>📱💻🖥️ Tự động lọc các gói Data cồng kềnh qua QoS (loại trừ tệp/file/video) tại Hop số 2+ trong chế độ nhảy cóc P2P thuần túy.</li>
+</ul>
 <h4 id="chống-sybil-broadcast-storm-qua-mpow-micro-proof-of-work-hashcash-defense">Chống Sybil & Broadcast Storm qua mPoW (Micro Proof-of-Work Hashcash Defense)</h4>
 <ul>
 <li>📱💻🖥️ Áp dụng thuật toán SHA-256 Hashcash ép buộc thiết bị giải Nonce khớp tiền tố 12 bit 0 trước khi phát sóng tín hiệu.</li>
@@ -1570,6 +1593,12 @@
 <li>📱💻🖥️ <strong>TreeKEM Update Path Tái cấu trúc Cây khóa Epoch N+2:</strong> Sau khi trạng thái DAG hội tụ thành công, Lõi Rust phát yêu cầu Update Path để tái cấu trúc lại nhóm bảo mật MLS ở Epoch mới (N+2), phục hồi tính Forward Secrecy kịp thời hậu phân mảnh mạng.</li>
 </ul>
 <h3 id="515-split-brain-đa-cấp-và-tụt-hậu-epoch-causal-fast-forward-frontier-discovery">5.15 Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)</h3>
+<h4 id="xử-lý-xung-đột-não-lặp-split-brain-reconciliation">Xử lý Xung đột Não lặp (Split-Brain Reconciliation)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Deterministic Causal Merge:</strong> Quy chuẩn lai Hybrid Logical Clocks (HLC) song hành cùng Vector Clocks neo giữ tính bền vững nhân quả (Causality) dẫu phần cứng đồng hồ của hệ thống bị sai lệch thời gian nghiêm trọng.</li>
+<li>📱💻🖥️ Đóng chốt chu vi phân xử qua thuật toán Tie-breaker <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Hash(Node_ID)</code> Linearization, chọn duy nhất đường thẳng một chiều thông suốt có tính tất định tuyệt đối để dàn xếp hội tụ mạng DAG.</li>
+<li>📱💻🖥️ <strong>MLS Epoch Stitching:</strong> Khởi chạy Merge Commit bằng thủ tục O(log n) trực tiếp thông qua cây TreeKEM, thiết lập mới nhất thể Kỷ Nguyên (Epoch) kiên cố bao trùm toàn bộ nhóm hậu sự cố chẻ đảo.</li>
+</ul>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Khi mạng tách làm nhiều đảo (Split-brain), mỗi đảo tiến hóa state DAG và xoay khóa MLS Epoch độc lập. Khi nối lại, các node bị tụt hậu quá sâu không thể giải mã lịch sử chặn giữa và phân xử xung đột.</p>
 <ul>
 <li>📱💻🖥️ <strong>Gossip Protocol Lan truyền Vector Clock (Frontier Discovery):</strong> Các node liên tục trao đổi Vector Clock qua giao thức Gossip để nhận diện "Frontier" (biên giới cập nhật mới nhất) của các hòn đảo mạng.</li>
@@ -1632,6 +1661,12 @@
 <li>☁️📱💻🖥️ Ép buộc ghi nhận Audit Log chuẩn HIPAA/SOC2 đối với mọi thao tác giải mã của Admin.</li>
 </ul>
 <h3 id="49-tấn-công-memory-dumpextraction-synchronous-zeroize-safe-pipeline-hardware-isolation">4.9 Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)</h3>
+<h4 id="rò-rỉ-plaintext-từ-vector-embeddings-trong-ram-tự-hủy-bộ-nhớ-tàn-bạo">Rò rỉ Plaintext từ Vector Embeddings trong RAM (Tự hủy bộ nhớ tàn bạo)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Ruthless Memory Self-Destruct:</strong> Cấu trúc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> (RAII) lập tức ghi đè liên tục <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> xóa sạch vùng Shared Memory ngay giây khắc bộ máy AI Sandbox tiêu thụ xong luồng Vector Embeddings.</li>
+<li>💻🖥️ <strong>Hardware Anti-Swapping:</strong> Khởi động UNIX API <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> trên Desktop ngăn chặn hệ điều hành cày xới và đẩy Swap phân mảng dữ liệu AI siêu nhạy cảm xuống phân vùng đĩa cứng vật lý hở.</li>
+<li>📱💻🖥️ <strong>Luồng Xử lý Cách ly Kép:</strong> Độc lập tiến trình giải mật (CPU Bound) ngăn vách cực đoan khỏi mọi kết cấu hệ thống truyền dẫn chéo I/O mạng lưới.</li>
+</ul>
 <ul>
 <li>📱 Kích hoạt luồng ZeroizeOnDrop (RAII) để ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên không gian bộ nhớ ngay khi thoát khỏi scope, khống chế vòng đời của plaintext key &lt;2ms.</li>
 <li>📱💻🖥️ Đẩy luồng ký/giải mã KEK nội bộ xuống Hardware Root of Trust (Secure Enclave/TPM 2.0/StrongBox) tuyệt đối không nạp Private Key vào RAM.</li>

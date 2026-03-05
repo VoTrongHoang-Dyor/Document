@@ -936,6 +936,22 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)</code></pre></div>
 <li>Timestamp: 12px muted</li>
 <li>Message: 14px Regular, line-height 1.6</li>
 </ul>
+<h4 id="khởi-động-lạnh-skeleton-ui-render-khung-xương-cứng">Khởi động Lạnh & Skeleton UI (Render khung xương cứng)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Hardcoded Skeleton UI:</strong> Hiển thị tức thì (0ms - 50ms) khung xương mang phong cách Glassmorphism mà không cần chờ I/O từ cơ sở dữ liệu.</li>
+<li>📱💻🖥️ <strong>Pure Renderer Architecture:</strong> Logic xử lý dữ liệu được tách biệt hoàn toàn khỏi tầng hiển thị (Native/DOM), giúp UI không bị block bởi quá trình khởi động hệ thống tĩnh của Rust Core.</li>
+<li>📱 <strong>Quy tắc Điều hướng Thị giác:</strong> Layout Skeleton hardcode sẵn thanh Input và các khối tin nhắn dạng mờ (Blur) cố định để định hướng ánh nhìn của người dùng ngay khi app vừa mở.</li>
+</ul>
+<h4 id="hiệu-ứng-magic-reveal-stubs-staggered-native-reveal">Hiệu ứng Magic Reveal & Stubs (Staggered Native Reveal)</h4>
+<ul>
+<li>📱 <strong>Staggered Slide-Up:</strong> Animation trượt so le từ trên xuống được thực thi trực tiếp trên Native Thread (tác động thẳng vào Transform Y và Opacity), đảm bảo đạt 120fps mà không chịu nghẽn luồng từ JS Bridge.</li>
+<li>📱💻🖥️ <strong>Zero-Byte Blur-Hash Stubbing:</strong> Trước khi tải ảnh gốc, UI lập tức render các "Zero-Byte Stubs" (&lt;5KB JPEG E2EE chứa Hash Blur) tạo thành khối màu kính Glassmorphism mờ ảo.</li>
+<li>📱 <strong>Spring Physics:</strong> Áp dụng hiệu ứng nảy nhẹ (Spring) mang tính vật lý cho mỗi tin nhắn khi xuất hiện, tăng cảm giác chân thực và không gian tương tác.</li>
+</ul>
+<h4 id="glassmorphism-state-update-glow-effect-hiệu-ứng-thông-minh">Glassmorphism State Update & Glow Effect (Hiệu ứng Thông minh)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Trạng thái <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ai_ready</code>:</strong> Cập nhật trạng thái hệ thống và giao diện UI thông qua luồng IPC siêu nhẹ để bật hiệu ứng Glow lóe sáng viền mượt mà mang phong cách kính khi AI rà quét (tìm kiếm thông minh) thành công 20 tin nhắn gần nhất, báo hiệu sẵn sàng xử lý siêu văn bản.</li>
+</ul>
 <p><strong>Nhóm message</strong> (cùng user &lt; 5 phút):</p>
 <div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Avatar  User Name   14:02
         Message 1

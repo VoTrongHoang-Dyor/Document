@@ -574,6 +574,23 @@
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="6-client-data-plane">6. Client Data Plane</h2>
 <h3 id="61-ipc-bridge-architecture">6.1 IPC Bridge Architecture</h3>
+<h4 id="tối-ưu-hóa-kích-thước-lõi-biên-dịch-app-size-optimization">Tối ưu hóa Kích thước Lõi Biên dịch (App Size Optimization)</h4>
+<ul>
+<li>📱💻 Cấu hình biên dịch Rust tĩnh với cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">opt-level = 'z'</code>, bật Link-Time Optimization (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">lto = true</code>) và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">panic = 'abort'</code> nhằm gọt dũa dung lượng binary core rớt từ ~30MB xuống sát ngưỡng ~4MB.</li>
+<li>📱 Yêu cầu hệ thống tước bỏ toàn bộ Symbol (Strip Symbols) trong quá trình Release Build để tiết kiệm không gian gói cài đặt di động (.ipa/.apk).</li>
+</ul>
+<h4 id="split-payload-pipeline-chống-trễ-ipc-và-rớt-khung-hình">Split-Payload Pipeline (Chống Trễ IPC và Rớt khung hình)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Skeleton Extraction:</strong> Giới hạn lượng dữ liệu hiển thị trích xuất chỉ ~10KB (gồm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">message_id</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">text_preview</code>) để bảo đảm ngân sách thời gian xử lý chặn ở mức $16\text{ms}$, duy trì tốc độ 60/120fps.</li>
+<li>📱💻🖥️ <strong>Phân tách rạch ròi:</strong> Quy hoạch Control Plane và Data Plane độc lập qua schema <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_ipc.proto</code>.</li>
+<li>📱💻🖥️ <strong>Unidirectional State Sync:</strong> Giao diện UI chủ động kéo (pull) snapshot trạng thái thay vì hứng JSON đẩy (push) trực tiếp mệt mỏi từ Lõi.</li>
+</ul>
+<h4 id="truyền-tải-vector-embedding-background-zero-copy-memory-pumping">Truyền tải Vector Embedding (Background Zero-Copy Memory Pumping)</h4>
+<ul>
+<li>📱 <strong>JSI C++ Native Pointer (iOS):</strong> Bắn thẳng con trỏ bộ nhớ vật lý chứa 3MB Vector Embeddings vào Background Thread xuyên qua JSI, bypass hoàn toàn cổ chai Bridge của React Native.</li>
+<li>💻🖥️ <strong>SharedArrayBuffer (Desktop/Web):</strong> Sử dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap</code> vật lý cho phép hệ Web Worker truy cập Zero-copy trực diện vào kho dữ liệu 3MB.</li>
+<li>📱💻🖥️ <strong>Cô lập tác vụ AI:</strong> Điều hướng Web Worker / Dart Isolate gánh vác các phép toán Vector ngoài luồng Main Thread để chống đóng băng UI giao diện.</li>
+</ul>
 <h4 id="desktop-sharedarraybuffer-protobuf">Desktop — SharedArrayBuffer + Protobuf</h4>
 <ul>
 <li>💻🖥️ <strong>Control Plane:</strong> Protobuf schema <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_ipc.proto</code> qua WASM/Rust channel — lệnh, metadata, SQL, offset pointer. Kích thước \&lt;50 bytes/message.</li>
@@ -674,6 +691,12 @@
 </ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h3 id="614-stream-based-hydration-direct-to-disk-io-chống-oom-kill-khi-ghi-db">6.14 Stream-based Hydration & Direct-to-Disk I/O (Chống OOM-Kill khi Ghi DB)</h3>
+<h4 id="đồng-bộ-hóa-hoạt-cảnh-và-bơm-dữ-liệu-animation-sync">Đồng bộ hóa Hoạt cảnh và Bơm dữ liệu (Animation-Sync)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Animation ACK & Post-Render Hydration:</strong> Cấu trúc luồng Control Plane Signaling đợi Native UI bắn tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UI_ANIMATION_COMPLETE</code> mới kích hoạt luồng Hydrate nhồi dữ liệu nặng.</li>
+<li>📱💻🖥️ <strong>Zero-Byte Stubs Barrier:</strong> Render ngay lập tức mã BlurHash (&lt;5KB) cực nhẹ để duy trì cảm giác phản hồi thị giác trong lúc màn nhung hoạt cảnh (Slide/Fade) đang diễn ra.</li>
+<li>📱💻🖥️ <strong>Async Event Loop:</strong> Vận hành vòng lặp sự kiện bất đồng bộ duy trì chuẩn phản hồi IPC siêu nhẹ dưới ngưỡng hẹp $5\text{ms}$.</li>
+</ul>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Việc tải Snapshot lớn vào RAM trước khi ghi DB sẽ gây OOM-Kill trên Mobile (giới hạn 150-200MB foreground). Stream Hydration giải quyết bằng cách ghi trực tiếp theo từng chunk mà không giữ toàn bộ payload trên heap.</p>
 <ul>
 <li>📱💻🖥️ <strong>SharedArrayBuffer / JSI C++ Shared Memory IPC:</strong> Dữ liệu Snapshot chảy từ Network Layer → Lõi Rust qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SharedArrayBuffer</code> / JSI C++ Shared Memory (Zero-copy) — không allocate heap cho toàn bộ payload, chỉ giữ window 2MB tại một thời điểm.</li>
@@ -909,6 +932,12 @@
 <li>📱 <strong>StrongBox Keymaster:</strong> Lưu Symmetric Push Key (FCM). Key sinh trong chip, không export.</li>
 </ul>
 <h3 id="65-lean-edge-caching">6.5 Lean Edge Caching</h3>
+<h4 id="mesh-aware-radar-pulse-visualization-trực-quan-hóa-trạng-thái-mesh">Mesh-Aware Radar Pulse Visualization (Trực quan hóa Trạng thái Mesh)</h4>
+<ul>
+<li>📱 <strong>Radar Pulse Scan:</strong> Hiệu ứng Radar Pulse màu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code> quét từ dưới lên trên UI, báo hiệu trực quan cho người dùng rằng dữ liệu đang được đồng bộ hóa từ mạng lưới P2P/Offline Mesh thay vì Cloud.</li>
+<li>📱💻🖥️ <strong>Control Plane Signals (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">StateChanged</code>):</strong> Lõi Rust áp dụng Unidirectional State Sync, chỉ bắn tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">StateChanged</code> qua IPC thay vì đẩy toàn bộ cục JSON cồng kềnh. Giao diện (Renderer) sẽ tự động trigger fetch phần dữ liệu thay đổi để giữ độ mượt mà tuyệt đối.</li>
+<li>📱 <strong>Off-screen Rendering Culling:</strong> Sử dụng kiến trúc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FlatList</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SliverList</code> bẩm sinh loại bỏ (Cull) việc render các tin nhắn nằm ngoài Viewport hiện tại (tránh nghẽn luồng UI do dồn ứ tin nhắn Mesh).</li>
+</ul>
 <h4 id="zero-byte-stubs-metadata-rendering-virtual-metadata-mapping-lazy-load-ui-architecture">Zero-Byte Stubs & Metadata Rendering (Virtual Metadata Mapping & Lazy-load UI Architecture)</h4>
 <ul>
 <li>📱💻🖥️ Sử dụng cấu trúc Zero-Byte Stubs chỉ chứa tĩnh lược Metadata &lt;5KB (bao gồm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">file_name</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">encrypted_thumbnail</code>).</li>
@@ -1046,6 +1075,21 @@
 <li>📱 Truyền tải nội dung qua JSI/FFI Pointer duy trì thông lượng ~400MB/s nhằm nạp ảnh sạch từ RAM chọc thẳng lên UI trong ngưỡng &lt; 1ms.</li>
 </ul>
 <h3 id="69-os-lifecycle-background-memory-security">6.9 OS Lifecycle & Background Memory Security</h3>
+<h4 id="đánh-thức-lõi-rust-qua-apnsfcm-sleep-wake-up-ở-online-mode">Đánh thức Lõi Rust qua APNs/FCM (Sleep & Wake-up ở Online Mode)</h4>
+<ul>
+<li>📱 <strong>Silent Push Sync:</strong> Lồng ghép cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">sync_needed</code> vào APNs (iOS) hoặc FCM (Android) Push Notification ở chế độ ưu tiên ngầm (Background). Bơm luồng sinh khí đánh thức Lõi Rust trong đúng 30 giây để khẩn trương kéo (Pull) toàn bộ dữ liệu mới từ VPS trước khi bị hệ điều hành đóng băng trở lại.</li>
+</ul>
+<h4 id="đánh-thức-theo-sự-kiện-người-dùng-user-initiated-event-driven-wake-up">Đánh thức theo Sự kiện Người dùng (User-Initiated Event-Driven Wake-up)</h4>
+<ul>
+<li>📱 <strong>Local Notification Bridge:</strong> Sử dụng High-Priority Local Notification làm cầu nối tương tác khẩn khi nhận diện thiết bị chuyển <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Network_State == Offline</code>.</li>
+<li>📱 Khởi phát lệnh IPC_Command thông qua JSI/FFI đánh thức Lõi Core từ trạng thái Foreground, cấp phát ngân sách RAM cực nhỏ (&lt;5MB) chỉ để nạp lại <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> và xử lý Mesh.</li>
+</ul>
+<h4 id="hardware-root-of-trust-biometric-unlock-mở-khóa-sinh-trắc-học-phần-cứng">Hardware Root-of-Trust Biometric Unlock (Mở khóa Sinh trắc học Phần cứng)</h4>
+<ul>
+<li>📱 <strong>Native Hardware Enclave API:</strong> Ứng dụng gọi trực tiếp API Native <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">kSecAccessControlBiometryCurrentSet</code> (iOS) hoặc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">StrongBox</code> (Android) để giải phóng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> khỏi Secure Enclave/Keystore.</li>
+<li>📱💻🖥️ <strong>Zero-Trust SQLite Guard:</strong> Lõi Rust chặn toàn luồng (I/O block) mọi truy vấn đến file <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> cho đến khi nhận được xác thực thành công từ Hardware Root-of-Trust. Ngăn chặn triệt để đọc lén dữ liệu qua luồng ngầm.</li>
+<li>📱💻🖥️ <strong>Cryptographic PIN Fallback Dialpad:</strong> Bàn phím nhập mã PIN dự phòng trượt nhẹ trên nền Skeleton UI, đảm bảo logic xử lý PIN diễn ra an toàn, xóa sạch (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code>) plaintext PIN khỏi RAM ngay lập tức mà không ghi log hay truyền qua Bridge.</li>
+</ul>
 <h4 id="rò-rỉ-qua-os-snapshot-secure-screen-masking-blurhash-overlay">Rò rỉ qua OS Snapshot (Secure Screen Masking & Blurhash Overlay)</h4>
 <ul>
 <li>📱 Kích hoạt lớp phủ màn hình bảo mật che dấu nội dung nhạy cảm ngay khi nhận tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">applicationWillResignActive</code> (iOS) hoặc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">onPause</code> (Android).</li>

@@ -381,6 +381,11 @@
 | **Execution Environment** | VPS Egress Proxy backend — dữ liệu chỉ trên RAM, không persist. |
 | **Interop Hub** | Gateway E2EE hóa dữ liệu SAP/Jira/CRM trước khi đẩy xuống Client. |
 
+#### Xử lý Đồng thời Lớn (Concurrency) trên Server
+
+- ☁️🗄️ **Asynchronous Rust + io_uring:** Loại bỏ hoàn toàn mô hình "1 Thread / 1 Connection" cũ kỹ trên hệ thống VPS. Kích hoạt Runtime Tokio kết hợp API io_uring của Linux kernel để tối ưu I/O.
+- ☁️🗄️ **Siêu Đồng thời Siêu nhẹ:** Mỗi kết nối WebSocket mã hóa từ Client chỉ chiếm khoảng ~2KB RAM hờ. Máy chủ chỉ giải quyết việc nhận mảng byte mã hóa (Ciphertext) và định tuyến nó qua hàng đợi Pub/Sub (Redis hoặc NATS JetStream), cho phép một VPS 4GB RAM gánh ~500.000 kết nối đồng thời.
+
 #### Blind Relay Egress Gateway (Mode E2)
 
 - ☁️🗄️ Cấu trúc Egress Proxy (Mode E2) luân chuyển dữ liệu qua Ephemeral Pipe trong không gian RAM máy chủ.
@@ -394,6 +399,11 @@
 - ☁️ Tự động kích hoạt trạng thái "Suspend" (Circuit Breaker) cho các ứng dụng vi phạm Latency >1500ms hoặc ngưỡng CPU Spike >30%.
 
 ### 3.3 Cơ sở Hạ tầng & Triển khai DevOps (Infrastructure & DevOps Deployments)
+
+#### Triển khai VPS/Server Vật lý 1 Chạm (Enterprise B2B)
+
+- ☁️🗄️ **Immutability & Docker Compose:** Đóng gói nguyên cụm Server (Blind Relay Server, PostgreSQL quản lý metadata, NATS Pub/Sub) vào duy nhất một tệp `docker-compose.yml`.
+- ☁️🗄️ **1-Touch Scripting:** Khách hàng doanh nghiệp hoặc MSP chỉ cần chạy lệnh `curl -sSL https://terachat.io/install.sh | bash` trên Ubuntu. Tiến trình tự tải cấu hình, xin Let's Encrypt SSL/TLS, và dựng trọn vẹn cụm hạ tầng an toàn trong 45 giây.
 
 #### Thiết quân luật Hệ điều hành (OS Hardening)
 
@@ -627,6 +637,13 @@
 | **Signal Plane** | BLE 5.0 Advertising | ~2 Mbps | ~10–100m |
 | **Data Plane** | Wi-Fi Direct / AWDL | ~200 Mbps | ~50–100m |
 
+#### Mesh Network kiểu Bitchat/Briar (Delay-Tolerant Networking - DTN)
+
+- 📱💻🖥️ **Store-and-Forward Gossip Protocol (Text):** Khi mất mạng lưới (Offline), tin nhắn CRDT (<1KB) mã hóa bằng khóa bảo mật đích được truyền đa bước ("nhảy cóc") qua các Router Trung gian (Mesh Nodes). Node bị cấm đọc nội dung nhưng cho phép lưu trữ tạm thời và phát kết tiếp thông lượng cho đến đỉnh đích.
+- 📱💻🖥️ **Direct-Link Only Media (File/Video):** Trong `Mesh Mode`, Lõi Rust đóng băng công năng định tuyến multi-hop đối với mọi tệp tin nặng nề. Dữ liệu băng thông cao bắt buộc giao dịch P2P Wi-Fi Aware khép kín chỉ khi 2 máy chạm bán kính trực diện (< 20 mét). Khung UI hiển thị "Chỉ gửi file khi ở gần".
+- 📱 **Passive Network Sensing (Cảm biến Mạng Thụ động):** Vận dụng bộ ngắm OS Native (`NWPathMonitor` iOS / `ConnectivityManager` Android) để bắt sự kiện luồng sóng tắt / mở Baseband. Đánh thức Tầng Logic Swift/Kotlin thay vì rượt vòng lặp dò quét tiêu pin điên cuồng ở lớp Lõi Rust, kéo mức Base Energy Consumption sát 0.
+- 📱💻🖥️ **BLE Duty-Cycle Management:** Răm rắp duy trì thuật toán vắt kiệt cường độ xung quét BLE: Tỉnh lược 200ms Advertising/Scanning xen lẫn 800ms chu kỳ Sleep để giảm hỏa 80% công suất tải ăn nguồn. Kết cấu Heartbeat Advertising rời rạc kết nạp linh động MTU Fragmentation cực hẹp.
+
 #### Tối ưu hóa Băng thông Mạng lưới Sinh tồn (Hybrid Multipath Transport Plane)
 
 #### Phân tách kênh Truyền dẫn và Gossip Discovery (Hybrid Multipath Transport Plane)
@@ -753,6 +770,12 @@
 - 📱 **Static Identity Elimination trong mọi Broadcast:** Audit toàn bộ BLE Advertising PDU: nghiêm cấm xuất hiện `Device_MAC thật`, `Node_ID`, `User_ID`, `Company_ID` dưới bất kỳ encoding nào (hex, base64, protobuf field). CI pipeline tự động scan Advertising payload template để phát hiện static field trước khi merge.
 
 ### 5.10 Mesh Anti-Spam & DoS Resilience
+
+#### Tấn công Sybil trên mạng Mesh (Chống Spam & OOM)
+
+- 📱💻🖥️ **Fixed-Size Relay Ring Buffer:** Cố định bộ đệm dạng vòng tròn tĩnh trên Shared Memory giới hạn RAM chuyên chứa tin nhảy cóc đa chiều, ngăn chặn phình to tràn bộ nhớ (OOM).
+- 📱💻🖥️ **Identity-Bound QoS & Edge Defense:** Áp ráp OPA Engine tự quy chiếu hạn ngạch tốc độ (Rate Limiting) theo định lượng tín nhiệm người dùng. Lớp bảo hệ MAC ngoại biên được xác thực bởi Sealed Sender + MLS khóa chặt yêu cầu bừa bãi.
+- 📱💻🖥️ Tự động lọc các gói Data cồng kềnh qua QoS (loại trừ tệp/file/video) tại Hop số 2+ trong chế độ nhảy cóc P2P thuần túy.
 
 #### Chống Sybil & Broadcast Storm qua mPoW (Micro Proof-of-Work Hashcash Defense)
 
@@ -891,6 +914,12 @@
 
 ### 5.15 Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)
 
+#### Xử lý Xung đột Não lặp (Split-Brain Reconciliation)
+
+- 📱💻🖥️ **Deterministic Causal Merge:** Quy chuẩn lai Hybrid Logical Clocks (HLC) song hành cùng Vector Clocks neo giữ tính bền vững nhân quả (Causality) dẫu phần cứng đồng hồ của hệ thống bị sai lệch thời gian nghiêm trọng.
+- 📱💻🖥️ Đóng chốt chu vi phân xử qua thuật toán Tie-breaker `Hash(Node_ID)` Linearization, chọn duy nhất đường thẳng một chiều thông suốt có tính tất định tuyệt đối để dàn xếp hội tụ mạng DAG.
+- 📱💻🖥️ **MLS Epoch Stitching:** Khởi chạy Merge Commit bằng thủ tục O(log n) trực tiếp thông qua cây TreeKEM, thiết lập mới nhất thể Kỷ Nguyên (Epoch) kiên cố bao trùm toàn bộ nhóm hậu sự cố chẻ đảo.
+
 > **Bài toán:** Khi mạng tách làm nhiều đảo (Split-brain), mỗi đảo tiến hóa state DAG và xoay khóa MLS Epoch độc lập. Khi nối lại, các node bị tụt hậu quá sâu không thể giải mã lịch sử chặn giữa và phân xử xung đột.
 
 - 📱💻🖥️ **Gossip Protocol Lan truyền Vector Clock (Frontier Discovery):** Các node liên tục trao đổi Vector Clock qua giao thức Gossip để nhận diện "Frontier" (biên giới cập nhật mới nhất) của các hòn đảo mạng.
@@ -958,6 +987,12 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - ☁️📱💻🖥️ Ép buộc ghi nhận Audit Log chuẩn HIPAA/SOC2 đối với mọi thao tác giải mã của Admin.
 
 ### 4.9 Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)
+
+#### Rò rỉ Plaintext từ Vector Embeddings trong RAM (Tự hủy bộ nhớ tàn bạo)
+
+- 📱💻🖥️ **Ruthless Memory Self-Destruct:** Cấu trúc `ZeroizeOnDrop` (RAII) lập tức ghi đè liên tục `0x00` xóa sạch vùng Shared Memory ngay giây khắc bộ máy AI Sandbox tiêu thụ xong luồng Vector Embeddings.
+- 💻🖥️ **Hardware Anti-Swapping:** Khởi động UNIX API `mlock()` trên Desktop ngăn chặn hệ điều hành cày xới và đẩy Swap phân mảng dữ liệu AI siêu nhạy cảm xuống phân vùng đĩa cứng vật lý hở.
+- 📱💻🖥️ **Luồng Xử lý Cách ly Kép:** Độc lập tiến trình giải mật (CPU Bound) ngăn vách cực đoan khỏi mọi kết cấu hệ thống truyền dẫn chéo I/O mạng lưới.
 
 - 📱 Kích hoạt luồng ZeroizeOnDrop (RAII) để ghi đè `0x00` lên không gian bộ nhớ ngay khi thoát khỏi scope, khống chế vòng đời của plaintext key <2ms.
 - 📱💻🖥️ Đẩy luồng ký/giải mã KEK nội bộ xuống Hardware Root of Trust (Secure Enclave/TPM 2.0/StrongBox) tuyệt đối không nạp Private Key vào RAM.

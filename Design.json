@@ -944,48 +944,95 @@
                     "Timestamp: 12px muted",
                     "Message: 14px Regular, line-height 1.6"
                   ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Nhóm message (cùng user < 5 phút):"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "Avatar  User Name   14:02\n        Message 1\n        Message 2\n        Message 3"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Không lặp avatar. Hiển thị 20–25 dòng / màn hình 13\"."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Hover message:"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "[React] [Reply] [Copy] [More…]"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Inline actions — không floating button lố. Background highlight 3%."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "System messages:"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "──────────── User X approved document ────────────"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Center aligned, muted text, không avatar."
                 }
               ],
-              "subsections": []
+              "subsections": [
+                {
+                  "id": "khởi-động-lạnh-skeleton-ui-render-khung-xương-cứng",
+                  "level": 4,
+                  "heading": "Khởi động Lạnh & Skeleton UI (Render khung xương cứng)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ Hardcoded Skeleton UI: Hiển thị tức thì (0ms - 50ms) khung xương mang phong cách Glassmorphism mà không cần chờ I/O từ cơ sở dữ liệu.",
+                        "📱💻🖥️ Pure Renderer Architecture: Logic xử lý dữ liệu được tách biệt hoàn toàn khỏi tầng hiển thị (Native/DOM), giúp UI không bị block bởi quá trình khởi động hệ thống tĩnh của Rust Core.",
+                        "📱 Quy tắc Điều hướng Thị giác: Layout Skeleton hardcode sẵn thanh Input và các khối tin nhắn dạng mờ (Blur) cố định để định hướng ánh nhìn của người dùng ngay khi app vừa mở."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "hiệu-ứng-magic-reveal-stubs-staggered-native-reveal",
+                  "level": 4,
+                  "heading": "Hiệu ứng Magic Reveal & Stubs (Staggered Native Reveal)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Staggered Slide-Up: Animation trượt so le từ trên xuống được thực thi trực tiếp trên Native Thread (tác động thẳng vào Transform Y và Opacity), đảm bảo đạt 120fps mà không chịu nghẽn luồng từ JS Bridge.",
+                        "📱💻🖥️ Zero-Byte Blur-Hash Stubbing: Trước khi tải ảnh gốc, UI lập tức render các \"Zero-Byte Stubs\" (<5KB JPEG E2EE chứa Hash Blur) tạo thành khối màu kính Glassmorphism mờ ảo.",
+                        "📱 Spring Physics: Áp dụng hiệu ứng nảy nhẹ (Spring) mang tính vật lý cho mỗi tin nhắn khi xuất hiện, tăng cảm giác chân thực và không gian tương tác."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "glassmorphism-state-update-glow-effect-hiệu-ứng-thông-minh",
+                  "level": 4,
+                  "heading": "Glassmorphism State Update & Glow Effect (Hiệu ứng Thông minh)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ Trạng thái ai_ready: Cập nhật trạng thái hệ thống và giao diện UI thông qua luồng IPC siêu nhẹ để bật hiệu ứng Glow lóe sáng viền mượt mà mang phong cách kính khi AI rà quét (tìm kiếm thông minh) thành công 20 tin nhắn gần nhất, báo hiệu sẵn sàng xử lý siêu văn bản."
+                      ]
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Nhóm message (cùng user < 5 phút):"
+                    },
+                    {
+                      "type": "code",
+                      "language": "",
+                      "code": "Avatar  User Name   14:02\n        Message 1\n        Message 2\n        Message 3"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Không lặp avatar. Hiển thị 20–25 dòng / màn hình 13\"."
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Hover message:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "",
+                      "code": "[React] [Reply] [Copy] [More…]"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Inline actions — không floating button lố. Background highlight 3%."
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "System messages:"
+                    },
+                    {
+                      "type": "code",
+                      "language": "",
+                      "code": "──────────── User X approved document ────────────"
+                    },
+                    {
+                      "type": "paragraph",
+                      "text": "Center aligned, muted text, không avatar."
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
             },
             {
               "id": "attachments",

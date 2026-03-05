@@ -395,6 +395,10 @@ Glass background blur 12–16px.
 - 📱💻🖥️ **Zero-Byte Blur-Hash Stubbing:** Trước khi tải ảnh gốc, UI lập tức render các "Zero-Byte Stubs" (<5KB JPEG E2EE chứa Hash Blur) tạo thành khối màu kính Glassmorphism mờ ảo.
 - 📱 **Spring Physics:** Áp dụng hiệu ứng nảy nhẹ (Spring) mang tính vật lý cho mỗi tin nhắn khi xuất hiện, tăng cảm giác chân thực và không gian tương tác.
 
+#### Glassmorphism State Update & Glow Effect (Hiệu ứng Thông minh)
+
+- 📱💻🖥️ **Trạng thái `ai_ready`:** Cập nhật trạng thái hệ thống và giao diện UI thông qua luồng IPC siêu nhẹ để bật hiệu ứng Glow lóe sáng viền mượt mà mang phong cách kính khi AI rà quét (tìm kiếm thông minh) thành công 20 tin nhắn gần nhất, báo hiệu sẵn sàng xử lý siêu văn bản.
+
 **Nhóm message** (cùng user < 5 phút):
 
 ```
