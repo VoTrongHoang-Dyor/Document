@@ -383,6 +383,18 @@ Glass background blur 12–16px.
 - Timestamp: 12px muted
 - Message: 14px Regular, line-height 1.6
 
+#### Khởi động Lạnh & Skeleton UI (Render khung xương cứng)
+
+- 📱💻🖥️ **Hardcoded Skeleton UI:** Hiển thị tức thì (0ms - 50ms) khung xương mang phong cách Glassmorphism mà không cần chờ I/O từ cơ sở dữ liệu.
+- 📱💻🖥️ **Pure Renderer Architecture:** Logic xử lý dữ liệu được tách biệt hoàn toàn khỏi tầng hiển thị (Native/DOM), giúp UI không bị block bởi quá trình khởi động hệ thống tĩnh của Rust Core.
+- 📱 **Quy tắc Điều hướng Thị giác:** Layout Skeleton hardcode sẵn thanh Input và các khối tin nhắn dạng mờ (Blur) cố định để định hướng ánh nhìn của người dùng ngay khi app vừa mở.
+
+#### Hiệu ứng Magic Reveal & Stubs (Staggered Native Reveal)
+
+- 📱 **Staggered Slide-Up:** Animation trượt so le từ trên xuống được thực thi trực tiếp trên Native Thread (tác động thẳng vào Transform Y và Opacity), đảm bảo đạt 120fps mà không chịu nghẽn luồng từ JS Bridge.
+- 📱💻🖥️ **Zero-Byte Blur-Hash Stubbing:** Trước khi tải ảnh gốc, UI lập tức render các "Zero-Byte Stubs" (<5KB JPEG E2EE chứa Hash Blur) tạo thành khối màu kính Glassmorphism mờ ảo.
+- 📱 **Spring Physics:** Áp dụng hiệu ứng nảy nhẹ (Spring) mang tính vật lý cho mỗi tin nhắn khi xuất hiện, tăng cảm giác chân thực và không gian tương tác.
+
 **Nhóm message** (cùng user < 5 phút):
 
 ```
