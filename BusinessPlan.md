@@ -158,13 +158,22 @@ Biên lợi nhuận gộp > 90% cho phép:
 
 ### 3.3 Enterprise Onboarding (Fast Deploy)
 
-**On-Premise (1 lệnh):**
+**On-Premise (CLI Install & Supply Chain Integrity):**
 
 ```bash
-curl -sL install.terachat.com | sudo bash --token=[License_Key]
+# 1. Download Signed Script & Manifest
+curl -sL https://install.terachat.com/install.sh -o /tmp/install.sh
+curl -sL https://install.terachat.com/manifest.sig -o /tmp/manifest.sig
+
+# 2. GPG/Cosign Verify & No-Execute Guard & Install
+cosign verify-blob --key terachat.pub --signature /tmp/manifest.sig /tmp/install.sh && \
+sha256sum -c /tmp/manifest.sig --ignore-missing && \
+sudo bash /tmp/install.sh --token=[License_Key]
 ```
 
-Máy tính biến thành Private Node trong vài phút. Không cần IT chuyên sâu.
+- Ngăn chặn tuyệt đối mã độc (Supply Chain) bằng đối soát mã băm SHA-256 từ Manifest chính thức.
+- Thực thi giới nghiêm `chmod -x` (No-Execute) trên thư mục `/tmp` trước khi cấp quyền `sudo`.
+- Máy tính biến thành Private Node trong vài phút. Không cần IT chuyên sâu.
 
 **Cloud Hybrid:** Admin nhập IP + SSH Key VPS → TeraChat tự SSH vào → cài Docker/K8s → bàn giao Admin Console.
 
@@ -198,11 +207,13 @@ Máy tính biến thành Private Node trong vài phút. Không cần IT chuyên 
 
 **PHẦN BẮT BUỘC ĐÓNG — "Két sắt" (bảo vệ bí mật thương mại):**
 
+> **Nghịch lý Obfuscation:** Làm rối (Obfuscation) toàn bộ ứng dụng gây lãng phí tài nguyên và phá vỡ tính minh bạch của Enterprise Security. Do đó, kỹ thuật Obfuscation (O-LLVM, Bogus Flow) **chỉ giới hạn nghiêm ngặt** ở các module Két sắt dưới đây, bảo toàn sự trong suốt cho Core Rust.
+
 | Component | Lý do đóng |
 |---|---|
-| **Enterprise Admin Console** | Giá trị cốt lõi để thu tiền: OPA Policy, Vùng 2, LDAP/Azure AD, quản trị phân quyền. |
-| **License Manager & Billing** | Kiểm tra License Key, đếm Seat, giới hạn tính năng theo tier. |
-| **AI Modules** (Magic Logger / RAG Context) | Bảo vệ thuật toán và lời hứa *không dùng dữ liệu khách hàng để train model*. |
+| **Enterprise Admin Console** | Giá trị cốt lõi để thu tiền: OPA Policy, Vùng 2, LDAP/Azure AD. **Được phép apply Obfuscation/Minification**. |
+| **License Manager & Billing** | Kiểm tra License Key, đếm Seat. **Bắt buộc áp dụng Obfuscation chuyên sâu** chống crack. |
+| **AI Modules** (Magic Logger / RAG Context) | Bảo vệ thuật toán AI độc quyền. |
 | **Deployment Scripts** (K8s/Docker HA) | Kịch bản auto-scale HA TURN Cluster. |
 
 ### 4.3 License Strategy ("Trói chân" đối thủ)

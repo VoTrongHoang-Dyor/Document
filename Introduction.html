@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — System Introduction & Onboarding</title>
+    <style>
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        .main {
+            padding: 4rem 4rem;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px;
+        }
+
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem;
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+        
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>System Introduction & Onboarding</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-header">Table of Contents</div><a href="#terachat-system-introduction-onboarding" class="nav-link" style="">TeraChat - System Introduction & Onboarding</a>
+<a href="#1-system-overview" class="nav-link" style="padding-left:0.8rem;">1. System Overview</a>
+<a href="#11-feature-requirements" class="nav-link" style="padding-left:0.8rem;">1.1 Feature Requirements</a>
+<a href="#12-feature-scope-out-of-scope" class="nav-link" style="padding-left:0.8rem;">1.2 Feature Scope & Out-of-Scope</a>
+<a href="#13-core-terminology" class="nav-link" style="padding-left:0.8rem;">1.3 Core Terminology</a>
+<a href="#14-high-level-architecture-philosophy" class="nav-link" style="padding-left:0.8rem;">1.4 High-Level Architecture Philosophy</a>
+<a href="#15-the-life-of-a-message-dòng-chảy-dữ-liệu" class="nav-link" style="padding-left:0.8rem;">1.5 The Life of a Message (Dòng chảy Dữ liệu)</a>
+<a href="#16-documentation-map" class="nav-link" style="padding-left:0.8rem;">1.6 Documentation Map</a>
+
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+</nav>
+
+<div class="main">
+    <h1 id="terachat-system-introduction-onboarding">TeraChat - System Introduction & Onboarding</h1>
+<h2 id="1-system-overview">1. System Overview</h2>
+<p>TeraChat là Hệ điều hành Công việc (Operating System for Work) dành cho Enterprise và Chính phủ, được xây dựng trên nền tảng kiến trúc Zero-Trust. Lõi hệ thống được phát triển hoàn toàn bằng ngôn ngữ Rust, đóng vai trò "độc tài" xử lý 100% nghiệp vụ mã hóa E2EE, đồng bộ dữ liệu và định tuyến mạng, đảm bảo an toàn tuyệt đối và khả năng hoạt động độc lập ngay cả khi hệ thống Internet toàn cầu gặp sự cố.</p>
+<h3 id="11-feature-requirements">1.1 Feature Requirements</h3>
+<ul>
+<li><strong>Zero-Knowledge:</strong> Máy chủ hoạt động như một "Blind Relay", chỉ chuyển tiếp các gói tin mã hóa. Máy chủ không giữ khóa giải mã, không biết nội dung thảo luận, danh tính thực của người gửi, hay lịch sử tìm kiếm.</li>
+<li><strong>End-to-End Encryption (E2EE):</strong> Toàn bộ dữ liệu (tin nhắn, gọi thoại, tệp tin) được mã hóa ngay tại thiết bị đầu cuối bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> trước khi truyền đi. Dữ liệu không bao giờ tồn tại trên mạng dưới dạng plaintext.</li>
+<li><strong>Hardware Security:</strong> Private Key được bảo vệ bằng phần cứng chuyên dụng (Secure Enclave trên iOS, StrongBox trên Android, TPM 2.0 trên Desktop, YubiKey) và tuyệt đối không bao giờ rời khỏi vi mạch này.</li>
+<li><strong>Offline Survival:</strong> Hệ thống duy trì liên lạc nội bộ thông qua mạng lưới P2P cục bộ (BLE 5.0, Wi-Fi Direct) tự hình thành khi mạng Internet bị cắt đứt.</li>
+</ul>
+<h3 id="12-feature-scope-out-of-scope">1.2 Feature Scope & Out-of-Scope</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>In-Scope</th>
+<th>Out-of-Scope</th>
+</tr></thead><tbody>
+<tr>
+<td>Nhắn tin, Voice/Video E2EE chuẩn MLS (IETF RFC 9420)</td>
+<td>Lưu trữ dữ liệu plaintext trên dữ liệu Server đám mây</td>
+</tr>
+<tr>
+<td>Cấu trúc mạng P2P Survival Mesh (BLE/Wi-Fi Direct)</td>
+<td>Định tuyến qua các Public Cloud không kiểm soát</td>
+</tr>
+<tr>
+<td>WASM Sandbox bảo mật cho các ứng dụng nội bộ (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>)</td>
+<td>Thực thi mã từ xa (Remote Code Execution) ngoài môi trường WASM</td>
+</tr>
+<tr>
+<td>Lưu trữ ẩn danh (Blind Storage) với MinIO & Erasure Coding</td>
+<td>Tìm kiếm nội dung nguyên bản (Server-side search) tại máy chủ</td>
+</tr>
+<tr>
+<td>Kiểm soát truy cập liên tổ chức (Federation Bridge & mTLS)</td>
+<td>Sử dụng Certificate Authority (CA) công cộng cho Federation</td>
+</tr>
+</tbody></table></div>
+<h3 id="13-core-terminology">1.3 Core Terminology</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Thuật ngữ</th>
+<th>Định nghĩa</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>.tapp</strong></td>
+<td>Tiện ích nghiệp vụ thu nhỏ (Mini-App) gồm bytecode WASM và JSON Schema, chạy cách ly hoàn toàn trên thiết bị. Server không thể can thiệp hay đọc dữ liệu xử lý bên trong.</td>
+</tr>
+<tr>
+<td><strong>Company_Key</strong></td>
+<td>Khóa mã hóa cấp doanh nghiệp, sinh tự động trong quá trình Onboarding. Mọi payload đều được mã hóa bằng khóa này trước khi phân bổ lên Cluster.</td>
+</tr>
+<tr>
+<td><strong>Blind Relay</strong></td>
+<td>Cơ chế định tuyến nơi máy chủ trung gian chỉ chuyển tiếp gói dữ liệu mã hóa mà không nắm giữ Key giải mã (áp dụng cho Messaging, File, Voice/Video).</td>
+</tr>
+<tr>
+<td><strong>TreeKEM / MLS</strong></td>
+<td>Kiến trúc phân phối khóa dạng cây nhị phân (thuộc chuẩn MLS). Đẩy tốc độ đồng bộ khóa nhóm nhanh gấp $O(\log n)$ siêu tốc cho quy mô 5000+ người dùng.</td>
+</tr>
+<tr>
+<td><strong>Zero-Byte Stubs</strong></td>
+<td>"Vỏ bọc ảo" định dạng siêu nhỏ (~5KB) đại diện cho tệp lớn. Giúp giao diện hiển thị ảnh xem trước tức thì mà không cần kéo tệp gốc từ máy chủ, khử hoàn toàn độ trễ I/O.</td>
+</tr>
+<tr>
+<td><strong>Shared Core</strong></td>
+<td>Kiến trúc "Lõi Độc Tài" dùng chung một bộ mã Rust duy nhất xử lý toàn bộ khóa, mạng, cơ sở dữ liệu cho cả 5 nền tảng (iOS, Android, Windows, macOS, Linux).</td>
+</tr>
+<tr>
+<td><strong>Survival Mesh</strong></td>
+<td>Tính năng tự tạo mạng cục bộ P2P (mạng nhện nhảy cóc) qua Bluetooth cục bộ và Wi-Fi Direct nhằm duy trì giao tiếp khi mạng WAN/Internet đứt gãy.</td>
+</tr>
+</tbody></table></div>
+<h3 id="14-high-level-architecture-philosophy">1.4 High-Level Architecture Philosophy</h3>
+<p>Triết lý lõi của TeraChat là phân tách tuyệt đối giữa <strong>Lõi Rust (Core)</strong> và <strong>Giao diện (UI)</strong>.</p>
+<p>Lõi Rust đóng vai trò "độc tài", nắm giữ 100% mọi nghiệp vụ tính toán mật mã E2EE (MLS), đồng bộ trạng thái (CRDT), hệ quản trị dữ liệu (SQLite WAL) và mạng (P2P/WebRTC). Trong khi đó, tầng UI (React Native, Tauri) đóng vai trò "Pure Renderer" (Thợ vẽ thuần túy) – tước bỏ toàn bộ logic, chỉ hiển thị những thay đổi trạng thái (StateChanged) do Core báo về qua IPC.</p>
+<p>Thiết kế này bắt buộc hình thành vì 3 lý do:</p>
+<ol>
+<li><strong>Nhất quán mã hóa:</strong> Đảm bảo duy nhất 1 thư viện phân giải mã hóa chuẩn xác trên cả 5 nền tảng OS.</li>
+<li><strong>Loại trừ rò rỉ bộ nhớ:</strong> JS thread (UI) rất dễ bị trích xuất dữ liệu, giam toàn bộ Crypto Runtime trong lõi độc lập bảo vệ an toàn tối đa cho RAM.</li>
+<li><strong>Hiệu năng xuyên không gian:</strong> Tránh được rào cản quá tải vòng lặp Event-Loop chậm chạp, tận dụng băng thông chia sẻ (Shared Memory) khổng lồ đẩy tốc độ I/O lên hơn 400MB/s.</li>
+</ol>
+<h3 id="15-the-life-of-a-message-dòng-chảy-dữ-liệu">1.5 The Life of a Message (Dòng chảy Dữ liệu)</h3>
+<ol>
+<li><strong>Khởi tạo và Mã hóa (Thiết bị gửi [A]):</strong> Người dùng [A] soạn tin nhắn. Lõi Rust trên máy [A] sử dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> và thuật toán cây TreeKEM để mã hóa nội dung E2EE nguyên khối ngay trong vi mạch thiết bị.</li>
+<li><strong>Định tuyến Ẩn danh (Sealed Sender):</strong> Lõi Rust đóng gói bản mã (ciphertext) vào một phong bì dữ liệu, tiếp tục mã hóa danh tính người gửi bằng Public Key của người nhận [B]. Mọi dấu vết danh tính đi ra khỏi máy bị ẩn hoàn toàn (Zero-Knowledge).</li>
+<li><strong>Trung chuyển Mù (Blind Relay Server):</strong> Máy chủ làm nhiệm vụ lưu trữ và phân phối. Giống một trạm bưu điện không quyền bóc thư, hệ thống không giữ Private Key, đẩy nguyên khối gói tin tới hàng chờ (Queue) của thiết bị [B].</li>
+<li><strong>Nhận và Giải mã (Thiết bị nhận [B]):</strong> Thiết bị hạ du [B] kéo gói tin về. Lõi Rust trên máy [B] kích hoạt Private Key (được giữ chặt trong chip TPM/Secure Enclave) để giải thuật Sealed Sender, sau đó bung gói E2EE thành dữ liệu văn bản thuần (plaintext).</li>
+<li><strong>Vẽ giao diện và Tiêu hủy Ký ức (UI & Crypto-Shredding):</strong> Sau khi văn bản được vẽ (Paint) tức thì trên màn hình nhờ cầu nối UI Component, khối khóa giải mã và mọi tàn dư trên RAM bị "hủy diệt" (kiến trúc Zeroize — tự đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code>). Không một phần mềm Malware nào có thể trích xuất ra (Memory Dumped) khóa gốc.</li>
+</ol>
+<h3 id="16-documentation-map">1.6 Documentation Map</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tài liệu</th>
+<th>Đối tượng độc giả</th>
+<th>Phạm vi nội dung (Scope)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Introduction.md</code></strong></td>
+<td>Mọi thành viên</td>
+<td>Tổng quan về triết lý <strong>"Lõi Độc Tài" (Dictator Core)</strong>, kiến trúc Zero-Trust và phân tích dòng chảy dữ liệu (Data Life-cycle) của một tin nhắn từ lúc khởi tạo đến khi tiêu hủy.</td>
+</tr>
+<tr>
+<td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TechSpec.md</code></strong></td>
+<td>Lead Dev, Architects</td>
+<td><strong>"Kinh thánh" kỹ thuật.</strong> Định nghĩa các nguyên tắc thiết kế bất biến, cơ chế giải quyết xung đột (Conflict Resolution) và kiến trúc hạ tầng lưu trữ phân tầng (Tiered Storage).</td>
+</tr>
+<tr>
+<td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code></strong></td>
+<td>App Dev (Mobile/Desktop)</td>
+<td>Chi tiết thực thi tầng <strong>Data Plane</strong>, cơ chế giao tiếp IPC tốc độ cao (<strong>JSI/FFI</strong>), tối ưu hóa Local Storage qua SQLite WAL và quy trình tích hợp sâu vào Native OS.</td>
+</tr>
+<tr>
+<td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Core_Spec.md</code></strong></td>
+<td>DevOps, Security Eng.</td>
+<td>Hạ tầng Backend, quản lý hệ thống khóa <strong>HKMS</strong>, giao thức bảo mật MLS, vận hành mạng lưới sinh tồn (<strong>Survival Mesh</strong>) và bảo mật phần cứng Enclave (TEE).</td>
+</tr>
+<tr>
+<td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code></strong></td>
+<td>Product Owner, Devs</td>
+<td>Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ <strong>Dual-Mask</strong> và giao thức liên kết tổ chức (Federation).</td>
+</tr>
+<tr>
+<td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BusinessPlan.md</code></strong></td>
+<td>Stakeholders, Sales</td>
+<td>Mô hình kinh doanh đột phá <strong>"Zero Bandwidth Cost"</strong>, chiến lược mã nguồn mở có kiểm soát (Open-Core) và lộ trình chiếm lĩnh thị trường (Go-to-Market).</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

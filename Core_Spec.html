@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Core Technical Specification</title>
+    <style>
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        .main {
+            padding: 4rem 4rem;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px;
+        }
+
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem;
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+        
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Core Technical Specification</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-header">Table of Contents</div><a href="#core-specmd-terachat-v022" class="nav-link" style="">Core_Spec.md — TeraChat V0.2.2</a>
+<a href="#1-system-overview" class="nav-link" style="padding-left:0.8rem;">1. System Overview</a>
+<a href="#11-feature-requirements-zero-knowledge-e2ee" class="nav-link" style="padding-left:0.8rem;">1.1 Feature Requirements (Zero-Knowledge, E2EE)</a>
+<a href="#111-hardware-root-of-trust-anti-extraction-chống-xâm-nhập-vật-lý" class="nav-link" style="padding-left:0.8rem;">1.1.1 Hardware Root of Trust & Anti-Extraction (Chống Xâm nhập Vật lý)</a>
+<a href="#12-feature-scope-out-of-scope" class="nav-link" style="padding-left:0.8rem;">1.2 Feature Scope & Out-of-Scope</a>
+<a href="#13-core-terminology" class="nav-link" style="padding-left:0.8rem;">1.3 Core Terminology</a>
+<a href="#2-architectural-approach" class="nav-link" style="padding-left:0.8rem;">2. Architectural Approach</a>
+<a href="#21-shared-core-philosophy-lõi-rust-độc-tài" class="nav-link" style="padding-left:0.8rem;">2.1 Shared Core Philosophy — Lõi Rust Độc Tài</a>
+<a href="#22-blind-routing-zero-knowledge" class="nav-link" style="padding-left:0.8rem;">2.2 Blind Routing & Zero-Knowledge</a>
+<a href="#23-phân-rã-lõi-dynamic-micro-core-loading" class="nav-link" style="padding-left:0.8rem;">2.3 Phân rã Lõi (Dynamic Micro-Core Loading)</a>
+<a href="#24-trạng-thái-ảo-hóa-cloud-edge-tee-backed-stateless-ephemeral-client" class="nav-link" style="padding-left:0.8rem;">2.4 Trạng thái Ảo hóa (Cloud-Edge TEE-Backed Stateless Ephemeral Client)</a>
+<a href="#25-lõi-cập-nhật-minh-bạch-rào-chắn-sandbox-rogue-admin-sandboxing-defenses" class="nav-link" style="padding-left:0.8rem;">2.5 Lõi Cập nhật Minh bạch & Rào chắn Sandbox (Rogue Admin & Sandboxing Defenses)</a>
+<a href="#26-lõi-mật-mã-kháng-kênh-kề-hardware-level-cryptography-defenses" class="nav-link" style="padding-left:0.8rem;">2.6 Lõi Mật mã Kháng Kênh kề (Hardware-Level Cryptography Defenses)</a>
+<a href="#3-infrastructure-control-plane" class="nav-link" style="padding-left:0.8rem;">3. Infrastructure & Control Plane</a>
+<a href="#31-deployment-topologies" class="nav-link" style="padding-left:0.8rem;">3.1 Deployment Topologies</a>
+<a href="#32-backend-services" class="nav-link" style="padding-left:0.8rem;">3.2 Backend Services</a>
+<a href="#33-cơ-sở-hạ-tầng-triển-khai-devops-infrastructure-devops-deployments" class="nav-link" style="padding-left:0.8rem;">3.3 Cơ sở Hạ tầng & Triển khai DevOps (Infrastructure & DevOps Deployments)</a>
+<a href="#34-database-layer" class="nav-link" style="padding-left:0.8rem;">3.4 Database Layer</a>
+<a href="#4-security-cryptography-engine" class="nav-link" style="padding-left:0.8rem;">4. Security & Cryptography Engine</a>
+<a href="#41-key-management-system-hkms" class="nav-link" style="padding-left:0.8rem;">4.1 Key Management System (HKMS)</a>
+<a href="#42-message-layer-security-mls-ietf-rfc-9420" class="nav-link" style="padding-left:0.8rem;">4.2 Message Layer Security (MLS — IETF RFC 9420)</a>
+<a href="#43-hardware-isolation-crypto-shredding" class="nav-link" style="padding-left:0.8rem;">4.3 Hardware Isolation & Crypto-Shredding</a>
+<a href="#5-network-communication-protocols" class="nav-link" style="padding-left:0.8rem;">5. Network & Communication Protocols</a>
+<a href="#51-real-time-messaging" class="nav-link" style="padding-left:0.8rem;">5.1 Real-time Messaging</a>
+<a href="#52-survival-mesh-network-p2p-ble-50-wi-fi-direct" class="nav-link" style="padding-left:0.8rem;">5.2 Survival Mesh Network (P2P, BLE 5.0, Wi-Fi Direct)</a>
+<a href="#56-clustered-mesh-topology-super-node-silent-election-chống-broadcast-storm" class="nav-link" style="padding-left:0.8rem;">5.6 Clustered Mesh Topology & Super Node Silent Election (Chống Broadcast Storm)</a>
+<a href="#57-dò-tìm-nội-dung-tất-định-blind-content-addressable-oblivious-bloom-filter" class="nav-link" style="padding-left:0.8rem;">5.7 Dò tìm Nội dung Tất định Blind Content-Addressable (Oblivious Bloom Filter)</a>
+<a href="#58-truyền-tải-file-đa-kênh-mạng-mesh-teralink-multipath-data-mule" class="nav-link" style="padding-left:0.8rem;">5.8 Truyền tải File đa kênh mạng Mesh (TeraLink Multipath Data Mule)</a>
+<a href="#59-tiết-kiệm-năng-lượng-mạng-mesh-jcas-spatial-aware-routing-ibeacon-stealth-mode" class="nav-link" style="padding-left:0.8rem;">5.9 Tiết kiệm Năng lượng Mạng Mesh (JCAS Spatial-Aware Routing & iBeacon Stealth Mode)</a>
+<a href="#510-mesh-anti-spam-dos-resilience" class="nav-link" style="padding-left:0.8rem;">5.10 Mesh Anti-Spam & DoS Resilience</a>
+<a href="#511-webrtc-blind-relay-turn" class="nav-link" style="padding-left:0.8rem;">5.11 WebRTC Blind Relay (TURN)</a>
+<a href="#54-oob-mesh-ratchet-double-ratchet-vs-data-mule" class="nav-link" style="padding-left:0.8rem;">5.4 OOB Mesh Ratchet (Double Ratchet vs Data Mule)</a>
+<a href="#44-hybrid-pq-kem-kyber768-điểm-neo-lượng-tử" class="nav-link" style="padding-left:0.8rem;">4.4 Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử</a>
+<a href="#45-threshold-fido2-recovery-quorum-based-recovery" class="nav-link" style="padding-left:0.8rem;">4.5 Threshold FIDO2 Recovery (Quorum-based Recovery)</a>
+<a href="#46-phân-mảnh-hạ-tầng-chữ-ký-phục-hồi-hybrid-cross-signing-cloud-escrow" class="nav-link" style="padding-left:0.8rem;">4.6 Phân mảnh Hạ tầng Chữ ký & Phục hồi (Hybrid Cross-Signing & Cloud Escrow)</a>
+<a href="#47-bảo-vệ-toàn-vẹn-chống-replay-trong-mạng-mesh-blake3-merkle" class="nav-link" style="padding-left:0.8rem;">4.7 Bảo vệ Toàn vẹn & Chống Replay trong mạng Mesh (BLAKE3 & Merkle)</a>
+<a href="#48-thảm-họa-zero-access-rogue-admin-multi-party-enterprise-escrow-kem" class="nav-link" style="padding-left:0.8rem;">4.8 Thảm họa "Zero-Access" & Rogue Admin (Multi-Party Enterprise Escrow KEM)</a>
+<a href="#49-tấn-công-memory-dumpextraction-synchronous-zeroize-safe-pipeline-hardware-isolation" class="nav-link" style="padding-left:0.8rem;">4.9 Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)</a>
+<a href="#410-giao-diện-ký-số-vật-lý-hybrid-multi-device-cross-signing-zkp-delegation" class="nav-link" style="padding-left:0.8rem;">4.10 Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)</a>
+<a href="#411-chế-độ-kiosk-ephemeral-session-vault-raii-zeroization" class="nav-link" style="padding-left:0.8rem;">4.11 Chế độ Kiosk (Ephemeral Session Vault & RAII Zeroization)</a>
+<a href="#410-ephemeral-session-provisioning-role-based-vault-kiosk-mode" class="nav-link" style="padding-left:0.8rem;">4.10 Ephemeral Session Provisioning & Role-Based Vault (Kiosk Mode)</a>
+<a href="#46-zkp-rate-limiting-bảng-nullifier-voprf-chống-spam-ẩn-danh" class="nav-link" style="padding-left:0.8rem;">4.6 ZKP Rate-Limiting & Bảng Nullifier VOPRF — Chống Spam Ẩn danh</a>
+<a href="#411-cryptographic-nullifier-sets-idp-linked-token-revocation" class="nav-link" style="padding-left:0.8rem;">4.11 Cryptographic Nullifier Sets & IdP-Linked Token Revocation</a>
+<a href="#47-nghịch-lý-mã-nguồn-mở-và-compiler-level-guards" class="nav-link" style="padding-left:0.8rem;">4.7 Nghịch lý Mã nguồn Mở và Compiler-Level Guards</a>
+<a href="#48-identity-key-escrow-sovereignty-first-key-recovery" class="nav-link" style="padding-left:0.8rem;">4.8 Identity & Key Escrow — Sovereignty-First Key Recovery</a>
+<a href="#49-searchable-symmetric-encryption-sse-forward-secrecy" class="nav-link" style="padding-left:0.8rem;">4.9 Searchable Symmetric Encryption (SSE) & Forward Secrecy</a>
+<a href="#6-api-secret-management" class="nav-link" style="padding-left:0.8rem;">6. API Secret Management</a>
+<a href="#61-e2ee-api-secret-vault-cryptographic-binding" class="nav-link" style="padding-left:0.8rem;">6.1 E2EE API Secret Vault & Cryptographic Binding</a>
+<a href="#62-phân-xử-nội-dung-trong-môi-trường-zero-knowledge-blind-dag-store" class="nav-link" style="padding-left:0.8rem;">6.2 Phân xử Nội dung trong Môi trường Zero-Knowledge (Blind DAG Store)</a>
+<a href="#63-xung-đột-audit-log-không-nhất-quán-split-brain-resolution" class="nav-link" style="padding-left:0.8rem;">6.3 Xung đột Audit Log không nhất quán (Split-Brain Resolution)</a>
+<a href="#64-asynchronous-treekem-với-epoch-forking-deterministic-merge-đứt-gãy-mls" class="nav-link" style="padding-left:0.8rem;">6.4 Asynchronous TreeKEM với Epoch Forking & Deterministic Merge (Đứt gãy MLS)</a>
+<a href="#65-hiệu-năng-xử-lý-đồ-thị-tại-biên-client-side-in-memory-dag" class="nav-link" style="padding-left:0.8rem;">6.5 Hiệu năng Xử lý Đồ thị tại Biên (Client-Side In-Memory DAG)</a>
+
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+</nav>
+
+<div class="main">
+    <h1 id="core-specmd-terachat-v022">Core_Spec.md — TeraChat V0.2.2</h1>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> DevOps · Backend · Security Engineer</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Scope:</strong> Infrastructure, Security & Cryptography, Network Protocols — Implementation-level only.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="1-system-overview">1. System Overview</h2>
+<h3 id="11-feature-requirements-zero-knowledge-e2ee">1.1 Feature Requirements (Zero-Knowledge, E2EE)</h3>
+<ul>
+<li><strong>E2EE tuyệt đối:</strong> Mọi payload mã hóa tại thiết bị đầu cuối bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> trước khi rời thiết bị.</li>
+<li><strong>Zero-Knowledge Server:</strong> ☁️ Server chỉ thấy ciphertext blob — không biết sender thực, nội dung, từ khóa tìm kiếm.</li>
+<li><strong>Hardware Root of Trust:</strong> Private Key giam trong chip vật lý (Secure Enclave/StrongBox/TPM 2.0). Không bao giờ rời chip.</li>
+<li><strong>Forward Secrecy:</strong> MLS Epoch Rotation — khóa cũ bị hủy khi thành viên rời nhóm.</li>
+</ul>
+<h3 id="111-hardware-root-of-trust-anti-extraction-chống-xâm-nhập-vật-lý">1.1.1 Hardware Root of Trust & Anti-Extraction (Chống Xâm nhập Vật lý)</h3>
+<ul>
+<li>📱 <strong>Xác thực Mật mã Ràng buộc Sinh trắc học phần cứng (Biometric-Bound Cryptographic Handshake):</strong> Khởi tạo khóa E2EE <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> trong Secure Enclave/StrongBox đi kèm cờ kiểm soát truy cập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">kSecAccessControlBiometryCurrentSet</code> ép buộc xác thực sinh trắc học (FaceID/TouchID). Kích hoạt cơ chế <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên vùng nhớ chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OIDC_ID_Token</code> để tiêu hủy dữ liệu ngay khi nhận tín hiệu lỗi từ phần cứng. Lõi Rust Ký số (Sign) <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OIDC_ID_Token</code> bằng Private Key vừa sinh để tạo chứng nhận <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Proof_of_Identity_and_Device</code> đệ trình lên máy chủ TeraChat.</li>
+<li>📱💻🖥️ <strong>Enterprise PIN Độc lập & Kỹ thuật Bọc Khóa Kép (Dual-Wrapped KEK):</strong> Thuật toán Argon2id tinh chỉnh độ trễ (0.5s CPU) để sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Fallback_KEK</code> chống bẻ khóa bằng GPU/ASIC. Nhân bản và bọc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> thành hai bản độc lập (Bản 1 qua Secure Enclave/StrongBox, Bản 2 qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Fallback_KEK</code>). Hàm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Drop()</code> kết hợp cơ chế Zeroize xóa sạch mã PIN và KEK khỏi bộ nhớ RAM ngay sau thao tác bọc khóa.</li>
+<li>📱💻🖥️ <strong>Luồng Fallback Mật mã qua FFI Pointer (Cryptographic PIN Fallback):</strong> Truyền mã PIN 6 số từ UI Native xuống Lõi Rust thông qua con trỏ bộ nhớ (FFI Pointer) nhằm tránh rò rỉ trên UI state. Tái tạo <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Fallback_KEK</code> để mở khóa Bản bọc 2 và trích xuất <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> hợp lệ. Ký số trực tiếp lên <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OIDC_ID_Token</code> bằng Private Key để xác thực định danh với máy chủ, sau đó ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên vùng RAM chứa PIN thô bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code>.</li>
+<li>📱💻🖥️ <strong>Cơ chế Tự hủy Mật mã (Ruthless Cryptographic Self-Destruct):</strong> Bộ đếm trạng thái <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Failed_PIN_Attempts</code> lưu trữ mã hóa cấp thấp với giới hạn tối đa 5 lần thử sai liên tiếp. Khi vượt hạn mức, lệnh Wipe thực thi xóa trắng (Crypto-Shredding) toàn bộ Local Database và thẻ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OIDC_ID_Token</code>. Tiêu hủy (Băm nát) vĩnh viễn 2 bản bọc của <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> để ép ứng dụng quay về trạng thái Factory Reset.</li>
+</ul>
+<h3 id="12-feature-scope-out-of-scope">1.2 Feature Scope & Out-of-Scope</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>In-Scope</th>
+<th>Out-of-Scope</th>
+</tr></thead><tbody>
+<tr>
+<td>Messaging E2EE (MLS IETF RFC 9420)</td>
+<td>Lưu plaintext trên Server</td>
+</tr>
+<tr>
+<td>P2P Survival Mesh (BLE/Wi-Fi Direct)</td>
+<td>Routing qua Public Cloud</td>
+</tr>
+<tr>
+<td>WASM Sandbox cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code></td>
+<td>Remote Code Execution ngoài WASM</td>
+</tr>
+<tr>
+<td>Blind Storage (MinIO + Erasure Coding)</td>
+<td>Server-side search trên plaintext</td>
+</tr>
+<tr>
+<td>Federation Bridge (mTLS + Sealed Sender)</td>
+<td>Dùng CA công cộng cho Federation</td>
+</tr>
+</tbody></table></div>
+<h3 id="13-core-terminology">1.3 Core Terminology</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Thuật ngữ</th>
+<th>Định nghĩa</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code></td>
+<td>Gói tiện ích: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">logic.wasm</code> + JSON Schema UI. Chạy trong WASM Sandbox trên thiết bị — không thực thi trên Server.</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code></td>
+<td>Khóa cấp Tenant, sinh khi Onboarding. Không rời thiết bị thành viên. Mã hóa mọi payload trước khi lên Cluster.</td>
+</tr>
+<tr>
+<td><strong>Blind Relay</strong></td>
+<td>Server chỉ chuyển tiếp ciphertext — không nắm key giải mã. Áp dụng cho Messaging (MLS), File (MinIO CAS), Voice (TURN).</td>
+</tr>
+<tr>
+<td><strong>TreeKEM</strong></td>
+<td>Cấu trúc cây nhị phân trong MLS, phân phối khóa nhóm O(log n). Tăng tốc sync 100× cho nhóm 5000+ user.</td>
+</tr>
+<tr>
+<td><strong>HKMS</strong></td>
+<td>Hierarchical Key Management System — Master Key → KEK → DEK. Master Key giam trong HSM/Secure Enclave.</td>
+</tr>
+<tr>
+<td><strong>Sealed Sender</strong></td>
+<td>Server biết gói tin đi đến đâu, nhưng không biết từ ai.</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code></td>
+<td>SHA-256 của ciphertext dùng cho CAS path và dedup. Server tra hash, không tra nội dung.</td>
+</tr>
+<tr>
+<td><strong>Crypto-Shredding</strong></td>
+<td>Xóa KEK thay vì xóa dữ liệu vật lý. Ciphertext còn trên disk nhưng trở thành garbage.</td>
+</tr>
+<tr>
+<td><strong>TEE</strong></td>
+<td>Trusted Execution Environment (Intel SGX / AWS Nitro). AI Worker chạy isolated — Cloud provider không đọc được.</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="2-architectural-approach">2. Architectural Approach</h2>
+<h3 id="21-shared-core-philosophy-lõi-rust-độc-tài">2.1 Shared Core Philosophy — Lõi Rust Độc Tài</h3>
+<ul>
+<li>☁️📱💻🖥️ <strong>Lõi Rust (TeraChat Core)</strong> nắm giữ 100% sinh mệnh: MLS E2EE, SQLCipher I/O, P2P Mesh, CRDT Sync. Biên dịch ra native binary cho mọi platform.</li>
+<li>📱💻🖥️ <strong>Tầng UI (React Native / Flutter / Tauri):</strong> Pure Renderer — cấm tuyệt đối port Crypto/Business Logic lên JS/Dart Thread.</li>
+<li>📱💻🖥️ <strong>IPC — Tách Control/Data Plane:</strong></li>
+<li><em>Control Plane:</em> Protobuf qua JSI HostObject / Dart FFI — lệnh nhỏ \&lt;1KB.</li>
+<li><em>Data Plane:</em> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SharedArrayBuffer</code> (Desktop) / C++ Shared Memory via JSI (iOS) / Dart FFI TypedData (Android) — Zero-Copy, throughput ~400–500MB/s.</li>
+<li>📱💻🖥️ <strong>Unidirectional State Sync:</strong> Rust bắn signal <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">StateChanged(table, version)</code> qua IPC. UI kéo snapshot tại thời điểm rảnh — không polling, không push JSON cục.</li>
+</ul>
+<h3 id="22-blind-routing-zero-knowledge">2.2 Blind Routing & Zero-Knowledge</h3>
+<ul>
+<li>☁️ Server là <strong>Blind Relay</strong> — chỉ thấy: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">destination_device_id</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">blob_size</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">timestamp</code>.</li>
+<li>☁️ <strong>Sealed Sender:</strong> Header người gửi mã hóa bằng public key người nhận — Server không biết who-to-whom.</li>
+<li>☁️ <strong>Oblivious CAS Routing:</strong> Batch 4–10 <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Fake_CAS_Hashes</code> khi gửi hash query (Chaffing). Tra qua Mixnet Proxy Endpoint, không đính <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">User_ID</code>.</li>
+<li>🗄️☁️ <strong>MinIO Blind Storage:</strong> Lưu file theo <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code> path — không biết tên file thực.</li>
+</ul>
+<h3 id="23-phân-rã-lõi-dynamic-micro-core-loading">2.3 Phân rã Lõi (Dynamic Micro-Core Loading)</h3>
+<ul>
+<li>📱💻 Khai thác Dynamic Library Loading (DLL/dylib) điều phối nạp/rút các phân hệ linh động theo từng ngữ cảnh giao tiếp.</li>
+<li>📱💻 Khởi động cơ chế Just-In-Time (JIT) Micro-Core nhằm đè bẹp dung lượng RAM thường trực của lõi hệ thống xuống mức tối thiểu tuyệt đối.</li>
+<li>📱💻🖥️ Áp dụng Engine mã hóa hậu lượng tử Kyber768 bảo đảm tương lai an toàn trước kỷ nguyên Shor Algorithm (Thuật toán Shor).</li>
+</ul>
+<h3 id="24-trạng-thái-ảo-hóa-cloud-edge-tee-backed-stateless-ephemeral-client">2.4 Trạng thái Ảo hóa (Cloud-Edge TEE-Backed Stateless Ephemeral Client)</h3>
+<ul>
+<li>☁️ Điều hướng luồng trạng thái dữ liệu ủy quyền sang vùng thực thi tin cậy TEE Enclave (Intel SGX / AWS Nitro) đặt tại Cloud-Edge.</li>
+<li>📱 Kiến nối kênh truyền E2EE Tunneling chọc thẳng từ thiết bị di động vào bộ nhớ RAM cấu trúc TEE mà không chạm đĩa cứng máy chủ.</li>
+<li>📱 Loại bỏ triệt để SSD I/O bottleneck nội bộ máy qua mô thức Zero-Local-Storage, biên dịch trọn vẹn trạng thái App vào luồng Virtual Memory.</li>
+</ul>
+<h3 id="25-lõi-cập-nhật-minh-bạch-rào-chắn-sandbox-rogue-admin-sandboxing-defenses">2.5 Lõi Cập nhật Minh bạch & Rào chắn Sandbox (Rogue Admin & Sandboxing Defenses)</h3>
+<h4 id="xác-thực-chữ-ký-gốc-root-ca-binary-transparency-không-tin-admin">Xác thực Chữ ký Gốc (Root CA Binary Transparency) — Không tin Admin</h4>
+<ul>
+<li>📱💻🖥️ Mọi bản build (Native App, Rust Core, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>) đều được ký số bằng <strong>TeraChat Root CA Key</strong> lưu trong hầm lạnh offline của TeraChat HQ. Admin không thể tạo ra chữ ký này.</li>
+<li>📱💻🖥️ Lõi Rust trên Client hard-code sẵn Public Key của TeraChat. Khi tải bản cập nhật từ VPS nội bộ, Lõi Rust <strong>bắt buộc kiểm tra chữ ký Ed25519</strong> trước khi thực thi. Sửa 1 bit → chữ ký vỡ → Drop + Báo động đỏ.</li>
+<li>📱💻🖥️ Xác minh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">signature_ed25519</code> tận sâu tầng Lõi Rust nhằm vô hiệu hóa tức thời mọi bản cập nhật đơn phương (kể cả Admin nội bộ).</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Phân vai rõ ràng:</strong> FROST Quorum chỉ áp dụng cho phê duyệt tài liệu nội bộ và giải mã dữ liệu Escrow. Không dùng cho việc ký xác nhận cài đặt App.</p>
+<h4 id="cờ-chống-hạ-cấp-anti-rollback-monotonic-counter">Cờ Chống Hạ cấp (Anti-Rollback Monotonic Counter)</h4>
+<ul>
+<li>📱💻🖥️ Mỗi bản build đớu chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Version_Sequence</code> (số nguyên tăng đơn đặt trong header).</li>
+<li>📱💻🖥️ Lõi Rust lưu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Current_Sequence</code> vào SQLite được mã hóa. Nếu VPS đẩy xuống bản build có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Sequence &lt; Current_Sequence</code> → Drop tức thì, chống hạ cấp (Downgrade Attack).</li>
+</ul>
+<h4 id="global-cve-heartbeat-qua-dns-txt-records-out-of-band-revocation">Global CVE Heartbeat qua DNS TXT Records (Out-of-Band Revocation)</h4>
+<ul>
+<li>📱💻🖥️ Tra cứu bản ghi DNS TXT Out-of-Band định kỳ mỗi 24h trỏ về <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">security.terachat.com</code> — vô hình trước các tường lửa HTTP/TCP truyền thống.</li>
+<li>📱💻🖥️ Sử dụng <strong>DNS-over-HTTPS (DoH)</strong> qua Cloudflare/Google để xuyên thủng DPI Firewall nội bộ, chống chặn DNS.</li>
+<li>📱💻🖥️ Xác thực chữ ký điện tử <strong>Ed25519</strong> từ TeraChat Global CA trước khi nạp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Version_Sequence_Blacklist</code> — chống DNS Spoofing và DNS Hijacking.</li>
+</ul>
+<h4 id="atomic-ipc-security-lock-rsod-cơ-chế-khóa-ứng-dụng-khẩn-cấp">Atomic IPC Security Lock & RSOD (Cơ chế Khóa Ứng dụng khẩn cấp)</h4>
+<ul>
+<li>📱💻🖥️ Sử dụng cờ <strong>Atomic</strong> (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ATOMIC_SECURITY_LOCK</code>) để khóa toàn bộ luồng IPC Data Plane ngay khi phát hiện phiên bản bị thu hồi (CVE Blacklist match).</li>
+<li>📱💻🖥️ Kích hoạt giao diện <strong>Red Screen of Death (RSOD)</strong> thông qua luồng tín hiệu từ Lõi Rust lên UI (React Native/Tauri) — người dùng không thể đóng hộp thoại này.</li>
+<li>📱💻🖥️ Thực thi giao thức <strong>Zeroize RAM</strong> tiêu hủy tức khắc khóa Root và tàn dư vùng nhớ nhạy cảm khi nhận lệnh khóa.</li>
+</ul>
+<h4 id="phân-rã-kênh-cập-nhật-dual-track-ota-distribution">Phân rã Kênh Cập nhật (Dual-Track OTA Distribution)</h4>
+<ul>
+<li>📱 <strong>Mobile (Signal-Only Update):</strong> VPS chỉ phát cờ lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"V0.3.0 là bắt buộc"</code>. App iOS/Android nhận lệnh → Khóa UI → Hiển thị nút <em>"Đến App Store / CH Play để cập nhật"</em>. quá trình tải app vẫn phải đi qua server Apple/Google. VPS không chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.ipa/.apk</code>.</li>
+<li>💻🖥️ <strong>Desktop (LAN P2P Update và Tauri Updater):</strong> VPS chỉ "mồi" bản cập nhật cho 10 máy Super Nodes. Sau đó, các máy Desktop tự dùng <strong>LAN P2P (Survival Mesh)</strong> phân phối Binary cho các máy còn lại, giải phóng 99% tải băng thông của VPS, tránh bão mạng LAN.</li>
+</ul>
+<h4 id="tấn-công-cập-nhật-mục-tiêu-lén-lút-distributed-binary-transparency-dbt">Tấn công Cập nhật Mục tiêu lén lút (Distributed Binary Transparency - DBT)</h4>
+<ul>
+<li>📱💻🖥️ Ấn định sổ cái bất biến Global_Update_Log đổ khuôn trên kiến trúc cốt lõi Append-Only CRDT Log.</li>
+<li>📱💻 Đồng bộ mã băm (Hash) xuyên suốt mọi bản cập nhật JMM qua giao thức Gossip lan truyền trên toàn tuyến mạng Mesh.</li>
+<li>📱💻 Khóa chặt cờ No-Exception Rule buộc Lõi Rust đối soát đối xứng Hash của JMM với sổ cái chung trước thời khắc nạp module.</li>
+</ul>
+<h4 id="thực-thi-mã-độc-trong-module-mật-mã-wasm-capability-based-sandboxing">Thực thi Mã độc trong Module Mật mã (WASM Capability-Based Sandboxing)</h4>
+<ul>
+<li>📱💻🖥️ Gia cố Engine <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasmtime</code> mặc định chạy ở chế độ Deny-by-Default nghẹt con trỏ (Pointer) chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> truyền ngược vào module.</li>
+<li>📱💻🖥️ Tước bỏ triệt để Network Socket Capabilities phong ấn hoàn toàn kẽ hở dữ liệu rò rỉ ra cầu nối Internet mở.</li>
+<li>📱💻🖥️ Kích nổ cơ chế Blind Return kèm Zeroize tiêu hủy tàn dư vùng nhớ RAM của WASM ngay tắp lự sau vạch kết thúc thực thi.</li>
+</ul>
+<h4 id="ast-opcode-filtering-fixed-point-arithmetic-enforcement-bất-tất-định-fpu">AST Opcode Filtering & Fixed-point Arithmetic Enforcement (Bất tất định FPU)</h4>
+<ul>
+<li>📱💻🖥️ Sử dụng thư viện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasmparser</code> để phân tích tĩnh (Static Analysis) và chặn đứng các opcode <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">f32/f64</code> gây bất tất định.</li>
+<li>📱💻🖥️ Cưỡng ép sử dụng toán học số nguyên (Fixed-point) hoặc Soft-float thay cho Float phần cứng ở cấp độ biên dịch.</li>
+<li>📱💻🖥️ Phân loại <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">execution_profile</code> trong cấu trúc Manifest để cô lập an toàn các tác vụ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">consensus_critical</code>.</li>
+</ul>
+<h4 id="engine-level-canonical-nan-normalization-sai-lệch-vi-kiến-trúc">Engine-level Canonical NaN Normalization (Sai lệch vi kiến trúc)</h4>
+<ul>
+<li>💻🖥️ Kích hoạt cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cranelift_nan_canonicalization</code> trong Wasmtime để chuẩn hóa mọi bit pattern của biến thể NaN hiểm hóc.</li>
+<li>📱💻🖥️ Vô hiệu hóa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">relaxed_simd</code> và phần cứng SIMD để nhổ bỏ tận rễ các phép toán phụ thuộc vi kiến trúc vật lý.</li>
+<li>📱 Thực thi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">js-flags</code> (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--no-wasm-simd</code>) qua JSI để đồng bộ cứng hành vi runtime chuẩn xác trên nền tảng Mobile.</li>
+</ul>
+<h4 id="dictator-choke-point-via-host-binding-proxy-sandbox-network-escape">Dictator Choke-Point via Host-Binding Proxy (Sandbox Network Escape)</h4>
+<ul>
+<li>📱💻🖥️ Tước đoạt hoàn toàn năng lực <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasi-sockets</code> của WASM Runtime để phong tỏa khả năng Direct Socket Access.</li>
+<li>📱💻🖥️ Chuyển hướng mọi yêu cầu mạng qua Polyfilled <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fetch()</code> và cấu trúc IPC Protobuf <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EgressNetworkRequest</code>.</li>
+<li>📱💻 Thiết lập Lõi Rust (Data Plane) đóng vai trò Forward Proxy duy nhất để kiểm soát luồng TLS vật lý.</li>
+</ul>
+<h4 id="custom-dns-over-https-doh-bogon-filtering-dns-rebinding">Custom DNS-over-HTTPS (DoH) & Bogon Filtering (DNS Rebinding)</h4>
+<ul>
+<li>📱💻🖥️ Rust Core tự phân giải DNS qua giao thức DoH trỏ về Enterprise DNS nhằm bypass bộ đệm hệ điều hành.</li>
+<li>📱💻🖥️ Áp dụng thuật toán Bogon Space Validation đối chiếu IP trả về với dải <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">127.0.0.0/8</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">10.0.0.0/8</code> ngăn chặn SSRF xâm nhập nội bộ.</li>
+<li>📱💻🖥️ Kích hoạt kỹ thuật IP Pinning cố định địa chỉ đích ngay tại tầng Socket để triệt tiêu chiến thuật đổi IP giữa chừng.</li>
+</ul>
+<h4 id="air-gapped-linear-memory-isolation-chống-trích-xuất-khóa-từ-ram">Air-Gapped Linear Memory Isolation (Chống trích xuất khóa từ RAM)</h4>
+<ul>
+<li>📱💻🖥️ Cấp phát dải bộ nhớ ảo (Linear Memory) hoàn toàn độc lập và cách ly cho WASM Sandbox để ngăn chặn con trỏ (pointer) thoát luồng.</li>
+<li>📱💻🖥️ Khóa cứng vùng nhớ chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> bằng lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> tại Lõi Rust để chống quét (scan) hoặc trích xuất (dump) RAM của hệ thống.</li>
+</ul>
+<h4 id="opa-driven-ipc-bridge-manifest-control-kiểm-soát-io-trái-phép">OPA-driven IPC Bridge & Manifest Control (Kiểm soát I/O trái phép)</h4>
+<ul>
+<li>📱💻🖥️ Sử dụng giao thức IPC Protobuf qua SharedArrayBuffer làm cầu nối giao tiếp duy nhất cho mọi hành vi I/O (Network, File System, Database).</li>
+<li>☁️📱💻🖥️ Tích hợp OPA Engine (Open Policy Agent) tại Lõi Rust để đối chiếu quyền hạn khai báo trong Manifest của <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> với quyền hiện tại của User.</li>
+<li>💻🖥️ Trả dữ liệu Plaintext ngược vào RAM của WASM mà tuyệt đối không cấp quyền truy cập trực tiếp vào File Handle gốc của OS.</li>
+</ul>
+<h4 id="blind-cryptography-kdf-storage-sandboxing-mã-hóa-lưu-trữ-ẩn-danh">Blind Cryptography & KDF Storage Sandboxing (Mã hóa Lưu trữ Ẩn danh)</h4>
+<ul>
+<li>📱💻🖥️ Dẫn xuất khóa phụ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Tapp_Sandbox_Key</code> từ khóa gốc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> thông qua thuật toán KDF (Key Derivation Function) tại Lõi Rust.</li>
+<li>📱💻🖥️ Mã hóa AES-256-GCM toàn bộ payload JSON và lưu xuống SQLite WAL bảo đảm tiện ích hoàn toàn "mù" về khóa mã hóa.</li>
+<li>📱💻 Tự động giải mã và bơm Plaintext trả lại Sandbox khi tiện ích gọi API đọc dữ liệu hợp lệ.</li>
+</ul>
+<h4 id="host-binding-network-deprivation-strict-e2ee-routing-chống-tuồn-dữ-liệu-ra-mạng-ngoài">Host-Binding Network Deprivation & Strict E2EE Routing (Chống tuồn dữ liệu ra mạng ngoài)</h4>
+<ul>
+<li>📱💻🖥️ Chặn (Block) toàn bộ khả năng truy cập API mạng tự do (như HTTP Socket/TCP Socket) từ bên trong WASM Sandbox.</li>
+<li>📱💻🖥️ Ép buộc mọi luồng đồng bộ dữ liệu phải đi qua Data Plane của TeraChat dưới dạng payload E2EE.</li>
+<li>☁️📱💻🖥️ Bọc gói tin trong giao thức Federation mTLS để kiểm soát và đảm bảo đích đến luôn là máy chủ nội bộ được cấp phép.</li>
+</ul>
+<h3 id="26-lõi-mật-mã-kháng-kênh-kề-hardware-level-cryptography-defenses">2.6 Lõi Mật mã Kháng Kênh kề (Hardware-Level Cryptography Defenses)</h3>
+<h4 id="kiến-trúc-lai-kép-hybrid-pq-kem-với-ml-kem-768-tấn-công-store-now-decrypt-later-sndl-và-đe-dọa-lượng-tử">Kiến trúc Lai Kép (Hybrid PQ-KEM) với ML-KEM-768 (Tấn công Store Now, Decrypt Later (SNDL) và Đe dọa Lượng tử)</h4>
+<ul>
+<li>📱💻🖥️☁️🗄️ Kết hợp song song mật mã học cổ điển <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">X25519</code> và mật mã học kháng lượng tử <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ML-KEM</code> (Kyber768) để đảm bảo an toàn kể cả khi một trong hai thuật toán bị bẻ gãy.</li>
+<li>📱💻🖥️☁️🗄️ Hàm dẫn xuất khóa $Final\_Session\_Key = HKDF(X25519\_Shared \parallel Kyber768\_Shared)$ tuân thủ tiêu chuẩn CNSA 2.0.</li>
+<li>☁️ Triển khai cấu trúc cây nhị phân MLS (TreeKEM) để phân phối khóa nhóm kháng lượng tử với độ phức tạp $O(log\ n)$.</li>
+</ul>
+<h4 id="quantum-checkpoints-symmetric-ratcheting-quá-tải-băng-thông-và-pin-trên-thiết-bị-di-động">Quantum Checkpoints & Symmetric Ratcheting (Quá tải Băng thông và Pin trên thiết bị di động)</h4>
+<ul>
+<li>📱 Sử dụng cơ chế "Quantum Checkpoints": Chỉ đính kèm PQ-KEM payload (~1.18KB) vào các pha Handshake hoặc định kỳ sau mỗi 10.000 tin nhắn để tiết kiệm 99.9% băng thông.</li>
+<li>📱💻🖥️ Luồng dữ liệu hàng ngày sử dụng mật mã đối xứng AES-256-GCM, vốn có khả năng kháng lượng tử tự nhiên trước thuật toán Grover (duy trì độ bảo mật tương đương 128-bit).</li>
+<li>📱💻 Phân đoạn gói tin (Fragmentation) cho mạng Mesh offline để xử lý giới hạn MTU 512 bytes của BLE 5.0 khi truyền tải khóa lượng tử cồng kềnh.</li>
+</ul>
+<h4 id="hardware-backed-key-wrapping-lồng-khóa-mật-mã-cho-pqc">Hardware-Backed Key Wrapping (Lồng khóa mật mã cho PQC)</h4>
+<ul>
+<li>📱💻🖥️ Sinh cặp khóa PQ trên phân vùng RAM được bảo vệ bởi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MAP_CONCEAL</code> để ngăn chặn rò rỉ vào file Swap.</li>
+<li>📱 Sử dụng cơ chế "Lồng khóa": Mã hóa Private Key của ML-KEM bằng khóa đối xứng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Hardware_Wrap_Key</code> được neo giữ trong chip vật lý (Secure Enclave/StrongBox).</li>
+<li>📱💻🖥️ Áp dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> (RAII) để ghi đè $0x00$ lên bản rõ của khóa trong RAM ngay sau khi thực hiện xong tính toán KEM.</li>
+</ul>
+<h4 id="pre-fetched-pq-roster-đồng-bộ-danh-bạ-khóa-trước-cho-pqc-mesh">Pre-fetched PQ Roster (Đồng bộ danh bạ khóa trước cho PQC Mesh)</h4>
+<ul>
+<li>📱💻 Tải trước và lưu trữ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KeyPackage</code> (X25519 + ML-KEM-768) vào SQLite cục bộ thông qua WAL mode khi có kết nối Internet.</li>
+<li>📱💻 Xây dựng cơ chế truy vấn tối giản qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Key_Hash</code> (16 bytes) để kích hoạt Hybrid Handshake mà không hao tốn băng thông truyền khóa qua rào cản BLE.</li>
+<li>📱💻 Giao thức Zero-Knowledge Key Management đảm bảo khóa Private tuyệt đối không bao giờ rời khỏi vùng an toàn Hardware Root of Trust.</li>
+</ul>
+<h4 id="lazy-quantum-ratchet-nâng-cấp-lượng-tử-trì-hoãn-trong-mesh">Lazy Quantum Ratchet (Nâng cấp lượng tử trì hoãn trong Mesh)</h4>
+<ul>
+<li>📱 Tận dụng X25519 Fast Handshake (&lt;100 bytes) cho phép thiết lập kênh E2EE cổ điển ngay trong 1 gói tin BLE duy nhất để chớp thời cơ kết nối khẩn cấp (SOS).</li>
+<li>📱 Kích hoạt cơ chế MLS Epoch Rotation để hòa trộn ML-KEM-768 Secret vào Master Secret ngay sau khi hoàn tất tải dữ liệu ngầm.</li>
+<li>📱 Tận dụng Worker nền của Lõi Rust để tối ưu hóa quá trình đồng bộ khóa PQC mà không phong tỏa luồng tác vụ SOS khẩn cấp.</li>
+</ul>
+<h4 id="raptorq-fountain-codes-forward-error-correction-tin-cậy-dữ-liệu-mesh-p2p">RaptorQ (Fountain Codes) Forward Error Correction (Tin cậy dữ liệu Mesh P2P)</h4>
+<ul>
+<li>📱💻🖥️ Triển khai thuật toán RaptorQ (RFC 6330) tại tầng Rust Data Plane để mã hóa khóa PQC 1.2KB thành các "giọt" dữ liệu đa chiều.</li>
+<li>📱💻🖥️ Phân mảnh dữ liệu thành các khối 200 bytes để lách qua rào cản vật lý MTU của BLE 5.0 và tránh nút thắt nghẽn mạng cục bộ.</li>
+<li>📱💻🖥️ Dựng cơ chế loại bỏ ACK/NACK truyền thống giúp triệt tiêu hoàn toàn hiện tượng "Bão Broadcast" cộng hưởng trong cấu trúc mạng Mesh multi-hop.</li>
+</ul>
+<h4 id="tấn-công-kênh-kề-thời-gian-timing-attack">Tấn công Kênh kề Thời gian (Timing Attack)</h4>
+<ul>
+<li>📱💻🖥️ Áp đặt kiến trúc <strong>Constant-time Logic Enforcement</strong> qua thư viện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">subtle</code> của Rust, triệt tiêu toàn bộ lệnh rẽ nhánh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">if/else</code> nhạy cảm dữ liệu.</li>
+<li>📱💻🖥️ Thi hành kỹ thuật <strong>Bit-masking</strong> (AND, OR, XOR, NOT) buộc mọi phép tính mật mã tiêu tốn cùng một số chu kỳ xung nhịp CPU bất kể bit khóa là 0 hay 1.</li>
+</ul>
+<h4 id="tấn-công-phân-tích-điện-năng-power-analysis">Tấn công Phân tích Điện năng (Power Analysis)</h4>
+<ul>
+<li>📱💻🖥️ Chèn ngẫu nhiên <strong>Lệnh giả (Dummy Instructions/NOPs)</strong> vào giữa luồng xử lý mã hóa làm nhiễu loạn biểu đồ tiêu thụ điện áp vật lý.</li>
+<li>📱💻🖥️ Xáo trộn luồng tính toán qua <strong>Instruction Shuffling</strong> với các phép toán vô nhân quả để tước đoạt khả năng tìm điểm khớp Correlation.</li>
+<li>📱💻🖥️ Áp dụng <strong>Dithering</strong> cường độ cao nhằm vô hiệu hóa hoàn toàn kỹ thuật Differential Power Analysis (DPA) nhắm vào CPU.</li>
+</ul>
+<h4 id="phân-tích-hành-vi-theo-lưu-lượng-traffic-pattern-analysis">Phân tích Hành vi theo Lưu lượng (Traffic Pattern Analysis)</h4>
+<ul>
+<li>📱💻🖥️ Kích hoạt <strong>Fixed-size Padding</strong> đắp dữ liệu rác để mọi TCP/UDP payload xuất xưởng đạt mức cố định (ví dụ: 4096 Bytes), che giấu chủng loại tệp.</li>
+<li>📱💻🖥️ Duy trì nhịp <strong>Heartbeat Dummy Traffic</strong> bắt buộc để bảo toàn lưu lượng mạng đồng nhất không đứt gãy dù mạng lưới đang thả nổi (Idle) hay quá tải luồng Chat.</li>
+<li>☁️📱💻🖥️ Pha trộn <strong>Oblivious CAS Routing</strong> và trạm Batch Requests (&lt;1KB) làm mù lộ trình dữ liệu qua cụm Mixnet Proxy.</li>
+</ul>
+<h4 id="rò-rỉ-dữ-liệu-qua-tầng-phần-mềm-software-leakage">Rò rỉ Dữ liệu qua Tầng Phần mềm (Software Leakage)</h4>
+<ul>
+<li>📱💻🖥️ Cưỡng ép <strong>Hardware-Accelerated Primitive Hardening</strong> ưu tiên đẩy luồng tính toán thẳng tới tập lệnh <strong>AES-NI</strong> (Intel/AMD) hoặc <strong>ARM NEON</strong> nguyên khối trong tinh thể bán dẫn.</li>
+<li>📱💻🖥️ Trưng dụng Hardware Root of Trust (<strong>Secure Enclave/TPM 2.0</strong>) chuyên trách giải nén và phong ấn khóa E2EE, không rò rỉ tín hiệu vỡ trên tầng RAM.</li>
+<li>📱💻 Tối ưu hóa hiệu năng giải ma trận kháng lượng tử Kyber768 thông qua gia tốc NPU hoặc Crypto Engine chuyên dụng trên SoC di động.</li>
+</ul>
+<h4 id="side-channel-mitigation-via-timer-degradation-thread-limiting">Side-Channel Mitigation via Timer Degradation & Thread Limiting</h4>
+<ul>
+<li>📱💻🖥️ Làm mờ đồng hồ hệ thống (Timer Degradation) xuống 5-10ms kết hợp nhiễu Jitter để phá bỏ phép đo độ trễ RAM.</li>
+<li>📱💻🖥️ Giới hạn luồng (Thread Concurrency) và vô hiệu hóa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Atomics.wait</code> nếu không khai báo trong Permission Manifest.</li>
+<li>📱💻🖥️ Ràng buộc cơ chế Host-Binding kiểm duyệt nghiêm ngặt mọi lệnh gọi ra từ Sandbox.</li>
+</ul>
+<h4 id="opa-driven-ipc-compartmentalization-phân-rã-dữ-liệu-qua-opa">OPA-driven IPC Compartmentalization (Phân rã dữ liệu qua OPA)</h4>
+<ul>
+<li>📱💻🖥️ Áp dụng IPC Authentication sử dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Tapp_Token</code> định danh duy nhất cho mỗi instance sandbox.</li>
+<li>📱💻🖥️ OPA Policy Engine thực thi luật Namespace để ngăn chặn .tapp truy cập bảng dữ liệu không thuộc thẩm quyền.</li>
+<li>📱💻🖥️ Giới hạn Byte-Quota tại Edge và Sandbox IPC để chống thất thoát dữ liệu hàng loạt (Bulk Exfiltration).</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="3-infrastructure-control-plane">3. Infrastructure & Control Plane</h2>
+<h3 id="31-deployment-topologies">3.1 Deployment Topologies</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Global Edge / GeoDNS Routing]
+         │
+         ├──&gt; [Zone 1A: Enterprise Private Cluster — Dell/HPE/IBM On-Prem]
+         │      ├─ K8s Control Plane (HA: 3 Master Nodes)
+         │      ├─ TEE Enclave (Intel SGX / AWS Nitro) — AI Worker
+         │      ├─ MinIO Storage (Erasure Coding: EC+4)
+         │      └─ PostgreSQL HA (pgRepmgr + PgPool)
+         ├──&gt; [Zone 2: Federation Bridge]
+         │      ├─ mTLS Mutual Auth (không dùng CA công cộng)
+         │      ├─ Sealed Sender Protocol
+         │      └─ Cluster A ↔ Cluster B giao tiếp an toàn
+         └──&gt; [Zone 1B: VPS Cluster — Vultr / DigitalOcean / Linode]
+                ├─ Standard Hardened Docker (CAP_IPC_LOCK enforced)
+                ├─ MinIO Storage (S3-Compatible)
+                └─ HA TURN Array (WebRTC Relay, Floating IP)</code></pre></div>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Quy mô</th>
+<th>Topology</th>
+<th>Storage</th>
+</tr></thead><tbody>
+<tr>
+<td>10k Users</td>
+<td>Single K8s Cluster (3–5 Nodes)</td>
+<td>MinIO Local</td>
+</tr>
+<tr>
+<td>100k Users</td>
+<td>Geo-Federated Clusters</td>
+<td>PostgreSQL Geo-Partitioning + HA TURN Array</td>
+</tr>
+<tr>
+<td>1M+ Users</td>
+<td>Multi-Cloud Active-Active (Federation Bridge)</td>
+<td>Data Mule + NTN Satellite routing</td>
+</tr>
+</tbody></table></div>
+<h3 id="32-backend-services">3.2 Backend Services</h3>
+<h4 id="gateway-identity-broker">Gateway & Identity Broker</h4>
+<ul>
+<li>☁️ <strong>API Gateway:</strong> Rate Limiting (Sliding Window Log — Redis ZSET), OPA Policy trên mọi request.</li>
+<li>☁️ <strong>Identity Broker (Keycloak/Dex):</strong> Cầu nối OIDC/SAML — Azure AD / Google Workspace / Okta / OneLogin.</li>
+<li>☁️ <strong>Enterprise CA (PKI nội bộ):</strong> Chỉ tin tưởng Key ký bởi CA nội bộ. Không CA công cộng.</li>
+<li>☁️ <strong>SCIM Listener:</strong> Lắng nghe sự kiện SCIM 2.0 — tự động offboarding nhân viên.</li>
+</ul>
+<h4 id="opaabac-policy-engine">OPA/ABAC Policy Engine</h4>
+<ul>
+<li>☁️ Mọi request đi qua <strong>OPA (Open Policy Agent)</strong> — kiểm tra tại API Gateway.</li>
+<li>☁️ <strong>GeoHash Indexing:</strong> Tọa độ → GeoHash prefix string. OPA so sánh String thay vì Haversine — O(1) lookup.</li>
+<li>☁️ <strong>Formal Verification:</strong> OPA Policy → SMT Model → <strong>Z3 Solver</strong> → Block Deploy nếu có kẽ hở.</li>
+</ul>
+<h4 id="opa-driven-ui-state-enforcement-launchpad-access-control">OPA-Driven UI State Enforcement (Launchpad Access Control)</h4>
+<ul>
+<li>📱💻🖥️ Rút trích quyền truy cập UI thông qua OPA Policy Engine vận hành trực tiếp tại lõi Core.</li>
+<li>📱💻🖥️ Áp dụng cơ chế Manifest-driven Permission Model nhằm rà soát và giới hạn quyền hạn của Launchpad plugin ngay trước quá trình thực thi.</li>
+<li>📱💻🖥️ Đảm bảo WASM Sandbox Runtime Isolation để ngăn cấm quá trình vượt quyền của bất kì plugin nào tích hợp vào mạng lưới UI.</li>
+</ul>
+<h4 id="zkp-based-attribute-routing-voprf-token">ZKP-based Attribute Routing & VOPRF Token</h4>
+<ul>
+<li>☁️ Áp dụng Zero-Knowledge Proofs (zk-SNARKs) để OPA xác thực Policy mà không cần giải mã danh tính.</li>
+<li>☁️📱💻🖥️ Thiết lập hệ thống VOPRF (Verifiable Oblivious Pseudorandom Function) sinh Blind Tokens nhằm cấp quyền Rate Limit ẩn danh.</li>
+<li>☁️ Triển khai Homomorphic Encryption (Mã hóa đồng cấu) để đánh giá metadata định tuyến trực tiếp trên ciphertext.</li>
+</ul>
+<h4 id="cluster-4-trong-1">Cluster 4-trong-1</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Component</th>
+<th>Chức năng</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>MLS Backbone</strong></td>
+<td>Phân phối khóa & định tuyến nhóm 5000+. Encrypted Log Streams (Zero-Knowledge).</td>
+</tr>
+<tr>
+<td><strong>HA TURN Cluster</strong></td>
+<td>Floating IP, failover 3s. WebRTC Relay HD/Video Conference.</td>
+</tr>
+<tr>
+<td><strong>Execution Environment</strong></td>
+<td>VPS Egress Proxy backend — dữ liệu chỉ trên RAM, không persist.</td>
+</tr>
+<tr>
+<td><strong>Interop Hub</strong></td>
+<td>Gateway E2EE hóa dữ liệu SAP/Jira/CRM trước khi đẩy xuống Client.</td>
+</tr>
+</tbody></table></div>
+<h4 id="blind-relay-egress-gateway-mode-e2">Blind Relay Egress Gateway (Mode E2)</h4>
+<ul>
+<li>☁️🗄️ Cấu trúc Egress Proxy (Mode E2) luân chuyển dữ liệu qua Ephemeral Pipe trong không gian RAM máy chủ.</li>
+<li>📱💻 Mã hóa E2EE gói tin Egress bằng khóa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Server_Egress_Key</code> trước khi rời thiết bị hạn chế Device IP Exposure.</li>
+<li>☁️ Đặt Exit Nodes tại vùng phi quân sự (DMZ) của VPS Cluster để che giấu hoàn toàn danh tính người dùng cuối khỏi Internet.</li>
+</ul>
+<h4 id="hierarchical-qos-multi-runtime-isolation-ngăn-chặn-cạn-kiệt-tài-nguyên">Hierarchical QoS & Multi-Runtime Isolation (Ngăn chặn Cạn kiệt Tài nguyên)</h4>
+<ul>
+<li>☁️ Phân tách luồng xử lý độc lập thành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">core-messaging-runtime</code> (ưu tiên cao) và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">heavy-io-runtime</code> (trọng tải <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>) thông qua cấu trúc Bounded MPSC Channels.</li>
+<li>📱💻🖥️ Áp đặt OPA Policy Engine quản trị Byte-Quota và Rate Limiting nghiêm ngặt đối với từng tiến trình chạy ngầm của tiện ích.</li>
+<li>☁️ Tự động kích hoạt trạng thái "Suspend" (Circuit Breaker) cho các ứng dụng vi phạm Latency &gt;1500ms hoặc ngưỡng CPU Spike &gt;30%.</li>
+</ul>
+<h3 id="33-cơ-sở-hạ-tầng-triển-khai-devops-infrastructure-devops-deployments">3.3 Cơ sở Hạ tầng & Triển khai DevOps (Infrastructure & DevOps Deployments)</h3>
+<h4 id="thiết-quân-luật-hệ-điều-hành-os-hardening">Thiết quân luật Hệ điều hành (OS Hardening)</h4>
+<ul>
+<li>☁️🗄️ Tắt hoàn toàn phân vùng Swap trên cấp độ OS nhằm triệt tiêu độ trễ, đảm bảo tiến trình Kubelet vận hành ổn định không gián đoạn.</li>
+<li>☁️🗄️ Nạp bắt buộc các cấu trúc Kernel Modules (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">br_netfilter</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">overlay</code>) và kích hoạt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">bridge-nf-call-iptables = 1</code> mở đường cho năng lực lọc luồng mạng nội bộ K8s.</li>
+<li>☁️🗄️ Đẩy giới hạn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fs.inotify.max_user_instances</code> lên trần áp suất (512+) tránh rủi ro tràn bộ nhớ đệm khi Longhorn và MinIO quản trị hàng triệu mảnh tệp tin li ti.</li>
+<li>🖥️ Lập trình lá chắn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">kernel.kptr_restrict=2</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">kernel.panic_on_oops</code> ngăn chặn hành vi Memory Dump và che giấu địa chỉ con trỏ lõi (Kernel Pointers) khỏi User Space.</li>
+<li>🖥️ Củng cố hệ thống khởi tạo (tera-init) rà soát chuỗi Entropy ngẫu nhiên tinh khiết từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">/dev/urandom</code> và đối chiếu tập lệnh phần cứng AES-NI rễ trước vạch xuất phát.</li>
+</ul>
+<h4 id="truyền-thông-nội-bộ-vps-secure-overlay">Truyền thông nội bộ VPS (Secure Overlay)</h4>
+<ul>
+<li>☁️🗄️ Cấu hình mạng riêng ảo WireGuard theo dải Full-Mesh đục thông các đường hầm P2P trực tiếp rẽ nhánh giữa mọi VPS trong cụm.</li>
+<li>☁️🗄️ Chấp pháp chính sách Default Deny thông qua Network Policy (Calico/Cilium) khóa chặt mọi đường truyền Container-to-Container, chỉ thông hành các kết nối được whitelist tường minh.</li>
+</ul>
+<h4 id="phân-tán-hóa-cụm-điều-khiển-orchestration">Phân tán hóa Cụm điều khiển (Orchestration)</h4>
+<ul>
+<li>☁️🗄️ Triển khai phi phân quyền lõi Kubernetes qua nền tảng RKE2 (Rancher Next Generation) áp đặt quy chuẩn bảo mật cao nhất hiện nay.</li>
+<li>☁️🗄️ Khắc phục kịch bản sập phân nửa số trạm bằng cách lên lịch snapshot dữ liệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">etcd</code> tự động sao lưu lên vũng lưu trữ dị địa (S3/NAS) mỗi 1 giờ.</li>
+<li>☁️🗄️ Loại trừ bề mặt tấn công Attack Surface của Docker bằng việc thắt chặt hệ sinh thái Runtime Security thông qua giao thức CRI-O/Containerd.</li>
+</ul>
+<h4 id="lưu-trữ-phân-tán-persistence">Lưu trữ phân tán (Persistence)</h4>
+<ul>
+<li>☁️🗄️ Căng dãn Longhorn Block Storage kích hoạt Synchronous Replication (Replicas=3) bảo vệ tính toàn vẹn đa luồng của Database (SQLite/PostgreSQL).</li>
+<li>☁️🗄️ Trải chuỗi MinIO Object Storage qua cơ chế Erasure Coding (EC) bảo toàn dữ liệu E2EE Blobs ngay cả khi thất thoát 1-2 ổ cứng vật lý.</li>
+</ul>
+<h4 id="công-khai-dịch-vụ-tls-ingress">Công khai Dịch vụ & TLS (Ingress)</h4>
+<ul>
+<li>☁️🗄️ Áp đặt hạ tầng khóa công khai Enterprise PKI thông qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">step-ca</code> bảo chứng định danh nội bộ khép kín.</li>
+<li>☁️🗄️ Phong tỏa lưới Microservices bằng giao thức Mutual TLS (mTLS) yêu cầu xác nhận chứng chỉ chéo hai chiều (vd: Blind Relay ↔ MinIO) chặn đứng nguy cơ leo thang đặc quyền.</li>
+</ul>
+<h4 id="khởi-tạo-zero-knowledge-bootstrap">Khởi tạo Zero-Knowledge (Bootstrap)</h4>
+<ul>
+<li>💻🖥️🗄️ Admin cấu hình <strong>Static IP/DNS</strong> của Master Node thông qua file <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">config.yaml</code> tại thời điểm triển khai On-Premise. Không phụ thuộc vào Cloud Provider Metadata API.</li>
+<li>☁️ Kết hợp <strong>Gossip-based Discovery</strong> (Memberlist) để Worker động tìm nún Cluster WireGuard LAN ảo sau khi Bootstrap thành công.</li>
+<li>☁️ Thỏa thuận trao đổi <strong>Pre-shared Key (PSK)</strong> phân mảnh qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">inventory.ini</code> thiết lập đường hầm xác thực nguyên thủy.</li>
+</ul>
+<h4 id="hardware-attested-mtls-tunneling-đường-hầm-mtls-bootstrap">Hardware-Attested mTLS Tunneling (Đường hầm mTLS Bootstrap)</h4>
+<ul>
+<li>📱💻☁️ Thiết lập đường hầm mTLS hai chiều sử dụng Root CA doanh nghiệp đã ghim (pinned) trong Secure Enclave/TPM thiết bị Admin.</li>
+<li>📱💻☁️ Tích hợp cơ chế <strong>Remote Attestation</strong> (qua Apple App Attest / Android Play Integrity) để đảm bảo chỉ những thiết bị nguyên bản (không root/jailbreak) mới được quyền thiết lập kênh truyền tin với VPS.</li>
+<li>📱 Sử dụng mã QR <strong>chỉ để truyền tải</strong> cấu hình định tuyến (IP/Port). Tuyệt đối không chứa dữ liệu nhạy cảm hay Token bên trong QR code để khóa chặt rủi ro giả mạo OOB.</li>
+</ul>
+<h4 id="enclave-bound-master-key-hardware-pinning">Enclave-Bound Master Key (Hardware Pinning)</h4>
+<ul>
+<li>📱💻🖥️ Master Key (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.terakey</code>) được sinh ra và gói gọn (wrapped) trực tiếp bên trong không gian Secure Enclave/StrongBox, tuyệt đối không bao giờ được phép export sang filesystem hay RAM của OS.</li>
+<li>📱 Yêu cầu <strong>User Presence</strong> (Biometric/PIN) mỗi khi cần ký giải mã Bootstrap Token, vô hiệu hóa việc sử dụng khóa tự động kể cả khi thiết bị đã được mở khóa.</li>
+<li>📱💻 Định danh chéo thiết bị thông qua Hardware-ID Binding để ràng buộc Master Key chỉ có hiệu lực duy nhất trên phần cứng thiết bị Admin chỉ định.</li>
+<li>📱💻🖥️ Kích hoạt lính canh <strong>Zeroize RAM</strong> tiêu hủy tức khắc khóa Root trên vùng nhớ động vừa nạp ngay khoảnh khắc chuyển giao vĩnh viễn vào <strong>Secure Enclave/TPM 2.0</strong>.</li>
+<li>☁️🗄️ Khởi tạo môi trường MinIO Provisioning đính kèm cơ chế Server-Side Encryption (SSE-KMS) sử dụng vỏ bọc bao ngoài xẻ từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code>.</li>
+<li>☁️🗄️ Quản lý Server ở trạng thái giữ "chìa khóa đã bị khóa", ép buộc thao tác mở khóa dịch vụ phải nhận tín hiệu chứng thực E2EE trực tiếp từ thiết bị cầm tay.</li>
+</ul>
+<h4 id="phòng-thủ-control-plane-giám-sát-hạt-nhân-k8s-kubernetes-security">Phòng thủ Control Plane & Giám sát Hạt nhân K8s (Kubernetes Security)</h4>
+<ul>
+<li>☁️ Ngăn chặn tuyệt đối giả mạo Container Image tại Master Node bằng kiến trúc <strong>Supply Chain Integrity</strong> kết hợp <strong>Sigstore/Cosign</strong> ký số tệp nhị phân ngay tại CI/CD Pipeline biệt lập.</li>
+<li>☁️ Yêu cầu Kubelet xác thực Digital Signature đối xứng công khai phân phối sẵn trước khi kéo Image nhằm vô hiệu hóa nỗ lực tiêm mã độc vào nguồn gốc.</li>
+</ul>
+<h4 id="container-signature-pinning-via-sigstorecosign-supply-chain-mitm">Container Signature Pinning via Sigstore/Cosign (Supply Chain MITM)</h4>
+<ul>
+<li>☁️🗄️ Kích hoạt <strong>Sigstore/Cosign Admission Controller</strong> trên cụm K8s nội bộ xác minh Image Signature tại thời điểm khởi tạo Pod.</li>
+<li>☁️🗄️ Đối soát mã băm <strong>SHA256 tĩnh</strong> của Container Image — cấm dùng tag <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">latest</code> để chống Supply Chain Attack kiểu "chết cá" im lặng.</li>
+<li>☁️🗄️ Cơ chế chặn khởi tạo Pod (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ImagePullBackOff</code>) nếu chữ ký không khớp với <strong>TeraChat HQ Public Key</strong>, kết hợp cảnh báo tập trung qua Falco + OPA.</li>
+<li>☁️ Dựng chốt chặn <strong>Zero-Trust API Admission Gatekeeping</strong> sử dụng Validating Admission Webhook kết hợp <strong>Kyverno/OPA Gatekeeper</strong> sàng lọc toàn bộ các tệp định tuyến <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">kubectl apply</code>.</li>
+<li>☁️🗄️ Thiết lập Security Context Constraints khắt khe, áp đặt cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">readOnlyRootFilesystem: true</code> và Immutable Root Filesystem khóa cứng khả năng ghi đè hệ điều hành lõi.</li>
+<li>☁️ Cưỡng ép quy chuẩn Pod Security Standards (PSS) vào chế độ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">restricted</code> với <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allowPrivilegeEscalation: false</code> tước bỏ 100% đặc quyền Root của Container.</li>
+<li>☁️🗄️ Đẩy lùi nguy cơ trích xuất dữ liệu nhạy cảm từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">etcd</code> bằng cơ chế <strong>Hardware-Backed Envelope Encryption</strong> qua KMS Plugin nối trực tiếp với chip bảo mật.</li>
+<li>☁️🗄️ Giam cầm Key Encryption Key (KEK) vào <strong>TPM 2.0</strong> hoặc <strong>Secure Enclave</strong> vật lý, khiến kho báu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">etcd</code> hoàn toàn vô nghĩa đối với bất kỳ ai nắm giữ ổ cứng nhưng thiếu hụt chip giải mã.</li>
+<li>☁️ Chống can thiệp tầng Kernel và Binary bằng lá chắn <strong>eBPF-Based Runtime Surveillance</strong> sử dụng <strong>Falco</strong> giám sát Syscall cực đoan theo thời gian thực.</li>
+<li>☁️ Nhận diện tức thì mọi hành vi ghi tệp trái phép vào thung lũng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">/etc/kubernetes</code> qua màng lọc Extended Berkeley Packet Filter.</li>
+<li>📱💻🖥️☁️ Thiết đặt tín hiệu <strong>Self-Destruct Signal</strong> cắt đứt toàn diện kết nối mTLS và ra lệnh OPA/Kyverno thiêu rụi dữ liệu (Sandbox Escape Self-Destruct) ngay tại khoảnh khắc eBPF đánh tín hiệu xâm nhập.</li>
+</ul>
+<h4 id="điện-toán-bảo-mật-phần-cứng-confidential-computing-ai-privacy-pipeline">Điện toán Bảo mật Phần cứng (Confidential Computing) & AI Privacy Pipeline</h4>
+<ul>
+<li>☁️🗄️ Mã hóa 100% dung lượng bộ nhớ động qua tính năng <strong>Hardware-level RAM Encryption (AMD SEV-SNP)</strong> biến mọi dữ liệu RAM vật lý thành Ciphertext vô nghĩa đối với bất kì Hypervisor nào.</li>
+<li>☁️ Tách biệt luồng <strong>Memory Isolation</strong> và giao phó khóa giải mã nội bộ duy nhất cho vi xử lý <strong>AMD Secure Processor</strong> quản lý.</li>
+<li>☁️ Thiết lập cổng gác <strong>Remote Attestation Protocol</strong> xác nhận tính vẹn toàn qua chữ ký Quote từ chip phần cứng trước khi chắp nối đường hầm lưới mTLS <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">📱💻🖥️☁️</code>.</li>
+<li>📱💻🖥️ Tích hợp Engine <strong>Hardware Signature Verification</strong> tại Lõi Rust để thẩm định chữ ký gốc cung cấp bởi nhà xuất xưởng phần cứng silicon (AMD/Intel).</li>
+<li>☁️🗄️ Vận hành dịch vụ trọng yếu (Blind Relay, Vault Store) khép kín vào luồng <strong>Confidential Containers (CoCo)</strong> bọc quanh bởi khu cách ly <strong>Intel TDX</strong> hoặc <strong>SGX Enclaves</strong>.</li>
+<li>☁️ Ngăn chặn tuyệt đối can thiệp đọc/ghi trộm từ Cloud Provider láng giềng nhắm tới CPU Register/Cache theo chuẩn <strong>TEE-Based Processing</strong>.</li>
+<li>☁️ Triển khai phi tập trung cấu trúc <strong>Specialized Confidential VM</strong> độc lập chạy trên dải máy chủ CPU AMD EPYC gen 3+ kết hợp <strong>TPM 2.0/Secure Enclave</strong>.</li>
+<li>📱💻🖥️ <strong>Rust Local Micro-NER & Dynamic Vaulting (Bảo mật Dữ liệu AI Khách):</strong> Triển khai bộ máy Regex kết hợp thuật toán Micro-NER tĩnh (&lt;1MB) tại Lõi Rust để bóc tách dữ liệu định danh (PII/PCI/PHI) trước khi rời thiết bị. Khởi tạo Bảng ánh xạ tạm thời trên RAM bảo vệ bằng cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> để quản lý phiên xử lý cục bộ; áp dụng Tokenization Động thay thế Plaintext thành các Token ngữ nghĩa (vd: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[TOKEN_ACCOUNT_01]</code>) nhằm bảo toàn cấu trúc câu cho AI.</li>
+<li>☁️🗄️ <strong>Blind Execution trong TEE Sandbox (Chống Rò rỉ Weights/KV Cache):</strong> Cô lập tiến trình xử lý Masked Prompt bên trong TEE (Intel SGX/AWS Nitro). Ép buộc SLM/LLM xử lý suy luận mù (Blind Inference) hoàn toàn trên Token đại diện, ngăn chặn tuyệt đối việc nạp dữ liệu doanh nghiệp vào Weights hoặc KV Cache.</li>
+<li>📱💻🖥️ <strong>Prompt Rehydration & RAII Zeroization (Phục hồi ngữ cảnh an toàn):</strong> Thực thi De-tokenization đối chiếu kết quả trả về từ TEE với Hash Map cục bộ để lấp Plaintext vào đúng vị trí Token. Kích hoạt vòng đời <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Drop()</code> của Rust kết hợp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> ghi đè toàn bộ vùng nhớ chứa Session Vault và Bảng ánh xạ bằng các byte <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> để triệt tiêu vĩnh viễn dấu vết Plaintext trên RAM ngay khi trả kết quả về UI Native.</li>
+</ul>
+<ul>
+<li>🖥️ Thiết lập gông cùm <strong>TPM 2.0 Monotonic Counter Sealing</strong> áp góc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TPM2_Seal</code>/<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TPM2_Unseal</code> logic, tự động đối chiếu PCR State Validation và vô hiệu phiên (Session Invalidation) chặn đứng mọi mưu đồ Snapshot/Cloning ảo hóa vật lý.</li>
+<li>🖥️ Trực chiến lính gác <strong>Micro-architectural Drift Watchdog</strong> nạp luồng Rust RT-priority theo dõi độ trễ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rdtsc</code> Sampling, giáng đòn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code>/<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> quét sạch nội hàm RAM nếu vi kiến trúc bộc lộ dấu hiệu Hypervisor Pause.</li>
+<li>🖥️ Nhồi nhịp đập mã hóa <strong>Remote Attestation Heartbeat</strong> gộp chữ ký AIK (Attestation Identity Key) và Hardware Quote độc bản.</li>
+<li>📱💻🖥️ Liên đới giao thức <strong>"Poison Pill" Mesh Revocation</strong> trên mạng lưới Survival Mesh gạch bỏ vĩnh viễn danh tính bất đồng bộ, đập tan âm mưu Offline Brute-force/VPS Cloning.</li>
+<li>🖥️ Thiết lập vành đai <strong>Anti-Snapshot Deployment Hardening</strong> trói cứng luồng xử lý qua CPU Hard-pinning (Core isolation) và áp đặt vòng đời KMS Key_TTL tự xoay mỗi 10 phút.</li>
+<li>☁️ Đính kèm cơ chế <strong>Blind Wipe</strong> gắn nhãn metadata ảo cho MinIO và kích hoạt quy trình SharedArrayBuffer Immediate Zeroing xóa trắng thung lũng bộ nhớ cấu hình tại mỗi hồi nhịp Tự hủy (Self-destruct) <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🖥️</code>.</li>
+</ul>
+<h3 id="34-database-layer">3.4 Database Layer</h3>
+<h4 id="postgresql-ha">PostgreSQL HA</h4>
+<ul>
+<li>☁️🗄️ pgRepmgr + PgPool — Failover tự động, streaming replication.</li>
+<li>☁️🗄️ Geo-Partitioning cho quy mô 100k+ user.</li>
+</ul>
+<h4 id="minio-blind-storage">MinIO Blind Storage</h4>
+<ul>
+<li>☁️🗄️ <strong>Erasure Coding (EC+4):</strong> Sharding 3–5 Nodes. 1 Node sập → tự phục hồi.</li>
+<li>☁️ Lưu file theo <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code> path (CAS). Server không biết tên file thực.</li>
+<li>☁️ <strong>Zero-Byte Stub:</strong> Client nhận Stub \&lt;5KB (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">file_name</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">encrypted_thumbnail</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">storage_ref</code>). File thực tải khi user yêu cầu.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="4-security-cryptography-engine">4. Security & Cryptography Engine</h2>
+<h3 id="41-key-management-system-hkms">4.1 Key Management System (HKMS)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Master Key]  — HSM / TPM / Secure Enclave (không rời chip)
+      └──&gt; [KEK]  — giải mã trong RAM, mlock'd / ZeroizeOnDrop
+                └──&gt; [DEK]  — mã hóa nội dung thực tế
+                          └──&gt; [DB / File / Channel / API Key]</code></pre></div>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Thiết bị</th>
+<th>Nơi lưu Private Key</th>
+<th>Cơ chế</th>
+</tr></thead><tbody>
+<tr>
+<td>📱 iOS</td>
+<td>Secure Enclave</td>
+<td>Không extract. Ký/Giải mã yêu cầu biometric.</td>
+</tr>
+<tr>
+<td>📱 Android</td>
+<td>StrongBox Keymaster (HAL)</td>
+<td>Key sinh trong chip, không export.</td>
+</tr>
+<tr>
+<td>💻🖥️ Desktop</td>
+<td>TPM 2.0 (NCrypt / macOS SEP)</td>
+<td>Key binding với device.</td>
+</tr>
+<tr>
+<td>🗄️ Server</td>
+<td>HSM Software (PKCS#11)</td>
+<td>CA / Cluster signing key.</td>
+</tr>
+</tbody></table></div>
+<h4 id="kms-bootstrap">KMS Bootstrap</h4>
+<ul>
+<li>☁️🗄️ Khởi tạo Workspace → App sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_master_&lt;domain&gt;.terakey</code> (Master Key bọc AES-256 bằng Admin password).</li>
+<li>Lõi Rust <strong>Block</strong> tạo Database cho đến khi Admin lưu hoặc in file Key Backup.</li>
+</ul>
+<h4 id="dead-man-switch">Dead Man Switch</h4>
+<ul>
+<li>📱💻🖥️ Monotonic Hardware Counter (iOS Secure Enclave / Android StrongBox) — chống Time Travel Attack.</li>
+<li>Mỗi unlock DB → Counter++. Server lưu "Last Valid Counter". <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Counter &lt; Server's Value</code> → từ chối + Self-Destruct.</li>
+<li><strong>Offline Grace:</strong> Tối đa 72h offline, sau đó bắt buộc verify online.</li>
+</ul>
+<h4 id="remote-wipe">Remote Wipe</h4>
+<ul>
+<li>📱💻🖥️ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">self.userID</code> trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">removedMembers</code> → xóa Private Key trong SE → Drop bảng chat → Quét xóa Sandbox files. Thực thi trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">autoreleasepool</code> (iOS) / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">try-finally</code> (Android) — không thể bị User chặn.</li>
+</ul>
+<h3 id="42-message-layer-security-mls-ietf-rfc-9420">4.2 Message Layer Security (MLS — IETF RFC 9420)</h3>
+<h4 id="kiến-trúc-hạ-cấp-tại-nguồn-sender-downgrade-mode-chống-xung-đột-phiên-bản">Kiến trúc Hạ cấp tại Nguồn (Sender Downgrade Mode) chống Xung đột phiên bản</h4>
+<ul>
+<li>📱💻🖥️ Tích hợp Extension <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TeraChat_App_Version</code> vào gói <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KeyPackage</code> của giao thức MLS để đàm phán năng lực khả dụng giữa các thành viên.</li>
+<li>📱💻🖥️ Triển khai thuật toán quét Min-Version Roster để tự động kích hoạt Chế độ Hạ cấp Serialization khi phát hiện có thiết bị cũ trong mạng lưới.</li>
+<li>📱 Xây dựng cơ chế mờ hóa tính năng (UI Feature Gray-out) dựa trên siêu dữ liệu phiên bản để ngăn chặn người dùng vô tình tạo ra payload không tương thích.</li>
+</ul>
+<ul>
+<li>☁️ <strong>TreeKEM:</strong> Mã hóa O(log n) cho nhóm 5000+ user.</li>
+<li>☁️ <strong>Self-Healing:</strong> Epoch Rotation khi member rời — Forward Secrecy.</li>
+<li>☁️ <strong>Sealed Sender:</strong> Server không biết người gửi.</li>
+<li>☁️ <strong>Multi-Device Queue:</strong> N bản copy (1/device). Device ACK → xóa bản đó. TTL 14 ngày → Crypto-Shred KEK.</li>
+<li>☁️ <strong>Enterprise Escrow KEM:</strong> Shamir's Secret Sharing — M-of-N Recovery Key cho Supervisors. Audit Log bắt buộc (HIPAA/SOC2).</li>
+</ul>
+<h3 id="43-hardware-isolation-crypto-shredding">4.3 Hardware Isolation & Crypto-Shredding</h3>
+<h4 id="hardware-backed-signing">Hardware-Backed Signing</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Platform</th>
+<th>API</th>
+<th>Mechanism</th>
+</tr></thead><tbody>
+<tr>
+<td>📱 iOS</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">LAContext</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SecKeyCreateSignature</code> + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.biometryCurrentSet</code></td>
+</tr>
+<tr>
+<td>📱 Android</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BiometricPrompt</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">setUserAuthenticationRequired(true)</code> + Hardware Keystore</td>
+</tr>
+<tr>
+<td>💻 macOS</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CryptoTokenKit</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">kSecAttrTokenIDSecureEnclave</code></td>
+</tr>
+<tr>
+<td>💻🖥️ Windows</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CNG</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Microsoft Platform Crypto Provider (TPM 2.0)</code> + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NCryptSignHash</code></td>
+</tr>
+<tr>
+<td>🗄️ Gov-Grade</td>
+<td>PKCS#11</td>
+<td>SafeNet/Viettel/VNPT CA — Rust <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">pkcs11</code> crate</td>
+</tr>
+</tbody></table></div>
+<h4 id="tiêu-hủy-db-cũ-an-toàn-zeroize-crypto-shredding-xóa-sạch-dấu-vết">Tiêu hủy DB cũ an toàn: Zeroize & Crypto-Shredding (Xóa sạch dấu vết)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Integrity Validation:</strong> Chỉ sau khi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">last_migrated_id</code> khớp với bản ghi cuối cùng của V1, hệ thống mới kích hoạt lệnh kiểm tra băm (Hash) toàn cục để xác nhận V2 đã sẵn sàng.</li>
+<li>📱💻 <strong>Physical Zeroization:</strong> Kích hoạt lệnh intrinsics (SIMD/Neon) để ghi đè mã <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên toàn bộ vùng vật lý của DB cũ trên ổ cứng trong 1-2 ms.</li>
+<li>📱💻🖥️ <strong>Crypto-Shredding:</strong> Thực hiện xóa Key Encryption Key (KEK) của DB cũ trong Secure Enclave/TPM, biến các byte còn sót lại thành dữ liệu rác không thể giải mã. Tuyệt đối không gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">VACUUM</code>.</li>
+<li>📱💻 <strong>Storage Ring-Buffer (TeraVault VFS):</strong> Pre-allocated blob (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TeraCache.blob</code> — 500MB Mobile, 5GB Desktop). Crypto-Shredding đánh dấu offset = <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FREE_SPACE</code>. File mới overwrite trực tiếp — Zero I/O Delete, Zero Wear-Leveling.</li>
+</ul>
+<h4 id="memory-defense">Memory Defense</h4>
+<ul>
+<li>💻🖥️ <strong>Desktop/Server:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">VirtualLock()</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code>. Kiểm tra BitLocker/FileVault khi khởi động — từ chối nếu không bật.</li>
+<li>📱 <strong>Mobile:</strong> ZeroizeOnDrop (RAII) — không dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code>. Plaintext RAM \&lt;50ms, ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> ngay sau scope.</li>
+</ul>
+<h4 id="zeroize-deferred-task-suspension">Zeroize & Deferred Task Suspension</h4>
+<ul>
+<li>📱💻 Áp dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> (RAII) để ghi đè $0x00$ lên vùng nhớ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Decrypted Secure Arena</code> ngay khi giao dịch bị hủy.</li>
+<li>📱 Tích hợp iOS Background Delegate (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BGTask.setTaskCompleted</code>) và Android <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">WorkManager</code> retry để đưa tác vụ JIT Indexing vào hàng đợi thực thi lại khi thiết bị mở khóa.</li>
+<li>📱 Giải phóng triệt để vùng nhớ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> để lách qua và tránh JetSam OOM-Kill trong trạng thái nền.</li>
+</ul>
+<h4 id="remote-attestation">Remote Attestation</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Platform</th>
+<th>API</th>
+<th>Yêu cầu</th>
+</tr></thead><tbody>
+<tr>
+<td>📱 iOS</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">DCAppAttestService</code></td>
+<td>App gốc, không Jailbreak</td>
+</tr>
+<tr>
+<td>📱 Android</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Play Integrity API</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MEETS_STRONG_INTEGRITY</code></td>
+</tr>
+<tr>
+<td>💻🖥️ Windows</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TPM 2.0 Health Attestation</code></td>
+<td>PCR check + BitLocker ON</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>☁️ Chỉ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MEETS_BASIC_INTEGRITY</code> hoặc Root → từ chối + Remote Wipe.</li>
+</ul>
+<h4 id="binary-hardening-fuzzing">Binary Hardening & Fuzzing</h4>
+<ul>
+<li>📱💻🖥️ Control Flow Flattening (O-LLVM), Bogus Control Flow, Instruction Substitution, Compile-time String Encryption.</li>
+<li>App tự hash <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.text section</code> khi khởi chạy. Hash thay đổi → Silent Crash.</li>
+<li>☁️ <strong>Smoke Fuzz (PR Gate):</strong> 10 phút / Crash → Block Merge. <strong>Deep Fuzz (Nightly):</strong> 24h LibFuzzer + AFL++ + Stateful MLS Fuzzing. LLVM Sanitizers: ASan, MSan, UBSan.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="5-network-communication-protocols">5. Network & Communication Protocols</h2>
+<h3 id="51-real-time-messaging">5.1 Real-time Messaging</h3>
+<h4 id="websocket-e2ee-relay">WebSocket E2EE Relay</h4>
+<ul>
+<li>☁️ Server relay ciphertext blob — không giải mã. Rate Limiting (Redis ZSET Sliding Window). OPA throttle theo phòng ban.</li>
+</ul>
+<h4 id="e2ee-push-notification-ios-nse">E2EE Push Notification — iOS (NSE)</h4>
+<ul>
+<li>📱 <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UNNotificationServiceExtension</code> + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mutable-content: 1</code> (chuẩn Signal/WhatsApp).</li>
+<li>📱 <strong>NSE Micro-Crypto Build Target:</strong> Loại bỏ 100% MLS, CRDT Automerge, SQLCipher. Chỉ giữ AES-256-GCM decrypt + Shared Keychain read. Footprint ~4MB (safe dưới 24MB Apple limit).</li>
+<li>📱 <strong>Push Payload ≤ 4KB:</strong> fields: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">chat_id</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">sender_display</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">preview_ct</code> (AES-256-GCM), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">has_attachment</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">epoch</code>. Không HTTP GET trong NSE.</li>
+<li>📱 <strong>Push Key Rotation:</strong> Đồng bộ với MLS Epoch. Key per-chat trong Shared Keychain (App Group).</li>
+<li>📱 <strong>Key Desync Fallback:</strong> Không tìm thấy Key → fallback text an toàn, không crash.</li>
+</ul>
+<h4 id="e2ee-push-notification-android-fcm">E2EE Push Notification — Android (FCM)</h4>
+<ul>
+<li>📱 Data Message → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FirebaseMessagingService</code> → giải mã Rust FFI. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">StrongBox Keymaster</code> lưu Symmetric Push Key.</li>
+</ul>
+<h4 id="desktop-background-daemon">Desktop Background Daemon</h4>
+<ul>
+<li>💻🖥️ <strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-daemon</code></strong> ~4.5MB RAM — tách biệt khỏi Tauri UI.</li>
+<li>💻 Windows Service (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">sc create</code>) / macOS <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">launchd</code> LaunchAgent / 🖥️ Linux <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">systemd</code> user service.</li>
+<li>💻🖥️ Nhận E2EE payload → giải mã preview → OS Native Notification → xóa plaintext. DB sync chỉ khi Tauri UI mở.</li>
+</ul>
+<h3 id="52-survival-mesh-network-p2p-ble-50-wi-fi-direct">5.2 Survival Mesh Network (P2P, BLE 5.0, Wi-Fi Direct)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Layer</th>
+<th>Protocol</th>
+<th>Tốc độ</th>
+<th>Phạm vi</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Signal Plane</strong></td>
+<td>BLE 5.0 Advertising</td>
+<td>~2 Mbps</td>
+<td>~10–100m</td>
+</tr>
+<tr>
+<td><strong>Data Plane</strong></td>
+<td>Wi-Fi Direct / AWDL</td>
+<td>~200 Mbps</td>
+<td>~50–100m</td>
+</tr>
+</tbody></table></div>
+<h4 id="tối-ưu-hóa-băng-thông-mạng-lưới-sinh-tồn-hybrid-multipath-transport-plane">Tối ưu hóa Băng thông Mạng lưới Sinh tồn (Hybrid Multipath Transport Plane)</h4>
+<h4 id="phân-tách-kênh-truyền-dẫn-và-gossip-discovery-hybrid-multipath-transport-plane">Phân tách kênh Truyền dẫn và Gossip Discovery (Hybrid Multipath Transport Plane)</h4>
+<ul>
+<li>📱💻 Phân định <strong>Cấp độ 1 (Tối ưu Sinh tồn - Background):</strong> Sử dụng duy nhất giao thức <strong>BLE L2CAP CoC</strong> (Control Plane) cho phép ứng dụng truyền tải ngầm payload nhỏ (&lt;500KB) như tin nhắn SOS/văn bản mà không cần người dùng cấp quyền OS liên tục.</li>
+<li>📱💻🖥️ <strong>Gossip Discovery & L2CAP Chunked Transmission:</strong> Trao đổi Vector trạng thái (Hash) qua thuật toán Gossip để nhận diện phiên bản mới khả dụng trong Mesh. Payload OTA được phân mảnh (Chunking) thành các block 512 bytes truyền tải qua kênh L2CAP CoC cực kì ổn định để tránh phân mảnh MTU.</li>
+<li>📱💻🖥️ Bắt buộc chuyển sang <strong>Cấp độ 2 (Truyền tải nặng - Foreground):</strong> Kích hoạt <strong>Wi-Fi Direct / LAN / SoftAP</strong> (Data Plane) phục vụ truyền tải tệp tin đa phương tiện và bản cập nhật nhị phân (.exe/.dmg) lớn nhờ sự điều phối băng thông của các Super Nodes. Yêu cầu popup xác nhận từ người dùng để tránh vi phạm background policy của Apple.</li>
+<li>📱 Cơ chế Opportunistic Tear-down ngắt kênh Data Plane ngay sau khi truyền tệp thành công nhằm bảo toàn năng lượng pin thiết bị.</li>
+</ul>
+<h4 id="shadow-drop-via-system-level-steganography-chống-opa-chặn-tố-giác">Shadow-Drop via System-level Steganography (Chống OPA chặn tố giác)</h4>
+<ul>
+<li>📱💻🖥️ Nhúng payload mã hóa chứa bằng chứng hoặc tin nhắn tố giác vào cấu trúc gói tin <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CRDT_Garbage_Collection_Log</code> hoặc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">System_Telemetry</code>.</li>
+<li>📱💻🖥️ Tận dụng đường hầm mTLS Federation Bridge để đẩy dữ liệu xuyên qua lớp chặn lọc OPA tại Gateway của chi nhánh.</li>
+<li>☁️ Màng lọc "Magic Bytes" tại máy chủ HQ thực hiện bóc tách (De-capsulation) dữ liệu tố giác khỏi luồng hệ thống.</li>
+</ul>
+<h4 id="slotted-mesh-synchronized-duty-cycle-đồng-bộ-chu-kỳ-slot-mesh">Slotted Mesh & Synchronized Duty Cycle (Đồng bộ chu kỳ Slot Mesh)</h4>
+<ul>
+<li>📱💻🖥️ Thuật toán Time-Division Multiplexing (TDM) kết hợp Hybrid Logical Clock (HLC) để đồng bộ thời gian thức/ngủ giữa các node.</li>
+<li>📱 Duy trì 1% Duty Cycle (chỉ thức 200ms mỗi 20s) để tối ưu hóa thời gian anten BLE ở trạng thái Deep Sleep.</li>
+<li>📱 Cơ chế Extended Connection Event chỉ kích hoạt khi xác nhận có Payload lớn cần trao đổi.</li>
+</ul>
+<h4 id="companion-device-manager-cdm-integration-chống-android-doze">Companion Device Manager (CDM) Integration (Chống Android Doze)</h4>
+<ul>
+<li>📱 Đăng ký đặc quyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">REQUEST_COMPANION_RUN_IN_BACKGROUND</code> để duy trì luồng quét BLE vĩnh viễn không bị ngắt quãng.</li>
+<li>📱 Định nghĩa Hardware Mesh-ID giả lập làm Thiết bị đồng hành (Companion Device) nhằm lách rào cản App Standby Buckets hà khắc.</li>
+<li>📱 Kích hoạt cơ chế Hardware BLE Scan Hardware-offloaded nhằm tối ưu hóa tối đa năng lượng tiêu thụ trong chế độ ngủ sâu Doze.</li>
+</ul>
+<h4 id="asymmetric-mesh-handshake-softap-hybrid-data-plane-đứt-gãy-p2p-đa-nền-tảng">Asymmetric Mesh Handshake & SoftAP Hybrid Data Plane (Đứt gãy P2P Đa nền tảng)</h4>
+<ul>
+<li>📱 Điều phối Android tự động kích hoạt SoftAP ẩn với WP2 ngẫu nhiên để làm cầu nối trung tâm.</li>
+<li>📱 Sử dụng API <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NEHotspotConfiguration</code> trên iOS để gia nhập mạng cục bộ của Android thông qua tín hiệu BLE Handshake.</li>
+<li>📱 Tận dụng giao thức <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BLE L2CAP CoC</code> (Connection-oriented Channels) làm luồng vận chuyển SOS dự phòng rủi ro đứt gãy kết nối Wi-Fi Direct.</li>
+</ul>
+<h4 id="thực-thi-mật-mã-trì-hoãn-deferred-cryptographic-execution">Thực thi mật mã trì hoãn (Deferred Cryptographic Execution)</h4>
+<ul>
+<li>📱 Cơ chế "Write-Only mmap" để ghi dữ liệu RaptorQ thô vào SQLite mà không thực hiện giải mã toán học ở Background.</li>
+<li>📱 Trì hoãn việc giải hệ phương trình ma trận và ML-KEM JIT cho đến khi App chuyển sang Foreground (Just-In-Time Evaluation).</li>
+<li>📱 Tận dụng NPU/Multi-threading để xử lý dồn tích khối lượng công việc ngay khi người dùng mở màn hình.</li>
+<li>📱 Áp dụng ZeroizeOnDrop (RAII) để xóa sạch dữ liệu trung gian ngay sau khi giải mã thành công.</li>
+</ul>
+<h4 id="phân-cấp-nút-mạng-mesh-bất-đối-xứng-asymmetric-hierarchical-role-delegation">Phân cấp Nút mạng Mesh Bất đối xứng (Asymmetric Hierarchical Role Delegation)</h4>
+<ul>
+<li>💻🖥️ Triển khai cơ cấu Super Nodes trên nền tảng Desktop/Laptop đảm trách vai trò Backbone vững chắc cho tiến trình Store-and-Forward vòng định tuyến.</li>
+<li>📱 Cơ động hóa Relay Nodes tận dụng chuẩn Android Foreground Service thiết lập trạm chuyển tiếp Data Mule tịnh tiến gói tin E2EE.</li>
+<li>📱 Ràng buộc giới hạn Leaf Nodes hoạt động thụ động trên nền tảng iOS iBeacon Ranging chuyên trách rình rập và nhận gói tin để lách rào cản Jetsam do OS khóa nền.</li>
+</ul>
+<h4 id="định-tuyến-đồ-thị-nhận-thức-không-gian-jcas-spatial-aware-routing-3d-a-pathfinding">Định tuyến Đồ thị Nhận thức Không gian (JCAS Spatial-Aware Routing (3D-A* Pathfinding))</h4>
+<ul>
+<li>📱💻🖥️ Đánh giá tín hiệu suy hao RSSI & Round-Trip Time (chuẩn IEEE 802.11mc) đúc kết bản đồ 3D thực tế ánh xạ trực tiếp trên RAM hệ thống.</li>
+<li>📱💻🖥️ Triển khai thuật toán 3D-A* Pathfinding quét tọa độ và tính toán Shortest Path vượt qua các Node đang nhịp thức theo chu kỳ.</li>
+<li>📱💻🖥️ Thiết lập giao thức Zero-Wake cô lập nghiêm ngặt các thiết bị nằm ngoài quỹ đạo luồng định tuyến nhằm phong tỏa hao hụt pin rác.</li>
+</ul>
+<h4 id="offline-pki-defense">Offline PKI Defense</h4>
+<ul>
+<li><strong>Offline TTL (24h):</strong> App tự đóng băng Session nếu mất Server \&gt;TTL — kể cả Mesh vẫn hoạt động.</li>
+<li><strong>Gossip CRL:</strong> 1 node bắt Internet → tải CRL delta → ký Enterprise CA → Gossip BLE sang toàn Mesh ~30s → node revoked bị evict khỏi MLS Group, kích hoạt Key Rotation.</li>
+<li><strong>Replay Protection:</strong> Monotonic Version Counter + CA Signature + Timestamp Window (48h).</li>
+</ul>
+<h4 id="opportunistic-mesh-wakeup-asynchronous-store-and-forward">Opportunistic Mesh Wakeup & Asynchronous Store-and-Forward</h4>
+<ul>
+<li>📱 Tận dụng giao thức iBeacon Ranging (CoreLocation) để lách giới hạn của hệ điều hành, duy trì khả năng quét BLE ở chế độ Background.</li>
+<li>💻🖥️📱 Cấu hình Định tuyến Bất đồng bộ (Asynchronous DAG Routing) kết hợp cơ chế Store-and-Forward trên các Super Node nội bộ.</li>
+<li>📱💻🖥️ Triển khai mạng lưới Causal Graph kết hợp Pending Buffer nhằm xử lý tối ưu độ trễ và các gói tin Out-of-Order.</li>
+</ul>
+<h3 id="56-clustered-mesh-topology-super-node-silent-election-chống-broadcast-storm">5.6 Clustered Mesh Topology & Super Node Silent Election (Chống Broadcast Storm)</h3>
+<ul>
+<li>💻🖥️📱 Phân quyền kiến trúc mạng nhện sinh tồn (Hierarchical Mesh Topology): ấn định Desktop làm Super Node và iOS làm Leaf Node tuân thủ thuật toán định tuyến A*.</li>
+<li>💻🖥️📱 <strong>Thuật toán Silent Election:</strong> Tự động thăng cấp các thiết bị có chỉ số Pin/CPU mạnh nhất lên làm Super Nodes để điều phối mạng lưới khi Offline.</li>
+<li>💻🖥️📱 Phân tách luồng giao tiếp: Leaf Nodes (Mobile) gắn kết qua BLE Point-to-Point, trong khi Super Nodes (Desktop) kết nối tầng trên qua Wi-Fi Direct/AWDL băng thông rộng.</li>
+<li>📱💻 Cơ chế <strong>Gossip Rate Limiting</strong> kết hợp nén <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">zstd</code> để giảm thiểu mật độ gói tin dư thừa tràn qua rào cản băng thông BLE hẹp.</li>
+<li>📱 Triển khai tín hiệu iBeacon Ranging trên CoreLocation nhằm cưỡng chế sóng BLE ở chế độ Background, lách qua rào cản đánh thức từ hệ điều hành.</li>
+<li>📱 Kiến tạo cầu nối vật lý (Data Mule) tự động chuyển phát chéo gói tin thông qua chu trình Android Foreground Service.</li>
+</ul>
+<h3 id="57-dò-tìm-nội-dung-tất-định-blind-content-addressable-oblivious-bloom-filter">5.7 Dò tìm Nội dung Tất định Blind Content-Addressable (Oblivious Bloom Filter)</h3>
+<ul>
+<li>📱💻🖥️ Tổ chức khối nén phân tán Distributed Bloom Filters (Compressed) cấu trúc hóa đại diện kho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code> nội bộ thiết bị.</li>
+<li>📱💻 Phát tán tín hiệu quảng bá định danh "CAS-HIT" thông qua nền tảng BLE 5.0 Advertising, tuyệt đối giấu kín gốc danh tính User_ID.</li>
+<li>📱💻🖥️ Xác định linh hoạt vị trí tệp tin trong mạng nhện Mesh thông qua thuật toán Gossip với độ trễ truy vấn &lt; 500ms.</li>
+</ul>
+<h3 id="58-truyền-tải-file-đa-kênh-mạng-mesh-teralink-multipath-data-mule">5.8 Truyền tải File đa kênh mạng Mesh (TeraLink Multipath Data Mule)</h3>
+<ul>
+<li>📱💻 Tách biệt luồng điểu khiển Control Plane (BLE 5.0) và luồng dữ liệu Data Plane (Wi-Fi Direct/AWDL) nhằm cực tiểu hóa hao hụt năng lượng.</li>
+<li>📱💻🖥️ Đánh giá chiều hướng vector RSSI và RTT kết hợp thuật toán A* để định tuyến đường đi vật lý ngắn nhất tới Super Node hoặc thiết bị trung chuyển (Mule).</li>
+<li>📱💻 Phân rã mã hóa tải trọng (Segmented Fragmentation) thành các phân mảnh siêu nhỏ 400 bytes, lách qua rào cản nút thắt cổng MTU của giao thức BLE.</li>
+</ul>
+<h3 id="59-tiết-kiệm-năng-lượng-mạng-mesh-jcas-spatial-aware-routing-ibeacon-stealth-mode">5.9 Tiết kiệm Năng lượng Mạng Mesh (JCAS Spatial-Aware Routing & iBeacon Stealth Mode)</h3>
+<ul>
+<li>📱 Cưỡng ép đóng gói tín hiệu mạng Mesh vào giao thức iBeacon Ranging (CoreLocation) nhằm lách hạn chế ngầm định của iOS, duy trì chu kỳ quét Background.</li>
+<li>📱💻 Áp dụng thuật toán JCAS Spatial-Aware Routing (A*) thiết lập biểu đồ 3D tọa độ thiết bị trực tiếp trên RAM để tối ưu hóa nút mạng, giảm thiểu tình trạng "phát sóng rác".</li>
+<li>📱💻 Điều tiết cấu hình Opportunistic Wakeup chủ động kích hoạt năng lượng định tuyến khi payload có nhu cầu di chuyển tệp thực, hạ tần suất Beacon xuống 1 lần/5 phút ở trạng thái Standby.</li>
+</ul>
+<h3 id="510-mesh-anti-spam-dos-resilience">5.10 Mesh Anti-Spam & DoS Resilience</h3>
+<h4 id="chống-sybil-broadcast-storm-qua-mpow-micro-proof-of-work-hashcash-defense">Chống Sybil & Broadcast Storm qua mPoW (Micro Proof-of-Work Hashcash Defense)</h4>
+<ul>
+<li>📱💻🖥️ Áp dụng thuật toán SHA-256 Hashcash ép buộc thiết bị giải Nonce khớp tiền tố 12 bit 0 trước khi phát sóng tín hiệu.</li>
+<li>📱💻🖥️ Thi hành cơ chế Spam Toll cưỡng chế tiêu hao năng lượng tính toán vật lý để dập tắt các truy vấn Control Plane độc hại.</li>
+<li>📱💻🖥️ Giải phóng tốc độ xác thực băm với độ phức tạp $O(1)$ tại Node đầu nhận nhằm duy trì hiệu năng mạng chéo.</li>
+</ul>
+<h4 id="t-uuid-time-based-rotating-service-uuids-chống-sleep-deprivation">T-UUID (Time-based Rotating Service UUIDs) chống Sleep Deprivation</h4>
+<ul>
+<li>📱💻 Sử dụng hàm $HMAC-SHA256$ để băm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Mesh_Epoch_Key</code> cùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Time_Slot_Index</code> sinh ra UUID động mỗi 5 phút.</li>
+<li>📱 Cấp quyền Pre-emptive Registration cho phép Lõi Rust đăng ký trước danh sách UUID với OS Daemon (CoreBluetooth/BluetoothLeScanner) trước khi chuyển trạng thái Suspend.</li>
+<li>📱 Tự động thực hiện Hardware-level Drop tại lớp Baseband nếu UUID không khớp khung thời gian (Time Window).</li>
+</ul>
+<h4 id="hardware-offloaded-mac-filtering-bit-pattern-masking-chống-wake-up-ảo">Hardware-Offloaded MAC Filtering (Bit-pattern Masking) chống Wake-up ảo</h4>
+<ul>
+<li>📱💻🖥️ Nhúng khóa xác thực SipHash-24 (4 bytes) vào trường Manufacturer Specific Data của quảng bá BLE.</li>
+<li>📱 Thiết lập Bit-mask filter (ScanFilter) cho Anten Bluetooth vật lý để chỉ chấp nhận trọn vẹn các hình thái bit (Bit-pattern) hợp lệ.</li>
+<li>📱 Cơ chế lọc phần cứng đè bẹp mầm mống rác chạm vào tầng phần mềm, bảo toàn 0% CPU khi có nhiễu sóng xung quanh.</li>
+</ul>
+<h4 id="dynamic-quarantine-ipc-circuit-breaker-chống-nội-gián">Dynamic Quarantine & IPC Circuit Breaker (Chống nội gián)</h4>
+<ul>
+<li>📱💻🖥️ Áp đặt Rate Limiting dựa trên <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Node_ID</code> và tần suất gửi gói tin khẩn cấp tại tầng Rust Data Plane.</li>
+<li>📱💻🖥️ Xác thực chặt chẽ Sequence Counter và Timestamp bên trong payload mã hóa để tóm gọn tấn công phát lại (Replay Attack).</li>
+<li>📱 Mở luồng IPC khẩn cấp để tống khứ địa chỉ MAC vật lý của kẻ tấn công vào Hardware Denylist của hệ điều hành.</li>
+</ul>
+<h4 id="quản-lý-danh-tính-hạn-mức-mesh-hardware-bound-offline-trust-tokens">Quản lý Danh tính & Hạn mức Mesh (Hardware-bound Offline Trust Tokens)</h4>
+<ul>
+<li>📱💻🖥️ Neo chặn chữ ký số Ed25519 trực tiếp vào phần cứng (Secure Enclave/StrongBox) bảo vệ định danh mạng Mesh nguyên thủy.</li>
+<li>📱💻🖥️ Ràng buộc bước kiểm chứng Admin_Public_Key cấp phát Token niềm tin chuyên biệt cho từng phiên Epoch di động.</li>
+<li>📱💻🖥️ Tích hợp chu trình Token-burning đánh dấu trực tiếp vào gói tin Mesh nhằm ngắt ngọn tần suất Broadcast Spam.</li>
+</ul>
+<h4 id="chốt-chặn-cách-ly-lọc-gói-tin-sớm-3ms-early-drop-quarantine-filter">Chốt chặn Cách ly & Lọc gói tin sớm (3ms Early-Drop Quarantine Filter)</h4>
+<ul>
+<li>📱💻🖥️ Đẩy mạnh khả năng Rust Core Early-Drop tiêu hủy gói tin rác ngay trên RAM trước khi chạm vào UI hoặc tiến trình giải mã E2EE.</li>
+<li>📱💻🖥️ Cấu trúc In-memory Blacklist thông qua Bloom Filter hoặc Hash Map bóng ma hóa "Ghosting" mọi truy cập từ thiết bị lây nhiễm.</li>
+<li>📱💻🖥️ Điều tiết vòng lặp Leaky Bucket tự động làm mới nhịp Reset danh sách đen định kỳ theo thời gian thực.</li>
+</ul>
+<h4 id="bảo-vệ-tài-nguyên-chống-dos-zero-context-switch-dos-resilience">Bảo vệ Tài nguyên & Chống DoS (Zero-Context Switch DoS Resilience)</h4>
+<ul>
+<li>📱💻🖥️ Xóa sổ gói tin xâm nhập ngay tại vách nối Kernel/Rust Interface triệt tiêu hoàn toàn chi phí Context Switch lên ranh giới User-space.</li>
+<li>📱💻 Quản trị vũng nhớ Memory Arena ép dung lượng tiêu thụ pin xuống mức &lt; 0.01% kể cả khi bị dội bom hàng vạn gói tin rác.</li>
+<li>☁️📱💻🖥️ Đính kèm chốt xác thực VOPRF/Nullifier phong tỏa tận gốc rễ biến thể tấn công Replay trong cấu trúc phi tập trung.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h3 id="511-webrtc-blind-relay-turn">5.11 WebRTC Blind Relay (TURN)</h3>
+<ul>
+<li>📱💻🖥️ <strong>Signaling:</strong> Trao đổi SDP qua kênh chat MLS (E2EE channel).</li>
+<li>☁️ <strong>Transport:</strong> SRTP — E2EE Audio/Video. TURN Server chỉ relay UDP mã hóa — không nắm Key.</li>
+<li>☁️ <strong>HA:</strong> Keepalived Floating IP, failover 3 giây. Sizing: 1 Node ~ 50 HD streams, 4 vCPUs, 8GB RAM, 1 Gbps.</li>
+<li>☁️ <strong>Hybrid STUN qua Private Cluster:</strong> Vượt AP/Client Isolation bằng WebRTC Data Channel mồi từ VPS nội bộ.</li>
+</ul>
+<h3 id="54-oob-mesh-ratchet-double-ratchet-vs-data-mule">5.4 OOB Mesh Ratchet (Double Ratchet vs Data Mule)</h3>
+<ul>
+<li>📱💻 Phân tách Data Plane State Machine để chống lệch con trỏ (ratchet out-of-sync) trên các thiết bị.</li>
+<li>📱💻 Cấu hình <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Online_Ratchet_Tree</code>: Ràng buộc định tuyến qua TCP/WebSocket. Xoay khóa TLS/MLS liên tục, hardcode <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Max_Gap = 2000</code> messages.</li>
+<li>📱💻 Cấu hình <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OOB_Mesh_Ratchet</code>: Bypass luồng online nếu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Is_Mesh = True</code>. Sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Mesh_Session_Key</code> qua quá trình X3DH đã thiết lập trước.</li>
+<li>📱💻 Thiết lập CRDT Vector Clock. Khi reconnect Internet, trigger hàm Rust hợp nhất (merge) Mesh State vào Online State. Zeroize RAM ngay sau khi merge để chống OOM do jump KDF.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h3 id="44-hybrid-pq-kem-kyber768-điểm-neo-lượng-tử">4.4 Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử</h3>
+<ul>
+<li>📱💻🖥️☁️🗄️ <strong>Kiến trúc Lai ghép Kép (Hybrid KEM):</strong> Lõi Rust chạy song song <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">X25519</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ML-KEM/Kyber768</code>. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Final_Session_Key = HKDF(X25519_Shared || Kyber768_Shared)</code>. X25519 chống tấn công cổ điển; Kyber768 chống Shor Algorithm (máy tính lượng tử).</li>
+<li>📱 <strong>Quantum Checkpoints:</strong> ML-KEM payload cồng kềnh (~1.18KB vs X25519 ~32 bytes) chỉ đính kèm vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KeyPackage</code> MLS Handshake hoặc tick định kỳ (24h / 10.000 tin). Luồng hàng ngày chạy thuần AES-256-GCM (\&lt;1KB) — tiết kiệm 99.9% băng thông.</li>
+<li>📱 <strong>Survival Mesh Fragmentation:</strong> BLE 5.0 MTU ~512 bytes. Khi offline, Rust Core băm nhỏ Kyber blob 1.18KB thành mảnh 400 bytes + Sequence ID + FEC. Selective ACK yêu cầu lại mảnh rớt — chặn tràn bộ đệm chip viễn thông.</li>
+<li>Đáp ứng chuẩn <strong>NSA CNSA 2.0</strong>, miễn nhiễm tấn công <strong>HNDL (Harvest Now, Decrypt Later)</strong>.</li>
+</ul>
+<h3 id="45-threshold-fido2-recovery-quorum-based-recovery">4.5 Threshold FIDO2 Recovery (Quorum-based Recovery)</h3>
+<p>Khi doanh nghiệp yêu cầu Cold Recovery:</p>
+<ul>
+<li>📱💻🖥️ <strong>Hardware Vault:</strong> Admin neo giữ KEK (Key Encryption Key) trong YubiKey sử dụng chuẩn FIDO2 <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hmac-secret</code> (PRF extension). Đảm bảo không ai có thể giải mã nếu thiếu thiết bị vật lý.</li>
+<li>📱💻🖥️ <strong>M-of-N Fragmentation:</strong> Thiết lập cơ chế Shamir's Secret Sharing phân mảnh Recovery Key để chống điểm lỗi đơn lẻ. Hệ thống chỉ phục hồi khi đạt Quorum (Ví dụ: 3/5 YubiKey của Hội đồng quản trị cùng cắm vào điểm truy cập).</li>
+<li>🖥️ <strong>Monotonic Counter Sealing:</strong> Áp dụng niêm phong TPM 2.0 Monotonic Counter. Mỗi nỗ lực gõ sai mã PIN hoặc tháo gỡ phần cứng sẽ làm thay đổi Counter, vô hiệu hóa ngay lập tức mọi nỗ lực Clone hoặc Snapshot VM của thiết bị phục hồi.</li>
+<li><strong>Master Wrapping Key:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KEK_deterministic</code> chịu sự bảo vệ trực tiếp từ YubiKey thay vì Software Enclave thuần túy.</li>
+</ul>
+<h3 id="46-phân-mảnh-hạ-tầng-chữ-ký-phục-hồi-hybrid-cross-signing-cloud-escrow">4.6 Phân mảnh Hạ tầng Chữ ký & Phục hồi (Hybrid Cross-Signing & Cloud Escrow)</h3>
+<ul>
+<li>📱 Áp dụng mô hình Hybrid Multi-Device Cross-Signing cho phép xác thực chéo thiết bị thông qua tín hiệu BLE/LAN nội bộ.</li>
+<li>📱 Cấu hình mã hóa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KEK_deterministic</code> trực tiếp lên iCloud Keychain áp đặt quy chuẩn Advanced Data Protection (Cloud Escrow Fallback).</li>
+<li>📱 Thiết lập giao thức phục hồi ngoại vi tuân thủ chuẩn lưu trữ BIP39 thông qua sơ đồ 24-word Recovery Key.</li>
+</ul>
+<h3 id="47-bảo-vệ-toàn-vẹn-chống-replay-trong-mạng-mesh-blake3-merkle">4.7 Bảo vệ Toàn vẹn & Chống Replay trong mạng Mesh (BLAKE3 & Merkle)</h3>
+<ul>
+<li>📱💻🖥️ Vận hành Pipelined Segmented Merkle phân rã tệp tin thành các Macro-Block 64MB cho phép CPU xử lý tính toán băm xác thực song song.</li>
+<li>📱💻🖥️ Gắn kết nhãn Cryptographic Offset Binding (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">AD = [File_ID] || [Chunk_Index] || [Byte_Offset]</code>) vào từng mảnh nhằm ngăn chặn sự đánh cắp hoặc dịch chuyển thứ tự (Displacement Attack).</li>
+<li>📱💻🖥️ Sinh Deterministic Nonce từ khóa luồng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Channel_Key</code> đảm bảo quyền hạn giải mã và xác thực được khoanh vùng độc quyền cho thành viên cùng nhóm.</li>
+</ul>
+<h3 id="48-thảm-họa-zero-access-rogue-admin-multi-party-enterprise-escrow-kem">4.8 Thảm họa "Zero-Access" & Rogue Admin (Multi-Party Enterprise Escrow KEM)</h3>
+<ul>
+<li>☁️📱💻🖥️ Giải quyết rủi ro Rogue Admin bằng Hệ thống Ký quỹ Khóa Đa bên, áp dụng thuật toán Shamir's Secret Sharing (M-of-N Quorum) phân mảnh Recovery Key giao cho Hội đồng quản trị.</li>
+<li>☁️📱💻🖥️ Ràng buộc cơ chế Cryptographic Wrapping (Bọc chéo) thông qua Escrow Public Key ngay tại thời điểm Bootstrap KMS.</li>
+<li>☁️📱💻🖥️ Ép buộc ghi nhận Audit Log chuẩn HIPAA/SOC2 đối với mọi thao tác giải mã của Admin.</li>
+</ul>
+<h3 id="49-tấn-công-memory-dumpextraction-synchronous-zeroize-safe-pipeline-hardware-isolation">4.9 Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)</h3>
+<ul>
+<li>📱 Kích hoạt luồng ZeroizeOnDrop (RAII) để ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên không gian bộ nhớ ngay khi thoát khỏi scope, khống chế vòng đời của plaintext key &lt;2ms.</li>
+<li>📱💻🖥️ Đẩy luồng ký/giải mã KEK nội bộ xuống Hardware Root of Trust (Secure Enclave/TPM 2.0/StrongBox) tuyệt đối không nạp Private Key vào RAM.</li>
+<li>📱💻🖥️ Thiết lập Compiler-Level Guard ngắt mã kích hoạt trait <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Send</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Sync</code>, ngăn chặn rò rỉ khóa mã hóa qua thread boundary hoặc khi vượt điểm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.await</code>.</li>
+</ul>
+<h3 id="410-giao-diện-ký-số-vật-lý-hybrid-multi-device-cross-signing-zkp-delegation">4.10 Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)</h3>
+<ul>
+<li>📱💻 Phát hành Delegation Certificate (Chứng thư ủy quyền) thời hạn định đoạt ngắn từ mạng lưới Desktop có USB Token bảo chuẩn sang thiết bị di động.</li>
+<li>📱 Triển khai Multi-Device Cross-Signing cho phép Private Key nằm rải rác trong Secure Enclave của iOS ký xác thực thay mặt mỏ neo USB Token gốc.</li>
+<li>📱💻 Sử dụng bằng chứng bảo mật Zero-Knowledge Proof (ZKP) để chứng minh quyền hạn phê duyệt hợp lệ mà không cần truy xuất trực tiếp khóa vật lý PKCS#11.</li>
+</ul>
+<h3 id="411-chế-độ-kiosk-ephemeral-session-vault-raii-zeroization">4.11 Chế độ Kiosk (Ephemeral Session Vault & RAII Zeroization)</h3>
+<ul>
+<li>📱 Cấp phát độc lập Khóa Phiên Tạm thời (Ephemeral Session Key) tách biệt hoàn toàn ranh giới RAM cho mỗi nhân viên trong ca làm việc.</li>
+<li>📱 Áp dụng chu trình ZeroizeOnDrop (RAII) tự động trích xuất và ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên toàn bộ vùng nhớ chứa KEK ngay khi tài khoản đăng xuất hoặc qua 5 phút bất động.</li>
+<li>📱 Sử dụng Store Key Pair neo giữ vĩnh viễn định danh chi nhánh trong chip bảo mật phần cứng (Secure Enclave/StrongBox).</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h3 id="410-ephemeral-session-provisioning-role-based-vault-kiosk-mode">4.10 Ephemeral Session Provisioning & Role-Based Vault (Kiosk Mode)</h3>
+<ul>
+<li>📱💻 Áp dụng Giao thức Cấp phát Khóa Phiên Tạm thời (Ephemeral Session Key) thông qua cơ chế ủy quyền từ thiết bị của Quản lý đã xác thực YubiKey.</li>
+<li>☁️🗄️📱 Ứng dụng thuật toán Shamir's Secret Sharing (SSS) để phân mảnh khóa Recovery chuyên dụng cho các trạm Kiosk.</li>
+<li>📱 Tích hợp kỹ thuật ZeroizeOnDrop đảm bảo giải phóng toàn bộ KEK khỏi RAM ngay khi ca làm việc kết thúc.</li>
+</ul>
+<h3 id="46-zkp-rate-limiting-bảng-nullifier-voprf-chống-spam-ẩn-danh">4.6 ZKP Rate-Limiting & Bảng Nullifier VOPRF — Chống Spam Ẩn danh</h3>
+<ul>
+<li>📱💻🖥️ <strong>Cấp phát Token Mù (Blind Signatures / VOPRF):</strong> Mỗi chu kỳ 1h, Lõi Rust kết nối Auth Server qua Mixnet, nhận rổ 100 Anonymous Token. Auth Server ký bằng phép nhân vô hướng Elliptic Curve — không nhìn thấy Serial Number (Mù hóa 100%).</li>
+<li>☁️🗄️ <strong>Nullifier Edge Table:</strong> Khi gửi gói Onion, nhúng 1 Token đã giải mù vào header. Exit Node xác thực: VOPRF signature hợp lệ + Bloom Filter O(1) kiểm tra Double-Spending. PASSed → deliver. FAIL/Trùng → DROP tại Edge Boundary — không đánh thức Disk I/O.</li>
+<li>📱💻🖥️ <strong>Client-Side Triage (Zero-Disk I/O):</strong> Payload E2EE đáng ngờ vào Ring Buffer RAM (&lt;2MB). Lõi gỡ E2EE lấy Sender ID thật đối chiếu Local Trust Graph. Rating thấp → Quarantine, không Write SQLite.</li>
+<li>⚠️ Constraint: VOPRF xác thực tại Exit Node &lt; 0.2ms/packet. Nullifier Table: 100M entries &lt; 150MB RAM tĩnh.</li>
+</ul>
+<h3 id="411-cryptographic-nullifier-sets-idp-linked-token-revocation">4.11 Cryptographic Nullifier Sets & IdP-Linked Token Revocation</h3>
+<ul>
+<li>☁️ Quản lý danh sách chặn token ẩn danh thông qua Blind Nullifier Sets vận hành tại OPA Gateway.</li>
+<li>☁️ Kích hoạt MLS <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">remove_member</code> Trigger để tự động xoay khóa nhóm và loại trừ thành viên bị cách ly.</li>
+<li>☁️📱💻🖥️ Áp dụng kỹ thuật Behavioral Fingerprinting trên lớp Blind Metadata nhằm phát hiện mẫu hành vi bất thường phân tuyến theo Role/Dept.</li>
+</ul>
+<h3 id="47-nghịch-lý-mã-nguồn-mở-và-compiler-level-guards">4.7 Nghịch lý Mã nguồn Mở và Compiler-Level Guards</h3>
+<ul>
+<li>📱💻🖥️ <strong>Lõi Rust (Open-Core):</strong> Loại bỏ hoàn toàn giải pháp làm rối O-LLVM và Bogus Control Flow gây lãng phí tài nguyên. Tập trung bảo vệ bằng Compiler-Level Guards.</li>
+<li>📱💻🖥️ <strong>Zeroize Safe Pipeline:</strong> Tách biệt hoàn toàn luồng mã hóa (Synchronous/CPU Bound) và luồng mạng (Async/I/O Bound). Plaintext Key (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Zeroizing&lt;Vec&lt;u8&gt;&gt;</code>) chỉ tồn tại trong Synchronous Scope. RAII <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Drop</code> ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> trước khi spawn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tokio::task</code>.</li>
+<li>📱💻🖥️ <strong>Compiler-Level Guard:</strong> Plaintext Key Struct <strong>cố tình không implement</strong> trait <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Send</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Sync</code>. Trình biên dịch Rust báo Compile Error nếu developer vô tình truyền Key qua thread boundary hoặc giữ qua điểm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.await</code> — Attack Surface = 0 tại compile time.</li>
+<li>💻🖥️☁️🗄️ <strong>mlock() Hardening:</strong> Desktop/Server dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap</code> + cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MAP_LOCKED | MAP_CONCEAL</code>. Bảo vệ RAM khỏi Swap file trong khoảng 2ms tồn tại của Key.</li>
+</ul>
+<h4 id="hq-audit-zero-knowledge-identity-bảo-vệ-người-tố-giác">HQ-Audit Zero-Knowledge Identity (Bảo vệ người tố giác)</h4>
+<ul>
+<li>📱💻 Thiết lập Hardcoded <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HQ_Audit_PubKey</code> tại Client để mã hóa dữ liệu tố giác ngay từ nguồn.</li>
+<li>📱💻 Kích hoạt cơ chế sinh Ephemeral Keypair (Khóa dùng một lần) để loại bỏ hoàn toàn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">User_ID</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_ID</code> khỏi gói tin.</li>
+<li>☁️ Lưu trữ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HQ_Audit_PrivateKey</code> trong HSM/Secure Enclave biệt lập tại Ban Kiểm soát HQ.</li>
+</ul>
+<h4 id="out-of-band-domain-fronting-mesh-fallback-chống-firewall-dpingắt-ngầm">Out-of-Band Domain Fronting & Mesh Fallback (Chống Firewall DPI/Ngắt ngầm)</h4>
+<ul>
+<li>📱💻 Áp dụng kỹ thuật Domain Fronting ngụy trang SNI/Host header qua các CDN lớn (Cloudflare/Microsoft) để bypass DPI.</li>
+<li>📱💻 Tự động chuyển đổi định tuyến sang mạng Wi-Fi/4G cá nhân (Mesh-to-Internet Fallback) khi phát hiện Federation Bridge bị admin ngắt.</li>
+<li>📱💻 Phân đoạn tệp tin (Chunking) kết hợp mã hóa AEAD để thay đổi hình thái gói tin trước các bộ lọc kích thước dữ liệu.</li>
+</ul>
+<h3 id="48-identity-key-escrow-sovereignty-first-key-recovery">4.8 Identity & Key Escrow — Sovereignty-First Key Recovery</h3>
+<ul>
+<li>📱💻 <strong>Loại bỏ iCloud Escrow:</strong> Không đẩy Ciphertext lên iCloud Keychain — bảo toàn nguyên tắc <strong>Enterprise Data Sovereignty</strong>. Mọi khóa chỉ rời thiết bị qua các luồng được E2EE bảo vệ.</li>
+<li>📱💻 Duy trì <strong>Multi-Device Cross-Signing</strong> xác thực chéo giữa các thiết bị trong Vòng tin tưởng Device Ring của tổ chức.</li>
+<li>📱💻 <strong>Physical Vaulting (BIP39 24-word Recovery Key):</strong> Lưu trữ Recovery Key trong két sắt quản trị vật lý; không có phương án lưu trữ Online nào khác.</li>
+<li>📱 Cấm lưu private key vào Secure Enclave nếu thiếu FIDO2 attestation. Luôn verify signature list trước khi cấp quyền giải mã local.</li>
+</ul>
+<h3 id="49-searchable-symmetric-encryption-sse-forward-secrecy">4.9 Searchable Symmetric Encryption (SSE) & Forward Secrecy</h3>
+<ul>
+<li>🗄️☁️ Xây dựng SSE phân mảnh theo Epoch để giải quyết bài toán xoay khóa trên TEE.</li>
+<li>💻🖥️☁️ Cấu hình Rust Core sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Search_Subkey_Epoch_N</code> thông qua KDF Chain mỗi khi kích hoạt hàm xoay khóa (nhân sự đổi quyền).</li>
+<li>📱💻🖥️ Lập trình hàm tạo Blind Index tại Client, bắt buộc đính kèm tag <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Epoch_ID</code>.</li>
+<li>🗄️☁️ Tại query-time, Rust Core cung cấp mảng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Historic_Tokens</code> cho TEE Server. Server thực hiện đối chiếu O(1) Token-to-Index. Cấm re-index toàn bộ database.</li>
+</ul>
+<h4 id="lsh-locality-sensitive-hashing-garbled-circuits-cho-tee">LSH (Locality-Sensitive Hashing) & Garbled Circuits cho TEE</h4>
+<ul>
+<li>📱💻🖥️ Thuật toán MinHash/SimHash để chuyển đổi từ khóa thành mã băm bảo toàn khoảng cách Hamming.</li>
+<li>☁️🗄️ Mạch xáo trộn (Garbled Circuits) để tính toán khoảng cách giữa các Token trên RAM mã hóa của TEE mà không lộ Plaintext.</li>
+<li>☁️🗄️ Cơ chế Compaction Index theo Epoch để tối ưu hóa bộ nhớ RAM tĩnh.</li>
+</ul>
+<h4 id="encrypted-blind-search-qua-tee-kết-hợp-hybrid-sse">Encrypted Blind Search qua TEE kết hợp Hybrid SSE</h4>
+<ul>
+<li>📱☁️ Token hóa luồng từ khóa thông qua thuật toán băm $HMAC-SHA256(Company\_Search\_Key, keyword)$.</li>
+<li>📱☁️ Phân mảnh cấu trúc chỉ mục theo định danh Epoch ID phục vụ quá trình xoay vòng khóa (Epoch Rotation).</li>
+<li>☁️🗄️ Cấu hình truy vấn $O(1)$ Token-to-Index trực diện trên vùng nhớ đã mã hóa của hạt nhân TEE.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="6-api-secret-management">6. API Secret Management</h2>
+<h3 id="61-e2ee-api-secret-vault-cryptographic-binding">6.1 E2EE API Secret Vault & Cryptographic Binding</h3>
+<ul>
+<li>☁️🗄️ <strong>Blind Vault Storage (VPS):</strong> Admin nhập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{name: "OpenAI", value: "sk-xxx"}</code> → Rust sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Vault_Key (AES-256)</code> chỉ sync giữa Admin devices qua E2EE → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">encrypted_blob = AES-256-GCM(Vault_Key, api_key)</code> → đẩy lên VPS. VPS lưu label + ciphertext — <strong>không biết giá trị thực.</strong></li>
+<li>📱💻🖥️ <strong>Cryptographic Binding (Zero-Server):</strong> Admin bấm [+] cấp key cho Bot: Client kéo blob → giải mã trong RAM (&lt;100ms) → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Bot_Bound_Blob = Curve25519_ECIES.encrypt(Bot_Public_Key, api_key)</code> → DROP(api_key) → đẩy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Bot_Bound_Blob</code> lên VPS. VPS chỉ mở được bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Bot_Private_Key</code> — không bao giờ rời chip.</li>
+<li>☁️ <strong>Instant Revoke:</strong> Admin đổi key gốc trong Vault → Rust chạy ngầm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rebind_all_bots()</code> mã hóa lại toàn bộ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Bot_Bound_Blob</code> trong &lt; 2 giây.</li>
+<li>☁️🗄️ <strong>BYOK (Bring Your Own Key):</strong> API Key lưu trong Secure Enclave / OS Keychain — không bao giờ plaintext trên Server.</li>
+</ul>
+<h3 id="62-phân-xử-nội-dung-trong-môi-trường-zero-knowledge-blind-dag-store">6.2 Phân xử Nội dung trong Môi trường Zero-Knowledge (Blind DAG Store)</h3>
+<ul>
+<li>☁️🗄️ Chỉ đạo Sever xây dựng cấu trúc đồ thị dựa trên Metadata Plaintext (HLC, parents_HLC) hoàn toàn mù với dữ liệu nội dung.</li>
+<li>📱💻🖥️ Gán mã hóa E2EE cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Encrypted_payload</code> từ phía thiết bị để đảm bảo tính Zero-Knowledge lưu trữ.</li>
+<li>📱💻🖥️ Áp dụng chữ ký số Ed25519 trực tiếp lên từng Node của lưới DAG nhằm neo chặn tính toàn vẹn (Tamper-proof).</li>
+</ul>
+<h3 id="63-xung-đột-audit-log-không-nhất-quán-split-brain-resolution">6.3 Xung đột Audit Log không nhất quán (Split-Brain Resolution)</h3>
+<ul>
+<li>📱💻🖥️ Triển khai cơ cấu san phẳng đồ thị tất định (HLC Deterministic Flattening) bằng sự kết hợp giữa Physical Time và Logical Counter bảo vệ tính nhân quả.</li>
+<li>📱💻🖥️ Kích hoạt Thuật toán Tie-breaker phán xử qua chuỗi băm Node_ID (Hash MAC) để phân định thứ tự cho các sự kiện xảy ra song song.</li>
+<li>📱💻🖥️ Ràng buộc cấu trúc Hash Chain nối rễ chuỗi nhằm duy trì tính toàn vẹn tuyến tính của Audit Log phục vụ quá trình truy vết độc lập.</li>
+</ul>
+<h3 id="64-asynchronous-treekem-với-epoch-forking-deterministic-merge-đứt-gãy-mls">6.4 Asynchronous TreeKEM với Epoch Forking & Deterministic Merge (Đứt gãy MLS)</h3>
+<ul>
+<li>📱💻🖥️ Khởi tạo bộ nhớ Keyring State đa nhánh lưu trữ đồng thời nhiều Epoch trong RAM tạm nhằm giải mã các luồng chia tách (Fork) diễn ra song song do Mesh bị phân mảnh.</li>
+<li>📱💻🖥️ Neo chặn (Anchor) Update Path của phân vùng TreeKEM vào cấu trúc Vector Clock của CRDT nhằm nhận diện chính xác nhánh mã hóa tương ứng.</li>
+<li>📱💻🖥️ Thuật toán <strong>Tie-breaker (Hash Node_ID)</strong>: Phân xử phi tập trung để chỉ định duy nhất một Super Node thực hiện Merge Commit, kéo toàn mạng lưới sang Epoch nhất quán (Epoch N+2) khi các nhánh hội tụ.</li>
+<li>📱💻🖥️ Khẩn trương thực thi thủ tục phát tán MLS TreeKEM nhằm tái cấu trúc nhóm bảo mật ngay sau bước sáp nhập Trạng thái CRDT.</li>
+</ul>
+<h3 id="65-hiệu-năng-xử-lý-đồ-thị-tại-biên-client-side-in-memory-dag">6.5 Hiệu năng Xử lý Đồ thị tại Biên (Client-Side In-Memory DAG)</h3>
+<ul>
+<li>📱💻🖥️ Đẩy luồng trích xuất dữ liệu thô (In-memory DAG Reconciliation) xuống Client với giới hạn độ phức tạp $O(N \log N)$ cho thao tác xếp đặt HLC.</li>
+<li>☁️🗄️ Giải tỏa nút thắt IOPS tại cụm trung tâm bằng mô thức Pub/Sub trao đổi siêu dữ liệu đồ thị dạng mù (Zero-Knowledge).</li>
+<li>📱💻🖥️ Ghi chuỗi Atomic Write đồng bộ trực tiếp xuống bảng SQLite FTS ở bước cuối để chốt khóa trạng thái hợp nhất cục bộ.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho App-layer. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

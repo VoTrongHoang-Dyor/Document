@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Core Functions & Features</title>
+    <style>
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        .main {
+            padding: 4rem 4rem;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px;
+        }
+
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem;
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+        
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Core Functions & Features</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-header">Table of Contents</div><a href="#1-chức-năng-dành-cho-quản-trị-viên-admin" class="nav-link" style="padding-left:0.8rem;">1. Chức năng dành cho Quản trị viên (Admin)</a>
+<a href="#2-chức-năng-dành-cho-người-dùng-cuối-usernhân-viên" class="nav-link" style="padding-left:0.8rem;">2. Chức năng dành cho Người dùng cuối (User/Nhân viên)</a>
+<a href="#3-chức-năng-tích-hợp-mở-rộng-dành-cho-developerintegrator" class="nav-link" style="padding-left:0.8rem;">3. Chức năng Tích hợp & Mở rộng (Dành cho Developer/Integrator)</a>
+<a href="#4-chức-năng-vận-hành-cứu-hộ-dành-cho-devopssecops" class="nav-link" style="padding-left:0.8rem;">4. Chức năng Vận hành & Cứu hộ (Dành cho DevOps/SecOps)</a>
+<a href="#5-chức-năng-tàng-hình-của-lõi-rust-cấp-hệ-thống" class="nav-link" style="padding-left:0.8rem;">5. Chức năng "Tàng hình" của Lõi Rust (Cấp Hệ thống)</a>
+<a href="#6-chức-năng-cho-hệ-thống-liên-tổ-chức" class="nav-link" style="padding-left:0.8rem;">6 Chức năng cho hệ thống Liên tổ chức</a>
+<a href="#1-kiến-trúc-độc-lập-và-cầu-nối-zone-2-routing" class="nav-link" style="padding-left:0.8rem;">1. Kiến trúc Độc lập và Cầu nối (Zone 2 Routing)</a>
+<a href="#2-quá-trình-kết-nối-chi-nhánh-cross-cluster-trust-handshake" class="nav-link" style="padding-left:0.8rem;">2. Quá trình Kết nối Chi nhánh (Cross-Cluster Trust Handshake)</a>
+<a href="#3-kiểm-soát-đặc-quyền-và-chống-làm-phiền-opa-routing-policy" class="nav-link" style="padding-left:0.8rem;">3. Kiểm soát Đặc quyền và Chống làm phiền (OPA Routing Policy)</a>
+<a href="#4-thu-hồi-quyền-liên-tổ-chức-offboarding-cascade" class="nav-link" style="padding-left:0.8rem;">4. Thu hồi quyền liên tổ chức (Offboarding Cascade)</a>
+
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+</nav>
+
+<div class="main">
+    <h3 id="1-chức-năng-dành-cho-quản-trị-viên-admin">1. Chức năng dành cho Quản trị viên (Admin)</h3>
+<p>Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệu và thiết lập các hàng rào bảo mật. Các chức năng chính bao gồm:</p>
+<ul>
+<li><strong>Quản lý Khóa và Định danh (KMS & Identity):</strong></li>
+<li>Thiết lập ban đầu với <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KMS Bootstrap</code>, trong đó Admin phải quản lý <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Master Key</code> (ví dụ: in ra giấy hoặc lưu file <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.terakey</code>) để tránh thảm họa "Zero-Access".</li>
+<li>Phát hành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Invite Token</code> (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Epoch Rotation</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Remote Wipe</code> (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.</li>
+<li>Nắm giữ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise Escrow Key</code> (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.</li>
+</ul>
+<ul>
+<li><strong>Thiết lập Chính sách Bảo mật (OPA Policy & DLP):</strong></li>
+<li>Định nghĩa các chính sách truy cập qua OPA Engine, bao gồm giới hạn tốc độ (Rate Limiting) theo phòng ban, thời gian lưu trữ tin nhắn (TTL), và quyền hiển thị ứng dụng.</li>
+<li>Thiết lập cấu hình OPA Policy Enforcement nhằm giới hạn quyền hiển thị trên Launchpad (nút khởi chạy tự động vô hiệu hóa/mờ đi nếu phòng ban không được cấp quyền).</li>
+<li>Cấu hình chính sách cho mạng liên tổ chức (Federation), như thiết lập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allowed_roles</code> hoặc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow_reply</code> để ngăn nhân viên cấp dưới nhắn tin làm phiền Tổng bộ.</li>
+<li>Thiết lập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">App Whitelist</code> cho phép nhúng các ứng dụng bên ngoài (như Zalo, Telegram) vào Sandbox, đồng thời bật các tính năng chống thất thoát dữ liệu (DLP) như chặn copy/paste, chặn kéo thả file.</li>
+<li>Ràng buộc ứng dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> khởi chạy hoàn toàn trong môi trường cách ly WASM Sandbox tuyệt đối nhằm ngăn chặn mọi hành vi đọc trộm dữ liệu hội thoại từ cửa sổ ứng dụng.</li>
+</ul>
+<ul>
+<li><strong>Quản trị Hệ sinh thái Tiện ích (.tapp) & AI:</strong></li>
+<li>Kiểm duyệt và cài đặt các gói tiện ích nội bộ (Private Sideloading) thông qua chữ ký <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise_CA</code>.</li>
+<li>Quản lý tập trung các API Key (ví dụ: OpenAI) trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">E2EE Secret Vault</code> mà không làm lộ Key trên máy chủ, sau đó cấp quyền (Cryptographic Binding) cho các AI Bot.</li>
+<li>Định nghĩa cấu trúc dữ liệu đầu vào (JSON Schema) cho các công cụ nghiệp vụ như Smart Order Entry.</li>
+</ul>
+<ul>
+<li><strong>Nghi thức Kiểm toán & Liên kết Tổ chức:</strong></li>
+<li>Thực hiện "Nghi thức Kiểm toán Zero-Trust" (N-of-M Audit Ceremony) sử dụng Shamir's Secret Sharing và YubiKey để giải mã dữ liệu khi có yêu cầu pháp lý mà không tạo ra "cửa hậu" (backdoor).</li>
+<li>Tạo và phê duyệt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Federation Invite Token</code> để thiết lập cầu nối mTLS an toàn giữa cụm máy chủ Tổng công ty và Công ty con.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h3 id="2-chức-năng-dành-cho-người-dùng-cuối-usernhân-viên">2. Chức năng dành cho Người dùng cuối (User/Nhân viên)</h3>
+<p>Người dùng được trải nghiệm một môi trường làm việc bảo mật tuyệt đối nhưng vẫn đảm bảo tính liền mạch, ngay cả khi gặp sự cố mạng. Các chức năng chính bao gồm:</p>
+<ul>
+<li><strong>Giao tiếp và Nhắn tin Cốt lõi:</strong></li>
+<li>Nhắn tin văn bản, gọi thoại/video HD (WebRTC) được mã hóa đầu cuối (E2EE) qua giao thức chuẩn MLS và Signal.</li>
+<li>Tìm kiếm toàn văn bản (Full-text search) siêu tốc độ bằng SQLite FTS5 tại máy trạm mà không làm rò rỉ siêu dữ liệu (Zero-Knowledge Search).</li>
+</ul>
+<ul>
+<li><strong>Làm việc Ngoại tuyến & Mạng Lưới (Mesh/Offline-First):</strong></li>
+<li>Chủ động kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct khi hệ thống mất Internet để tiếp tục nhắn tin khẩn cấp.</li>
+<li>Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường hoàn toàn không có mạng LAN hay Wi-Fi Router.</li>
+</ul>
+<ul>
+<li><strong>Quản lý Không gian làm việc và File (TeraVault):</strong></li>
+<li>Sắp xếp, kéo thả file từ khung chat vào một cây thư mục ảo (Virtual File System) ngăn nắp mà không làm nhân bản dung lượng file.</li>
+<li>Chủ động bật chế độ "Make Available Offline" (Tầng lưu trữ 3) để tải trước toàn bộ thư mục về máy khi chuẩn bị di chuyển vào vùng mất sóng.</li>
+<li>Xem trước các file (PDF, CAD, Video) siêu nhanh nhờ cơ chế nạp "vỏ bọc" Zero-Byte Stub (~5KB).</li>
+</ul>
+<ul>
+<li><strong>Sử dụng Tiện ích và Phê duyệt:</strong></li>
+<li>Tương tác với các AI Bot ảo trực tiếp trong nhóm chat (bằng cách <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">@mention</code>) để tóm tắt tài liệu mà không lo rò rỉ dữ liệu cá nhân (nhờ cơ chế Dual-Mask).</li>
+<li>Sử dụng các Mini-App nghiệp vụ (Smart Order, CRM) chạy siêu mượt với độ trễ &lt; 50ms, hỗ trợ Undo/Redo (Time-Travel).</li>
+<li>Ký số và phê duyệt tài liệu nhiều cấp thông qua Smart Approval (Fintech Bridge) có xác thực sinh trắc học.</li>
+<li>Nhắn tin với đối tác qua các ứng dụng ngoài (Zalo, Telegram) ngay trong một cửa sổ duy nhất (Sandbox) mà không sợ bị dính mã độc chéo.</li>
+</ul>
+<h3 id="3-chức-năng-tích-hợp-mở-rộng-dành-cho-developerintegrator">3. Chức năng Tích hợp & Mở rộng (Dành cho Developer/Integrator)</h3>
+<ul>
+<li><strong>Hệ sinh thái API Đa tầng (Tiered API):</strong> Cung cấp hệ thống REST API, WebSocket và Webhook để kết nối với bên ngoài, được chia từ Tier 1 (chỉ gửi thông báo) đến Tier 4 (Bot Builder SDK để phát triển Mini-app).</li>
+<li><strong>Đồng bộ Nhân sự Tự động (SCIM 2.0 Identity Sync):</strong> Lắng nghe các sự kiện từ hệ thống nhân sự (như Azure AD, Google Workspace). Khi có nhân sự nghỉ việc, SCIM sẽ tự động kích hoạt chuỗi thu hồi quyền (Offboarding Cascade), khóa tài khoản và xóa khóa thiết bị trong chưa tới 30 giây.</li>
+<li><strong>Cổng Tích hợp Đồng thuận (Consent-Driven Bridge):</strong> Quản lý luồng giao tiếp với các ứng dụng bên thứ 3 (Jira, Zoom, Salesforce) thông qua một Bot trung gian (Egress Worker). Hệ thống sẽ hỏi ý kiến (Consent) của Admin trước khi tạm thời giải mã E2EE trên RAM VPS để gọi API ra ngoài.</li>
+<li><strong>ChatOps & Secure Tunneling:</strong> Cung cấp đường hầm bảo mật cho phép kỹ sư hệ thống truy cập SSH/RDP thẳng vào các máy chủ nội bộ thông qua TeraChat mà không cần thiết lập VPN truyền thống.</li>
+</ul>
+<h3 id="4-chức-năng-vận-hành-cứu-hộ-dành-cho-devopssecops">4. Chức năng Vận hành & Cứu hộ (Dành cho DevOps/SecOps)</h3>
+<ul>
+<li><strong>Khôi phục Thảm họa Cơ sở dữ liệu (PostgreSQL PITR):</strong> Chức năng "cỗ máy thời gian" thông qua WAL Archiving. Nếu Admin vô tình chạy lệnh xóa nhầm dữ liệu, hệ thống có thể dựng lại nguyên vẹn Database về đúng một mốc thời gian cụ thể (ví dụ: 14:03:00) dựa trên các log được sao lưu định kỳ.</li>
+<li><strong>Lưu trữ Tự chủ (BYOS - Bring Your Own Storage):</strong> Không ép buộc Doanh nghiệp dùng Cloud của TeraChat. Hệ thống tích hợp chuẩn S3-Compatible (MinIO), cho phép IT tự cắm thêm ổ cứng vật lý để mở rộng dung lượng và lưu trữ lịch sử vô hạn (Infinite Retention).</li>
+<li><strong>Cập nhật Không cần Mạng (Air-Gapped Patching):</strong> Cho phép triển khai các bản vá lỗi siêu nhỏ (Delta Patch - BSDiff) cục bộ cho các máy trạm nằm trong mạng nội bộ đóng kín hoàn toàn với Internet.</li>
+<li><strong>Trạm Giám sát (Observability Pipeline):</strong> Tích hợp sẵn chuẩn Prometheus (đo lường), Loki (lưu log JSON ẩn danh) và Tempo (theo dõi vết gói tin) để đảm bảo SLA hoạt động đạt mức 99.99%.</li>
+</ul>
+<h3 id="5-chức-năng-tàng-hình-của-lõi-rust-cấp-hệ-thống">5. Chức năng "Tàng hình" của Lõi Rust (Cấp Hệ thống)</h3>
+<ul>
+<li><strong>Truyền tải Đa đường (TeraLink Multipath):</strong> Tự động nhân bản các gói tin nhỏ (như lệnh đồng bộ CRDT) và gửi song song qua cả 3 đường: 4G/5G, Wi-Fi LAN, và BLE Mesh. Giúp hệ thống đạt độ trễ 0ms khi người dùng di chuyển chuyển vùng mạng (Roaming).</li>
+<li><strong>Trạm Trung chuyển Dữ liệu AI (Predictive Data Mules):</strong> Khi hệ thống rớt mạng diện rộng, lõi Rust chạy mô hình học máy (Edge ML) để phân tích thói quen di chuyển của nhân viên. Dữ liệu sẽ ưu tiên gửi gắm vào máy của những người có tỷ lệ gặp người nhận cao nhất (ví dụ: gửi tài liệu sếp qua máy của trợ lý) thay vì gửi rác mù quáng.</li>
+<li><strong>Bẫy Hắc Ín chống DDoS (Infinite Tarpit):</strong> Bức tường lửa thông minh bảo vệ máy chủ. Nếu có kẻ tấn công gửi Request vượt hạn mức hoặc sai chữ ký TLS Fingerprint, hệ thống không từ chối ngay mà "treo" kết nối đó, cứ 10 giây mới nhả 1 Byte rác để làm cạn kiệt RAM của kẻ tấn công.</li>
+<li><strong>Puncturing Stream (Phục hồi luồng tệp đứt gãy):</strong> Khi truyền file lớn (ví dụ: 2GB) qua Wi-Fi Direct mà bị nhiễu sóng (như do lò vi sóng, thiết bị công nghiệp), hệ thống đánh dấu đoạn bị lỗi là "Thủng" (Punctured) và gửi tiếp phần còn lại, sau đó tự động vá lại đoạn hỏng ở cuối phiên thay vì phải gửi lại từ đầu.</li>
+</ul>
+<h3 id="6-chức-năng-cho-hệ-thống-liên-tổ-chức">6 Chức năng cho hệ thống Liên tổ chức</h3>
+<h2 id="1-kiến-trúc-độc-lập-và-cầu-nối-zone-2-routing">1. Kiến trúc Độc lập và Cầu nối (Zone 2 Routing)</h2>
+<ul>
+<li>Tổng công ty (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Org_ID_HQ</code>) và Công ty con (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Org_ID_Sub</code>) là hai thực thể pháp lý độc lập, mỗi bên sở hữu một Private Cluster riêng biệt.</li>
+<li>Luồng giao tiếp giữa HQ và Chi nhánh bắt buộc đi qua <strong>Federation Bridge (Zone 2)</strong> thông qua xác thực mTLS (Mutual Auth) và giao thức Sealed Sender (ẩn danh tính người gửi khỏi trạm trung chuyển).</li>
+<li><strong>Chủ quyền dữ liệu (Data Sovereignty):</strong> Dữ liệu của HQ ở lại máy chủ HQ, dữ liệu của Chi nhánh ở lại máy chủ Chi nhánh, trạm Federation Bridge ở giữa chỉ chuyển tiếp gói tin mã hóa (Blind Relay) chứ không lưu trữ.</li>
+</ul>
+<h2 id="2-quá-trình-kết-nối-chi-nhánh-cross-cluster-trust-handshake">2. Quá trình Kết nối Chi nhánh (Cross-Cluster Trust Handshake)</h2>
+<p>Quá trình kết nối hai công ty diễn ra hoàn toàn an toàn mà không cần đồng bộ Database:</p>
+<ul>
+<li><strong>Bước 1:</strong> Admin Tổng công ty tạo một mã <strong>Federation Invite Token</strong> (bản chất là một Signed JWT chứa URL của HQ, Public Key và có hạn 24h) rồi gửi cho Admin Chi nhánh qua kênh ngoài (email, điện thoại).</li>
+<li><strong>Bước 2:</strong> Admin Chi nhánh nhập Token này vào hệ thống của mình để gửi yêu cầu kết nối (Connection Request) chứa Public Key của Chi nhánh sang HQ.</li>
+<li><strong>Bước 3:</strong> Admin Tổng công ty bấm "Phê duyệt", hai máy chủ trao đổi Public Key và lưu vào sổ cái tin cậy (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">federation_trust_registry</code>). Từ đây, hai bên có thể nhắn tin chéo cho nhau.</li>
+</ul>
+<h2 id="3-kiểm-soát-đặc-quyền-và-chống-làm-phiền-opa-routing-policy">3. Kiểm soát Đặc quyền và Chống làm phiền (OPA Routing Policy)</h2>
+<p>Để tránh tình trạng nhân viên Chi nhánh nhắn tin ồ ạt làm phiền lãnh đạo Tổng bộ, Admin Chi nhánh có thể thiết lập các bộ lọc (Policy) thông qua OPA:</p>
+<ul>
+<li>Có thể giới hạn chỉ những người có Role cụ thể (như <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Director</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Manager</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Branch_Admin</code>) mới được chủ động khởi tạo tin nhắn sang HQ.</li>
+<li>Nhân viên bình thường vẫn có thể trả lời (reply) nếu người từ HQ chủ động nhắn tin trước.</li>
+<li>Hệ thống có thể giới hạn tần suất nhắn tin liên tổ chức (ví dụ: 20 tin nhắn/giờ).</li>
+</ul>
+<h2 id="4-thu-hồi-quyền-liên-tổ-chức-offboarding-cascade">4. Thu hồi quyền liên tổ chức (Offboarding Cascade)</h2>
+<ul>
+<li>Khi một nhân viên Chi nhánh nghỉ việc hoặc bị sa thải, Admin Chi nhánh thao tác trên hệ thống nội bộ, bộ lắng nghe SCIM sẽ lập tức khóa tài khoản và xóa khóa thiết bị.</li>
+<li>Ngay khi mất quyền ở Chi nhánh, nhân viên đó <strong>tự động mất luôn quyền truy cập vào kênh mTLS sang HQ trong vòng chưa tới 30 giây</strong>.</li>
+<li>Điểm hay của kiến trúc này là Tổng công ty không cần biết nhân viên Chi nhánh bị đuổi, hệ thống của Chi nhánh sẽ tự dọn dẹp và ngắt luồng liên lạc.</li>
+</ul>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

@@ -11,17 +11,24 @@ import json
 import sys
 import time
 
-BASE_DIR = "/Users/hoang_dyor_i/Code_Projects/DocumentTeraChat"
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 TARGET_FILES = [
-    "TechSpec.md",
-    "PRD.md",
+    "Introduction.md",
+    "Function.md",
+    "Feature_Spec.md",
+    "Design.md",
+    "Core_Spec.md",
     "BusinessPlan.md",
 ]
 
 TITLES = {
-    "TechSpec.md":      "TeraChat — Technical Specification",
-    "PRD.md":           "TeraChat — Product Requirements Document",
+    "Introduction.md":  "TeraChat — System Introduction & Onboarding",
+    "Function.md":      "TeraChat — Core Functions & Features",
+    "Feature_Spec.md":  "TeraChat — Client Feature Specification",
+    "Design.md":        "TeraChat — Product Requirements Document",
+    "Core_Spec.md":     "TeraChat — Core Technical Specification",
     "BusinessPlan.md":  "TeraChat — Business Plan & GTM Strategy",
 }
 

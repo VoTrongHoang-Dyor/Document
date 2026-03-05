@@ -1,0 +1,655 @@
+# Feature_Spec.md — TeraChat V0.2.2
+
+> **Audience:** App Dev Mobile/Desktop/Laptop · FFI Integrator
+> **Scope:** Client Data Plane, IPC, Local Storage, Native OS, WASM Ecosystem — Implementation-level only.
+
+---
+
+## TABLE OF CONTENTS
+
+1. [Client Data Plane](#6-client-data-plane)
+2. [Ecosystem & Integration](#7-ecosystem--integration)
+
+---
+
+## 6. Client Data Plane
+
+### 6.1 IPC Bridge Architecture
+
+#### Desktop — SharedArrayBuffer + Protobuf
+
+- 💻🖥️ **Control Plane:** Protobuf schema `terachat_ipc.proto` qua WASM/Rust channel — lệnh, metadata, SQL, offset pointer. Kích thước \<50 bytes/message.
+- 💻🖥️ **Data Plane:** `SharedArrayBuffer` (mmap vật lý) — file chunk, record bulk, AI input. Ring Buffer cố định 10MB, chunk 2MB, throughput ~500MB/s.
+- 💻🖥️ **Zero-Copy Flow:** WASM ghi I/O nhị phân vào SAB → Rust đọc con trỏ vật lý, validate CRC32, AES-256-GCM encrypt → ghi ciphertext vào offset khác trong SAB → WASM lấy kết quả. Không copy buffer.
+- 💻🖥️ **Security Contract:**
+  - ACL per-.tapp: mọi `UtilityAction` qua ACL Policy tại Rust Core trước khi xử lý.
+  - `Company_Key` / `Channel_Key` tuyệt đối không truyền qua Protobuf lên WASM. WASM chỉ gửi data vào SAB, Rust tự dùng Key đang `mlock`'d.
+  - Rust kiểm tra `offset + length ≤ SAB_SIZE` + validate CRC32. Vi phạm → `SIGSEGV` trap + panic.
+
+#### Custom URI Protocol Interceptor & Security Header Injection (Tê liệt SharedArrayBuffer)
+
+- 💻🖥️ Can thiệp trực tiếp vào Tauri Builder Protocol Interceptor để kiểm soát luồng phản hồi phân phối tĩnh cục bộ.
+- 💻🖥️ Tiêm (Inject) cưỡng bức Header `Cross-Origin-Opener-Policy: same-origin` ngay tại cấp độ mạng của WebView.
+- 💻🖥️ Tiêm Header `Cross-Origin-Embedder-Policy: require-corp` để kích hoạt trạng thái Cross-Origin Isolation, cho mượn SharedArrayBuffer.
+
+#### Mobile iOS — React Native JSI (C++ Shared Memory Pointer)
+
+- 📱 **JSI C++ Pointer:** UI Native App bọc con trỏ C++ Shared Memory bằng `std::unique_ptr` với Custom Deleter → đâm thẳng vào luồng nhận của Rust FFI. Throughput ~400MB/s, bỏ qua WebView Bridge.
+- 📱 **Crash-Safe Checkpoint:** Native UI lắng nghe `applicationWillTerminate` / `onTrimMemory` → bắn FFI signal `terachat_core_flush_io()` → Rust flush WAL checkpoint trước khi OS kill.
+- 📱 Rust lock DB tối đa 50ms (Micro-batching). Không có transaction nào vượt ngưỡng này.
+
+#### Mobile Android — Dart FFI + TypedData
+
+- 📱 **Dart FFI TypedData:** Zero-Copy sang C ABI. Throughput ~400MB/s.
+- 📱 Cùng Crash-Safe Checkpoint pattern: lắng nghe `onTrimMemory` → `terachat_core_flush_io()`.
+
+> ⚠️ **Legacy bị loại bỏ:** Base64 qua WebView/MessageChannel (~25MB/s) — gây giật UI (blocking). Không dùng.
+
+#### Unidirectional State Sync
+
+Luồng state chỉ đi 1 chiều: `Rust -> Native UI -> Render`. UI tuyệt đối không chứa business state.
+
+#### Dual-Plane
+
+### 11.2 "Zero-Byte" App Stubs (WASM)
+
+> 🔗 **Structural Note:** Nội dung của mục này (và 11.3) đã được hợp nhất và mở rộng tại **Section 7.1 (WASM Sandbox & Dual-Registry)**. Đọc Section 7.1 để tham khảo kiến trúc đầy đủ và tính năng bảo mật nâng cao.
+
+- 📱💻🖥️ Bề mặt UI `.tapp` chỉ là một file `.wasm` siêu nhẹ (10KB - 50KB), tải nóng từ Mesh trong 10ms.
+- 📱💻🖥️ Mọi logic "nặng" đều gọi xuống Rust qua IPC.
+- ☁️ Máy chủ không chứa frontend code, chỉ điều phối cấu trúc nhánh.
+
+### 11.3 Độc thủ từ WASM Sandbox Escape (Zero-Trust WASM Host Binding & OPA Guardrail)
+
+- 💻🖥️ Phân cách hoàn toàn luồng điều khiển và dữ liệu qua IPC Bridge Architecture (SharedArrayBuffer + Protobuf).
+- 📱💻🖥️ Tuân thủ Key Isolation Protocol, kiên quyết block đường truyền phân bổ `Company_Key` và `Channel_Key` qua IPC lên môi trường thực thi WASM.
+- ☁️📱💻 Úy thác cho hệ nhúng Rust Core ACL Policy (OPA Engine) quyền sinh sát giám sát mọi `UtilityAction` dựa trên App Whitelist trước khi nhả lệnh thực thi.
+
+#### Memory Air-Gapping & DMZ Shared Memory
+
+- 📱💻🖥️ Cách ly hoàn toàn vùng nhớ tuyến tính (Linear Memory) của WASM khỏi không gian địa chỉ vật lý của Rust Core.
+- 💻🖥️ Thiết lập cơ chế "Cửa khẩu" (DMZ) qua SharedArrayBuffer 10MB chỉ chứa dữ liệu đã copy (tuyệt đối không chứa con trỏ vật lý).
+- 💻🖥️ Ràng buộc hàm Bounds Checking nghiêm ngặt (`offset + len ≤ SAB_SIZE`) nhằm ngăn chặn mọi hành vi truy cập ngoài biên.
+
+### 11.4 Phá nút thắt Cổ chai Bộ nhớ WASM (Dual-Plane Mobile Native Bridge Bypass)
+
+- 📱 Tích hợp cổng React Native JSI C++ Pointer cho hệ sinh thái iOS nhằm đâm thẳng luồng dữ liệu từ hệ thống Rust Core xuất sang UI đạt mức throughput ~400MB/s.
+- 📱 Áp dụng giao diện Dart FFI TypedData cho Android thực thi tín hiệu Zero-Copy nạp thẳng sang kiến trúc C ABI tĩnh, bypass 100% tài nguyên bộ nhớ từ WASM Sandbox.
+- 📱 Tách bạch nhiệm vụ Control Plane (định hướng WASM) và Data Plane (điều hướng Native FFI) chuyên môn hoá xử lý tệp tin hạng nặng nhằm dập tắt hiểm họa OOM-Kill từ gốc rễ.
+
+#### Virtual File Handles & Zero-Copy Bypass (Ánh xạ tệp ảo WASM)
+
+- 📱💻🖥️ Trừu tượng hóa luồng byte qua `File_Handle_ID` (vfs_id) để giữ Metadata IPC siêu nhẹ (<50 bytes).
+- 📱💻🖥️ Cơ chế Stream Pumping vận chuyển trực tiếp payload từ đĩa cứng xuống Network Socket thông qua Lõi Rust Proxy.
+- 📱💻🖥️ Áp dụng kỹ thuật mmap bypass vùng nhớ Sandbox WASM nhằm triệt tiêu hoàn toàn rủi ro OOM-Kill khi giải quyết tệp hàng GB.
+
+---
+IPC Zero-Copy Architecture
+
+- 💻🖥️ Phân bổ vùng nhớ SharedArrayBuffer kết hợp Ring Buffer 10MB đạt ngưỡng thông lượng ~500MB/s nhằm vượt rào thông lượng IPC.
+- 📱 Tham chiếu React Native trực diện thông qua C++ JSI Pointer nhằm vượt luồng thắt cổ chai của WebView Bridge truyền thống.
+- 📱 Tích hợp chuẩn Dart FFI TypedData hỗ trợ giao thức Zero-Copy thẳng vào giao diện vùng nhớ C ABI.
+
+#### In-Memory Encryption (No Plaintext on Disk)
+
+Mọi file tải về đều nằm trong thư mục Application Sandbox dưới dạng Encrypted Blob. Trình xem ảnh/file tích hợp sẵn của OS sẽ bị bypass; TeraChat tự mount file vào bộ nhớ RAM (`memfd` hoặc `Secure Enclave`) để hiển thị.
+
+#### Non-Volatile VFS Mapping & Crash-Safe Checkpointing
+
+- 📱 Chỉ định vị trí lưu trữ `TeraCache.blob` trực tiếp tại ổ đĩa DocumentDirectory với cờ phân quyền `DoNotBackup`.
+- 📱 Ràng buộc kích hoạt tiến trình xả buffer `terachat_core_flush_io()` ngay lập tức khi hệ thống thu nhận cờ `applicationWillTerminate`.
+- 📱💻🖥️ Liên kết cấu trúc SQLite với cơ chế ghi trước WAL (Write-Ahead Logging) ánh xạ trực tiếp lên không gian bộ nhớ ảo Ring-Buffer.
+
+#### Ghi dữ liệu ngoại tuyến (JIT Mesh-to-VFS Stream Processing)
+
+- 📱 Bơm nguyên khối dữ liệu thẳng vào trình phát System Player thông qua cổng truyền Local HTTP Streaming tại `127.0.0.1` bỏ qua mọi bước đệm vắt kiệt RAM.
+- 📱💻🖥️ Cấu hình API `mmap()` tham chiếu trực diện bộ nhớ lưu trữ vật lý lên không gian bộ nhớ ảo nhằm ghi đè vòng lặp liên tục (Ring-Buffer).
+- 📱💻 Đánh dấu các mảng bộ nhớ an toàn là `FREE_SPACE` để tiến hành ghi đè trực tiếp theo quy chuẩn Crypto-Shredding bảo vệ vòng đời hao mòn SSD nội hạt.
+
+#### Xung đột Bất đối xứng Không gian VFS (Local Anonymous HTTP Loopback Streaming)
+
+- 📱 Thiết lập Local HTTP Server ẩn danh tại vòng lặp `127.0.0.1` chỉ có quyền lắng nghe loopback để phục vụ cổng trích xuất nội dung cho Media Player hệ thống.
+- 📱💻🖥️ Khai thác liên kết `mmap()` phản chiếu kích thước file vật lý lên phân vùng nhớ ảo, nạp linh hoạt từng mảnh con 2MB on-demand để kìm hãm RAM footprint < 10MB.
+- 📱 Triển khai mã hóa Chunked AEAD (STREAM/OAE1) giải mã trực tiếp phía trên Ring Buffer và gọi hàm `Drop()` giải phóng lập tức dung lượng ngay khi Socket xả lưu lượng.
+
+#### Memory Segmentation & RAII Zeroization
+
+- 📱 **ZeroizeOnDrop (RAII):** Mọi biến plaintext wrap trong `zeroize::Zeroize`. Không giữ plaintext qua bất kỳ `await` hay `suspend` point.
+- 📱 **Tuyệt đối không dùng `mlock()`** trên mobile — Jetsam OOM-Kill app ngay lập tức.
+- 📱💻🖥️ Phân vùng bộ nhớ riêng biệt cho các luồng xử lý nhạy cảm, đảm bảo cô lập dữ liệu và giảm thiểu rủi ro rò rỉ.
+
+### 6.2 Local Storage & State Sync
+
+#### SQLite WAL + Sliding Window
+
+- 📱💻🖥️ Bắt buộc chế độ **WAL (Write-Ahead Logging)** cho mọi SQLite instance. Không gọi `VACUUM` (rủi ro Corrupt trên Mobile Doze/Jetsam).
+- 📱 **Mobile Window:** 7 ngày hoặc 2.000 tin nhắn gần nhất (Cold Data nằm trên Cluster).
+- 💻🖥️ **Desktop Window:** 30 ngày hoặc 10.000 tin nhắn gần nhất.
+- ☁️ **Cold Data:** Fetch on-demand khi user cuộn lên hoặc tìm kiếm \>30 ngày.
+
+#### Tiến hóa dữ liệu song song (Dual-State Evolution)
+
+- 📱💻🖥️ **Kiến trúc Phân thân (Dual-State Overlay):** Lõi Rust mở file DB cũ (`messages_v1.db`) ở chế độ `SQLITE_OPEN_READONLY` để bảo vệ dữ liệu gốc khỏi lỗi I/O. Khởi tạo DB mới (`messages_v2.db`) trong < 5ms với engine VFS mới nhất. Mọi lệnh ghi đi thẳng vào V2, lệnh đọc thực hiện `UNION` kết quả từ cả hai DB trên RAM trước khi trả về UI.
+- 📱 **Read-Through / Background Drip Migration (Di chuyển nhỏ giọt):** Khi người dùng cuộn xem tin nhắn cũ, hệ thống tự động giải mã V1 và tái mã hóa sang V2 (Lazy JIT Migration). Sử dụng `BGProcessingTask` (iOS) / `WorkManager` (Android) di chuyển khối 500 bản ghi khi cắm sạc ở trạng thái nhàn rỗi.
+- 📱💻 **WAL Atomic Rollback:** Bọc từng đợt migration nhỏ giọt bằng `BEGIN IMMEDIATE TRANSACTION` nhằm tự động khôi phục dữ liệu nếu tiến trình bị OS ngắt đột ngột.
+
+#### Dynamic JSONB Fallback & Deferred Migration (Nâng cấp SQLite trì hoãn)
+
+- 📱💻🖥️ Bổ sung cột `extended_data` kiểu BLOB/JSONB đóng vai trò thùng chứa linh hoạt cho các thuộc tính chưa được định nghĩa trong Schema hiện tại.
+- 📱💻🖥️ Ban hành quy trình `Deferred Migration` sử dụng script `ALTER TABLE` kết hợp trích xuất dữ liệu từ JSON ngầm để tái cấu trúc khối dữ liệu sau mỗi đợt nâng cấp OS.
+- 📱💻🖥️ Vận hành hệ thống đồng bộ CRDT Event Log kết hợp Hybrid Logical Clocks (HLC) để giữ vững tính nhân quả chặt chẽ bất chấp sự chênh lệch phiên bản giữa các thiết bị.
+
+#### Kiến trúc SQLCipher-backed Hybrid Virtual Tables (Lưu trữ Tìm kiếm Hỗn hợp E2EE)
+
+- 📱💻🖥️ Sử dụng SQLCipher với chuẩn mã hóa AES-256-GCM bọc toàn bộ tệp `.sqlite` duy nhất.
+- 📱💻🖥️ Khai thác module FTS5 (Full-Text Search) sử dụng cấu trúc `External Content Table` nhằm giảm thiểu tối đa kích thước dữ liệu Plaintext dư thừa.
+- 📱💻 Tích hợp Extension `vss0` (sqlite-vss) để lưu trữ và truy vấn Vector Embeddings 384 chiều.
+
+#### CRDT Automerge — Hybrid Event-Sourcing
+
+- 📱💻🖥️ **CRDT dùng cho:** Schema và trạng thái công cụ (vài KB). Không dùng CRDT cho data entry thực tế.
+- 📱💻🖥️ **Event Log (Data Entry thực tế):** WASM sinh event nhỏ \<1KB/event → Rust mã hóa E2EE bằng `Company_Key` → đẩy Event_Blob lên VPS Blind Storage. Thiết bị khác tải → giải mã → replay vào SQLite local.
+- 📱 Xung đột giải quyết bằng **Last-Write-Wins (LWW)** + Epoch Timestamp — không dùng CRDT State Vector cho data rows.
+- 📱 RAM target: CRM 10.000 bản ghi = ~5MB RAM (Event Log) thay vì ~500MB (CRDT State Vector thuần).
+
+#### Reciprocal Rank Fusion (RRF) Multi-modal Scoring
+
+- 📱💻🖥️ Áp dụng thuật toán RRF để hợp nhất điểm BM25 từ FTS5 và L2 Distance từ VSS theo công thức: $RRFscore(d) = \sum_{r \in R} \frac{1}{k + r(d)}$.
+- 📱💻🖥️ Kích hoạt Phép truy vấn song song (Parallel Query) ngay trong lõi Rust Core để tối ưu hóa triệt để độ trễ.
+- 📱💻🖥️ Đảm bảo cơ chế Atomic Transaction giữ vững tính toàn vẹn dữ liệu giữa bảng Metadata và cấu trúc Virtual Tables.
+
+#### In-Memory Caching (Hot Paths — tránh SQL thô)
+
+- 📱 **Trie (Prefix Tree):** Autocomplete nội bộ — O(L), \<1ms.
+- 📱 **Segment Tree / Fenwick Tree (BIT):** Quản lý khoảng xung đột CRDT log — O(log n).
+- 📱💻 **B-Tree (RAM):** Index VFS TeraVault thay vì query Database phẳng.
+- 📱 **Sliding Window + Bitmask DP:** OPA Policy Engine và Rate Limiter.
+- 📱 Constraint: RAM 24MB limit (iOS NSE). Áp dụng Zero-allocation trên luồng Real-time.
+
+#### Adaptive Vector Life-cycle Management (AVLM)
+
+- 📱 Thực thi chính sách "LRU Vector Eviction" tự động định kỳ giải phóng embedding của các tin nhắn cũ hơn 90 ngày để gọt dũa không gian lưu trữ (giảm ~1536 bytes/record).
+- 📱💻 Ràng buộc cơ chế `ZeroizeOnDrop` để dọn sạch hoàn toàn dấu vết Plaintext và Vector khỏi bộ nhớ `mlock()` ngay khi lệnh Commit hoàn tất.
+- 📱 Lập lịch quy trình chống phân mảnh ngầm (Incremental Vacuum) âm thầm chạy qua tác vụ `BGProcessingTask` của hệ điều hành nền.
+
+#### TeraVault VFS — Storage Ring-Buffer
+
+- 📱💻 Pre-allocate `TeraCache.blob` khi cài đặt: 500MB (Mobile), 5GB (Desktop).
+- 📱💻 Rust tự quản lý Mapping Sector nội bộ (Bypass OS File System). Offset cũ → đánh dấu `FREE_SPACE` → file mới overwrite trực tiếp.
+- 📱💻 **Crypto-Shredding:** Xóa KEK → toàn bộ data trong blob = garbage. Zero I/O Delete, Zero Wear-Leveling SSD.
+
+#### Local E2EE RAG & Vector Indexing (Biên tập ngữ nghĩa tại thiết bị đầu cuối)
+
+- 📱💻🖥️ Nhúng mô hình ngôn ngữ siêu nhỏ SLM (Small Language Model) qua runtime ONNX/WASM.
+- 📱💻🖥️ Sử dụng extension `sqlite-vss` để truy vấn Vector Similarity Search trực tiếp trên SQLite local.
+- 📱💻🖥️ Sinh Vector Embeddings 384 chiều từ Plaintext trước khi mã hóa.
+
+#### Custom Rust VFS với Decrypted Secure Arena & Lookahead Decryption
+
+- 📱💻🖥️ Tách biệt `vector_index.db` với `page_size = 16KB` để tối ưu hóa tính cục bộ (Locality) và giảm tần suất kích hoạt giải mã AES-GCM.
+- 📱💻🖥️ Cấp phát vùng nhớ RAM cố định qua `mmap(MAP_PRIVATE | MAP_ANONYMOUS)` kết hợp cờ `mlock()` để ngăn chặn swap dữ liệu xuống đĩa cứng.
+- 📱💻🖥️ Can thiệp vào tầng Hệ thống tệp ảo (VFS) để thực hiện giải mã trực tiếp vào RAM, trả con trỏ (Pointer) Plaintext cho engine Faiss/HNSW mà không ghi dữ liệu tạm xuống ổ cứng.
+- 📱 Sử dụng chỉ thị lệnh song song (SIMD/ARM NEON) để giải mã đón đầu các trang dữ liệu lân cận (N+1, N+2), chuyển đổi nút thắt cổ chai từ I/O sang CPU/RAM.
+
+#### Zero-Copy Secure Pipe với RAII Zeroize
+
+- 📱💻🖥️ Ánh xạ file vật lý trực tiếp lên vùng nhớ ảo thông qua `mmap()` của Lõi Rust, giảm thiểu footprint bộ nhớ xuống < 10MB bất kể kích thước file index.
+- 📱💻 Tự động kích hoạt cơ chế `ZeroizeOnDrop` (RAII) để ghi đè `0x00` lên các phân đoạn RAM ngay khi SQLite kết thúc truy vấn, đảm bảo thời gian tồn tại của Plaintext Key/Vector < 2ms.
+- 📱💻🖥️ Nhốt toàn bộ tác vụ tính toán nặng vào `tokio::task::spawn_blocking` để duy trì tốc độ UI ở mức 60/120 FPS thông qua SharedArrayBuffer hoặc JSI.
+
+#### Circuit Breaker VFS với Hardware-Aware Trapping
+
+- 📱 Đăng ký OS Hooks lắng nghe tín hiệu `UIApplicationProtectedDataWillBecomeUnavailable` (iOS) và `Intent.ACTION_SCREEN_OFF` (Android) để kích hoạt cờ hiệu `ATOMIC_KEY_EVICTED`.
+- 📱 Ánh xạ lỗi tương tác phần cứng từ Secure Enclave/Keystore (như `errSecInteractionNotAllowed`) thành mã lỗi chuẩn `SQLITE_IOERR_AUTH` tại tầng VFS.
+- 📱 Khởi động cơ chế ngắt luồng (Short-circuit) chủ động tại hàm `xFetch` và `xRead` để bảo vệ an toàn tiến trình Rust khỏi những đợt Kernel Panic.
+
+#### WAL-backed Atomic Rollback Protocol
+
+- 📱💻🖥️ Kích hoạt chế độ SQLite WAL (Write-Ahead Logging) cho mọi instance để tách biệt file dữ liệu chính và log thay đổi.
+- 📱💻 Sử dụng cụm lệnh `BEGIN IMMEDIATE TRANSACTION` để khóa quyền ghi và cô lập dữ liệu Index dở dang trong file `-wal`.
+- 📱💻 Thiết lập cơ chế tự động Rollback về trạng thái nhất quán (Consistent State) gần nhất khi nhận tín hiệu lỗi I/O từ VFS.
+
+### 6.3 Desktop Native OS (Windows · macOS · Linux)
+
+- 💻🖥️ **Full Disk Encryption mandatory:** Kiểm tra BitLocker (Windows) / FileVault (macOS) khi khởi động. Từ chối khởi chạy nếu không bật.
+- 💻🖥️ **RAM Pinning:** `VirtualLock()` (Windows) / `mlock()` (Linux/macOS) ghim vùng nhớ chứa plaintext Key.
+- 💻🖥️ **Background Worker FTS5:** Indexing toàn bộ lịch sử tin nhắn (không giới hạn) — chạy liên tục dưới dạng background worker. Không block Main Thread.
+- 💻🖥️ **Daemon (`terachat-daemon`) — Startup Registration:**
+  - Windows: Windows Service (`sc create`) hoặc Task Scheduler (ONLOGON).
+  - macOS: `launchd` LaunchAgent (`~/Library/LaunchAgents/com.terachat.daemon.plist`).
+  - Linux: `systemd` user service (`~/.config/systemd/user/terachat-daemon.service`).
+- 💻🖥️ **Daemon RAM Budget:** tokio async runtime ~1.5MB, WebSocket/TLS stack ~1.5MB, Key cache ~0.5MB, E2EE decrypt buffer ~1.0MB. **Tổng ~4.5MB.**
+- 💻🖥️ Daemon chức năng duy nhất: nhận E2EE payload → giải mã preview → gửi OS Notification → zeroize RAM. Không lưu tin nhắn.
+
+#### Single-Instance Lock & IPC Forwarding (Khóa bản thể duy nhất Desktop)
+
+- 💻🖥️ Kích hoạt cơ chế bind vào Unix Domain Socket (macOS/Linux) hoặc Named Pipe (Windows) để phát hiện tức thời bản thể đang chạy ngầm.
+- 💻🖥️ Vận hành giao thức IPC Forwarding chuyển giao nguyên vẹn tham số CLI/Deep Link từ bản thể phụ sang quyền kiểm soát của bản thể chính.
+- 💻🖥️ Gắn lệnh tự sát (Graceful Exit `0`) cắt vòng đời của bản thể phụ ngay sau khi hoàn tất bàn giao tín hiệu khơi mào.
+
+### 6.4 Mobile Native OS (Android · iOS)
+
+#### iOS — Xử lý Jetsam / DAS Throttle / NSE Constraint
+
+- 📱 **Phân tách Cấu trúc RAM theo Process Context:**
+  - **Foreground (Main App):** Kích hoạt toàn bộ **50MB LRU Cache** để tối ưu hóa JSI/FFI Pointer và tốc độ phản hồi UI.
+  - **Background (NSE):** Vô hiệu hóa LRU Cache. Chỉ nạp module **Micro-Crypto** với Footprint tĩnh ~4MB. Luồng xử lý: Nhận payload (<4KB) → giải mã trực tiếp → đẩy thông báo → gọi `Drop()` ngay lập tức để giải phóng RAM dưới ngưỡng 24MB.
+- 📱 **Tuyệt đối không dùng `mlock()`** — Jetsam OOM-Kill app ngay lập tức.
+- 📱 **ZeroizeOnDrop (RAII):** Mọi biến plaintext wrap trong `zeroize::Zeroize`. Không giữ plaintext qua bất kỳ `await` hay `suspend` point.
+- 📱 **FTS5 Indexing:** Chỉ khi App Active + cắm sạc, hoặc batch 100 tin/lần qua `requestIdleCallback`. Index Window: 30 ngày gần nhất.
+- 📱 **Tìm kiếm >30 ngày (Encrypted Blind Search):** Rust Core gửi `HMAC-SHA256(Company_Search_Key, keyword)` token lên Cluster TEE — Server không biết keyword thực, trả về `message_id` list — Client tải và giải mã chỉ các tin khớp.
+- 📱 **iOS Background Delegate (Cold Data Sync — KHÔNG phải App Update):** Khi Foreground → TCP/WSS Pumping. Khi Background → ngắt WebSocket. VPS đóng gói **file đính kèm / lịch sử tin nhắn** Ciphertext thành file tĩnh 50MB, sinh One-time Pre-Signed URL, giao cho `NSURLSession Background Transfer` (iOS, `isDiscretionary = true`) để OS tự tải.
+  - OS tải xong → đánh thức App 30s → Rust dùng `mmap` + Hardware AES-NI giải mã toàn khối \<40ms → `unlink` file tạm.
+  > ⚠️ **Phân vai cứng:** Luồng này chỉ được dùng để kéo **Dữ liệu lạnh (Cold Data)**. Cập nhật Native App đi đườc qua Apple App Store. Vi phạm policy iOS nếu dùng luồng này để nâng cấp Binary.
+- 📱 **Context-Aware Edge Defense trên Pre-Signed URL:** URL ký bằng JA3/JA4 TLS Fingerprint của `NSURLSession` + IP Subnet. Mismatch → Edge drop 0ms. Byte-Quota tại Edge (Redis Bloom Filter): `quota = file_size × 1.5`. Vượt quota → TCP RST. Replay từ IP đáng ngờ → Infinite Tarpit (1 Byte/10s).
+
+#### Kiến trúc Phân rã Chỉ mục Hai Pha (Two-Phase Deferred Indexing)
+
+- 📱 Khởi chạy Rust Core Lightweight Mode (chỉ nạp module Cryptography) để kìm hãm RAM footprint < 10MB dưới ngưỡng an toàn NSE.
+- 📱 Thiết lập cơ chế Shared App Group đồng bộ xuyên suốt cơ cấu SQLite giữa tiến trình NSE và Main App.
+- 📱 Gán cờ `is_vectorized` đánh dấu phân luồng dữ liệu chờ ưu tiên xử lý AI.
+- 📱 Lắng nghe trigger `BGProcessingTask` để thực thi quá trình batch-indexing âm thầm khi thiết bị ở trạng thái nhàn rỗi (idle).
+
+#### Inbox Queue Architecture (Kiến trúc Hộp thư đến tách biệt)
+
+- 📱 Khởi tạo cơ sở dữ liệu phụ `inbox.sqlite` dạng Append-Only nhằm cô lập tuyệt đối luồng ghi của tiến trình NSE hạn hẹp.
+- 📱 Tận dụng Shared App Group để thiết lập vùng đệm dữ liệu trung gian giữa Extension Service và hệ quản trị Main App.
+- 📱 Áp dụng cơ chế Consumer Pattern tại Main App để hút và đồng bộ triệt để khối dữ liệu vào `main.sqlite` ngay khi ứng dụng mở lại ở Foreground.
+
+#### Android — Xử lý Doze / WorkManager
+
+- 📱 **FTS5 Indexing:** Batch nhỏ, chỉ khi App Active. Index Window: 30 ngày. Tìm kiếm cũ hơn → Encrypted Blind Search (giống iOS).
+- 📱 **Background Delegate:** Giao URL cho `WorkManager` (Android, `NetworkType.UNMETERED`) — OS tự tải lúc cắm sạc/Wi-Fi mạnh.
+- 📱 **Wake-and-Strip:** Rust `mmap` + ARM NEON giải mã, `unlink` file tạm; Hard Deadline \<3 giây (tránh vi phạm Background Time Limit).
+- 📱 **StrongBox Keymaster:** Lưu Symmetric Push Key (FCM). Key sinh trong chip, không export.
+
+### 6.5 Lean Edge Caching
+
+#### Zero-Byte Stubs & Metadata Rendering (Virtual Metadata Mapping & Lazy-load UI Architecture)
+
+- 📱💻🖥️ Sử dụng cấu trúc Zero-Byte Stubs chỉ chứa tĩnh lược Metadata <5KB (bao gồm `file_name`, `cas_hash`, `encrypted_thumbnail`).
+- 📱💻🖥️ Ánh xạ liên kết `cas_ref / storage_ref` thông qua bảng `vault_file_mappings` để hiển thị UI tệp tin nguyên bản mà không chiếm dụng không gian vật lý bộ nhớ.
+- 📱💻 Tiến hành giải mã cục bộ `encrypted_thumbnail` và hiển thị render mờ ngay lập tức dưới định dạng lưới đồ họa Blur-hash.
+- 📱💻🖥️ **Oblivious CAS Routing:** Batch 4–10 Fake Hashes khi gửi query `cas_hash`. Tra qua Mixnet Proxy (không đính User_ID). Khi HIT: Client phản hồi Merkle Root (zk-PoW) chứng minh sở hữu Plaintext trước khi lấy stream. Tính Fake Hash <2ms, Batch Request <1KB.
+
+#### Tiered Storage (3 tầng)
+
+| Tầng | Cơ chế | Ai quyết | Khi nào tải |
+|---|---|---|---|
+| **Tier 1 — Auto (Pinned)** | Rust Core tự kéo full ciphertext về local | Admin/Manager | `is_pinned = true` trong channel |
+| **Tier 2 — On-demand** | User click Tải / Xem trước | User | Tức thì qua Cluster hoặc LAN P2P |
+| **Tier 3 — Make Available Offline** | Background worker kéo toàn folder | User tự chọn | Trước khi lên máy bay / vào khu vực mất mạng |
+
+#### Sender-Side Media Pre-processing (Content-Aware Blind Chunking & E2EE Metadata Pre-processing)
+
+- 📱💻 Trích xuất Thumbnail cực nhẹ tĩnh (5-10KB) thông qua thuật toán Blur-hash từ thiết bị trước khi thực thi tiến trình mã hóa E2EE.
+- 📱💻🖥️ Áp dụng cơ chế AEAD (AES-GCM / ChaCha20-Poly1305) mã hóa độc lập từng khối phân mảnh (Chunk) 2MB.
+- 📱💻 Thực thi Pre-Encryption Compression (FFmpeg/JSI) chuyển đổi định dạng ảnh biên sang chuẩn WebP/HEIC chất lượng 80% nhằm gọt bỏ 30-80% băng thông tải lên.
+- Bypass nén bằng tag `Gửi HD`.
+
+#### Zero-Knowledge Media Vision via Edge Inference (Thị giác máy tính tại biên)
+
+- 📱💻 Tích hợp Edge CLIP (Contrastive Language-Image Pretraining) để phân loại ảnh bằng ngôn ngữ tự nhiên.
+- 📱 Trích xuất văn bản qua ML Kit OCR tận dụng NPU/GPU Hardware Acceleration.
+- 📱💻 Cơ chế Hidden Tags (Gán nhãn mù) bọc bởi Search_Subkey_Epoch_N trước khi đẩy lên Blind Storage.
+
+#### Convergent Encryption — Salted MLE + Contextual Heuristics Engine
+
+- 📱💻🖥️ **Heuristics Router** chạy ngầm tại Rust Core, quyết định chiến lược mã hóa \<1ms — không đọc nội dung file, không gọi API.
+- **Phân loại tự động:**
+
+| Loại file | Kích thước | Chiến lược | Dedup? |
+|---|---|---|---|
+| Hợp đồng PDF, .docx | Bất kỳ | Strict E2EE (Random Key) | ❌ |
+| File 1-1 DM | Bất kỳ | Strict E2EE | ❌ |
+| Video nội quy / Setup.exe | \>5MB | CompanyMediaMLE (`Company_Media_Key`) | ✅ 1 bản toàn tenant |
+| Ảnh JPEG lớn (channel) | \>5MB | SaltedMLE (`Channel_Key`) | ❌ per-channel |
+| File nhỏ \<5MB bất kỳ | \<5MB | Strict E2EE | ❌ |
+
+- **Salted MLE Anti-KPA:** `CAS_Hash = HMAC-SHA256(Static_Dedup_Key, file_content)`. `Static_Dedup_Key` = `HKDF-SHA256(Channel_Master_Secret, "dedup-v1")` — bất biến suốt vòng đời Channel, phân phối qua TreeKEM.
+- Hacker biết file gốc nhưng không có `Static_Dedup_Key` trong RAM thiết bị → không tính được `CAS_Hash` → không giải mã.
+
+### 6.6 APNs Payload Collapse & Notification Degradation
+
+- 📱 Triển khai giải mã tĩnh trực tiếp tại Notification Service Extension (NSE) cho nền tảng Mobile.
+- ☁️ Cấu hình Server push APNs Payload (<4KB) chứa Ciphertext đã nén bằng chuẩn CBOR.
+- 📱 Khởi tạo Rust FFI siêu nhẹ (Micro-Crypto) gắn vào NSE. Đọc Payload -> Giải mã CBOR Ciphertext -> Đẩy notification ra UI -> Gọi lệnh `drop()` lập tức giải phóng RAM.
+- 📱 Định nghĩa luồng Ghost Push: Nếu Payload > 4KB, Server trả `Fallback=True`. NSE render chuỗi tĩnh (Generic Text), đồng thời bắn `content-available: 1` đánh thức App ngầm kéo SQLite.
+
+### 6.7 Out-of-Band Notification Key Ratchet & Ghost Push Wakeup
+
+- 📱 Xây dựng cơ chế HKDF Hash Chain để trích xuất Notification Symmetric Key hoàn toàn độc lập với MLS Epoch.
+- ☁️📱 Thiết lập luồng Ghost Push đính kèm cờ `content-available: 1` để đánh thức App ngầm kéo dữ liệu từ SQLite.
+- 📱 Thực hiện giải mã tĩnh CBOR Ciphertext trực tiếp tại Notification Service Extension (NSE) sử dụng thư viện Micro-Crypto.
+
+### 6.8 Fast-Scroll Rendering & Viewport Management
+
+- 📱💻 Giám sát chéo quá trình tái định vị Viewport, ngăn chặn trễ luồng cuộn (Scroll-Lag) do tắc nghẽn IPC.
+- 📱💻🖥️ Áp dụng cơ chế **LRU Cache (50MB)** trên Main App để lưu lại 100 item gần nhất, giảm ping `get_message` liên tục qua cầu. Quá trình này **bị vô hiệu hóa hoàn toàn** tại tiến trình NSE để né Jetsam limit.
+
+#### Ảo ảnh Thị giác (Metadata-First Virtual Rendering Architecture)
+
+- 📱💻🖥️ Lưu trữ sẵn định dạng Blur-hash (30-50 bytes) và Base64 Tiny-Thumb (< 2KB) đã giải mã độc lập vào cơ sở dữ liệu SQLite.
+- 📱💻🖥️ Khởi tạo cấu trúc SQLite FTS5 lập chỉ mục metadata nhằm hỗ trợ thao tác truy vấn tức thời.
+- 📱 Render nóng bề mặt phân giải mờ tại mốc $0$ ms giúp kìm hãm drop-frame và duy trì triệt để hiệu năng 60-120FPS trong khi Fast-Scroll.
+
+#### Quản lý Tác vụ theo Khung nhìn (Event-Driven Task Cancellation Protocol)
+
+- 📱💻🖥️ Kích hoạt tín hiệu Viewport-Aware Cancellation bằng lệnh FFI `terachat_cancel_task` khi phân mảnh nội dung trượt khỏi khung nhìn UI.
+- 📱💻🖥️ Thực thi AbortHandle thông qua vòng lặp Rust `tokio::select!` để chủ động ngắt luồng I/O và hủy bỏ tác vụ giải mã ngay lập tức.
+- 📱💻 Đồng bộ chu kỳ giải mã định danh theo Task_ID Mapping khớp khít với khối trạng thái Unmount của thành phần UI giao diện.
+
+#### Hiệu suất Giải mã Bất đồng bộ (Dedicated Asynchronous Crypto Thread-Pool)
+
+- 📱💻🖥️ Áp dụng cơ cấu Thread-Pool Isolation tách biệt hoàn toàn luồng xử lý Crypto khỏi định tuyến UI Main Thread.
+- 📱💻🖥️ Chuyển giao các tác vụ CPU-bound (hệ AES-256-GCM / ChaCha20-Poly1305) thông qua lệnh `tokio::task::spawn_blocking`.
+- 📱💻🖥️ Thiết lập thuật toán tự động tinh chỉnh số lượng luồng công nhân (worker) nội vi dựa trên số lõi vật lý: $N_{workers} = \text{num\_cpus::get()} - 1$.
+
+#### Quản lý Bộ nhớ L1 (Tiered LRU RAM Cache with Security Shredding)
+
+- 📱💻 Quản trị 50MB RAM đệm nội bộ cấp L1 cho hệ thống thumbnails thông qua thuật toán Least Recently Used (LRU).
+- 📱 Gọi lệnh ZeroizeOnDrop (RAII) thực thi đè bẹp dung lượng $0x00$ ngay khi dữ liệu bị ép đẩy (Evict) khỏi bộ đệm cache.
+- 📱 Truyền tải nội dung qua JSI/FFI Pointer duy trì thông lượng ~400MB/s nhằm nạp ảnh sạch từ RAM chọc thẳng lên UI trong ngưỡng < 1ms.
+
+### 6.9 OS Lifecycle & Background Memory Security
+
+#### Rò rỉ qua OS Snapshot (Secure Screen Masking & Blurhash Overlay)
+
+- 📱 Kích hoạt lớp phủ màn hình bảo mật che dấu nội dung nhạy cảm ngay khi nhận tín hiệu `applicationWillResignActive` (iOS) hoặc `onPause` (Android).
+- 📱 Khai thác dữ liệu Blurhash siêu nhẹ (30-50 bytes) có sẵn trong SQLite hiển thị giao diện mờ thay thế cho Plaintext, triệt tiêu rủi ro rò rỉ hình ảnh vào Core OS qua màn hình đa nhiệm.
+- 📱 Đảm bảo kết quả snapshot do OS lưu trên đĩa cứng trắng thông tin thực tế, bảo vệ trọn vẹn quyền riêng tư người dùng trong trình chuyển đổi ứng dụng.
+
+#### Ngắt tác vụ ngầm khẩn cấp (High-Priority FFI Kill-Switch & Cancellation Token Bypass)
+
+- 📱💻 Phát nhịp lệnh FFI `terachat_core_emergency_wipe()` từ Native UI đánh thẳng vào Event Loop của Rust Core với mức độ ưu tiên tuyệt đối.
+- 📱💻🖥️ Áp dụng cấu trúc Cancellation_Token rẽ nhánh qua `tokio::select!` hoặc thẻ `AbortHandle` ép dừng khẩn cấp mọi Worker Thread vòng I/O hoặc tiến trình giải mã.
+- 📱💻 Thiết lập ngầm cơ chế bypass hàng đợi tác vụ đảm bảo lệnh tiêu hủy thực thi nghiêm ngặt dưới ngưỡng hard deadline 10ms, đè bẹp tốc độ dump RAM mặc định của OS.
+
+#### Tiêu hủy RAM vật lý (Contiguous Memory Arena SIMD Zeroization)
+
+- 📱💻🖥️ Cấu trúc khối LRU Cache theo chuẩn Contiguous Memory Arena quản lý phân vùng RAM liên tục 50MB, tối ưu hóa tốc độ truy cập chéo và tiêu hủy toàn phần.
+- 📱💻 Kích hoạt lệnh intrinsics cấp thấp (SIMD/Neon) ghi đè mã hex $0x00$ cày nát toàn bộ dải địa chỉ của khối Arena nội trong 1-2 mili-giây.
+- 📱💻🖥️ Ràng buộc pattern ZeroizeOnDrop kết hợp rào cản trình biên dịch dọn dẹp triệt để Plaintext không thể bị trích xuất phục hồi sau khi App lùi về chế độ Background.
+
+#### Phục hồi sau khi đóng ứng dụng (Metadata-driven JIT Re-hydration)
+
+- 📱💻 Khai thác `cas_ref` và tập Metadata đệm từ SQLite tái thiết lập cấu trúc khung nhìn nguyên bản ngay khi hệ thống xoay vòng về trạng thái Active.
+- 📱💻🖥️ Kêu gọi tiến trình Just-In-Time (JIT) Fetching âm thầm tải và giải mã luồng Thumbnail bám sát Viewport, mang tới trải nghiệm Render liền mạch.
+- 📱💻 Bù đắp khoảng lặng phục hồi vài chục mili-giây bằng kỹ xảo sắc nét hóa từ lớp mờ Blurhash che giấu hoàn toàn hoạt ảnh trắng RAM bị dọn dẹp trước đó.
+
+### 6.10 Ép xung Phần cứng & Nén Dữ liệu Động học (Hardware Offloading & Zero-Knowledge SDDC)
+
+#### Ép xung Phần cứng Chuyên trách (Hardware-Native Crypto & Search Acceleration)
+
+- 📱💻 Khai thác sức mạnh tàng hình của hàm API Native (Metal API trên macOS/iOS, Vulkan/NNAPI trên Android) đẩy tác vụ đồ họa, tìm kiếm sang luồng GPU/NPU chuyên biệt.
+- 📱💻🖥️ Kích hoạt chip phần cứng tăng tốc mã hóa (Hardware AES-NI/ARM NEON) ép khuôn tốc độ xả mã luồng băm AEAD theo thời gian thực.
+- 📱💻 Vận hành mô tơ tìm kiếm NPU-Optimized FTS5 dội bom từ khóa thẳng vào khối logic xử lý hình ảnh nội tại, tìm kiếm không giới hạn lịch sử cục bộ.
+
+#### Native Hardware Offloading via Apple Neural Engine (ANE)
+
+- 📱 Biên dịch chéo mô hình SLM/ONNX sang định dạng `.mlmodelc` tương thích hoàn toàn với nền tảng Core ML.
+- 📱 Xây dựng cầu nối FFI (Foreign Function Interface) điều phối dữ liệu trực tiếp từ Rust Core sang khối NPU.
+- 📱 Tận dụng Apple Neural Engine (ANE) nhằm tăng tốc xử lý ma trận Vector, ép xung tiêu thụ điện năng điện toán SLM xuống mức tối thiểu.
+
+#### Nén Dữ liệu Động học (Zero-Knowledge Shared Dictionary Delta Compression - SDDC)
+
+- 📱💻 Thực thi chu trình mã hóa và giải mã Zero-Knowledge Compression ngay tại phân vùng rìa cấu trúc biên (Client-Edge) trước khi đóng hộp E2EE lên Cloud.
+- 📱💻🖥️ Nén tín hiệu trao đổi với thuật toán Zstd Pre-trained Dictionary được vi điều chỉnh riêng rẽ mài giũa cho ngôn ngữ văn bản doanh nghiệp mượt mà.
+- 📱💻🖥️ Áp dụng giao thức chuyển đổi vi phân JSON Delta Encoding phân giải và truyền tải riêng biệt những mảnh chênh lệch nhỏ xíu lọt thỏm trong CRDT Event Log.
+
+---
+
+## 7. Ecosystem & Integration
+
+### 7.1 WASM Sandbox (.tapp) & Dual-Registry
+
+#### Phân vùng Thực thi (Sandbox vs Enclave)
+
+- **Phân vùng 1 (UI Sandbox):** Chuyên trách bề mặt UI `.tapp` siêu nhẹ (10-50KB), tải nóng trực tiếp qua IPC Bridge phục vụ các tác vụ tương tác.
+- **Phân vùng 2 (AI Enclave):** Chuyên trách mô hình AI/SLM. Sử dụng **Tiered Storage (Tầng 3)** kéo mô hình (ví dụ 100MB) về máy tĩnh cục bộ.
+  - **Zero-Copy Map:** Lõi Rust dùng `mmap()` trỏ thẳng vùng nhớ ảo của mô hình để phân bổ cho AI Enclave, không bao giờ nhồi tệp >10MB qua SharedArrayBuffer để tránh nghẽn cổ chai IPC.
+
+#### Dynamic Header Slot & Pinned Utility Registry (Launchpad Quick-Bar)
+
+- 📱💻🖥️ Ánh xạ bảng `pinned_utilities` cục bộ sử dụng cơ chế lưu trữ SQLite WAL bảo mật.
+- 📱💻🖥️ Thiết lập Unidirectional State Sync (Rust-to-UI Signal) nhằm tự động đồng bộ khi có tiện ích được gắn pin.
+- 💻🖥️ Render cửa sổ Floating WASM Window phục vụ thao tác Quick-Execute dành riêng cho nền tảng Desktop.
+- 📱 Nhúng Horizontal Mini-Dock Scroll tích hợp UI di chuyển siêu tốc cho nền tảng Mobile.
+
+#### Cấu trúc .tapp (3 Tầng)
+
+```text
+[Tầng 1 — Web Marketplace (marketplace.terachat.io)]
+  • Danh mục .tapp ký duyệt bảo mật (Ed25519 — TeraChat CA)
+  • Admin bấm "Install" → lệnh xuống VPS
+           │
+           ▼
+[Tầng 2 — VPS Control Plane]
+  • Kéo .tapp (WASM + JSON Schema) về Cluster
+  • Cấp bảng SQL trống (Blind Storage) làm Backend Sync
+  • Phân phối .tapp xuống thiết bị qua App Sync
+  • ❌ KHÔNG phải kênh phân phối Native App (Rust/Tauri Binary)
+  • ❌ KHÔNG thực thi logic App — chỉ lưu blob mã hóa mù
+> **Phân biệt rạch ròi:**
+> - **Cập nhật Native App (TeraChat Binary):** Phải kiểm tra chữ ký `TeraChat_Global_CA`. Mobile đi qua App Store. Desktop đi qua VPS nhưng xác thực chữ ký tĩnh Ed25519 trước khi nạp.
+> - **Cập nhật `.tapp` (Tiện ích nội bộ):** Được ký bởi `Enterprise_CA` nội bộ. VPS phân phối bằng CRDT Event Log.
+           │
+           ▼
+[Tầng 3 — Device Data Plane (Desktop / Mobile)]
+  • UI Sandbox thực thi 100% logic bằng CPU thiết bị (<= 50KB).
+  • AI Enclave nạp model qua mmap(), tránh ArrayBuffer.
+  • UI map JSON Schema (Server-Driven UI — Adaptive Cards).
+  • Per-app SQLCipher (cô lập hoàn toàn).
+  • ❌ VPS không đọc được dữ liệu — Zero-Knowledge
+```
+
+#### Security Gates & Hot-Reload (Chống Tiêm nhiễm & Rollback)
+
+- 📱💻🖥️ **Offline Hot-Reload via Pinned Root Keys:** Chữ ký số Ed25519 xác thực tính chính chủ của gói `.tapp` (WASM). Khóa `Enterprise_App_Signing_PubKey` neo cứng trong Secure Enclave/StrongBox tạo Hardware Root of Trust. Toàn vẹn Hash được đối soát ngay trên RAM.
+- 📱💻🖥️ **Anti-Downgrade Protection:** Lớp kiểm tra `Version_Tag` ngăn chặn tuyệt đối các cuộc tấn công Rollback ép hạ cấp module WASM.
+- 📱💻🖥️ **JIT RAM-only Hot-Reload:** Sử dụng FFI Pointer bắn thẳng vùng nhớ chứa WASM Module sạch vào JIT Engine mà không quẹt qua Disk I/O. Cơ chế luồng Unidirectional State Sync kích hoạt Zero-downtime render cho UI mà không cần khởi động lại.
+
+| Gate | Mechanism | When |
+|---|---|---|
+| **Digital Signature** | Ed25519 (TeraChat CA hoặc Enterprise CA) | Upload |
+| **Integrity Hash** | SHA-256 khớp Manifest | Download |
+| **Admin Approval** | OPA Policy check | Before Push |
+| **Sandbox** | WASM container, no OS syscall | Runtime |
+| **Permission Model** | Manifest-driven, Core cấp đúng quyền khai báo | Runtime |
+
+#### WASM Network Rules (Bàn tay sắt)
+
+- WASM **không bao giờ** chạm vào Network Socket trực tiếp.
+- Mọi luồng mạng ra/vào phải đi qua `host_bindings` của Rust Core (kiểm duyệt Permission).
+- API Key không bao giờ hardcode trong `.tapp` bytecode — phân phối qua E2EE.
+
+#### 3 Gateway Modes cho .tapp
+
+| Gateway | Dùng khi | VPS biết | Bảo mật |
+|---|---|---|---|
+| **E1 — Client-Side Direct** | Thiết bị có Internet | Không gì | Zero-Knowledge 100% |
+| **E2 — VPS Egress Proxy** | LAN air-gapped | Chỉ URL đích + Ciphertext tạm (RAM-only, không log) | Ephemeral Pipe |
+| **E3 — Blind Webhook** | Nhận event từ ngoài vào | Blob mã hóa mù (Curve25519 ECIES) | VPS không giải mã được |
+
+#### OPA Payload Sanitization & Byte-Quota Enforcement
+
+- 📱💻🖥️ Kích hoạt Whitelist Header Sanitization chỉ cho phép các trường `Content-Type`, `Authorization` và `Accept` đi qua kênh IPC.
+- 📱💻🖥️ Thực thi JSON Schema Enforcement qua OPA để kiểm tra độ dài và kiểu dữ liệu của từng trường trong Payload nhắm tới Data Steganography.
+- ☁️🗄️ Xây dựng hệ thống giám sát ngưỡng rò rỉ (Exfiltration Quota) sử dụng kiến trúc Redis Bloom Filter đặt tại Edge.
+
+#### LLM Iron Dome — 3 Lớp phòng ngự Prompt Injection
+
+- 📱💻🖥️ **Lớp 1 — Egress Firewall:** WASM chỉ truyền `User Intent` + `File ID`. Rust Core trích xuất file từ SQLite, nhúng vào template chuẩn, gọi LLM. Chỉ kết nối Whitelist Domains.
+- 📱💻🖥️ **Lớp 2 — Markdown AST Sanitizer:** Mọi `<img src="...">` / `![alt](url)` trỏ external URL bị chặn hoàn toàn. Chỉ cho phép `localhost` (VFS) hoặc base64 nội bộ.
+- 💻🖥️ **Lớp 3 — Local Semantic Guardrail (Enterprise):** Model NLP ONNX tại biên kiểm tra file gửi đi — block Jailbreak / System instruction spoofing patterns.
+
+### 7.2 Context-Aware Edge Defense & DLP Smart Clipboard
+
+#### DLP — Desktop
+
+- 💻🖥️ **Memory Air-Gap:** TeraChat Core và External Sandbox (Zalo/Telegram WebView) chạy 2 Process riêng biệt cấp OS. Crash/XSS từ Sandbox không dump được memory Core.
+- 💻🖥️ **Smart Clipboard Controller (Rust module):** Hook OS Clipboard API real-time. Phân loại nội dung: nội bộ TeraChat → block paste vào Sandbox. OPA Policy quyết định per-channel.
+- 💻🖥️ **Drag & Drop Blocking:** Chặn kéo thả file từ TeraChat sang External Sandbox.
+- 💻🖥️ **External Sandbox Isolation (Tauri):** Mỗi app ngoài chạy Window riêng — không có Tauri IPC, không thấy `Company_Key`, Network độc lập (traffic đi thẳng Internet), Ephemeral Storage (có thể reset theo OPA Policy).
+
+#### DLP — Mobile
+
+- 📱 **Android:** `FLAG_SECURE` (WindowManager) — chặn Screenshot + Screen Recording cấp phần cứng.
+- 📱 **iOS:** Lắng nghe `UIScreen.capturedDidChangeNotification` → phủ View đen khi bắt đầu quay màn hình.
+- 📱 **In-App Copy Restriction:** Không thể hook Clipboard iOS. Thay vào đó, chặn hành vi Copy từ Text Node SecureText trong TeraChat Mobile.
+- 📱 **DLP OPA Policy cho Mobile:** Admin cấu hình per-channel, per-department.
+
+#### DLP Hard Rules Summary
+
+| Hành động | Vùng 1 (Nội bộ) | External Sandbox | Mobile |
+|---|---|---|---|
+| Copy nội bộ → Paste ngoài | N/A | ❌ Clipboard Controller | ❌ SecureText (Copy blocked) |
+| Drag & Drop file | N/A | ❌ Chặn | ❌ |
+| Screen Share | ✅ | ❌ | ❌ FLAG_SECURE / Overlay |
+
+### 7.4 Ephemeral Identity-Binding & Threshold-Based Reveal
+
+- ☁️ Gán token vào IdP Session ID tạm thời tại thời điểm cấp phát (Binding được lưu trữ tại Vault, tuyệt đối không đính kèm vào Payload).
+- ☁️🖥️ Áp dụng Threshold-Based Reveal chỉ cho phép giải mã danh tính thực thông qua sự đồng thuận của M-of-N Admin Audit Log khi xảy ra vi phạm nghiêm trọng.
+- ☁️ Xây dựng logic cô lập tầng biên (Edge Blocking) dựa trên Token Hash thay vì truy nguyên User Identity.
+
+### 7.3 AI Integration Gateway (Dual-Mask Protocol, TEE Enclave)
+
+#### Architecture
+
+```text
+[Client (E2EE)] → [AI Gateway (Rust)] → [OpenAI / Claude / Azure AI]
+                         ├── PII Redactor (Regex + NER — Dynamic Tokenization)
+                         ├── Rate Limiter (per-tier, Bounded MPSC Channel)
+                         ├── Quota Management
+                         ├── Audit Logger (tamper-proof)
+                         └── Model Router (Org Policy)
+```
+
+- ☁️ AI Bot có KeyPair Ed25519 riêng, join MLS Group như member bình thường. Chỉ active khi User `@mention` hoặc Admin Add Bot. **Không bao giờ auto-scan ngầm.**
+
+#### Dual-Mask Protocol (Dynamic Tokenization)
+
+- 📱💻🖥️ **Tokenization Pass:** Mỗi PII entity nhận alias riêng: `[REDACTED_PHONE_1]`, `[REDACTED_PHONE_2]`. Session Vault tồn tại trong RAM duy nhất cho 1 request.
+- 📱💻🖥️ **De-tokenization Pass:** Sau khi nhận LLM response, thay alias trở lại giá trị thực trên Client.
+- 📱💻🖥️ **Zero-Retention:** `SessionVault::drop()` overwrite toàn bộ giá trị gốc bằng `0x00` ngay sau De-tokenize (dùng `zeroize` crate).
+- ☁️ Header `X-Zero-Retention: true` trên mọi request → ép API Provider không lưu trữ, không dùng để train model.
+- ☁️ **BYOK (Bring Your Own Key):** API Key lưu trong Secure Enclave / OS Keychain — không bao giờ plaintext trên Server.
+
+#### TEE Enclave cho AI Worker
+
+- 🗄️☁️ AI Worker chạy trong Intel SGX / AWS Nitro Enclave — cô lập hoàn toàn. Cloud provider không đọc được dữ liệu xử lý.
+- ☁️ **Thread-Pool Isolation:** Hai Tokio Runtime độc lập: `core-messaging-runtime` và `ai-heavy-io-runtime` giao tiếp qua Bounded MPSC Channel. Khi Channel đầy → reject AI request (ChannelFull) thay vì ngốn RAM.
+- ☁️ **Circuit Breaker:** OPEN ngay nếu AI Latency p99 \>1500ms hoặc Packet Loss \>5% trong 10s. Fail-fast về UI.
+- 💻🖥️📱 **Local Fallback:** Khi kết nối rớt → chuyển NLP tĩnh về Local WASM Sandbox (~100MB SLM). Session Ticket Caching: 4-RTT → 1-RTT.
+
+#### AI Consent / Opt-in (Bắt buộc)
+
+- Mọi lần AI truy cập dữ liệu ghi vào **Tamper-Proof Audit Log**.
+- AI không bao giờ có thể truy cập `Channel_Key` hay `Company_Key` — chỉ nhận alias đã tokenized.
+
+---
+
+*Tài liệu này chỉ chứa App-layer implementation. Xem `Core_Spec.md` cho Infrastructure/Security. Xem `Function.md` cho Product flows.*
+
+---
+
+## 8. Large File Handling & Advanced Sync
+
+### 8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Local HTTP Streaming
+
+#### Zero-Copy I/O qua Virtual Memory (mmap)
+
+- 📱💻🖥️ Lõi Rust gọi `mmap()` ánh xạ file vật lý trực tiếp lên vùng nhớ ảo. Page Fault nạp từng mảnh on-demand — không dùng `read/write` qua vRAM Buffer. RAM footprint < 10MB bất kể file nặng hàng GB.
+- 📱💻🖥️ **Strict Thread Isolation:** UI chỉ truyền `File_URI` xuống Rust → Rust trả `ACK_START < 16ms` giữ 60FPS. Toàn bộ tác vụ `mmap`, BLAKE3, AEAD nhốt vào `tokio::task::spawn_blocking`.
+
+#### OS-Aware I/O Fallback & Synchronous Ring Buffer (Bẫy SIGBUS mmap trên iOS)
+
+- 📱 Thay thế toàn diện `mmap()` bằng hệ thống lệnh `pread()` syscall để kiểm soát tường minh lỗi I/O chuẩn trên hạ tầng Mobile thay vì Kernel Panic.
+- 📱 Quản trị vòng đời Fixed-Size Ring Buffer (2MB/4MB) cấp phát tĩnh tại ngăn xếp RAM không gian người dùng (User-space).
+- 📱 Tiêm cơ chế catch lỗi văng `EIO/EPERM` để thực thi Graceful Abort và WAL Rollback ngay tích tắc khi thiết bị khóa màn hình (Data Protection Lock).
+
+#### BLAKE3 Segmented Merkle Tree — Xác thực Chunk không Freeze UI
+
+- 📱💻🖥️ **Pipelined Segmented Merkle:** Chia file thành Macro-Block 64MB. Rust băm BLAKE3 Macro-Block #1 (<50ms) → gửi Root Hash qua Control Plane → nhồi chunks vào Data Plane → đồng thời băm Macro-Block #2. **O(1) Initial Latency** bất kể kích thước file.
+- 📱💻🖥️ **AEAD Associated Data (Cryptographic Offset Binding):** Mỗi chunk: `AD = [File_ID] || [Chunk_Index] || [Byte_Offset]`. Receiver kiểm chứng AD_Expected trên RAM. Sai lệch → AEAD fail → Drop lập tức. Chặn **Displacement Attack** và **Replay Attack**.
+- 📱💻🖥️ **Deterministic Nonce:** `Nonce = HMAC-SHA256(Channel_Key, File_ID || Chunk_Index)`. Nonce lệch do tráo chunk → panic tại cửa bộ giải mã.
+- Hiệu năng: BLAKE3 Out-of-Order verification ~6GB/s (Desktop CPU).
+
+#### Local Proxy Streaming & On-the-fly Decryption (Local Loopback Proxy & JIT Stream Decryption)
+
+- 📱 Dựng Local HTTP Server ẩn danh tại vòng lặp `127.0.0.1` chuyên trách giao tiếp cung cấp luồng phương tiện đa phương tiện với khung trình phát AVPlayer/ExoPlayer của hệ thống.
+- 📱💻🖥️ Triển khai JIT (Just-In-Time) Fetching nhằm cơ động tải trực giác đúng Chunk cần thiết dựa trên vị trí Byte Offset của thanh tiến trình (Seek bar).
+- 📱💻🖥️ Áp dụng luật ZeroizeOnDrop / RAII xóa triệt để dữ liệu Plaintext khỏi phân vùng RAM ngay lập tức sau thao tác xả Socket trả về Client.
+- 📱 Xác lập phân vùng 2MB Ring Buffer giới hạn ngặt nghèo bộ nhớ Memory Footprint duy trì trạng thái ổn định tĩnh < 8MB bất chấp file gốc lên tới hàng GB.
+- 📱 **Chunked AEAD (STREAM / OAE1):** Chống lỗi Merkle Chain BLAKE3 theo chiều ngang bảo chứng chuỗi 1 bypte hỏng không phá bung tập dữ liệu 4GB tổng.
+
+#### In-Memory Pumping via Custom URL Scheme Handler (Lỗ hổng TCP Local và Cleartext)
+
+- 📱 Triển khai `AVAssetResourceLoader` (iOS) và `MediaDataSource` (Android) để nạp gói tin dữ liệu luân chuyển trực tiếp qua bộ nhớ vật lý.
+- 📱 Giải mã cục bộ AES-GCM On-the-fly tốc độ cao ngay tại luồng bơm byte (Byte-stream) truyền phát.
+- 📱 Đúc kết cơ chế bypass hoàn toàn ATS (App Transport Security) và Network Security Configuration nhờ việc thủ tiêu vĩnh viễn cấu trúc Local TCP Socket.
+
+#### OS-Level BLE Offloading (Ký sinh tiến trình nền OS)
+
+- 📱 Sử dụng cơ chế State Preservation & Restoration (iOS CoreBluetooth) và PendingIntent (Android) để ủy quyền quét Service UUID cho phần cứng.
+- 📱 Chuyển Rust Core sang trạng thái Suspend (0% CPU) cho đến khi nhận tín hiệu đánh thức từ OS.
+- 📱 Lọc thiết bị qua băm mật mã UUID để giảm thiểu số lần thức giấc của App chính.
+
+### 8.2 Đồng bộ CRDT bằng Hybrid Logical Clocks (HLC) — Khi Offline
+
+#### Triệt tiêu Clock Drift
+
+- 📱💻🖥️ **HLC Timestamp:** Mọi thao tác trạng thái định danh bằng `(Lamport_Counter, Node_ID, Wall_Clock_HLC)`. HLC bảo vệ tính nhân quả (Causality) bất chấp đồng hồ phần cứng OS sai lệch hàng tiếng.
+- 📱💻🖥️ Tuyệt đối không dùng `SystemTime::now()` cho ordering — dùng NTP nội bộ Rust Core + Lamport Vector Clock.
+
+#### DAG Causal Graph + Delta-State CRDT Pending Buffer
+
+- 📱💻🖥️ **Delta-State CRDT:** Chuyển đổi từ mô hình Op-based nguyên thủy sang Delta-State CRDT để chỉ truyền tải bản tóm tắt trạng thái cuối cùng (thay vì toàn bộ lịch sử thao tác).
+- 📱💻🖥️ Mỗi gói E2EE BLE kết nối vào DAG (Đồ thị có hướng không vòng). Event Out-of-Order thiếu gốc → `Pending_RAM_Buffer`. UI chỉ render khi gốc Đồ thị Nhân quả đã đầy đủ từ tất cả luồng Mesh.
+- 📱💻🖥️ **Aggressive Tombstone Pruning:** Sau khi Quorum (VD: 3/5 Super Nodes) xác nhận đồng bộ History X → Rust chạy lệnh Snapshot State → Xóa vĩnh viễn Tombstone khỏi SQLite. Cắt dung lượng từ 500MB xuống ~10MB.
+
+#### Giao thức Vỏ bọc mờ (Opaque Envelope) & Hash Invariance (Đứt gãy Đồ thị CRDT)
+
+- 📱💻🖥️ Ràng buộc thuật toán Blake3 thực hiện băm trực tiếp trên dải byte thô (Raw Bytes) thay vì struct đã deserialize để bảo toàn tuyệt đối ID Node CRDT.
+- 📱💻🖥️ Tận dụng tính năng `UnknownFieldSet` của Protocol Buffers để lưu trữ nguyên bản và chuyển tiếp các trường dữ liệu mới mà nhánh thiết bị cũ chưa kịp nhận diện.
+- 📱💻🖥️ Thực thi cơ chế "Forward-Preservation" đảm bảo dữ liệu đến từ tương lai đi xuyên qua các node trung gian lỗi thời mà không bị bốc hơi dòng siêu dữ liệu cốt lõi.
+
+#### Shadow Execution & Pre-Flight Hash Consensus (Split-Brain CRDT)
+
+- 📱💻🖥️ Vận hành cơ chế Shadow Execution thực thi lại (Replay) hàm WASM tại thiết bị nhận để đối soát chéo kết quả.
+- 📱💻🖥️ Sử dụng BLAKE3 State Hashing để kiểm chứng tính toàn vẹn tuyệt đối của Trạng thái đầu ra (Output State).
+- 📱💻🖥️ Thuật toán Byzantine Isolation tự động cô lập các node sinh dữ liệu dị thường (dấu hiệu chẻ nhánh) khỏi mạng lưới Mesh cục bộ.
+
+#### Constraints & RAM Circuit Breaker
+
+- ⚠️ **RAM Circuit Breaker:** Tín hiệu CHOKE tự động phân rã lưới Mesh, ngăn chặn nạp dữ liệu vào bộ đệm Out-of-Order khi RAM vượt ngưỡng an toàn (Ví dụ: `8MB Buffer / 24MB Limit` trên iOS NSE) để tránh Jetsam OOM-Kill.
+- ⚠️ CRDT Write Local-First < 5ms. Garbage Collection Epoch < 50ms. RAM Buffer Out-of-Order Event < 8MB.
+
+### 8.3 TeraVault VFS — Kéo thả (cas_ref mapping)
+
+#### Nguyên lý: Không nhân bản file
+
+- 💻🖥️ TeraVault **không copy file** — toàn bộ cây thư mục ảo là bảng `vault_file_mappings` (pointer `cas_ref` → blob vật lý duy nhất trên Cluster).
+
+#### Drag & Drop — Chat → TeraVault Folder
+
+- 💻🖥️ Frontend gửi IPC: `vault::pin_file(cas_ref, target_folder_id, display_name)` → Rust tạo thêm bản ghi `vault_file_mappings` trỏ về cùng `cas_ref`. File xuất hiện ở thư mục đích **mà không bị sao chép**.
+- 💻🖥️ E2EE không bị ảnh hưởng — `File_Key` vẫn nguyên vẹn. TeraVault chỉ quản lý metadata.
+- 📱 **Auto-Mapping:** Khi file gửi vào Channel → Rust Core tự tạo bản ghi ánh xạ vào thư mục mặc định tương ứng Channel.
+
+#### Cấu trúc Folder
+
+| Cấp | Nguồn | Ví dụ |
+|---|---|---|
+| **Cấp 1 (Auto)** | Tên Channel / Group Chat | `📁 Dự án Alpha`, `📁 Phòng Kế Toán` |
+| **Cấp 2+ (Manual)** | Admin / User tạo thủ công | `📁 Hợp đồng 2026`, `📁 Bản vẽ kỹ thuật Q1` |
+
+- 💻🖥️**VFS Search:** `vault_file_mappings.file_name` + `tags` được index bằng PostgreSQL FTS (tsvector) hoặc local SQLite FTS5. Kết quả trả về FileStub → lazy-load từ Cluster.
+
+### 8.4 CAS_Hash Dedup trong Offline Mesh
+
+- ☁️🖥️ Xây dựng Deferred CRDT Sync dành riêng cho kho lưu trữ TeraVault VFS.
+- 📱💻🖥️ Khi upload trong mạng Mesh offline, Rust sinh `FileStub_UUID = Hash(Device_ID + Local_Timestamp)`. Cho phép trao đổi P2P qua định danh này.
+- ☁️🗄️ Khi kết nối lại, multi-client push payload. Cụm Server kích hoạt hàm Arbitrator, chạy thuật toán CRDT "First-Seen-Wins" xử lý đụng độ cùng `CAS_Hash`.
+- 📱💻🖥️ Trả về `Canonical_VFS_ID` duy nhất. Client nhận ID này và update lại bảng SQLite FTS (Full-Text Search) cục bộ bằng một transaction duy nhất (Atomic write).

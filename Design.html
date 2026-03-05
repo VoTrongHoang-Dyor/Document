@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Product Requirements Document</title>
+    <style>
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        .main {
+            padding: 4rem 4rem;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px;
+        }
+
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem;
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+        
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Product Requirements Document</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-header">Table of Contents</div><a href="#terachat-design-specification" class="nav-link" style="">TeraChat – Design Specification</a>
+<a href="#phần-i-triết-lý-hệ-thống-thiết-kế" class="nav-link" style="">PHẦN I – TRIẾT LÝ & HỆ THỐNG THIẾT KẾ</a>
+<a href="#0-triết-lý-thiết-kế" class="nav-link" style="padding-left:0.8rem;">0. Triết lý Thiết kế</a>
+<a href="#hai-trạng-thái-hoạt-động-bắt-buộc-phải-phân-biệt-rõ-về-visual" class="nav-link" style="padding-left:0.8rem;">Hai trạng thái hoạt động (bắt buộc phải phân biệt rõ về visual)</a>
+<a href="#1-hệ-thống-màu-sắc" class="nav-link" style="padding-left:0.8rem;">1. Hệ thống Màu sắc</a>
+<a href="#bảng-màu-chính" class="nav-link" style="padding-left:0.8rem;">Bảng màu chính</a>
+<a href="#2-typography" class="nav-link" style="padding-left:0.8rem;">2. Typography</a>
+<a href="#3-glassmorphism-enterprise-spec" class="nav-link" style="padding-left:0.8rem;">3. Glassmorphism Enterprise Spec</a>
+<a href="#layer-system" class="nav-link" style="padding-left:0.8rem;">Layer System</a>
+<a href="#online-mode" class="nav-link" style="padding-left:0.8rem;">Online Mode</a>
+<a href="#mesh-mode" class="nav-link" style="padding-left:0.8rem;">Mesh Mode</a>
+<a href="#4-micro-animations-motion" class="nav-link" style="padding-left:0.8rem;">4. Micro-Animations & Motion</a>
+<a href="#5-interaction-logic-chung" class="nav-link" style="padding-left:0.8rem;">5. Interaction Logic chung</a>
+<a href="#phần-ii-bố-cục-điều-hướng" class="nav-link" style="">PHẦN II – BỐ CỤC & ĐIỀU HƯỚNG</a>
+<a href="#6-cấu-trúc-bố-cục-tổng-thể" class="nav-link" style="padding-left:0.8rem;">6. Cấu trúc Bố cục Tổng thể</a>
+<a href="#-desktop-laptop-960px" class="nav-link" style="padding-left:0.8rem;">🖥️💻 Desktop / Laptop (≥ 960px)</a>
+<a href="#-mobile-960px" class="nav-link" style="padding-left:0.8rem;">📱 Mobile (< 960px)</a>
+<a href="#responsive-breakpoints" class="nav-link" style="padding-left:0.8rem;">Responsive Breakpoints</a>
+<a href="#7-left-rail-navigation-desktoplaptop" class="nav-link" style="padding-left:0.8rem;">7. Left Rail – Navigation (Desktop/Laptop)</a>
+<a href="#thứ-tự-icon-trên-dưới" class="nav-link" style="padding-left:0.8rem;">Thứ tự icon (trên → dưới)</a>
+<a href="#8-bottom-tab-bar-navigation-mobile" class="nav-link" style="padding-left:0.8rem;">8. Bottom Tab Bar – Navigation (Mobile)</a>
+<a href="#phần-iii-các-màn-hình-chi-tiết" class="nav-link" style="">PHẦN III – CÁC MÀN HÌNH CHI TIẾT</a>
+<a href="#9-home-dashboard" class="nav-link" style="padding-left:0.8rem;">9. Home Dashboard</a>
+<a href="#triết-lý-home" class="nav-link" style="padding-left:0.8rem;">Triết lý Home</a>
+<a href="#layout-desktoplaptop-2-cột-35-65" class="nav-link" style="padding-left:0.8rem;">Layout Desktop/Laptop (2 cột — 35% / 65%)</a>
+<a href="#left-column-pinned-channels" class="nav-link" style="padding-left:0.8rem;">LEFT COLUMN — Pinned Channels</a>
+<a href="#right-column-dashboard" class="nav-link" style="padding-left:0.8rem;">RIGHT COLUMN — Dashboard</a>
+<a href="#mesh-mode-home" class="nav-link" style="padding-left:0.8rem;">Mesh Mode — Home</a>
+<a href="#layout-mobile" class="nav-link" style="padding-left:0.8rem;">Layout Mobile</a>
+<a href="#10-chats" class="nav-link" style="padding-left:0.8rem;">10. Chats</a>
+<a href="#layout-desktoplaptop" class="nav-link" style="padding-left:0.8rem;">Layout Desktop/Laptop</a>
+<a href="#chat-list-panel" class="nav-link" style="padding-left:0.8rem;">Chat List Panel</a>
+<a href="#chat-header-56px" class="nav-link" style="padding-left:0.8rem;">Chat Header (56px)</a>
+<a href="#message-list-trọng-tâm-không-bubble" class="nav-link" style="padding-left:0.8rem;">Message List (Trọng tâm — KHÔNG BUBBLE)</a>
+<a href="#attachments" class="nav-link" style="padding-left:0.8rem;">Attachments</a>
+<a href="#message-input-64px-min" class="nav-link" style="padding-left:0.8rem;">Message Input (64px min)</a>
+<a href="#info-panel-slide-từ-phải-025s" class="nav-link" style="padding-left:0.8rem;">Info Panel (Slide từ phải — 0.25s)</a>
+<a href="#layout-mobile" class="nav-link" style="padding-left:0.8rem;">Layout Mobile</a>
+<a href="#11-notifications" class="nav-link" style="padding-left:0.8rem;">11. Notifications</a>
+<a href="#filter-bar" class="nav-link" style="padding-left:0.8rem;">Filter bar</a>
+<a href="#notification-row" class="nav-link" style="padding-left:0.8rem;">Notification row</a>
+<a href="#12-files-teravault" class="nav-link" style="padding-left:0.8rem;">12. Files (TeraVault)</a>
+<a href="#layout-desktoplaptop" class="nav-link" style="padding-left:0.8rem;">Layout Desktop/Laptop</a>
+<a href="#file-sidebar-glass-panel" class="nav-link" style="padding-left:0.8rem;">File Sidebar (Glass Panel)</a>
+<a href="#file-workspace" class="nav-link" style="padding-left:0.8rem;">File Workspace</a>
+<a href="#mesh-mode-behavior" class="nav-link" style="padding-left:0.8rem;">Mesh Mode Behavior</a>
+<a href="#layout-mobile" class="nav-link" style="padding-left:0.8rem;">Layout Mobile</a>
+<a href="#13-tools-tapp-enterprise-launchpad" class="nav-link" style="padding-left:0.8rem;">13. Tools (.tapp) — Enterprise Launchpad</a>
+<a href="#desktoplaptop" class="nav-link" style="padding-left:0.8rem;">Desktop/Laptop</a>
+<a href="#mobile" class="nav-link" style="padding-left:0.8rem;">Mobile</a>
+<a href="#pinned-tapp" class="nav-link" style="padding-left:0.8rem;">Pinned .tapp</a>
+<a href="#14-settings" class="nav-link" style="padding-left:0.8rem;">14. Settings</a>
+<a href="#15-admin-console-role-based-chỉ-admin-thấy" class="nav-link" style="padding-left:0.8rem;">15. Admin Console (Role-based — chỉ Admin thấy)</a>
+<a href="#tab-structure" class="nav-link" style="padding-left:0.8rem;">Tab Structure</a>
+<a href="#trải-nghiệm-quản-trị-1-chạm-wizard-driven-ux" class="nav-link" style="padding-left:0.8rem;">Trải nghiệm Quản trị 1-Chạm (Wizard-driven UX)</a>
+<a href="#phần-iv-luồng-ux-bảo-mật" class="nav-link" style="">PHẦN IV – LUỒNG UX BẢO MẬT</a>
+<a href="#16-smart-approval-flow" class="nav-link" style="padding-left:0.8rem;">16. Smart Approval Flow</a>
+<a href="#17-mesh-activation-flow" class="nav-link" style="padding-left:0.8rem;">17. Mesh Activation Flow</a>
+<a href="#18-qr-enrollment-onboarding-nhân-viên" class="nav-link" style="padding-left:0.8rem;">18. QR Enrollment (Onboarding nhân viên)</a>
+<a href="#19-file-approval-flow-zone-2-restricted" class="nav-link" style="padding-left:0.8rem;">19. File Approval Flow (Zone 2 Restricted)</a>
+<a href="#phần-vi-các-giao-diện-mở-rộng-sso-liên-tổ-chức" class="nav-link" style="">PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)</a>
+<a href="#22-giao-diện-đăng-nhập-enterprise-sso-login" class="nav-link" style="padding-left:0.8rem;">22. Giao diện Đăng nhập (Enterprise SSO Login)</a>
+<a href="#layout-desktopmobile-màn-hình-welcome" class="nav-link" style="padding-left:0.8rem;">Layout Desktop/Mobile (Màn hình Welcome)</a>
+<a href="#23-giao-diện-thiết-lập-chi-nhánh-cross-cluster-federation-handshake" class="nav-link" style="padding-left:0.8rem;">23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)</a>
+<a href="#ở-phía-tổng-công-ty-hq-admin" class="nav-link" style="padding-left:0.8rem;">Ở phía Tổng công ty (HQ Admin)</a>
+<a href="#ở-phía-chi-nhánh-branch-admin" class="nav-link" style="padding-left:0.8rem;">Ở phía Chi nhánh (Branch Admin)</a>
+<a href="#24-giao-diện-épthêm-member-directory-sync-invites" class="nav-link" style="padding-left:0.8rem;">24. Giao diện Ép/Thêm Member (Directory Sync & Invites)</a>
+<a href="#tab-1-directory-sync-scim-20-tự-động" class="nav-link" style="padding-left:0.8rem;">Tab 1: Directory Sync (SCIM 2.0 Tự động)</a>
+<a href="#tab-2-manual-guest-invites" class="nav-link" style="padding-left:0.8rem;">Tab 2: Manual / Guest Invites</a>
+<a href="#25-giao-diện-đăng-nhập-ngầm-phân-quyền-hr-magic-deep-link-sso" class="nav-link" style="padding-left:0.8rem;">25. Giao diện Đăng nhập Ngầm & Phân quyền HR (Magic Deep-Link SSO)</a>
+<a href="#phần-1-phân-quyền-mời-delegation-via-opa" class="nav-link" style="padding-left:0.8rem;">Phần 1: Phân quyền Mời (Delegation via OPA)</a>
+<a href="#phần-2-workflow-1-tap-magic-sso" class="nav-link" style="padding-left:0.8rem;">Phần 2: Workflow 1-Tap Magic SSO</a>
+<a href="#phần-vii-accessibility-checklist" class="nav-link" style="">PHẦN VII – ACCESSIBILITY & CHECKLIST</a>
+<a href="#26-accessibility" class="nav-link" style="padding-left:0.8rem;">26. Accessibility</a>
+<a href="#27-checklist-cho-designer" class="nav-link" style="padding-left:0.8rem;">27. Checklist cho Designer</a>
+
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+</nav>
+
+<div class="main">
+    <h1 id="terachat-design-specification">TeraChat – Design Specification</h1>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Phiên bản:</strong> Alpha 1.0 | <strong>Nền tảng:</strong> Desktop 🖥️ / Laptop 💻 / Mobile 📱</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Gửi tới:</strong> Đội ngũ UX/UI Design</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-i-triết-lý-hệ-thống-thiết-kế">PHẦN I – TRIẾT LÝ & HỆ THỐNG THIẾT KẾ</h1>
+<h2 id="0-triết-lý-thiết-kế">0. Triết lý Thiết kế</h2>
+<p>TeraChat là <strong>Enterprise Sovereign Messenger</strong> — không phải Slack bình thường.</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Câu hỏi</th>
+<th>Câu trả lời</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Trông như thế nào?</strong></td>
+<td>Glassmorphism. Enterprise. Tối giản nhưng dày thông tin.</td>
+</tr>
+<tr>
+<td><strong>Cảm giác như thế nào?</strong></td>
+<td>Nhanh. Đáng tin cậy. Bảo mật ngầm không bắt người dùng để ý.</td>
+</tr>
+<tr>
+<td><strong>Mục tiêu người dùng?</strong></td>
+<td>Nhân viên chính phủ, doanh nghiệp tài chính, tập đoàn nội bộ.</td>
+</tr>
+<tr>
+<td><strong>Điều không được làm?</strong></td>
+<td>Bubble chat kiểu WhatsApp. Màu nền mỗi người mỗi màu. UX game hóa thái quá.</td>
+</tr>
+</tbody></table></div>
+<h3 id="hai-trạng-thái-hoạt-động-bắt-buộc-phải-phân-biệt-rõ-về-visual">Hai trạng thái hoạt động (bắt buộc phải phân biệt rõ về visual)</h3>
+<ul>
+<li><strong>Online Mode</strong> — Kết nối Server chuẩn: Nền sáng, blur trắng, accent <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code>.</li>
+<li><strong>Mesh Mode</strong> — Offline P2P qua BLE/Wi-Fi Direct: Nền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code> dark navy, radar pulse trên logo, banner <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – N nodes connected"</code>.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="1-hệ-thống-màu-sắc">1. Hệ thống Màu sắc</h2>
+<h3 id="bảng-màu-chính">Bảng màu chính</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Token</th>
+<th>Giá trị</th>
+<th>Dùng khi</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--primary</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code></td>
+<td>Accent, CTA, Active indicator</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--bg-online</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#FFFFFF</code></td>
+<td>Background Online Mode</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--bg-mesh</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code></td>
+<td>Background Mesh Mode</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--glass-light</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.08)</code></td>
+<td>Card, Panel nền</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--glass-dark</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(20,30,45,0.4)</code></td>
+<td>Dark glass container</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--border</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.12)</code></td>
+<td>Border toàn bộ</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--muted</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#64748B</code></td>
+<td>Text phụ, timestamp</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--divider-online</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#F1F5F9</code></td>
+<td>Divider Online</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--divider-mesh</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#1E293B</code></td>
+<td>Divider Mesh</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--hover</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">+4% brightness</code></td>
+<td>Hover state</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="2-typography">2. Typography</h2>
+<p><strong>Font:</strong> Inter / Outfit (Google Fonts)</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Role</th>
+<th>Size</th>
+<th>Weight</th>
+</tr></thead><tbody>
+<tr>
+<td>Heading H1</td>
+<td>20px</td>
+<td>SemiBold</td>
+</tr>
+<tr>
+<td>Section Label</td>
+<td>13px</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Username</td>
+<td>13px</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td>Message Body</td>
+<td>14px</td>
+<td>Regular, line-height 1.6</td>
+</tr>
+<tr>
+<td>Timestamp</td>
+<td>12px</td>
+<td>Regular, muted</td>
+</tr>
+<tr>
+<td>Badge / Tag</td>
+<td>10px</td>
+<td>Uppercase</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="3-glassmorphism-enterprise-spec">3. Glassmorphism Enterprise Spec</h2>
+<h3 id="layer-system">Layer System</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Layer 1 → App Background (dark navy gradient hoặc white)
+Layer 2 → Sidebar/Rail Glass      (blur: 16–18px)
+Layer 3 → Work Area Glass         (blur: 12px)
+Layer 4 → Floating Panels/Modals  (blur: 20px)</code></pre></div>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Mỗi tầng phải có blur depth <strong>khác nhau</strong> để tạo chiều sâu thật sự (không flat).</p>
+<h3 id="online-mode">Online Mode</h3>
+<ul>
+<li>Background: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#FFFFFF</code></li>
+<li>Glass: blur 16px, white 70%</li>
+<li>Shadow rất nhẹ</li>
+<li>Accent: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code></li>
+</ul>
+<h3 id="mesh-mode">Mesh Mode</h3>
+<ul>
+<li>Background: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code></li>
+<li>Glass: blur 20px, dark navy</li>
+<li>Text sáng: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#E2E8F0</code></li>
+<li>Radar pulse animation trên Logo</li>
+<li>Banner top: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – 12 nodes connected"</code></li>
+</ul>
+<p><strong>Transition:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fade 0.3s</code></p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="4-micro-animations-motion">4. Micro-Animations & Motion</h2>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Event</th>
+<th>Animation</th>
+</tr></thead><tbody>
+<tr>
+<td>Tab switch</td>
+<td>Fade cross 0.15s</td>
+</tr>
+<tr>
+<td>Theme switch (Online ↔ Mesh)</td>
+<td>Fade 0.3s toàn màn hình</td>
+</tr>
+<tr>
+<td>New message arrive</td>
+<td>Slide-in từ dưới 0.15s</td>
+</tr>
+<tr>
+<td>Pin .tapp to Rail</td>
+<td>Slide-down 0.2s, fade-in</td>
+</tr>
+<tr>
+<td>Panel open (Info, Smart Action)</td>
+<td>Slide từ phải 0.25s</td>
+</tr>
+<tr>
+<td>Hover icon (Rail)</td>
+<td>Scale 1.05, highlight 5% — 0.1s</td>
+</tr>
+<tr>
+<td>Mesh radar pulse</td>
+<td>CSS loop animation, interval 2s</td>
+</tr>
+<tr>
+<td>File loading</td>
+<td>BlurHash → fade-in 0.3s</td>
+</tr>
+<tr>
+<td>Loading spinner</td>
+<td>60fps SVG spin</td>
+</tr>
+<tr>
+<td>Toast notification</td>
+<td>Slide từ top-right, auto dismiss 3s</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="5-interaction-logic-chung">5. Interaction Logic chung</h2>
+<p><strong>Hover icon (Rail/Sidebar):</strong></p>
+<ul>
+<li>Background highlight 5%</li>
+<li>Scale 1.05 nhẹ</li>
+</ul>
+<p><strong>Active:</strong></p>
+<ul>
+<li>Indicator 3px <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code> bên trái</li>
+<li>Icon fill accent</li>
+</ul>
+<p><strong>Scroll Behavior:</strong></p>
+<ul>
+<li>Smooth scroll</li>
+<li>New message slide-in 0.15s</li>
+<li>Khi đang scroll lên → không auto kéo xuống</li>
+<li>Show <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"New messages ↓"</code> indicator</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-ii-bố-cục-điều-hướng">PHẦN II – BỐ CỤC & ĐIỀU HƯỚNG</h1>
+<h2 id="6-cấu-trúc-bố-cục-tổng-thể">6. Cấu trúc Bố cục Tổng thể</h2>
+<h3 id="-desktop-laptop-960px">🖥️💻 Desktop / Laptop (≥ 960px)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌──────────────────────────────────────────────────────────┐
+│  [Left Rail 76px] │ [Panel 280–360px] │ [Main Area fill] │
+└──────────────────────────────────────────────────────────┘</code></pre></div>
+<ul>
+<li><strong>Left Rail</strong> (76px cố định): Navigation chính — Glassmorphism, blur 16px.</li>
+<li><strong>Middle Panel</strong>: Danh sách (Chats, Files, Notifications…).</li>
+<li><strong>Main Area</strong>: Nội dung chính (Chat Frame, Dashboard, Tools).</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Panel có thể ẩn/hiện bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cmd/Ctrl + \</code>.</p>
+<h3 id="-mobile-960px">📱 Mobile (< 960px)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌───────────────────┐
+│     Screen        │
+│   (Full Width)    │
+│                   │
+│ [Bottom Tab Bar]  │
+└───────────────────┘</code></pre></div>
+<ul>
+<li><strong>Bottom Tab Bar</strong> thay thế Left Rail.</li>
+<li>Chat List → Chat View: <strong>Push Navigation</strong> (trượt phải để back).</li>
+<li>Không có panel cố định — dùng <strong>Bottom Sheet</strong> cho context actions.</li>
+</ul>
+<h3 id="responsive-breakpoints">Responsive Breakpoints</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Màn hình</th>
+<th>Layout</th>
+<th>Nav Pattern</th>
+</tr></thead><tbody>
+<tr>
+<td>Desktop ≥ 1440px</td>
+<td>3 cột (Rail + Panel + Main)</td>
+<td>Left Rail 76px cố định</td>
+</tr>
+<tr>
+<td>Laptop 960–1440px</td>
+<td>3 cột (có thể collapse panel)</td>
+<td>Left Rail 76px, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cmd+\</code> ẩn panel</td>
+</tr>
+<tr>
+<td>Tablet 768–959px</td>
+<td>2 cột (Rail + Main, panel overlay)</td>
+<td>Left Rail thu hẹp 60px</td>
+</tr>
+<tr>
+<td>Mobile &lt; 768px</td>
+<td>1 cột full screen</td>
+<td>Bottom Tab Bar 5 tabs</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="7-left-rail-navigation-desktoplaptop">7. Left Rail – Navigation (Desktop/Laptop)</h2>
+<p><strong>Kích thước:</strong> 76px cố định.</p>
+<ul>
+<li>Online: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.7)</code>, border right 1px subtle.</li>
+<li>Mesh: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(15,23,42,0.7)</code>, text sáng.</li>
+</ul>
+<h3 id="thứ-tự-icon-trên-dưới">Thứ tự icon (trên → dưới)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>#</th>
+<th>Tab</th>
+<th>Mô tả</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td><strong>Logo</strong></td>
+<td>Click → Home. Long press → Workspace switch. Mesh: radar pulse.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Home</strong></td>
+<td>Dashboard tổng quan. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cmd+1</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Chats</strong></td>
+<td>Chat List + Chat View. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cmd+2</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Notifications</strong></td>
+<td>Mentions, Approvals, Security Alerts.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Files</strong></td>
+<td>TeraVault file center.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Tools (.tapp)</strong></td>
+<td>Enterprise Launchpad.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><em>(Dynamic)</em></td>
+<td>Pinned .tapp apps (xuất hiện sau khi user pin).</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Settings</strong></td>
+<td>Cuối cùng.</td>
+</tr>
+</tbody></table></div>
+<p><strong>Pinned .tapp:</strong></p>
+<ul>
+<li>Animate slide-down khi pin, fade-in 0.2s.</li>
+<li>Có badge nếu có alert.</li>
+<li>Right-click → Unpin / App Settings / Permissions.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="8-bottom-tab-bar-navigation-mobile">8. Bottom Tab Bar – Navigation (Mobile)</h2>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Home] [Chats] [Notif] [Files] [Tools]</code></pre></div>
+<ul>
+<li>Indicator: dot <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code> phía trên icon active.</li>
+<li>Icon + badge (không text label).</li>
+<li>Gesture: swipe left/right giữa các tab chính.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-iii-các-màn-hình-chi-tiết">PHẦN III – CÁC MÀN HÌNH CHI TIẾT</h1>
+<h2 id="9-home-dashboard">9. Home Dashboard</h2>
+<h3 id="triết-lý-home">Triết lý Home</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Home = Operational Control Surface</strong> — Không phải Activity Feed đơn thuần.</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>So sánh</th>
+<th>Slack</th>
+<th>Telegram</th>
+<th>TeraChat</th>
+</tr></thead><tbody>
+<tr>
+<td>Pinned nổi bật</td>
+<td>❌</td>
+<td>✅</td>
+<td>✅ Enterprise style</td>
+</tr>
+<tr>
+<td>Zone status</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Network-aware</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Tools tích hợp sâu</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+</tbody></table></div>
+<h3 id="layout-desktoplaptop-2-cột-35-65">Layout Desktop/Laptop (2 cột — 35% / 65%)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌──────────────────┬─────────────────────────────────────────┐
+│  LEFT COLUMN     │              RIGHT COLUMN               │
+│  (Pinned Chats + │  (Welcome + Overview + Activity + Tools)│
+│   Departments)   │                                         │
+└──────────────────┴─────────────────────────────────────────┘</code></pre></div>
+<h3 id="left-column-pinned-channels">LEFT COLUMN — Pinned Channels</h3>
+<p><strong>📌 Pinned Channels</strong> (tối đa 6, scroll nếu nhiều hơn):</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Icon]  Gov-Operations
+        Last message preview
+        [12 unread badge]</code></pre></div>
+<ul>
+<li>Glass card mini, radius 12px.</li>
+<li>Drag để reorder.</li>
+<li>Hover: highlight 4%.</li>
+<li>Right-click → Pin/Unpin, Mute, Go to channel.</li>
+<li>Double-click → mở Split View.</li>
+</ul>
+<p><strong>Hành vi ghim (Telegram logic):</strong></p>
+<ul>
+<li>Right-click channel → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Pin to Home"</code> → xuất hiện trong Home &gt; Pinned.</li>
+<li>Unpin → biến mất khỏi Home. Không ảnh hưởng sidebar.</li>
+</ul>
+<p><strong>🏢 Department Groups</strong> (bên dưới pinned):</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Departments
+  &gt; Finance
+  &gt; Operations
+  &gt; Security
+  &gt; HR</code></pre></div>
+<p>Click → mở Chat View.</p>
+<h3 id="right-column-dashboard">RIGHT COLUMN — Dashboard</h3>
+<p><strong>Header:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Welcome back, [Username]          [Zone Badge: Online ●]
+[Workspace Name]                  [Encryption: E2EE Active]</code></pre></div>
+<p><strong>Section 1 — Operational Overview</strong> (Grid 2×2, glass cards):</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Card</th>
+<th>Nội dung</th>
+</tr></thead><tbody>
+<tr>
+<td>Active Channels</td>
+<td>Số kênh đang hoạt động</td>
+</tr>
+<tr>
+<td>Pending Approvals</td>
+<td>Phê duyệt chờ xử lý + CTA</td>
+</tr>
+<tr>
+<td>Online Members</td>
+<td>Avatar stack</td>
+</tr>
+<tr>
+<td>Security Alerts</td>
+<td>Badge mức độ</td>
+</tr>
+</tbody></table></div>
+<p>Card style: radius 16px, blur 12px, border subtle.</p>
+<p><strong>Section 2 — Activity Feed</strong> (Slack-style timeline):</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>14:02 · User A approved "Budget_Q2.pdf"
+14:01 · New file uploaded in Finance
+13:58 · Zone changed to Mesh</code></pre></div>
+<p>Timestamp nhỏ, không avatar to, hover highlight nhẹ.</p>
+<p><strong>Section 3 — Quick Tools</strong> (1 hàng icons):</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Smart Approval] [CRM] [POS] [HR]     [Open Full Tools →]</code></pre></div>
+<h3 id="mesh-mode-home">Mesh Mode — Home</h3>
+<ul>
+<li>Background chuyển dark navy.</li>
+<li>Radar icon ở header.</li>
+<li>Banner: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – Local secure network connected"</code>.</li>
+</ul>
+<h3 id="layout-mobile">Layout Mobile</h3>
+<ul>
+<li>Single column.</li>
+<li>Pinned Channels: horizontal scroll cards.</li>
+<li>Activity Feed + Quick Tools bên dưới.</li>
+<li>Empty state hero text 60px: <em>"Secure Communication Infrastructure for Critical Operations."</em></li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="10-chats">10. Chats</h2>
+<h3 id="layout-desktoplaptop">Layout Desktop/Laptop</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>| Left Rail | Chat List (360px) | Chat Frame (fill) | Info Panel (overlay) |</code></pre></div>
+<h3 id="chat-list-panel">Chat List Panel</h3>
+<ul>
+<li>Search bar: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Search chats…"</code>, glass input, radius 12px, focus glow <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE 30%</code>.</li>
+<li>Group chats theo Section: <strong>Direct</strong> / <strong>Channels</strong> / <strong>Departments</strong>.</li>
+<li>Mỗi row:</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>  [Avatar 36px] Channel Name              14:02
+                Last message preview      [3 unread badge]</code></pre></div>
+<ul>
+<li>Hover: highlight 3%, indicator trái nhẹ.</li>
+<li>Right-click: Pin to Home / Mute / Leave.</li>
+</ul>
+<h3 id="chat-header-56px">Chat Header (56px)</h3>
+<p>Glass background blur 12–16px.</p>
+<p><strong>Bên trái:</strong></p>
+<ul>
+<li>Channel name <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">16px SemiBold</code></li>
+<li>Department tag badge</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🔒 E2EE Active</code> icon</li>
+</ul>
+<p><strong>Bên phải:</strong></p>
+<ul>
+<li>Search in conversation</li>
+<li>Call (nếu Zone 1)</li>
+<li>Screen share (Zone 1)</li>
+<li>Info icon (mở Info Panel)</li>
+</ul>
+<p><strong>Mesh Mode:</strong></p>
+<ul>
+<li>Radar icon pulse</li>
+<li>Banner mỏng phía dưới header: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – 12 nearby nodes connected"</code></li>
+</ul>
+<h3 id="message-list-trọng-tâm-không-bubble">Message List (Trọng tâm — KHÔNG BUBBLE)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Avatar 28px]  Username          14:02
+               Message nội dung đầy đủ chiều rộng
+               [Attachment preview]
+───────────────────────────────────────────────────</code></pre></div>
+<p><strong>Typography:</strong></p>
+<ul>
+<li>Username: 13px Medium</li>
+<li>Timestamp: 12px muted</li>
+<li>Message: 14px Regular, line-height 1.6</li>
+</ul>
+<p><strong>Nhóm message</strong> (cùng user &lt; 5 phút):</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Avatar  User Name   14:02
+        Message 1
+        Message 2
+        Message 3</code></pre></div>
+<p>Không lặp avatar. Hiển thị 20–25 dòng / màn hình 13".</p>
+<p><strong>Hover message:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[React] [Reply] [Copy] [More…]</code></pre></div>
+<p>Inline actions — không floating button lố. Background highlight 3%.</p>
+<p><strong>System messages:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>──────────── User X approved document ────────────</code></pre></div>
+<p>Center aligned, muted text, không avatar.</p>
+<h3 id="attachments">Attachments</h3>
+<p><strong>Ảnh:</strong></p>
+<ul>
+<li>BlurHash placeholder → fade-in 0.3s khi load.</li>
+<li>Border subtle.</li>
+<li>Dynamic watermark nếu Zone 2 (Restricted).</li>
+</ul>
+<p><strong>File card:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>📄 Contract_v2.pdf    2.4MB | 🔒 Encrypted
+[Download]  [Preview]</code></pre></div>
+<p>Glass card, radius 8px.</p>
+<h3 id="message-input-64px-min">Message Input (64px min)</h3>
+<p>Glass container.</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[+] [😊] [📎]   |  Type secure message…  |  [🎤] [➤]</code></pre></div>
+<ul>
+<li><strong>Enter</strong> = Send. <strong>Shift+Enter</strong> = New line.</li>
+<li>Disable Send nếu không có quyền (Zone DLP block).</li>
+<li>Loading spinner khi đang gửi.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"New messages ↓"</code> indicator khi scroll lên.</li>
+</ul>
+<h3 id="info-panel-slide-từ-phải-025s">Info Panel (Slide từ phải — 0.25s)</h3>
+<p>Click <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ℹ</code> → slide từ phải.</p>
+<p>Tabs: <strong>Members</strong> / <strong>Files</strong> / <strong>Audit Log</strong> / <strong>Permissions</strong> / <strong>Zone Status</strong></p>
+<h3 id="layout-mobile">Layout Mobile</h3>
+<ul>
+<li>Chat List: màn hình đầu tiên (full screen).</li>
+<li>Tap conversation → push sang Chat Frame (full screen).</li>
+<li>Header: Back trái + Channel name + Icons.</li>
+<li>Input bar cố định ở đáy, trên bàn phím khi mở.</li>
+<li>Info Panel → <strong>Bottom Sheet</strong> khi tap Info icon.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="11-notifications">11. Notifications</h2>
+<h3 id="filter-bar">Filter bar</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[All]  [Mentions]  [System]  [Approval]</code></pre></div>
+<h3 id="notification-row">Notification row</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Icon type]  Title               14:02
+             Short description</code></pre></div>
+<ul>
+<li><strong>Approval:</strong> CTA <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Review]</code> inline.</li>
+<li><strong>Security Alert:</strong> badge đỏ, tap mở detail.</li>
+<li><strong>Audit Event:</strong> muted, không CTA.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="12-files-teravault">12. Files (TeraVault)</h2>
+<h3 id="layout-desktoplaptop">Layout Desktop/Laptop</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>| Left Rail | File Sidebar (280px) | File Workspace (fill) |</code></pre></div>
+<h3 id="file-sidebar-glass-panel">File Sidebar (Glass Panel)</h3>
+<p>Background: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.08)</code>, blur 18px, border 1px <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.12)</code>, radius 20px.</p>
+<p><strong>Header:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Files
+[ + Upload ]</code></pre></div>
+<p>Upload button: gradient nhẹ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE → transparent</code>, icon arrow up, hover glow subtle.</p>
+<p><strong>Filter Section:</strong></p>
+<ul>
+<li>All Files</li>
+<li>My Files</li>
+<li>Shared with Me</li>
+<li>Department Files</li>
+<li>Mesh Storage (nếu offline)</li>
+</ul>
+<p>Active item: nền glass sáng hơn 4%, viền trái accent <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code> 3px.</p>
+<p><strong>Quick Access (Pinned Files):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[PDF icon] Budget_2026.pdf
+           Finance Dept · Updated 2h ago</code></pre></div>
+<p>Hover: elevation nhẹ, icon action <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">⋯</code> bên phải.</p>
+<h3 id="file-workspace">File Workspace</h3>
+<p><strong>Header:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>📁 Department / Finance     [Search files...]     [Sort ▼] [Filter]</code></pre></div>
+<p><strong>View Toggle:</strong> Grid (default) / List.</p>
+<p><strong>Grid View:</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌──────────────┐
+│   [Icon]     │
+│ Budget.xlsx  │
+│   12 MB      │
+│ Updated 2h   │
+└──────────────┘</code></pre></div>
+<p>Card: background <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.06)</code>, blur 12px, radius 18px. Hover: sáng hơn 6%.</p>
+<p>File type color (subtle):</p>
+<ul>
+<li>PDF → đỏ subtle</li>
+<li>Excel → xanh lá</li>
+<li>Doc → xanh dương</li>
+<li>Image → tím</li>
+</ul>
+<p><strong>List View:</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Name</th>
+<th>Owner</th>
+<th>Department</th>
+<th>Updated</th>
+<th>Size</th>
+<th>Security</th>
+</tr></thead><tbody>
+<tr>
+<td>Budget.pdf</td>
+<td>Hoang</td>
+<td>Finance</td>
+<td>2h ago</td>
+<td>2.4MB</td>
+<td>🔒 Encrypted</td>
+</tr>
+</tbody></table></div>
+<p>Security column:</p>
+<ul>
+<li>🔒 Encrypted</li>
+<li>🌐 Cloud</li>
+<li>📡 Mesh Local</li>
+</ul>
+<p>Row hover: nền trắng 3%, border glow mỏng.</p>
+<p><strong>Security Badge (góc phải mỗi file):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[ENCRYPTED]  [CLASSIFIED]  [INTERNAL]  [PUBLIC]</code></pre></div>
+<p>Glass mini, blur 6px, text uppercase 10px.</p>
+<p><strong>Smart Action Bar (khi click file):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Preview / Share / Generate Approval / AI Summary / Download / Move to Mesh</code></pre></div>
+<p>Floating glass panel, shadow nhẹ, border glow <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code> mờ.</p>
+<h3 id="mesh-mode-behavior">Mesh Mode Behavior</h3>
+<p>Header banner: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Mode Active – Files syncing locally"</code></p>
+<p>File icons:</p>
+<ul>
+<li>📡 Local</li>
+<li>☁ Sync Pending</li>
+</ul>
+<p>Sync animation: subtle pulse.</p>
+<h3 id="layout-mobile">Layout Mobile</h3>
+<ul>
+<li>File Sidebar → <strong>Bottom Sheet</strong> filter thay thế.</li>
+<li>Grid 2 cột.</li>
+<li>Tap file → Bottom Sheet với Smart Actions.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="13-tools-tapp-enterprise-launchpad">13. Tools (.tapp) — Enterprise Launchpad</h2>
+<h3 id="desktoplaptop">Desktop/Laptop</h3>
+<p>Click Tools icon → <strong>Glass Modal lớn</strong> trung tâm màn hình. Grid 3–4 cột:</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Smart Approval] [CRM] [POS] [HR]
+[Internal App 1] [Internal App 2] ...</code></pre></div>
+<ul>
+<li>Card radius 16px, blur 12px.</li>
+<li>Hover: glow nhẹ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE 20%</code>.</li>
+<li>Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> chạy trong <strong>WASM Sandbox</strong> — hoàn toàn cô lập.</li>
+<li>Nút bị mờ/disable nếu phòng ban không được cấp quyền (OPA Policy).</li>
+</ul>
+<h3 id="mobile">Mobile</h3>
+<ul>
+<li>Tools → <strong>Full screen Bottom Sheet</strong> dạng 2 cột.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> khi mở → full screen modal, header tên App + nút Close.</li>
+</ul>
+<h3 id="pinned-tapp">Pinned .tapp</h3>
+<ul>
+<li>Right-click / long-press → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Pin to Sidebar"</code>.</li>
+<li>Animate slide-down vào Rail / Tab bar (dynamic zone).</li>
+<li>Badge alert nếu app có notification.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="14-settings">14. Settings</h2>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Section</th>
+<th>Nội dung</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Account</strong></td>
+<td>Profile, Avatar, Display name</td>
+</tr>
+<tr>
+<td><strong>Security</strong></td>
+<td>E2EE keys, Device list, Revoke sessions</td>
+</tr>
+<tr>
+<td><strong>OPA Policy</strong></td>
+<td>Xem chính sách DLP (read-only cho user)</td>
+</tr>
+<tr>
+<td><strong>Zone Config</strong></td>
+<td>Cấu hình Online / Mesh priority</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>Ring Buffer info, Offline storage quota</td>
+</tr>
+<tr>
+<td><strong>Developer Mode</strong></td>
+<td>Toggle (nếu được cấp quyền)</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="15-admin-console-role-based-chỉ-admin-thấy">15. Admin Console (Role-based — chỉ Admin thấy)</h2>
+<p>Entry point: Settings → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Admin Console]</code> button.</p>
+<h3 id="tab-structure">Tab Structure</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tab</th>
+<th>Chức năng</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>User Management</strong></td>
+<td>Invite Token, Revoke, Remote Wipe</td>
+</tr>
+<tr>
+<td><strong>Key Management</strong></td>
+<td>KMS Bootstrap, Master Key status, Epoch Rotation</td>
+</tr>
+<tr>
+<td><strong>OPA Policies</strong></td>
+<td>Tạo/sửa/xóa chính sách per-department</td>
+</tr>
+<tr>
+<td><strong>Federation</strong></td>
+<td>Invite Token liên tổ chức, trust registry</td>
+</tr>
+<tr>
+<td><strong>Audit Log</strong></td>
+<td>Timeline filter theo user/action/time</td>
+</tr>
+<tr>
+<td><strong>Tools Registry</strong></td>
+<td>Whitelist/blacklist <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>, quản lý API Keys</td>
+</tr>
+<tr>
+<td><strong>Infrastructure</strong></td>
+<td>Node health, Cluster scaling wizard</td>
+</tr>
+</tbody></table></div>
+<h3 id="trải-nghiệm-quản-trị-1-chạm-wizard-driven-ux">Trải nghiệm Quản trị 1-Chạm (Wizard-driven UX)</h3>
+<h4 id="khởi-tạo-cụm-trực-quan-cluster-setup-wizard">Khởi tạo Cụm Trực quan (Cluster Setup Wizard)</h4>
+<ol>
+<li><strong>Pre-flight Check</strong> — Scan phần cứng + network. Status badge ✅ / ❌. Nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Deploy Cluster]</code> chỉ sáng khi đủ điều kiện.</li>
+<li><strong>Config Form</strong> — Dropdown chọn provider (Vultr/DO), nhập 3 IP, drag-drop <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">id_rsa</code>. Không terminal.</li>
+<li><strong>Deploy Progress Bar</strong> — Phân nấc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">WireGuard → Longhorn → K8s → Ready</code>. Text ngôn ngữ tự nhiên, không log terminal.</li>
+<li><strong>Bootstrap QR</strong> — QR code để Admin scan trên mobile → thiết lập kênh mTLS, tự đặt IP/Port.</li>
+<li><strong>Day-2 Dashboard</strong> — Cluster health <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">3/3 Online</code>, storage gauge, 1-click <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Zero-Downtime Update]</code>.</li>
+</ol>
+<h4 id="mở-rộng-cụm-không-gián-đoạn-add-node-wizard">Mở rộng Cụm Không Gián Đoạn (Add Node Wizard)</h4>
+<ul>
+<li>Bảng trượt tối giản: nhập 3 trường — IP Address, Node Label, SSH Key.</li>
+<li>Progress động: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Initializing → Joining → Ready</code>.</li>
+<li>Rollback tự động + thông báo tiếng người nếu Node thất bại.</li>
+</ul>
+<h4 id="phản-hồi-thời-gian-thực">Phản hồi Thời gian thực</h4>
+<ul>
+<li>Biểu đồ động: WireGuard speed, Cluster capacity tăng gộp theo thời gian thực.</li>
+<li>K8s Scheduler tự cân bằng tải sang Node ít bận hơn.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-iv-luồng-ux-bảo-mật">PHẦN IV – LUỒNG UX BẢO MẬT</h1>
+<h2 id="16-smart-approval-flow">16. Smart Approval Flow</h2>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Notification → [Review] → Detail Modal → Ghi chú lý do
+→ [Biometric/PIN xác nhận] → Approved ✅ / Rejected ❌</code></pre></div>
+<ul>
+<li>Bắt buộc <strong>User Presence</strong> (Touch ID / Face ID / PIN) trước khi ký.</li>
+<li>Processing spinner → Success / Error state.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="17-mesh-activation-flow">17. Mesh Activation Flow</h2>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Detect mất kết nối
+→ Toast: "Switching to Mesh Mode..."
+→ UI fade sang Dark theme (0.3s)
+→ Banner: "Mesh Active – N nodes"
+→ Tiếp tục nhắn tin qua BLE/Wi-Fi Direct</code></pre></div>
+<ul>
+<li>Người dùng <strong>không cần thao tác</strong> — tự động.</li>
+<li>Offline message queue: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">⏱ đang chờ</code> → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">✓ đã đồng bộ</code>.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="18-qr-enrollment-onboarding-nhân-viên">18. QR Enrollment (Onboarding nhân viên)</h2>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Admin: Tạo Invite Token → Hiển thị QR
+Nhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA</code></pre></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="19-file-approval-flow-zone-2-restricted">19. File Approval Flow (Zone 2 Restricted)</h2>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Chọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]
+Manager nhận notification → [Review] → Approve / Reject
+User nhận thông báo kết quả</code></pre></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-vi-các-giao-diện-mở-rộng-sso-liên-tổ-chức">PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)</h1>
+<h2 id="22-giao-diện-đăng-nhập-enterprise-sso-login">22. Giao diện Đăng nhập (Enterprise SSO Login)</h2>
+<p>TeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta.</p>
+<h3 id="layout-desktopmobile-màn-hình-welcome">Layout Desktop/Mobile (Màn hình Welcome)</h3>
+<ul>
+<li><strong>Background (Layer 1):</strong> Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).</li>
+<li><strong>Center Glass Card (Layer 4):</strong> Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(20,30,45,0.6)</code>), viền phát sáng nhẹ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.1)</code>.</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌─────────────────────────────────────────────┐
+│               [TeraChat Logo]               │
+│        Secure Enterprise Communication      │
+│                                             │
+│  [ Input: Khóa/Workspace ID (terachat...) ] │
+│                                             │
+│  [ 🔑 Log in with Microsoft Azure AD     ]  │
+│  [ 🛡️ Log in with Google Workspace       ]  │
+│                                             │
+│       ─ Hoặc xác thực phần cứng ─           │
+│           [ YubiKey / Security Key ]        │
+└─────────────────────────────────────────────┘</code></pre></div>
+<p><strong>UX & Motion Logic (Zero-Trust Core Initialization):</strong></p>
+<ul>
+<li><strong>Biometric-Bound Initialization (Bắt buộc Sinh trắc học):</strong> Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).</li>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><em>"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)"</em></p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.</p>
+<li><strong>Cryptographic PIN Fallback UI:</strong> Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).</li>
+<li>PIN được truyền thẳng qua <strong>FFI Pointer</strong> xuống Lõi Rust mà không lưu lại trên State của React Native.</li>
+<li>Phía dưới hiển thị dòng chữ cảnh báo mờ: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Attempt X/5</code>.</li>
+<li><strong>Ruthless Self-Destruct Trigger (Hoạt cảnh Tự hủy):</strong> Nếu nhập sai PIN lần thứ 5.</li>
+<li>Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s).</li>
+<li>Toàn bộ UI tan vỡ thành các hạt pixel (Shredding effect) trong 1s.</li>
+<li>App lập tức bốc hơi dữ liệu nội bộ và văng ra ngoài Loading Screen ban đầu (Trạng thái Factory Reset).</li>
+<li><strong>Tiến trình Khởi tạo mượt mà:</strong> Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code>) chạy fade-in trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">&lt; 3 giây</code> với dòng text <em>"Đang thiết lập Lõi Mật Mã..."</em>.</li>
+<li><strong>Input Workspace ID:</strong> Nền glass trắng mờ, outline chuyển <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code> cùng bóng đổ mờ khi focus/active.</li>
+<li><strong>Button Style:</strong> Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="23-giao-diện-thiết-lập-chi-nhánh-cross-cluster-federation-handshake">23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)</h2>
+<p>Luồng kết nối HQ và Chi nhánh được định vị tại <strong>Admin Console &gt; Federation</strong>. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm "Click & Connect" trực quan.</p>
+<h3 id="ở-phía-tổng-công-ty-hq-admin">Ở phía Tổng công ty (HQ Admin)</h3>
+<ol>
+<li><strong>CTA Button:</strong> Nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ + Generate Federation Invite ]</code> nằm góc phải trên (Primary <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code>).</li>
+<li><strong>Setup Modal (Slide từ trung tâm):</strong></li>
+</ol>
+<ul>
+<li>Tên Chi nhánh: Khung Input field thường.</li>
+<li>Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">👁️ Chỉ Reply</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">💬 Nhắn tin</code>).</li>
+<li>Thời hạn Token: Slider kéo thả linh hoạt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">1h — 24h</code> dán nhãn màu.</li>
+</ul>
+<ol>
+<li><strong>Kết quả (Success State):</strong> Sinh JWT Token khổng lồ để mời Chi nhánh.</li>
+</ol>
+<ul>
+<li>Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ Copy Token ]</code> + icon clipboard.</li>
+</ul>
+<h3 id="ở-phía-chi-nhánh-branch-admin">Ở phía Chi nhánh (Branch Admin)</h3>
+<ol>
+<li>Mở Admin Console &gt; Federation. Click <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ Join Federation Network ]</code>.</li>
+<li><strong>Modal Nhập Token:</strong> Khung Paste lớn chiếm 50% modal. Ngay khi paste, <strong>Lõi Rust (WASM)</strong> phân tích realtime (&lt;50ms) và load ra thẻ Info Card xác nhận tin cậy:</li>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">⚠️ <strong>Bảo mật:</strong> Bạn đang yêu cầu kết nối mTLS với máy chủ <strong>[Tên HQ]</strong>. Trạng thái chứng chỉ: <em>Hợp lệ</em>.</p>
+<li><strong>Animation <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ Confirm & Handshake ]</code>:</strong> Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">✅ Connected</code> sang mảng màu xanh Success tươi sáng.</li>
+</ol>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="24-giao-diện-épthêm-member-directory-sync-invites">24. Giao diện Ép/Thêm Member (Directory Sync & Invites)</h2>
+<p>Thiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại <strong>Admin Console &gt; User Management</strong>.</p>
+<h3 id="tab-1-directory-sync-scim-20-tự-động">Tab 1: Directory Sync (SCIM 2.0 Tự động)</h3>
+<p><strong>Dashboard Control (Dải Ribbon trên cùng):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]</code></pre></div>
+<ul>
+<li><strong>Status Badge:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🟢 Active (Xanh lá)</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🟡 Warning (Vàng)</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🔴 Error (Đỏ)</code>. Thêm hiệu ứng pulse nhấp nháy vào dấu chấm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🟢</code>.</li>
+</ul>
+<p><strong>Data Grid (Danh sách User dạng List View Glass):</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Username</th>
+<th>Department</th>
+<th>Sync Source</th>
+<th>Tình trạng Khóa (E2EE)</th>
+<th>Action</th>
+</tr></thead><tbody>
+<tr>
+<td>Nguyen Van A</td>
+<td>Finance</td>
+<td>Azure AD</td>
+<td>🟢 Provisioned</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Revoke]</code></td>
+</tr>
+<tr>
+<td>Tran Thi B</td>
+<td>Sales</td>
+<td>Azure AD</td>
+<td>🟡 Pending Login</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Resend]</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>UX Logic (Offboarding Không Chạm):</strong></p>
+<ul>
+<li>Khi nhân sự nghỉ việc trên hệ thống mẹ (IdP), hàng dữ liệu của nhân sự lập tức <strong>đổi màu đỏ nhạt (Red Glass, opacity 10%)</strong> và nhãn Auth đổi thành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🔒 Revoked</code>.</li>
+<li>Các nút Action biến mất hoặc bị disable (mờ đi) kèm tooltip rõ ràng: <em>"Managed by IdP. Khóa thiết bị đã bị hủy."</em></li>
+</ul>
+<h3 id="tab-2-manual-guest-invites">Tab 2: Manual / Guest Invites</h3>
+<p>Dành cho nhà thầu hoặc đối tác outsource tạm thời.</p>
+<ol>
+<li>Click <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ + Generate Invite Token ]</code>.</li>
+<li><strong>Cấu hình (Modal):</strong> Nhập Tên cá nhân, Dropdown chọn Role (Guest, Contractor), Khung Box nhập Thời gian (12 giờ, 24 giờ).</li>
+<li><strong>Màn hình Trả ra (Output Modal):</strong></li>
+</ol>
+<ul>
+<li>Mã QR xuất hiện trung tâm khổng lồ. (Lưu ý: Card Glass chứa QR cần lót nền trắng phía dưới để Camera quét được).</li>
+<li>Đi kèm nút Copy URL bảo mật.</li>
+</ul>
+<ol>
+<li><strong>End-user Onboarding (Người nhận trên Mobile):</strong></li>
+</ol>
+<ul>
+<li>Trên màn hình Mobile của đối tác hiện nút Scan cực lớn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ 📷 Scan QR to Join ]</code>.</li>
+<li>UI bật khung ngắm (Viewfinder blur) bắt viền lấy nét QR siêu nhanh.</li>
+<li>Khi bắt được QR -&gt; Hiệu ứng màn hình mở khóa (Unlock animation chớp nhoáng), tự động thiết lập chứng chỉ Certificate và thả rơi user thẳng vào Chat Room mà không hỏi mật khẩu.</li>
+</ul>
+<h2 id="25-giao-diện-đăng-nhập-ngầm-phân-quyền-hr-magic-deep-link-sso">25. Giao diện Đăng nhập Ngầm & Phân quyền HR (Magic Deep-Link SSO)</h2>
+<p>Bài toán mâu thuẫn giữa Bảo mật cao (Zero-Trust + SSO) và Trải nghiệm người mới (Frictionless Onboarding) được giải quyết qua luồng <strong>Delegated Provisioning kết hợp Magic Deep-Link SSO</strong>.</p>
+<h3 id="phần-1-phân-quyền-mời-delegation-via-opa">Phần 1: Phân quyền Mời (Delegation via OPA)</h3>
+<p>Super Admin sẽ không đi mời từng người, mà <strong>ủy quyền (Delegate) cho bộ phận HR</strong> thông qua OPA Engine mà không làm hỏng tính toàn vẹn hệ thống.</p>
+<ol>
+<li><strong>Ủy quyền:</strong> Sếp tạo nhóm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HR_Department</code> trong Admin Console.</li>
+<li><strong>Tiêm luật OPA:</strong> Gán Policy đặc biệt để Lõi Rust kiểm tra nội bộ:</li>
+</ol>
+<p>   <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow if user.group == "HR_Department" and action == "generate_invite_token"</code></p>
+<ol>
+<li><strong>UX hiển thị:</strong> Chỉ những account thuộc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HR_Department</code> mới thấy xuất hiện nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ + Mời nhân viên ]</code> trên giao diện.</li>
+</ol>
+<h3 id="phần-2-workflow-1-tap-magic-sso">Phần 2: Workflow 1-Tap Magic SSO</h3>
+<p>Luồng này loại bỏ hoàn toàn giao diện gõ email/mật khẩu thủ công thông qua 3 bước chớp nhoáng:</p>
+<ol>
+<li><strong>HR Phát hành Lời mời:</strong></li>
+</ol>
+<ul>
+<li>HR nhập email công ty của nhân viên mới (VD: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">nhanvien@congty.com</code>).</li>
+<li>Lõi Rust sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Invite_Token</code> (Signed JWT) hạn 24h và tự động gửi một Email chứa nút <strong>"Tham gia TeraChat"</strong>.</li>
+</ul>
+<ol>
+<li><strong>Người dùng Chạm 1-Tap (Magic Deep-Link):</strong></li>
+</ol>
+<ul>
+<li>Nhân viên bấm nút từ Email (app Gmail/Outlook trên điện thoại).</li>
+<li>Lớp OS (iOS/Android) sẽ không mở trình duyệt mà kích hoạt <strong>Universal Link/App Link</strong> truyền thẳng URL: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">https://join.terachat.com/invite?token=abc&hint=nhanvien@congty.com</code> vào app TeraChat.</li>
+</ul>
+<ol>
+<li><strong>Đăng nhập Ngầm (Zero-Click SSO - Dưới 0.5s):</strong></li>
+</ol>
+<ul>
+<li>Thay vì hiện màn hình đăng nhập 2 nút (Azure/Google), Lõi Rust chộp lấy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hint=nhanvien@congty.com</code> và kích hoạt luồng OIDC (PKCE).</li>
+<li>Ép gửi tham số <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">prompt=none & login_hint=email</code>. Nhờ việc người dùng đang mở app Mail nội bộ, máy điện thoại <strong>đã có sẵn Session SSO</strong>.</li>
+<li>Hệ thống tự động xác thực ngầm, trình duyệt hệ thống bật lên chớp nhoáng rồi tắt, sau đó Lõi Rust sinh khóa E2EE (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code>) thả thẳng người dùng vào nhóm Chat.</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>TỔNG KẾT 4 KỸ THUẬT LÕI ĐƯỢC ÁP DỤNG:</strong></p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">1. <strong>Deferred Deep Linking:</strong> Ghi nhớ URL lời mời kể cả khi người dùng phải bay qua App Store tải App lần đầu.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">2. <strong>OIDC <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">login_hint</code> & <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">prompt=none</code>:</strong> Kỹ thuật ép SSO không được hiện màn hình chọn Account màn lấy luôn Session hiện tại.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">3. <strong>Smart Routing OPA:</strong> Quyền sinh JWT Pre-approved được chốt chặt ở lõi hệ thống.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">4. <strong>AppAuth (PKCE):</strong> Giao thức bảo mật bắt buộc để nhận Token trên thiết bị di động không cần Client Secret.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-vii-accessibility-checklist">PHẦN VII – ACCESSIBILITY & CHECKLIST</h1>
+<h2 id="26-accessibility">26. Accessibility</h2>
+<ul>
+<li>Minimum contrast <strong>4.5:1</strong> cho text chính.</li>
+<li>Keyboard navigable: Tab order <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Rail → Panel → Main</code>.</li>
+<li>Tất cả icon phải có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">aria-label</code> hoặc tooltip.</li>
+<li>Focus ring: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">outline 2px #24A1DE, offset 2px</code>.</li>
+<li>Screen reader support cho alerts và security status badges.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="27-checklist-cho-designer">27. Checklist cho Designer</h2>
+<ul>
+<li>[ ] Thiết kế Online Mode và Mesh Mode cho <strong>từng màn hình</strong>.</li>
+<li>[ ] Component Library: Button, Input, Card (Glass), Badge, Toast, Modal, Bottom Sheet.</li>
+<li>[ ] Icon set <strong>monochrome</strong> (không màu mè, không multicolor).</li>
+<li>[ ] Responsive breakpoints: Mobile / Tablet / Laptop / Desktop.</li>
+<li>[ ] Admin Console screens (tách biệt rõ với UI giao diện tương tác User).</li>
+<li>[ ] Empty states (màn hình hero khi chưa có dữ liệu).</li>
+<li>[ ] Error states (Cảnh báo mất kết nối, Cấm quyền, Lỗi đồng bộ SCIM).</li>
+<li>[ ] <strong>Onboarding flow 1:</strong> Luồng Enterprise SSO Login truyền thống (Hiệu ứng Lõi Zero-Trust).</li>
+<li>[ ] Máy Quét Thuật toán <strong>Biometric-bound Key Generation</strong> (FaceID/TouchID Prompt UI).</li>
+<li>[ ] <strong>Cryptographic PIN Fallback Dialpad</strong> (Bàn phím FFI 6 số siêu tối giản, không track state).</li>
+<li>[ ] Hoạt cảnh <strong>Ruthless Self-Destruct</strong> (Màn hình nháy đỏ + Shredding Effect 1s).</li>
+<li>[ ] <strong>Onboarding flow 2:</strong> Luồng Quét QR Enroll nội bộ.</li>
+<li>[ ] <strong>Onboarding flow 3:</strong> Luồng 1-Tap Magic Deep-Link SSO cho nhân sự mới (1-chú chạm từ Email, bypass Login).</li>
+<li>[ ] Smart Approval biometric prompt screen (Modal phê duyệt sinh trắc học).</li>
+<li>[ ] Cluster Setup Wizard (Admin — Desktop only).</li>
+<li>[ ] <strong>Cross-Cluster Federation Handshake</strong> (Modal sinh mời + Giao diện Paste Token).</li>
+<li>[ ] <strong>User Management & UI Tự động Đồng bộ SCIM 2.0 / Phân quyền HR</strong>.</li>
+<li>[ ] Indicator <strong>AI Privacy Shield</strong> (Icon khiên che chắn dữ liệu khi bật tính năng AI Blind Inference).</li>
+</ul>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

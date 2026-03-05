@@ -1,0 +1,202 @@
+{
+  "title": "TeraChat — Core Functions & Features",
+  "generated_at": "2026-02-23",
+  "sections": [
+    {
+      "id": "1-chức-năng-dành-cho-quản-trị-viên-admin",
+      "level": 3,
+      "heading": "1. Chức năng dành cho Quản trị viên (Admin)",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệu và thiết lập các hàng rào bảo mật. Các chức năng chính bao gồm:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Quản lý Khóa và Định danh (KMS & Identity):",
+            "Thiết lập ban đầu với KMS Bootstrap, trong đó Admin phải quản lý Master Key (ví dụ: in ra giấy hoặc lưu file .terakey) để tránh thảm họa \"Zero-Access\".",
+            "Phát hành Invite Token (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt Epoch Rotation và Remote Wipe (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.",
+            "Nắm giữ Enterprise Escrow Key (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.",
+            "Thiết lập Chính sách Bảo mật (OPA Policy & DLP):",
+            "Định nghĩa các chính sách truy cập qua OPA Engine, bao gồm giới hạn tốc độ (Rate Limiting) theo phòng ban, thời gian lưu trữ tin nhắn (TTL), và quyền hiển thị ứng dụng.",
+            "Thiết lập cấu hình OPA Policy Enforcement nhằm giới hạn quyền hiển thị trên Launchpad (nút khởi chạy tự động vô hiệu hóa/mờ đi nếu phòng ban không được cấp quyền).",
+            "Cấu hình chính sách cho mạng liên tổ chức (Federation), như thiết lập allowed_roles hoặc allow_reply để ngăn nhân viên cấp dưới nhắn tin làm phiền Tổng bộ.",
+            "Thiết lập App Whitelist cho phép nhúng các ứng dụng bên ngoài (như Zalo, Telegram) vào Sandbox, đồng thời bật các tính năng chống thất thoát dữ liệu (DLP) như chặn copy/paste, chặn kéo thả file.",
+            "Ràng buộc ứng dụng .tapp khởi chạy hoàn toàn trong môi trường cách ly WASM Sandbox tuyệt đối nhằm ngăn chặn mọi hành vi đọc trộm dữ liệu hội thoại từ cửa sổ ứng dụng.",
+            "Quản trị Hệ sinh thái Tiện ích (.tapp) & AI:",
+            "Kiểm duyệt và cài đặt các gói tiện ích nội bộ (Private Sideloading) thông qua chữ ký Enterprise_CA.",
+            "Quản lý tập trung các API Key (ví dụ: OpenAI) trong E2EE Secret Vault mà không làm lộ Key trên máy chủ, sau đó cấp quyền (Cryptographic Binding) cho các AI Bot.",
+            "Định nghĩa cấu trúc dữ liệu đầu vào (JSON Schema) cho các công cụ nghiệp vụ như Smart Order Entry.",
+            "Nghi thức Kiểm toán & Liên kết Tổ chức:",
+            "Thực hiện \"Nghi thức Kiểm toán Zero-Trust\" (N-of-M Audit Ceremony) sử dụng Shamir's Secret Sharing và YubiKey để giải mã dữ liệu khi có yêu cầu pháp lý mà không tạo ra \"cửa hậu\" (backdoor).",
+            "Tạo và phê duyệt Federation Invite Token để thiết lập cầu nối mTLS an toàn giữa cụm máy chủ Tổng công ty và Công ty con."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "2-chức-năng-dành-cho-người-dùng-cuối-usernhân-viên",
+      "level": 3,
+      "heading": "2. Chức năng dành cho Người dùng cuối (User/Nhân viên)",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "Người dùng được trải nghiệm một môi trường làm việc bảo mật tuyệt đối nhưng vẫn đảm bảo tính liền mạch, ngay cả khi gặp sự cố mạng. Các chức năng chính bao gồm:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Giao tiếp và Nhắn tin Cốt lõi:",
+            "Nhắn tin văn bản, gọi thoại/video HD (WebRTC) được mã hóa đầu cuối (E2EE) qua giao thức chuẩn MLS và Signal.",
+            "Tìm kiếm toàn văn bản (Full-text search) siêu tốc độ bằng SQLite FTS5 tại máy trạm mà không làm rò rỉ siêu dữ liệu (Zero-Knowledge Search).",
+            "Làm việc Ngoại tuyến & Mạng Lưới (Mesh/Offline-First):",
+            "Chủ động kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct khi hệ thống mất Internet để tiếp tục nhắn tin khẩn cấp.",
+            "Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường hoàn toàn không có mạng LAN hay Wi-Fi Router.",
+            "Quản lý Không gian làm việc và File (TeraVault):",
+            "Sắp xếp, kéo thả file từ khung chat vào một cây thư mục ảo (Virtual File System) ngăn nắp mà không làm nhân bản dung lượng file.",
+            "Chủ động bật chế độ \"Make Available Offline\" (Tầng lưu trữ 3) để tải trước toàn bộ thư mục về máy khi chuẩn bị di chuyển vào vùng mất sóng.",
+            "Xem trước các file (PDF, CAD, Video) siêu nhanh nhờ cơ chế nạp \"vỏ bọc\" Zero-Byte Stub (~5KB).",
+            "Sử dụng Tiện ích và Phê duyệt:",
+            "Tương tác với các AI Bot ảo trực tiếp trong nhóm chat (bằng cách @mention) để tóm tắt tài liệu mà không lo rò rỉ dữ liệu cá nhân (nhờ cơ chế Dual-Mask).",
+            "Sử dụng các Mini-App nghiệp vụ (Smart Order, CRM) chạy siêu mượt với độ trễ < 50ms, hỗ trợ Undo/Redo (Time-Travel).",
+            "Ký số và phê duyệt tài liệu nhiều cấp thông qua Smart Approval (Fintech Bridge) có xác thực sinh trắc học.",
+            "Nhắn tin với đối tác qua các ứng dụng ngoài (Zalo, Telegram) ngay trong một cửa sổ duy nhất (Sandbox) mà không sợ bị dính mã độc chéo."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "3-chức-năng-tích-hợp-mở-rộng-dành-cho-developerintegrator",
+      "level": 3,
+      "heading": "3. Chức năng Tích hợp & Mở rộng (Dành cho Developer/Integrator)",
+      "content_blocks": [
+        {
+          "type": "list",
+          "data": [
+            "Hệ sinh thái API Đa tầng (Tiered API): Cung cấp hệ thống REST API, WebSocket và Webhook để kết nối với bên ngoài, được chia từ Tier 1 (chỉ gửi thông báo) đến Tier 4 (Bot Builder SDK để phát triển Mini-app).",
+            "Đồng bộ Nhân sự Tự động (SCIM 2.0 Identity Sync): Lắng nghe các sự kiện từ hệ thống nhân sự (như Azure AD, Google Workspace). Khi có nhân sự nghỉ việc, SCIM sẽ tự động kích hoạt chuỗi thu hồi quyền (Offboarding Cascade), khóa tài khoản và xóa khóa thiết bị trong chưa tới 30 giây.",
+            "Cổng Tích hợp Đồng thuận (Consent-Driven Bridge): Quản lý luồng giao tiếp với các ứng dụng bên thứ 3 (Jira, Zoom, Salesforce) thông qua một Bot trung gian (Egress Worker). Hệ thống sẽ hỏi ý kiến (Consent) của Admin trước khi tạm thời giải mã E2EE trên RAM VPS để gọi API ra ngoài.",
+            "ChatOps & Secure Tunneling: Cung cấp đường hầm bảo mật cho phép kỹ sư hệ thống truy cập SSH/RDP thẳng vào các máy chủ nội bộ thông qua TeraChat mà không cần thiết lập VPN truyền thống."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "4-chức-năng-vận-hành-cứu-hộ-dành-cho-devopssecops",
+      "level": 3,
+      "heading": "4. Chức năng Vận hành & Cứu hộ (Dành cho DevOps/SecOps)",
+      "content_blocks": [
+        {
+          "type": "list",
+          "data": [
+            "Khôi phục Thảm họa Cơ sở dữ liệu (PostgreSQL PITR): Chức năng \"cỗ máy thời gian\" thông qua WAL Archiving. Nếu Admin vô tình chạy lệnh xóa nhầm dữ liệu, hệ thống có thể dựng lại nguyên vẹn Database về đúng một mốc thời gian cụ thể (ví dụ: 14:03:00) dựa trên các log được sao lưu định kỳ.",
+            "Lưu trữ Tự chủ (BYOS - Bring Your Own Storage): Không ép buộc Doanh nghiệp dùng Cloud của TeraChat. Hệ thống tích hợp chuẩn S3-Compatible (MinIO), cho phép IT tự cắm thêm ổ cứng vật lý để mở rộng dung lượng và lưu trữ lịch sử vô hạn (Infinite Retention).",
+            "Cập nhật Không cần Mạng (Air-Gapped Patching): Cho phép triển khai các bản vá lỗi siêu nhỏ (Delta Patch - BSDiff) cục bộ cho các máy trạm nằm trong mạng nội bộ đóng kín hoàn toàn với Internet.",
+            "Trạm Giám sát (Observability Pipeline): Tích hợp sẵn chuẩn Prometheus (đo lường), Loki (lưu log JSON ẩn danh) và Tempo (theo dõi vết gói tin) để đảm bảo SLA hoạt động đạt mức 99.99%."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "5-chức-năng-tàng-hình-của-lõi-rust-cấp-hệ-thống",
+      "level": 3,
+      "heading": "5. Chức năng \"Tàng hình\" của Lõi Rust (Cấp Hệ thống)",
+      "content_blocks": [
+        {
+          "type": "list",
+          "data": [
+            "Truyền tải Đa đường (TeraLink Multipath): Tự động nhân bản các gói tin nhỏ (như lệnh đồng bộ CRDT) và gửi song song qua cả 3 đường: 4G/5G, Wi-Fi LAN, và BLE Mesh. Giúp hệ thống đạt độ trễ 0ms khi người dùng di chuyển chuyển vùng mạng (Roaming).",
+            "Trạm Trung chuyển Dữ liệu AI (Predictive Data Mules): Khi hệ thống rớt mạng diện rộng, lõi Rust chạy mô hình học máy (Edge ML) để phân tích thói quen di chuyển của nhân viên. Dữ liệu sẽ ưu tiên gửi gắm vào máy của những người có tỷ lệ gặp người nhận cao nhất (ví dụ: gửi tài liệu sếp qua máy của trợ lý) thay vì gửi rác mù quáng.",
+            "Bẫy Hắc Ín chống DDoS (Infinite Tarpit): Bức tường lửa thông minh bảo vệ máy chủ. Nếu có kẻ tấn công gửi Request vượt hạn mức hoặc sai chữ ký TLS Fingerprint, hệ thống không từ chối ngay mà \"treo\" kết nối đó, cứ 10 giây mới nhả 1 Byte rác để làm cạn kiệt RAM của kẻ tấn công.",
+            "Puncturing Stream (Phục hồi luồng tệp đứt gãy): Khi truyền file lớn (ví dụ: 2GB) qua Wi-Fi Direct mà bị nhiễu sóng (như do lò vi sóng, thiết bị công nghiệp), hệ thống đánh dấu đoạn bị lỗi là \"Thủng\" (Punctured) và gửi tiếp phần còn lại, sau đó tự động vá lại đoạn hỏng ở cuối phiên thay vì phải gửi lại từ đầu."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "6-chức-năng-cho-hệ-thống-liên-tổ-chức",
+      "level": 3,
+      "heading": "6 Chức năng cho hệ thống Liên tổ chức",
+      "content_blocks": [],
+      "subsections": []
+    },
+    {
+      "id": "1-kiến-trúc-độc-lập-và-cầu-nối-zone-2-routing",
+      "level": 2,
+      "heading": "1. Kiến trúc Độc lập và Cầu nối (Zone 2 Routing)",
+      "content_blocks": [
+        {
+          "type": "list",
+          "data": [
+            "Tổng công ty (Org_ID_HQ) và Công ty con (Org_ID_Sub) là hai thực thể pháp lý độc lập, mỗi bên sở hữu một Private Cluster riêng biệt.",
+            "Luồng giao tiếp giữa HQ và Chi nhánh bắt buộc đi qua Federation Bridge (Zone 2) thông qua xác thực mTLS (Mutual Auth) và giao thức Sealed Sender (ẩn danh tính người gửi khỏi trạm trung chuyển).",
+            "Chủ quyền dữ liệu (Data Sovereignty): Dữ liệu của HQ ở lại máy chủ HQ, dữ liệu của Chi nhánh ở lại máy chủ Chi nhánh, trạm Federation Bridge ở giữa chỉ chuyển tiếp gói tin mã hóa (Blind Relay) chứ không lưu trữ."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "2-quá-trình-kết-nối-chi-nhánh-cross-cluster-trust-handshake",
+      "level": 2,
+      "heading": "2. Quá trình Kết nối Chi nhánh (Cross-Cluster Trust Handshake)",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "Quá trình kết nối hai công ty diễn ra hoàn toàn an toàn mà không cần đồng bộ Database:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Bước 1: Admin Tổng công ty tạo một mã Federation Invite Token (bản chất là một Signed JWT chứa URL của HQ, Public Key và có hạn 24h) rồi gửi cho Admin Chi nhánh qua kênh ngoài (email, điện thoại).",
+            "Bước 2: Admin Chi nhánh nhập Token này vào hệ thống của mình để gửi yêu cầu kết nối (Connection Request) chứa Public Key của Chi nhánh sang HQ.",
+            "Bước 3: Admin Tổng công ty bấm \"Phê duyệt\", hai máy chủ trao đổi Public Key và lưu vào sổ cái tin cậy (federation_trust_registry). Từ đây, hai bên có thể nhắn tin chéo cho nhau."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "3-kiểm-soát-đặc-quyền-và-chống-làm-phiền-opa-routing-policy",
+      "level": 2,
+      "heading": "3. Kiểm soát Đặc quyền và Chống làm phiền (OPA Routing Policy)",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "Để tránh tình trạng nhân viên Chi nhánh nhắn tin ồ ạt làm phiền lãnh đạo Tổng bộ, Admin Chi nhánh có thể thiết lập các bộ lọc (Policy) thông qua OPA:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Có thể giới hạn chỉ những người có Role cụ thể (như Director, Manager, Branch_Admin) mới được chủ động khởi tạo tin nhắn sang HQ.",
+            "Nhân viên bình thường vẫn có thể trả lời (reply) nếu người từ HQ chủ động nhắn tin trước.",
+            "Hệ thống có thể giới hạn tần suất nhắn tin liên tổ chức (ví dụ: 20 tin nhắn/giờ)."
+          ]
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "4-thu-hồi-quyền-liên-tổ-chức-offboarding-cascade",
+      "level": 2,
+      "heading": "4. Thu hồi quyền liên tổ chức (Offboarding Cascade)",
+      "content_blocks": [
+        {
+          "type": "list",
+          "data": [
+            "Khi một nhân viên Chi nhánh nghỉ việc hoặc bị sa thải, Admin Chi nhánh thao tác trên hệ thống nội bộ, bộ lắng nghe SCIM sẽ lập tức khóa tài khoản và xóa khóa thiết bị.",
+            "Ngay khi mất quyền ở Chi nhánh, nhân viên đó tự động mất luôn quyền truy cập vào kênh mTLS sang HQ trong vòng chưa tới 30 giây.",
+            "Điểm hay của kiến trúc này là Tổng công ty không cần biết nhân viên Chi nhánh bị đuổi, hệ thống của Chi nhánh sẽ tự dọn dẹp và ngắt luồng liên lạc."
+          ]
+        }
+      ],
+      "subsections": []
+    }
+  ]
+}

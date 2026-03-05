@@ -1,0 +1,66 @@
+# TeraChat - System Introduction & Onboarding
+
+## 1. System Overview
+
+TeraChat là Hệ điều hành Công việc (Operating System for Work) dành cho Enterprise và Chính phủ, được xây dựng trên nền tảng kiến trúc Zero-Trust. Lõi hệ thống được phát triển hoàn toàn bằng ngôn ngữ Rust, đóng vai trò "độc tài" xử lý 100% nghiệp vụ mã hóa E2EE, đồng bộ dữ liệu và định tuyến mạng, đảm bảo an toàn tuyệt đối và khả năng hoạt động độc lập ngay cả khi hệ thống Internet toàn cầu gặp sự cố.
+
+### 1.1 Feature Requirements
+
+* **Zero-Knowledge:** Máy chủ hoạt động như một "Blind Relay", chỉ chuyển tiếp các gói tin mã hóa. Máy chủ không giữ khóa giải mã, không biết nội dung thảo luận, danh tính thực của người gửi, hay lịch sử tìm kiếm.
+* **End-to-End Encryption (E2EE):** Toàn bộ dữ liệu (tin nhắn, gọi thoại, tệp tin) được mã hóa ngay tại thiết bị đầu cuối bằng `Company_Key` trước khi truyền đi. Dữ liệu không bao giờ tồn tại trên mạng dưới dạng plaintext.
+* **Hardware Security:** Private Key được bảo vệ bằng phần cứng chuyên dụng (Secure Enclave trên iOS, StrongBox trên Android, TPM 2.0 trên Desktop, YubiKey) và tuyệt đối không bao giờ rời khỏi vi mạch này.
+* **Offline Survival:** Hệ thống duy trì liên lạc nội bộ thông qua mạng lưới P2P cục bộ (BLE 5.0, Wi-Fi Direct) tự hình thành khi mạng Internet bị cắt đứt.
+
+### 1.2 Feature Scope & Out-of-Scope
+
+| In-Scope | Out-of-Scope |
+|---|---|
+| Nhắn tin, Voice/Video E2EE chuẩn MLS (IETF RFC 9420) | Lưu trữ dữ liệu plaintext trên dữ liệu Server đám mây |
+| Cấu trúc mạng P2P Survival Mesh (BLE/Wi-Fi Direct) | Định tuyến qua các Public Cloud không kiểm soát |
+| WASM Sandbox bảo mật cho các ứng dụng nội bộ (`.tapp`) | Thực thi mã từ xa (Remote Code Execution) ngoài môi trường WASM |
+| Lưu trữ ẩn danh (Blind Storage) với MinIO & Erasure Coding | Tìm kiếm nội dung nguyên bản (Server-side search) tại máy chủ |
+| Kiểm soát truy cập liên tổ chức (Federation Bridge & mTLS) | Sử dụng Certificate Authority (CA) công cộng cho Federation |
+
+### 1.3 Core Terminology
+
+| Thuật ngữ | Định nghĩa |
+|---|---|
+| **.tapp** | Tiện ích nghiệp vụ thu nhỏ (Mini-App) gồm bytecode WASM và JSON Schema, chạy cách ly hoàn toàn trên thiết bị. Server không thể can thiệp hay đọc dữ liệu xử lý bên trong. |
+| **Company_Key** | Khóa mã hóa cấp doanh nghiệp, sinh tự động trong quá trình Onboarding. Mọi payload đều được mã hóa bằng khóa này trước khi phân bổ lên Cluster. |
+| **Blind Relay** | Cơ chế định tuyến nơi máy chủ trung gian chỉ chuyển tiếp gói dữ liệu mã hóa mà không nắm giữ Key giải mã (áp dụng cho Messaging, File, Voice/Video). |
+| **TreeKEM / MLS** | Kiến trúc phân phối khóa dạng cây nhị phân (thuộc chuẩn MLS). Đẩy tốc độ đồng bộ khóa nhóm nhanh gấp $O(\log n)$ siêu tốc cho quy mô 5000+ người dùng. |
+| **Zero-Byte Stubs** | "Vỏ bọc ảo" định dạng siêu nhỏ (~5KB) đại diện cho tệp lớn. Giúp giao diện hiển thị ảnh xem trước tức thì mà không cần kéo tệp gốc từ máy chủ, khử hoàn toàn độ trễ I/O. |
+| **Shared Core** | Kiến trúc "Lõi Độc Tài" dùng chung một bộ mã Rust duy nhất xử lý toàn bộ khóa, mạng, cơ sở dữ liệu cho cả 5 nền tảng (iOS, Android, Windows, macOS, Linux). |
+| **Survival Mesh** | Tính năng tự tạo mạng cục bộ P2P (mạng nhện nhảy cóc) qua Bluetooth cục bộ và Wi-Fi Direct nhằm duy trì giao tiếp khi mạng WAN/Internet đứt gãy. |
+
+### 1.4 High-Level Architecture Philosophy
+
+Triết lý lõi của TeraChat là phân tách tuyệt đối giữa **Lõi Rust (Core)** và **Giao diện (UI)**.
+Lõi Rust đóng vai trò "độc tài", nắm giữ 100% mọi nghiệp vụ tính toán mật mã E2EE (MLS), đồng bộ trạng thái (CRDT), hệ quản trị dữ liệu (SQLite WAL) và mạng (P2P/WebRTC). Trong khi đó, tầng UI (React Native, Tauri) đóng vai trò "Pure Renderer" (Thợ vẽ thuần túy) – tước bỏ toàn bộ logic, chỉ hiển thị những thay đổi trạng thái (StateChanged) do Core báo về qua IPC.
+
+Thiết kế này bắt buộc hình thành vì 3 lý do:
+
+1. **Nhất quán mã hóa:** Đảm bảo duy nhất 1 thư viện phân giải mã hóa chuẩn xác trên cả 5 nền tảng OS.
+2. **Loại trừ rò rỉ bộ nhớ:** JS thread (UI) rất dễ bị trích xuất dữ liệu, giam toàn bộ Crypto Runtime trong lõi độc lập bảo vệ an toàn tối đa cho RAM.
+3. **Hiệu năng xuyên không gian:** Tránh được rào cản quá tải vòng lặp Event-Loop chậm chạp, tận dụng băng thông chia sẻ (Shared Memory) khổng lồ đẩy tốc độ I/O lên hơn 400MB/s.
+
+### 1.5 The Life of a Message (Dòng chảy Dữ liệu)
+
+1. **Khởi tạo và Mã hóa (Thiết bị gửi [A]):** Người dùng [A] soạn tin nhắn. Lõi Rust trên máy [A] sử dụng `Company_Key` và thuật toán cây TreeKEM để mã hóa nội dung E2EE nguyên khối ngay trong vi mạch thiết bị.
+2. **Định tuyến Ẩn danh (Sealed Sender):** Lõi Rust đóng gói bản mã (ciphertext) vào một phong bì dữ liệu, tiếp tục mã hóa danh tính người gửi bằng Public Key của người nhận [B]. Mọi dấu vết danh tính đi ra khỏi máy bị ẩn hoàn toàn (Zero-Knowledge).
+3. **Trung chuyển Mù (Blind Relay Server):** Máy chủ làm nhiệm vụ lưu trữ và phân phối. Giống một trạm bưu điện không quyền bóc thư, hệ thống không giữ Private Key, đẩy nguyên khối gói tin tới hàng chờ (Queue) của thiết bị [B].
+4. **Nhận và Giải mã (Thiết bị nhận [B]):** Thiết bị hạ du [B] kéo gói tin về. Lõi Rust trên máy [B] kích hoạt Private Key (được giữ chặt trong chip TPM/Secure Enclave) để giải thuật Sealed Sender, sau đó bung gói E2EE thành dữ liệu văn bản thuần (plaintext).
+5. **Vẽ giao diện và Tiêu hủy Ký ức (UI & Crypto-Shredding):** Sau khi văn bản được vẽ (Paint) tức thì trên màn hình nhờ cầu nối UI Component, khối khóa giải mã và mọi tàn dư trên RAM bị "hủy diệt" (kiến trúc Zeroize — tự đè `0x00`). Không một phần mềm Malware nào có thể trích xuất ra (Memory Dumped) khóa gốc.
+
+### 1.6 Documentation Map
+
+| Tài liệu | Đối tượng độc giả | Phạm vi nội dung (Scope) |
+| :--- | :--- | :--- |
+| **`Introduction.md`** | Mọi thành viên | Tổng quan về triết lý **"Lõi Độc Tài" (Dictator Core)**, kiến trúc Zero-Trust và phân tích dòng chảy dữ liệu (Data Life-cycle) của một tin nhắn từ lúc khởi tạo đến khi tiêu hủy. |
+| **`TechSpec.md`** | Lead Dev, Architects | **"Kinh thánh" kỹ thuật.** Định nghĩa các nguyên tắc thiết kế bất biến, cơ chế giải quyết xung đột (Conflict Resolution) và kiến trúc hạ tầng lưu trữ phân tầng (Tiered Storage). |
+| **`Feature_Spec.md`** | App Dev (Mobile/Desktop) | Chi tiết thực thi tầng **Data Plane**, cơ chế giao tiếp IPC tốc độ cao (**JSI/FFI**), tối ưu hóa Local Storage qua SQLite WAL và quy trình tích hợp sâu vào Native OS. |
+| **`Core_Spec.md`** | DevOps, Security Eng. | Hạ tầng Backend, quản lý hệ thống khóa **HKMS**, giao thức bảo mật MLS, vận hành mạng lưới sinh tồn (**Survival Mesh**) và bảo mật phần cứng Enclave (TEE). |
+| **`Function.md`** | Product Owner, Devs | Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ **Dual-Mask** và giao thức liên kết tổ chức (Federation). |
+| **`BusinessPlan.md`** | Stakeholders, Sales | Mô hình kinh doanh đột phá **"Zero Bandwidth Cost"**, chiến lược mã nguồn mở có kiểm soát (Open-Core) và lộ trình chiếm lĩnh thị trường (Go-to-Market). |
+
+---

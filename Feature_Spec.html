@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Client Feature Specification</title>
+    <style>
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        .main {
+            padding: 4rem 4rem;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px;
+        }
+
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem;
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+        
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Client Feature Specification</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-header">Table of Contents</div><a href="#feature-specmd-terachat-v022" class="nav-link" style="">Feature_Spec.md — TeraChat V0.2.2</a>
+<a href="#table-of-contents" class="nav-link" style="padding-left:0.8rem;">TABLE OF CONTENTS</a>
+<a href="#6-client-data-plane" class="nav-link" style="padding-left:0.8rem;">6. Client Data Plane</a>
+<a href="#61-ipc-bridge-architecture" class="nav-link" style="padding-left:0.8rem;">6.1 IPC Bridge Architecture</a>
+<a href="#112-zero-byte-app-stubs-wasm" class="nav-link" style="padding-left:0.8rem;">11.2 "Zero-Byte" App Stubs (WASM)</a>
+<a href="#113-độc-thủ-từ-wasm-sandbox-escape-zero-trust-wasm-host-binding-opa-guardrail" class="nav-link" style="padding-left:0.8rem;">11.3 Độc thủ từ WASM Sandbox Escape (Zero-Trust WASM Host Binding & OPA Guardrail)</a>
+<a href="#114-phá-nút-thắt-cổ-chai-bộ-nhớ-wasm-dual-plane-mobile-native-bridge-bypass" class="nav-link" style="padding-left:0.8rem;">11.4 Phá nút thắt Cổ chai Bộ nhớ WASM (Dual-Plane Mobile Native Bridge Bypass)</a>
+<a href="#62-local-storage-state-sync" class="nav-link" style="padding-left:0.8rem;">6.2 Local Storage & State Sync</a>
+<a href="#63-desktop-native-os-windows-macos-linux" class="nav-link" style="padding-left:0.8rem;">6.3 Desktop Native OS (Windows · macOS · Linux)</a>
+<a href="#64-mobile-native-os-android-ios" class="nav-link" style="padding-left:0.8rem;">6.4 Mobile Native OS (Android · iOS)</a>
+<a href="#65-lean-edge-caching" class="nav-link" style="padding-left:0.8rem;">6.5 Lean Edge Caching</a>
+<a href="#66-apns-payload-collapse-notification-degradation" class="nav-link" style="padding-left:0.8rem;">6.6 APNs Payload Collapse & Notification Degradation</a>
+<a href="#67-out-of-band-notification-key-ratchet-ghost-push-wakeup" class="nav-link" style="padding-left:0.8rem;">6.7 Out-of-Band Notification Key Ratchet & Ghost Push Wakeup</a>
+<a href="#68-fast-scroll-rendering-viewport-management" class="nav-link" style="padding-left:0.8rem;">6.8 Fast-Scroll Rendering & Viewport Management</a>
+<a href="#69-os-lifecycle-background-memory-security" class="nav-link" style="padding-left:0.8rem;">6.9 OS Lifecycle & Background Memory Security</a>
+<a href="#610-ép-xung-phần-cứng-nén-dữ-liệu-động-học-hardware-offloading-zero-knowledge-sddc" class="nav-link" style="padding-left:0.8rem;">6.10 Ép xung Phần cứng & Nén Dữ liệu Động học (Hardware Offloading & Zero-Knowledge SDDC)</a>
+<a href="#7-ecosystem-integration" class="nav-link" style="padding-left:0.8rem;">7. Ecosystem & Integration</a>
+<a href="#71-wasm-sandbox-tapp-dual-registry" class="nav-link" style="padding-left:0.8rem;">7.1 WASM Sandbox (.tapp) & Dual-Registry</a>
+<a href="#72-context-aware-edge-defense-dlp-smart-clipboard" class="nav-link" style="padding-left:0.8rem;">7.2 Context-Aware Edge Defense & DLP Smart Clipboard</a>
+<a href="#74-ephemeral-identity-binding-threshold-based-reveal" class="nav-link" style="padding-left:0.8rem;">7.4 Ephemeral Identity-Binding & Threshold-Based Reveal</a>
+<a href="#73-ai-integration-gateway-dual-mask-protocol-tee-enclave" class="nav-link" style="padding-left:0.8rem;">7.3 AI Integration Gateway (Dual-Mask Protocol, TEE Enclave)</a>
+<a href="#8-large-file-handling-advanced-sync" class="nav-link" style="padding-left:0.8rem;">8. Large File Handling & Advanced Sync</a>
+<a href="#81-xử-lý-file-khổng-lồ-mmap-blake3-segmented-merkle-local-http-streaming" class="nav-link" style="padding-left:0.8rem;">8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Local HTTP Streaming</a>
+<a href="#82-đồng-bộ-crdt-bằng-hybrid-logical-clocks-hlc-khi-offline" class="nav-link" style="padding-left:0.8rem;">8.2 Đồng bộ CRDT bằng Hybrid Logical Clocks (HLC) — Khi Offline</a>
+<a href="#83-teravault-vfs-kéo-thả-cas-ref-mapping" class="nav-link" style="padding-left:0.8rem;">8.3 TeraVault VFS — Kéo thả (cas_ref mapping)</a>
+<a href="#84-cas-hash-dedup-trong-offline-mesh" class="nav-link" style="padding-left:0.8rem;">8.4 CAS_Hash Dedup trong Offline Mesh</a>
+
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+</nav>
+
+<div class="main">
+    <h1 id="feature-specmd-terachat-v022">Feature_Spec.md — TeraChat V0.2.2</h1>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> App Dev Mobile/Desktop/Laptop · FFI Integrator</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Scope:</strong> Client Data Plane, IPC, Local Storage, Native OS, WASM Ecosystem — Implementation-level only.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="table-of-contents">TABLE OF CONTENTS</h2>
+<ol>
+<li><a href="#6-client-data-plane" style="color:var(--accent-blue);text-decoration:none;">Client Data Plane</a></li>
+<li><a href="#7-ecosystem--integration" style="color:var(--accent-blue);text-decoration:none;">Ecosystem & Integration</a></li>
+</ol>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="6-client-data-plane">6. Client Data Plane</h2>
+<h3 id="61-ipc-bridge-architecture">6.1 IPC Bridge Architecture</h3>
+<h4 id="desktop-sharedarraybuffer-protobuf">Desktop — SharedArrayBuffer + Protobuf</h4>
+<ul>
+<li>💻🖥️ <strong>Control Plane:</strong> Protobuf schema <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_ipc.proto</code> qua WASM/Rust channel — lệnh, metadata, SQL, offset pointer. Kích thước \&lt;50 bytes/message.</li>
+<li>💻🖥️ <strong>Data Plane:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SharedArrayBuffer</code> (mmap vật lý) — file chunk, record bulk, AI input. Ring Buffer cố định 10MB, chunk 2MB, throughput ~500MB/s.</li>
+<li>💻🖥️ <strong>Zero-Copy Flow:</strong> WASM ghi I/O nhị phân vào SAB → Rust đọc con trỏ vật lý, validate CRC32, AES-256-GCM encrypt → ghi ciphertext vào offset khác trong SAB → WASM lấy kết quả. Không copy buffer.</li>
+<li>💻🖥️ <strong>Security Contract:</strong></li>
+<li>ACL per-.tapp: mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UtilityAction</code> qua ACL Policy tại Rust Core trước khi xử lý.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Channel_Key</code> tuyệt đối không truyền qua Protobuf lên WASM. WASM chỉ gửi data vào SAB, Rust tự dùng Key đang <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock</code>'d.</li>
+<li>Rust kiểm tra <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">offset + length ≤ SAB_SIZE</code> + validate CRC32. Vi phạm → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SIGSEGV</code> trap + panic.</li>
+</ul>
+<h4 id="custom-uri-protocol-interceptor-security-header-injection-tê-liệt-sharedarraybuffer">Custom URI Protocol Interceptor & Security Header Injection (Tê liệt SharedArrayBuffer)</h4>
+<ul>
+<li>💻🖥️ Can thiệp trực tiếp vào Tauri Builder Protocol Interceptor để kiểm soát luồng phản hồi phân phối tĩnh cục bộ.</li>
+<li>💻🖥️ Tiêm (Inject) cưỡng bức Header <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cross-Origin-Opener-Policy: same-origin</code> ngay tại cấp độ mạng của WebView.</li>
+<li>💻🖥️ Tiêm Header <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cross-Origin-Embedder-Policy: require-corp</code> để kích hoạt trạng thái Cross-Origin Isolation, cho mượn SharedArrayBuffer.</li>
+</ul>
+<h4 id="mobile-ios-react-native-jsi-c-shared-memory-pointer">Mobile iOS — React Native JSI (C++ Shared Memory Pointer)</h4>
+<ul>
+<li>📱 <strong>JSI C++ Pointer:</strong> UI Native App bọc con trỏ C++ Shared Memory bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">std::unique_ptr</code> với Custom Deleter → đâm thẳng vào luồng nhận của Rust FFI. Throughput ~400MB/s, bỏ qua WebView Bridge.</li>
+<li>📱 <strong>Crash-Safe Checkpoint:</strong> Native UI lắng nghe <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">applicationWillTerminate</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">onTrimMemory</code> → bắn FFI signal <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_core_flush_io()</code> → Rust flush WAL checkpoint trước khi OS kill.</li>
+<li>📱 Rust lock DB tối đa 50ms (Micro-batching). Không có transaction nào vượt ngưỡng này.</li>
+</ul>
+<h4 id="mobile-android-dart-ffi-typeddata">Mobile Android — Dart FFI + TypedData</h4>
+<ul>
+<li>📱 <strong>Dart FFI TypedData:</strong> Zero-Copy sang C ABI. Throughput ~400MB/s.</li>
+<li>📱 Cùng Crash-Safe Checkpoint pattern: lắng nghe <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">onTrimMemory</code> → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_core_flush_io()</code>.</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">⚠️ <strong>Legacy bị loại bỏ:</strong> Base64 qua WebView/MessageChannel (~25MB/s) — gây giật UI (blocking). Không dùng.</p>
+<h4 id="unidirectional-state-sync">Unidirectional State Sync</h4>
+<p>Luồng state chỉ đi 1 chiều: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Rust -&gt; Native UI -&gt; Render</code>. UI tuyệt đối không chứa business state.</p>
+<h4 id="dual-plane">Dual-Plane</h4>
+<h3 id="112-zero-byte-app-stubs-wasm">11.2 "Zero-Byte" App Stubs (WASM)</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">🔗 <strong>Structural Note:</strong> Nội dung của mục này (và 11.3) đã được hợp nhất và mở rộng tại <strong>Section 7.1 (WASM Sandbox & Dual-Registry)</strong>. Đọc Section 7.1 để tham khảo kiến trúc đầy đủ và tính năng bảo mật nâng cao.</p>
+<ul>
+<li>📱💻🖥️ Bề mặt UI <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> chỉ là một file <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.wasm</code> siêu nhẹ (10KB - 50KB), tải nóng từ Mesh trong 10ms.</li>
+<li>📱💻🖥️ Mọi logic "nặng" đều gọi xuống Rust qua IPC.</li>
+<li>☁️ Máy chủ không chứa frontend code, chỉ điều phối cấu trúc nhánh.</li>
+</ul>
+<h3 id="113-độc-thủ-từ-wasm-sandbox-escape-zero-trust-wasm-host-binding-opa-guardrail">11.3 Độc thủ từ WASM Sandbox Escape (Zero-Trust WASM Host Binding & OPA Guardrail)</h3>
+<ul>
+<li>💻🖥️ Phân cách hoàn toàn luồng điều khiển và dữ liệu qua IPC Bridge Architecture (SharedArrayBuffer + Protobuf).</li>
+<li>📱💻🖥️ Tuân thủ Key Isolation Protocol, kiên quyết block đường truyền phân bổ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Channel_Key</code> qua IPC lên môi trường thực thi WASM.</li>
+<li>☁️📱💻 Úy thác cho hệ nhúng Rust Core ACL Policy (OPA Engine) quyền sinh sát giám sát mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UtilityAction</code> dựa trên App Whitelist trước khi nhả lệnh thực thi.</li>
+</ul>
+<h4 id="memory-air-gapping-dmz-shared-memory">Memory Air-Gapping & DMZ Shared Memory</h4>
+<ul>
+<li>📱💻🖥️ Cách ly hoàn toàn vùng nhớ tuyến tính (Linear Memory) của WASM khỏi không gian địa chỉ vật lý của Rust Core.</li>
+<li>💻🖥️ Thiết lập cơ chế "Cửa khẩu" (DMZ) qua SharedArrayBuffer 10MB chỉ chứa dữ liệu đã copy (tuyệt đối không chứa con trỏ vật lý).</li>
+<li>💻🖥️ Ràng buộc hàm Bounds Checking nghiêm ngặt (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">offset + len ≤ SAB_SIZE</code>) nhằm ngăn chặn mọi hành vi truy cập ngoài biên.</li>
+</ul>
+<h3 id="114-phá-nút-thắt-cổ-chai-bộ-nhớ-wasm-dual-plane-mobile-native-bridge-bypass">11.4 Phá nút thắt Cổ chai Bộ nhớ WASM (Dual-Plane Mobile Native Bridge Bypass)</h3>
+<ul>
+<li>📱 Tích hợp cổng React Native JSI C++ Pointer cho hệ sinh thái iOS nhằm đâm thẳng luồng dữ liệu từ hệ thống Rust Core xuất sang UI đạt mức throughput ~400MB/s.</li>
+<li>📱 Áp dụng giao diện Dart FFI TypedData cho Android thực thi tín hiệu Zero-Copy nạp thẳng sang kiến trúc C ABI tĩnh, bypass 100% tài nguyên bộ nhớ từ WASM Sandbox.</li>
+<li>📱 Tách bạch nhiệm vụ Control Plane (định hướng WASM) và Data Plane (điều hướng Native FFI) chuyên môn hoá xử lý tệp tin hạng nặng nhằm dập tắt hiểm họa OOM-Kill từ gốc rễ.</li>
+</ul>
+<h4 id="virtual-file-handles-zero-copy-bypass-ánh-xạ-tệp-ảo-wasm">Virtual File Handles & Zero-Copy Bypass (Ánh xạ tệp ảo WASM)</h4>
+<ul>
+<li>📱💻🖥️ Trừu tượng hóa luồng byte qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">File_Handle_ID</code> (vfs_id) để giữ Metadata IPC siêu nhẹ (&lt;50 bytes).</li>
+<li>📱💻🖥️ Cơ chế Stream Pumping vận chuyển trực tiếp payload từ đĩa cứng xuống Network Socket thông qua Lõi Rust Proxy.</li>
+<li>📱💻🖥️ Áp dụng kỹ thuật mmap bypass vùng nhớ Sandbox WASM nhằm triệt tiêu hoàn toàn rủi ro OOM-Kill khi giải quyết tệp hàng GB.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p>IPC Zero-Copy Architecture</p>
+<ul>
+<li>💻🖥️ Phân bổ vùng nhớ SharedArrayBuffer kết hợp Ring Buffer 10MB đạt ngưỡng thông lượng ~500MB/s nhằm vượt rào thông lượng IPC.</li>
+<li>📱 Tham chiếu React Native trực diện thông qua C++ JSI Pointer nhằm vượt luồng thắt cổ chai của WebView Bridge truyền thống.</li>
+<li>📱 Tích hợp chuẩn Dart FFI TypedData hỗ trợ giao thức Zero-Copy thẳng vào giao diện vùng nhớ C ABI.</li>
+</ul>
+<h4 id="in-memory-encryption-no-plaintext-on-disk">In-Memory Encryption (No Plaintext on Disk)</h4>
+<p>Mọi file tải về đều nằm trong thư mục Application Sandbox dưới dạng Encrypted Blob. Trình xem ảnh/file tích hợp sẵn của OS sẽ bị bypass; TeraChat tự mount file vào bộ nhớ RAM (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">memfd</code> hoặc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Secure Enclave</code>) để hiển thị.</p>
+<h4 id="non-volatile-vfs-mapping-crash-safe-checkpointing">Non-Volatile VFS Mapping & Crash-Safe Checkpointing</h4>
+<ul>
+<li>📱 Chỉ định vị trí lưu trữ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TeraCache.blob</code> trực tiếp tại ổ đĩa DocumentDirectory với cờ phân quyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">DoNotBackup</code>.</li>
+<li>📱 Ràng buộc kích hoạt tiến trình xả buffer <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_core_flush_io()</code> ngay lập tức khi hệ thống thu nhận cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">applicationWillTerminate</code>.</li>
+<li>📱💻🖥️ Liên kết cấu trúc SQLite với cơ chế ghi trước WAL (Write-Ahead Logging) ánh xạ trực tiếp lên không gian bộ nhớ ảo Ring-Buffer.</li>
+</ul>
+<h4 id="ghi-dữ-liệu-ngoại-tuyến-jit-mesh-to-vfs-stream-processing">Ghi dữ liệu ngoại tuyến (JIT Mesh-to-VFS Stream Processing)</h4>
+<ul>
+<li>📱 Bơm nguyên khối dữ liệu thẳng vào trình phát System Player thông qua cổng truyền Local HTTP Streaming tại <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">127.0.0.1</code> bỏ qua mọi bước đệm vắt kiệt RAM.</li>
+<li>📱💻🖥️ Cấu hình API <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap()</code> tham chiếu trực diện bộ nhớ lưu trữ vật lý lên không gian bộ nhớ ảo nhằm ghi đè vòng lặp liên tục (Ring-Buffer).</li>
+<li>📱💻 Đánh dấu các mảng bộ nhớ an toàn là <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FREE_SPACE</code> để tiến hành ghi đè trực tiếp theo quy chuẩn Crypto-Shredding bảo vệ vòng đời hao mòn SSD nội hạt.</li>
+</ul>
+<h4 id="xung-đột-bất-đối-xứng-không-gian-vfs-local-anonymous-http-loopback-streaming">Xung đột Bất đối xứng Không gian VFS (Local Anonymous HTTP Loopback Streaming)</h4>
+<ul>
+<li>📱 Thiết lập Local HTTP Server ẩn danh tại vòng lặp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">127.0.0.1</code> chỉ có quyền lắng nghe loopback để phục vụ cổng trích xuất nội dung cho Media Player hệ thống.</li>
+<li>📱💻🖥️ Khai thác liên kết <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap()</code> phản chiếu kích thước file vật lý lên phân vùng nhớ ảo, nạp linh hoạt từng mảnh con 2MB on-demand để kìm hãm RAM footprint &lt; 10MB.</li>
+<li>📱 Triển khai mã hóa Chunked AEAD (STREAM/OAE1) giải mã trực tiếp phía trên Ring Buffer và gọi hàm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Drop()</code> giải phóng lập tức dung lượng ngay khi Socket xả lưu lượng.</li>
+</ul>
+<h4 id="memory-segmentation-raii-zeroization">Memory Segmentation & RAII Zeroization</h4>
+<ul>
+<li>📱 <strong>ZeroizeOnDrop (RAII):</strong> Mọi biến plaintext wrap trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">zeroize::Zeroize</code>. Không giữ plaintext qua bất kỳ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">await</code> hay <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">suspend</code> point.</li>
+<li>📱 <strong>Tuyệt đối không dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code></strong> trên mobile — Jetsam OOM-Kill app ngay lập tức.</li>
+<li>📱💻🖥️ Phân vùng bộ nhớ riêng biệt cho các luồng xử lý nhạy cảm, đảm bảo cô lập dữ liệu và giảm thiểu rủi ro rò rỉ.</li>
+</ul>
+<h3 id="62-local-storage-state-sync">6.2 Local Storage & State Sync</h3>
+<h4 id="sqlite-wal-sliding-window">SQLite WAL + Sliding Window</h4>
+<ul>
+<li>📱💻🖥️ Bắt buộc chế độ <strong>WAL (Write-Ahead Logging)</strong> cho mọi SQLite instance. Không gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">VACUUM</code> (rủi ro Corrupt trên Mobile Doze/Jetsam).</li>
+<li>📱 <strong>Mobile Window:</strong> 7 ngày hoặc 2.000 tin nhắn gần nhất (Cold Data nằm trên Cluster).</li>
+<li>💻🖥️ <strong>Desktop Window:</strong> 30 ngày hoặc 10.000 tin nhắn gần nhất.</li>
+<li>☁️ <strong>Cold Data:</strong> Fetch on-demand khi user cuộn lên hoặc tìm kiếm \&gt;30 ngày.</li>
+</ul>
+<h4 id="tiến-hóa-dữ-liệu-song-song-dual-state-evolution">Tiến hóa dữ liệu song song (Dual-State Evolution)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Kiến trúc Phân thân (Dual-State Overlay):</strong> Lõi Rust mở file DB cũ (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">messages_v1.db</code>) ở chế độ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SQLITE_OPEN_READONLY</code> để bảo vệ dữ liệu gốc khỏi lỗi I/O. Khởi tạo DB mới (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">messages_v2.db</code>) trong &lt; 5ms với engine VFS mới nhất. Mọi lệnh ghi đi thẳng vào V2, lệnh đọc thực hiện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UNION</code> kết quả từ cả hai DB trên RAM trước khi trả về UI.</li>
+<li>📱 <strong>Read-Through / Background Drip Migration (Di chuyển nhỏ giọt):</strong> Khi người dùng cuộn xem tin nhắn cũ, hệ thống tự động giải mã V1 và tái mã hóa sang V2 (Lazy JIT Migration). Sử dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BGProcessingTask</code> (iOS) / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">WorkManager</code> (Android) di chuyển khối 500 bản ghi khi cắm sạc ở trạng thái nhàn rỗi.</li>
+<li>📱💻 <strong>WAL Atomic Rollback:</strong> Bọc từng đợt migration nhỏ giọt bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BEGIN IMMEDIATE TRANSACTION</code> nhằm tự động khôi phục dữ liệu nếu tiến trình bị OS ngắt đột ngột.</li>
+</ul>
+<h4 id="dynamic-jsonb-fallback-deferred-migration-nâng-cấp-sqlite-trì-hoãn">Dynamic JSONB Fallback & Deferred Migration (Nâng cấp SQLite trì hoãn)</h4>
+<ul>
+<li>📱💻🖥️ Bổ sung cột <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">extended_data</code> kiểu BLOB/JSONB đóng vai trò thùng chứa linh hoạt cho các thuộc tính chưa được định nghĩa trong Schema hiện tại.</li>
+<li>📱💻🖥️ Ban hành quy trình <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Deferred Migration</code> sử dụng script <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ALTER TABLE</code> kết hợp trích xuất dữ liệu từ JSON ngầm để tái cấu trúc khối dữ liệu sau mỗi đợt nâng cấp OS.</li>
+<li>📱💻🖥️ Vận hành hệ thống đồng bộ CRDT Event Log kết hợp Hybrid Logical Clocks (HLC) để giữ vững tính nhân quả chặt chẽ bất chấp sự chênh lệch phiên bản giữa các thiết bị.</li>
+</ul>
+<h4 id="kiến-trúc-sqlcipher-backed-hybrid-virtual-tables-lưu-trữ-tìm-kiếm-hỗn-hợp-e2ee">Kiến trúc SQLCipher-backed Hybrid Virtual Tables (Lưu trữ Tìm kiếm Hỗn hợp E2EE)</h4>
+<ul>
+<li>📱💻🖥️ Sử dụng SQLCipher với chuẩn mã hóa AES-256-GCM bọc toàn bộ tệp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.sqlite</code> duy nhất.</li>
+<li>📱💻🖥️ Khai thác module FTS5 (Full-Text Search) sử dụng cấu trúc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">External Content Table</code> nhằm giảm thiểu tối đa kích thước dữ liệu Plaintext dư thừa.</li>
+<li>📱💻 Tích hợp Extension <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vss0</code> (sqlite-vss) để lưu trữ và truy vấn Vector Embeddings 384 chiều.</li>
+</ul>
+<h4 id="crdt-automerge-hybrid-event-sourcing">CRDT Automerge — Hybrid Event-Sourcing</h4>
+<ul>
+<li>📱💻🖥️ <strong>CRDT dùng cho:</strong> Schema và trạng thái công cụ (vài KB). Không dùng CRDT cho data entry thực tế.</li>
+<li>📱💻🖥️ <strong>Event Log (Data Entry thực tế):</strong> WASM sinh event nhỏ \&lt;1KB/event → Rust mã hóa E2EE bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> → đẩy Event_Blob lên VPS Blind Storage. Thiết bị khác tải → giải mã → replay vào SQLite local.</li>
+<li>📱 Xung đột giải quyết bằng <strong>Last-Write-Wins (LWW)</strong> + Epoch Timestamp — không dùng CRDT State Vector cho data rows.</li>
+<li>📱 RAM target: CRM 10.000 bản ghi = ~5MB RAM (Event Log) thay vì ~500MB (CRDT State Vector thuần).</li>
+</ul>
+<h4 id="reciprocal-rank-fusion-rrf-multi-modal-scoring">Reciprocal Rank Fusion (RRF) Multi-modal Scoring</h4>
+<ul>
+<li>📱💻🖥️ Áp dụng thuật toán RRF để hợp nhất điểm BM25 từ FTS5 và L2 Distance từ VSS theo công thức: $RRFscore(d) = \sum_{r \in R} \frac{1}{k + r(d)}$.</li>
+<li>📱💻🖥️ Kích hoạt Phép truy vấn song song (Parallel Query) ngay trong lõi Rust Core để tối ưu hóa triệt để độ trễ.</li>
+<li>📱💻🖥️ Đảm bảo cơ chế Atomic Transaction giữ vững tính toàn vẹn dữ liệu giữa bảng Metadata và cấu trúc Virtual Tables.</li>
+</ul>
+<h4 id="in-memory-caching-hot-paths-tránh-sql-thô">In-Memory Caching (Hot Paths — tránh SQL thô)</h4>
+<ul>
+<li>📱 <strong>Trie (Prefix Tree):</strong> Autocomplete nội bộ — O(L), \&lt;1ms.</li>
+<li>📱 <strong>Segment Tree / Fenwick Tree (BIT):</strong> Quản lý khoảng xung đột CRDT log — O(log n).</li>
+<li>📱💻 <strong>B-Tree (RAM):</strong> Index VFS TeraVault thay vì query Database phẳng.</li>
+<li>📱 <strong>Sliding Window + Bitmask DP:</strong> OPA Policy Engine và Rate Limiter.</li>
+<li>📱 Constraint: RAM 24MB limit (iOS NSE). Áp dụng Zero-allocation trên luồng Real-time.</li>
+</ul>
+<h4 id="adaptive-vector-life-cycle-management-avlm">Adaptive Vector Life-cycle Management (AVLM)</h4>
+<ul>
+<li>📱 Thực thi chính sách "LRU Vector Eviction" tự động định kỳ giải phóng embedding của các tin nhắn cũ hơn 90 ngày để gọt dũa không gian lưu trữ (giảm ~1536 bytes/record).</li>
+<li>📱💻 Ràng buộc cơ chế <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> để dọn sạch hoàn toàn dấu vết Plaintext và Vector khỏi bộ nhớ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> ngay khi lệnh Commit hoàn tất.</li>
+<li>📱 Lập lịch quy trình chống phân mảnh ngầm (Incremental Vacuum) âm thầm chạy qua tác vụ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BGProcessingTask</code> của hệ điều hành nền.</li>
+</ul>
+<h4 id="teravault-vfs-storage-ring-buffer">TeraVault VFS — Storage Ring-Buffer</h4>
+<ul>
+<li>📱💻 Pre-allocate <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TeraCache.blob</code> khi cài đặt: 500MB (Mobile), 5GB (Desktop).</li>
+<li>📱💻 Rust tự quản lý Mapping Sector nội bộ (Bypass OS File System). Offset cũ → đánh dấu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FREE_SPACE</code> → file mới overwrite trực tiếp.</li>
+<li>📱💻 <strong>Crypto-Shredding:</strong> Xóa KEK → toàn bộ data trong blob = garbage. Zero I/O Delete, Zero Wear-Leveling SSD.</li>
+</ul>
+<h4 id="local-e2ee-rag-vector-indexing-biên-tập-ngữ-nghĩa-tại-thiết-bị-đầu-cuối">Local E2EE RAG & Vector Indexing (Biên tập ngữ nghĩa tại thiết bị đầu cuối)</h4>
+<ul>
+<li>📱💻🖥️ Nhúng mô hình ngôn ngữ siêu nhỏ SLM (Small Language Model) qua runtime ONNX/WASM.</li>
+<li>📱💻🖥️ Sử dụng extension <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">sqlite-vss</code> để truy vấn Vector Similarity Search trực tiếp trên SQLite local.</li>
+<li>📱💻🖥️ Sinh Vector Embeddings 384 chiều từ Plaintext trước khi mã hóa.</li>
+</ul>
+<h4 id="custom-rust-vfs-với-decrypted-secure-arena-lookahead-decryption">Custom Rust VFS với Decrypted Secure Arena & Lookahead Decryption</h4>
+<ul>
+<li>📱💻🖥️ Tách biệt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vector_index.db</code> với <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">page_size = 16KB</code> để tối ưu hóa tính cục bộ (Locality) và giảm tần suất kích hoạt giải mã AES-GCM.</li>
+<li>📱💻🖥️ Cấp phát vùng nhớ RAM cố định qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap(MAP_PRIVATE | MAP_ANONYMOUS)</code> kết hợp cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> để ngăn chặn swap dữ liệu xuống đĩa cứng.</li>
+<li>📱💻🖥️ Can thiệp vào tầng Hệ thống tệp ảo (VFS) để thực hiện giải mã trực tiếp vào RAM, trả con trỏ (Pointer) Plaintext cho engine Faiss/HNSW mà không ghi dữ liệu tạm xuống ổ cứng.</li>
+<li>📱 Sử dụng chỉ thị lệnh song song (SIMD/ARM NEON) để giải mã đón đầu các trang dữ liệu lân cận (N+1, N+2), chuyển đổi nút thắt cổ chai từ I/O sang CPU/RAM.</li>
+</ul>
+<h4 id="zero-copy-secure-pipe-với-raii-zeroize">Zero-Copy Secure Pipe với RAII Zeroize</h4>
+<ul>
+<li>📱💻🖥️ Ánh xạ file vật lý trực tiếp lên vùng nhớ ảo thông qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap()</code> của Lõi Rust, giảm thiểu footprint bộ nhớ xuống &lt; 10MB bất kể kích thước file index.</li>
+<li>📱💻 Tự động kích hoạt cơ chế <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> (RAII) để ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên các phân đoạn RAM ngay khi SQLite kết thúc truy vấn, đảm bảo thời gian tồn tại của Plaintext Key/Vector &lt; 2ms.</li>
+<li>📱💻🖥️ Nhốt toàn bộ tác vụ tính toán nặng vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tokio::task::spawn_blocking</code> để duy trì tốc độ UI ở mức 60/120 FPS thông qua SharedArrayBuffer hoặc JSI.</li>
+</ul>
+<h4 id="circuit-breaker-vfs-với-hardware-aware-trapping">Circuit Breaker VFS với Hardware-Aware Trapping</h4>
+<ul>
+<li>📱 Đăng ký OS Hooks lắng nghe tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UIApplicationProtectedDataWillBecomeUnavailable</code> (iOS) và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Intent.ACTION_SCREEN_OFF</code> (Android) để kích hoạt cờ hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ATOMIC_KEY_EVICTED</code>.</li>
+<li>📱 Ánh xạ lỗi tương tác phần cứng từ Secure Enclave/Keystore (như <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">errSecInteractionNotAllowed</code>) thành mã lỗi chuẩn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SQLITE_IOERR_AUTH</code> tại tầng VFS.</li>
+<li>📱 Khởi động cơ chế ngắt luồng (Short-circuit) chủ động tại hàm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">xFetch</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">xRead</code> để bảo vệ an toàn tiến trình Rust khỏi những đợt Kernel Panic.</li>
+</ul>
+<h4 id="wal-backed-atomic-rollback-protocol">WAL-backed Atomic Rollback Protocol</h4>
+<ul>
+<li>📱💻🖥️ Kích hoạt chế độ SQLite WAL (Write-Ahead Logging) cho mọi instance để tách biệt file dữ liệu chính và log thay đổi.</li>
+<li>📱💻 Sử dụng cụm lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BEGIN IMMEDIATE TRANSACTION</code> để khóa quyền ghi và cô lập dữ liệu Index dở dang trong file <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">-wal</code>.</li>
+<li>📱💻 Thiết lập cơ chế tự động Rollback về trạng thái nhất quán (Consistent State) gần nhất khi nhận tín hiệu lỗi I/O từ VFS.</li>
+</ul>
+<h3 id="63-desktop-native-os-windows-macos-linux">6.3 Desktop Native OS (Windows · macOS · Linux)</h3>
+<ul>
+<li>💻🖥️ <strong>Full Disk Encryption mandatory:</strong> Kiểm tra BitLocker (Windows) / FileVault (macOS) khi khởi động. Từ chối khởi chạy nếu không bật.</li>
+<li>💻🖥️ <strong>RAM Pinning:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">VirtualLock()</code> (Windows) / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code> (Linux/macOS) ghim vùng nhớ chứa plaintext Key.</li>
+<li>💻🖥️ <strong>Background Worker FTS5:</strong> Indexing toàn bộ lịch sử tin nhắn (không giới hạn) — chạy liên tục dưới dạng background worker. Không block Main Thread.</li>
+<li>💻🖥️ <strong>Daemon (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-daemon</code>) — Startup Registration:</strong></li>
+<li>Windows: Windows Service (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">sc create</code>) hoặc Task Scheduler (ONLOGON).</li>
+<li>macOS: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">launchd</code> LaunchAgent (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">~/Library/LaunchAgents/com.terachat.daemon.plist</code>).</li>
+<li>Linux: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">systemd</code> user service (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">~/.config/systemd/user/terachat-daemon.service</code>).</li>
+<li>💻🖥️ <strong>Daemon RAM Budget:</strong> tokio async runtime ~1.5MB, WebSocket/TLS stack ~1.5MB, Key cache ~0.5MB, E2EE decrypt buffer ~1.0MB. <strong>Tổng ~4.5MB.</strong></li>
+<li>💻🖥️ Daemon chức năng duy nhất: nhận E2EE payload → giải mã preview → gửi OS Notification → zeroize RAM. Không lưu tin nhắn.</li>
+</ul>
+<h4 id="single-instance-lock-ipc-forwarding-khóa-bản-thể-duy-nhất-desktop">Single-Instance Lock & IPC Forwarding (Khóa bản thể duy nhất Desktop)</h4>
+<ul>
+<li>💻🖥️ Kích hoạt cơ chế bind vào Unix Domain Socket (macOS/Linux) hoặc Named Pipe (Windows) để phát hiện tức thời bản thể đang chạy ngầm.</li>
+<li>💻🖥️ Vận hành giao thức IPC Forwarding chuyển giao nguyên vẹn tham số CLI/Deep Link từ bản thể phụ sang quyền kiểm soát của bản thể chính.</li>
+<li>💻🖥️ Gắn lệnh tự sát (Graceful Exit <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0</code>) cắt vòng đời của bản thể phụ ngay sau khi hoàn tất bàn giao tín hiệu khơi mào.</li>
+</ul>
+<h3 id="64-mobile-native-os-android-ios">6.4 Mobile Native OS (Android · iOS)</h3>
+<h4 id="ios-xử-lý-jetsam-das-throttle-nse-constraint">iOS — Xử lý Jetsam / DAS Throttle / NSE Constraint</h4>
+<ul>
+<li>📱 <strong>Phân tách Cấu trúc RAM theo Process Context:</strong></li>
+<li><strong>Foreground (Main App):</strong> Kích hoạt toàn bộ <strong>50MB LRU Cache</strong> để tối ưu hóa JSI/FFI Pointer và tốc độ phản hồi UI.</li>
+<li><strong>Background (NSE):</strong> Vô hiệu hóa LRU Cache. Chỉ nạp module <strong>Micro-Crypto</strong> với Footprint tĩnh ~4MB. Luồng xử lý: Nhận payload (&lt;4KB) → giải mã trực tiếp → đẩy thông báo → gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Drop()</code> ngay lập tức để giải phóng RAM dưới ngưỡng 24MB.</li>
+<li>📱 <strong>Tuyệt đối không dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code></strong> — Jetsam OOM-Kill app ngay lập tức.</li>
+<li>📱 <strong>ZeroizeOnDrop (RAII):</strong> Mọi biến plaintext wrap trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">zeroize::Zeroize</code>. Không giữ plaintext qua bất kỳ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">await</code> hay <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">suspend</code> point.</li>
+<li>📱 <strong>FTS5 Indexing:</strong> Chỉ khi App Active + cắm sạc, hoặc batch 100 tin/lần qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">requestIdleCallback</code>. Index Window: 30 ngày gần nhất.</li>
+<li>📱 <strong>Tìm kiếm &gt;30 ngày (Encrypted Blind Search):</strong> Rust Core gửi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HMAC-SHA256(Company_Search_Key, keyword)</code> token lên Cluster TEE — Server không biết keyword thực, trả về <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">message_id</code> list — Client tải và giải mã chỉ các tin khớp.</li>
+<li>📱 <strong>iOS Background Delegate (Cold Data Sync — KHÔNG phải App Update):</strong> Khi Foreground → TCP/WSS Pumping. Khi Background → ngắt WebSocket. VPS đóng gói <strong>file đính kèm / lịch sử tin nhắn</strong> Ciphertext thành file tĩnh 50MB, sinh One-time Pre-Signed URL, giao cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NSURLSession Background Transfer</code> (iOS, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">isDiscretionary = true</code>) để OS tự tải.</li>
+<li>OS tải xong → đánh thức App 30s → Rust dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap</code> + Hardware AES-NI giải mã toàn khối \&lt;40ms → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">unlink</code> file tạm.</li>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">⚠️ <strong>Phân vai cứng:</strong> Luồng này chỉ được dùng để kéo <strong>Dữ liệu lạnh (Cold Data)</strong>. Cập nhật Native App đi đườc qua Apple App Store. Vi phạm policy iOS nếu dùng luồng này để nâng cấp Binary.</p>
+<li>📱 <strong>Context-Aware Edge Defense trên Pre-Signed URL:</strong> URL ký bằng JA3/JA4 TLS Fingerprint của <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NSURLSession</code> + IP Subnet. Mismatch → Edge drop 0ms. Byte-Quota tại Edge (Redis Bloom Filter): <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">quota = file_size × 1.5</code>. Vượt quota → TCP RST. Replay từ IP đáng ngờ → Infinite Tarpit (1 Byte/10s).</li>
+</ul>
+<h4 id="kiến-trúc-phân-rã-chỉ-mục-hai-pha-two-phase-deferred-indexing">Kiến trúc Phân rã Chỉ mục Hai Pha (Two-Phase Deferred Indexing)</h4>
+<ul>
+<li>📱 Khởi chạy Rust Core Lightweight Mode (chỉ nạp module Cryptography) để kìm hãm RAM footprint &lt; 10MB dưới ngưỡng an toàn NSE.</li>
+<li>📱 Thiết lập cơ chế Shared App Group đồng bộ xuyên suốt cơ cấu SQLite giữa tiến trình NSE và Main App.</li>
+<li>📱 Gán cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">is_vectorized</code> đánh dấu phân luồng dữ liệu chờ ưu tiên xử lý AI.</li>
+<li>📱 Lắng nghe trigger <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BGProcessingTask</code> để thực thi quá trình batch-indexing âm thầm khi thiết bị ở trạng thái nhàn rỗi (idle).</li>
+</ul>
+<h4 id="inbox-queue-architecture-kiến-trúc-hộp-thư-đến-tách-biệt">Inbox Queue Architecture (Kiến trúc Hộp thư đến tách biệt)</h4>
+<ul>
+<li>📱 Khởi tạo cơ sở dữ liệu phụ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">inbox.sqlite</code> dạng Append-Only nhằm cô lập tuyệt đối luồng ghi của tiến trình NSE hạn hẹp.</li>
+<li>📱 Tận dụng Shared App Group để thiết lập vùng đệm dữ liệu trung gian giữa Extension Service và hệ quản trị Main App.</li>
+<li>📱 Áp dụng cơ chế Consumer Pattern tại Main App để hút và đồng bộ triệt để khối dữ liệu vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">main.sqlite</code> ngay khi ứng dụng mở lại ở Foreground.</li>
+</ul>
+<h4 id="android-xử-lý-doze-workmanager">Android — Xử lý Doze / WorkManager</h4>
+<ul>
+<li>📱 <strong>FTS5 Indexing:</strong> Batch nhỏ, chỉ khi App Active. Index Window: 30 ngày. Tìm kiếm cũ hơn → Encrypted Blind Search (giống iOS).</li>
+<li>📱 <strong>Background Delegate:</strong> Giao URL cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">WorkManager</code> (Android, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NetworkType.UNMETERED</code>) — OS tự tải lúc cắm sạc/Wi-Fi mạnh.</li>
+<li>📱 <strong>Wake-and-Strip:</strong> Rust <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap</code> + ARM NEON giải mã, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">unlink</code> file tạm; Hard Deadline \&lt;3 giây (tránh vi phạm Background Time Limit).</li>
+<li>📱 <strong>StrongBox Keymaster:</strong> Lưu Symmetric Push Key (FCM). Key sinh trong chip, không export.</li>
+</ul>
+<h3 id="65-lean-edge-caching">6.5 Lean Edge Caching</h3>
+<h4 id="zero-byte-stubs-metadata-rendering-virtual-metadata-mapping-lazy-load-ui-architecture">Zero-Byte Stubs & Metadata Rendering (Virtual Metadata Mapping & Lazy-load UI Architecture)</h4>
+<ul>
+<li>📱💻🖥️ Sử dụng cấu trúc Zero-Byte Stubs chỉ chứa tĩnh lược Metadata &lt;5KB (bao gồm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">file_name</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">encrypted_thumbnail</code>).</li>
+<li>📱💻🖥️ Ánh xạ liên kết <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref / storage_ref</code> thông qua bảng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings</code> để hiển thị UI tệp tin nguyên bản mà không chiếm dụng không gian vật lý bộ nhớ.</li>
+<li>📱💻 Tiến hành giải mã cục bộ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">encrypted_thumbnail</code> và hiển thị render mờ ngay lập tức dưới định dạng lưới đồ họa Blur-hash.</li>
+<li>📱💻🖥️ <strong>Oblivious CAS Routing:</strong> Batch 4–10 Fake Hashes khi gửi query <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_hash</code>. Tra qua Mixnet Proxy (không đính User_ID). Khi HIT: Client phản hồi Merkle Root (zk-PoW) chứng minh sở hữu Plaintext trước khi lấy stream. Tính Fake Hash &lt;2ms, Batch Request &lt;1KB.</li>
+</ul>
+<h4 id="tiered-storage-3-tầng">Tiered Storage (3 tầng)</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tầng</th>
+<th>Cơ chế</th>
+<th>Ai quyết</th>
+<th>Khi nào tải</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Tier 1 — Auto (Pinned)</strong></td>
+<td>Rust Core tự kéo full ciphertext về local</td>
+<td>Admin/Manager</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">is_pinned = true</code> trong channel</td>
+</tr>
+<tr>
+<td><strong>Tier 2 — On-demand</strong></td>
+<td>User click Tải / Xem trước</td>
+<td>User</td>
+<td>Tức thì qua Cluster hoặc LAN P2P</td>
+</tr>
+<tr>
+<td><strong>Tier 3 — Make Available Offline</strong></td>
+<td>Background worker kéo toàn folder</td>
+<td>User tự chọn</td>
+<td>Trước khi lên máy bay / vào khu vực mất mạng</td>
+</tr>
+</tbody></table></div>
+<h4 id="sender-side-media-pre-processing-content-aware-blind-chunking-e2ee-metadata-pre-processing">Sender-Side Media Pre-processing (Content-Aware Blind Chunking & E2EE Metadata Pre-processing)</h4>
+<ul>
+<li>📱💻 Trích xuất Thumbnail cực nhẹ tĩnh (5-10KB) thông qua thuật toán Blur-hash từ thiết bị trước khi thực thi tiến trình mã hóa E2EE.</li>
+<li>📱💻🖥️ Áp dụng cơ chế AEAD (AES-GCM / ChaCha20-Poly1305) mã hóa độc lập từng khối phân mảnh (Chunk) 2MB.</li>
+<li>📱💻 Thực thi Pre-Encryption Compression (FFmpeg/JSI) chuyển đổi định dạng ảnh biên sang chuẩn WebP/HEIC chất lượng 80% nhằm gọt bỏ 30-80% băng thông tải lên.</li>
+<li>Bypass nén bằng tag <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Gửi HD</code>.</li>
+</ul>
+<h4 id="zero-knowledge-media-vision-via-edge-inference-thị-giác-máy-tính-tại-biên">Zero-Knowledge Media Vision via Edge Inference (Thị giác máy tính tại biên)</h4>
+<ul>
+<li>📱💻 Tích hợp Edge CLIP (Contrastive Language-Image Pretraining) để phân loại ảnh bằng ngôn ngữ tự nhiên.</li>
+<li>📱 Trích xuất văn bản qua ML Kit OCR tận dụng NPU/GPU Hardware Acceleration.</li>
+<li>📱💻 Cơ chế Hidden Tags (Gán nhãn mù) bọc bởi Search_Subkey_Epoch_N trước khi đẩy lên Blind Storage.</li>
+</ul>
+<h4 id="convergent-encryption-salted-mle-contextual-heuristics-engine">Convergent Encryption — Salted MLE + Contextual Heuristics Engine</h4>
+<ul>
+<li>📱💻🖥️ <strong>Heuristics Router</strong> chạy ngầm tại Rust Core, quyết định chiến lược mã hóa \&lt;1ms — không đọc nội dung file, không gọi API.</li>
+<li><strong>Phân loại tự động:</strong></li>
+</ul>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Loại file</th>
+<th>Kích thước</th>
+<th>Chiến lược</th>
+<th>Dedup?</th>
+</tr></thead><tbody>
+<tr>
+<td>Hợp đồng PDF, .docx</td>
+<td>Bất kỳ</td>
+<td>Strict E2EE (Random Key)</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>File 1-1 DM</td>
+<td>Bất kỳ</td>
+<td>Strict E2EE</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Video nội quy / Setup.exe</td>
+<td>\&gt;5MB</td>
+<td>CompanyMediaMLE (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Media_Key</code>)</td>
+<td>✅ 1 bản toàn tenant</td>
+</tr>
+<tr>
+<td>Ảnh JPEG lớn (channel)</td>
+<td>\&gt;5MB</td>
+<td>SaltedMLE (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Channel_Key</code>)</td>
+<td>❌ per-channel</td>
+</tr>
+<tr>
+<td>File nhỏ \&lt;5MB bất kỳ</td>
+<td>\&lt;5MB</td>
+<td>Strict E2EE</td>
+<td>❌</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li><strong>Salted MLE Anti-KPA:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CAS_Hash = HMAC-SHA256(Static_Dedup_Key, file_content)</code>. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Static_Dedup_Key</code> = <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HKDF-SHA256(Channel_Master_Secret, "dedup-v1")</code> — bất biến suốt vòng đời Channel, phân phối qua TreeKEM.</li>
+<li>Hacker biết file gốc nhưng không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Static_Dedup_Key</code> trong RAM thiết bị → không tính được <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CAS_Hash</code> → không giải mã.</li>
+</ul>
+<h3 id="66-apns-payload-collapse-notification-degradation">6.6 APNs Payload Collapse & Notification Degradation</h3>
+<ul>
+<li>📱 Triển khai giải mã tĩnh trực tiếp tại Notification Service Extension (NSE) cho nền tảng Mobile.</li>
+<li>☁️ Cấu hình Server push APNs Payload (&lt;4KB) chứa Ciphertext đã nén bằng chuẩn CBOR.</li>
+<li>📱 Khởi tạo Rust FFI siêu nhẹ (Micro-Crypto) gắn vào NSE. Đọc Payload -&gt; Giải mã CBOR Ciphertext -&gt; Đẩy notification ra UI -&gt; Gọi lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">drop()</code> lập tức giải phóng RAM.</li>
+<li>📱 Định nghĩa luồng Ghost Push: Nếu Payload &gt; 4KB, Server trả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Fallback=True</code>. NSE render chuỗi tĩnh (Generic Text), đồng thời bắn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">content-available: 1</code> đánh thức App ngầm kéo SQLite.</li>
+</ul>
+<h3 id="67-out-of-band-notification-key-ratchet-ghost-push-wakeup">6.7 Out-of-Band Notification Key Ratchet & Ghost Push Wakeup</h3>
+<ul>
+<li>📱 Xây dựng cơ chế HKDF Hash Chain để trích xuất Notification Symmetric Key hoàn toàn độc lập với MLS Epoch.</li>
+<li>☁️📱 Thiết lập luồng Ghost Push đính kèm cờ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">content-available: 1</code> để đánh thức App ngầm kéo dữ liệu từ SQLite.</li>
+<li>📱 Thực hiện giải mã tĩnh CBOR Ciphertext trực tiếp tại Notification Service Extension (NSE) sử dụng thư viện Micro-Crypto.</li>
+</ul>
+<h3 id="68-fast-scroll-rendering-viewport-management">6.8 Fast-Scroll Rendering & Viewport Management</h3>
+<ul>
+<li>📱💻 Giám sát chéo quá trình tái định vị Viewport, ngăn chặn trễ luồng cuộn (Scroll-Lag) do tắc nghẽn IPC.</li>
+<li>📱💻🖥️ Áp dụng cơ chế <strong>LRU Cache (50MB)</strong> trên Main App để lưu lại 100 item gần nhất, giảm ping <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">get_message</code> liên tục qua cầu. Quá trình này <strong>bị vô hiệu hóa hoàn toàn</strong> tại tiến trình NSE để né Jetsam limit.</li>
+</ul>
+<h4 id="ảo-ảnh-thị-giác-metadata-first-virtual-rendering-architecture">Ảo ảnh Thị giác (Metadata-First Virtual Rendering Architecture)</h4>
+<ul>
+<li>📱💻🖥️ Lưu trữ sẵn định dạng Blur-hash (30-50 bytes) và Base64 Tiny-Thumb (&lt; 2KB) đã giải mã độc lập vào cơ sở dữ liệu SQLite.</li>
+<li>📱💻🖥️ Khởi tạo cấu trúc SQLite FTS5 lập chỉ mục metadata nhằm hỗ trợ thao tác truy vấn tức thời.</li>
+<li>📱 Render nóng bề mặt phân giải mờ tại mốc $0$ ms giúp kìm hãm drop-frame và duy trì triệt để hiệu năng 60-120FPS trong khi Fast-Scroll.</li>
+</ul>
+<h4 id="quản-lý-tác-vụ-theo-khung-nhìn-event-driven-task-cancellation-protocol">Quản lý Tác vụ theo Khung nhìn (Event-Driven Task Cancellation Protocol)</h4>
+<ul>
+<li>📱💻🖥️ Kích hoạt tín hiệu Viewport-Aware Cancellation bằng lệnh FFI <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_cancel_task</code> khi phân mảnh nội dung trượt khỏi khung nhìn UI.</li>
+<li>📱💻🖥️ Thực thi AbortHandle thông qua vòng lặp Rust <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tokio::select!</code> để chủ động ngắt luồng I/O và hủy bỏ tác vụ giải mã ngay lập tức.</li>
+<li>📱💻 Đồng bộ chu kỳ giải mã định danh theo Task_ID Mapping khớp khít với khối trạng thái Unmount của thành phần UI giao diện.</li>
+</ul>
+<h4 id="hiệu-suất-giải-mã-bất-đồng-bộ-dedicated-asynchronous-crypto-thread-pool">Hiệu suất Giải mã Bất đồng bộ (Dedicated Asynchronous Crypto Thread-Pool)</h4>
+<ul>
+<li>📱💻🖥️ Áp dụng cơ cấu Thread-Pool Isolation tách biệt hoàn toàn luồng xử lý Crypto khỏi định tuyến UI Main Thread.</li>
+<li>📱💻🖥️ Chuyển giao các tác vụ CPU-bound (hệ AES-256-GCM / ChaCha20-Poly1305) thông qua lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tokio::task::spawn_blocking</code>.</li>
+<li>📱💻🖥️ Thiết lập thuật toán tự động tinh chỉnh số lượng luồng công nhân (worker) nội vi dựa trên số lõi vật lý: $N_{workers} = \text{num\_cpus::get()} - 1$.</li>
+</ul>
+<h4 id="quản-lý-bộ-nhớ-l1-tiered-lru-ram-cache-with-security-shredding">Quản lý Bộ nhớ L1 (Tiered LRU RAM Cache with Security Shredding)</h4>
+<ul>
+<li>📱💻 Quản trị 50MB RAM đệm nội bộ cấp L1 cho hệ thống thumbnails thông qua thuật toán Least Recently Used (LRU).</li>
+<li>📱 Gọi lệnh ZeroizeOnDrop (RAII) thực thi đè bẹp dung lượng $0x00$ ngay khi dữ liệu bị ép đẩy (Evict) khỏi bộ đệm cache.</li>
+<li>📱 Truyền tải nội dung qua JSI/FFI Pointer duy trì thông lượng ~400MB/s nhằm nạp ảnh sạch từ RAM chọc thẳng lên UI trong ngưỡng &lt; 1ms.</li>
+</ul>
+<h3 id="69-os-lifecycle-background-memory-security">6.9 OS Lifecycle & Background Memory Security</h3>
+<h4 id="rò-rỉ-qua-os-snapshot-secure-screen-masking-blurhash-overlay">Rò rỉ qua OS Snapshot (Secure Screen Masking & Blurhash Overlay)</h4>
+<ul>
+<li>📱 Kích hoạt lớp phủ màn hình bảo mật che dấu nội dung nhạy cảm ngay khi nhận tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">applicationWillResignActive</code> (iOS) hoặc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">onPause</code> (Android).</li>
+<li>📱 Khai thác dữ liệu Blurhash siêu nhẹ (30-50 bytes) có sẵn trong SQLite hiển thị giao diện mờ thay thế cho Plaintext, triệt tiêu rủi ro rò rỉ hình ảnh vào Core OS qua màn hình đa nhiệm.</li>
+<li>📱 Đảm bảo kết quả snapshot do OS lưu trên đĩa cứng trắng thông tin thực tế, bảo vệ trọn vẹn quyền riêng tư người dùng trong trình chuyển đổi ứng dụng.</li>
+</ul>
+<h4 id="ngắt-tác-vụ-ngầm-khẩn-cấp-high-priority-ffi-kill-switch-cancellation-token-bypass">Ngắt tác vụ ngầm khẩn cấp (High-Priority FFI Kill-Switch & Cancellation Token Bypass)</h4>
+<ul>
+<li>📱💻 Phát nhịp lệnh FFI <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_core_emergency_wipe()</code> từ Native UI đánh thẳng vào Event Loop của Rust Core với mức độ ưu tiên tuyệt đối.</li>
+<li>📱💻🖥️ Áp dụng cấu trúc Cancellation_Token rẽ nhánh qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tokio::select!</code> hoặc thẻ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">AbortHandle</code> ép dừng khẩn cấp mọi Worker Thread vòng I/O hoặc tiến trình giải mã.</li>
+<li>📱💻 Thiết lập ngầm cơ chế bypass hàng đợi tác vụ đảm bảo lệnh tiêu hủy thực thi nghiêm ngặt dưới ngưỡng hard deadline 10ms, đè bẹp tốc độ dump RAM mặc định của OS.</li>
+</ul>
+<h4 id="tiêu-hủy-ram-vật-lý-contiguous-memory-arena-simd-zeroization">Tiêu hủy RAM vật lý (Contiguous Memory Arena SIMD Zeroization)</h4>
+<ul>
+<li>📱💻🖥️ Cấu trúc khối LRU Cache theo chuẩn Contiguous Memory Arena quản lý phân vùng RAM liên tục 50MB, tối ưu hóa tốc độ truy cập chéo và tiêu hủy toàn phần.</li>
+<li>📱💻 Kích hoạt lệnh intrinsics cấp thấp (SIMD/Neon) ghi đè mã hex $0x00$ cày nát toàn bộ dải địa chỉ của khối Arena nội trong 1-2 mili-giây.</li>
+<li>📱💻🖥️ Ràng buộc pattern ZeroizeOnDrop kết hợp rào cản trình biên dịch dọn dẹp triệt để Plaintext không thể bị trích xuất phục hồi sau khi App lùi về chế độ Background.</li>
+</ul>
+<h4 id="phục-hồi-sau-khi-đóng-ứng-dụng-metadata-driven-jit-re-hydration">Phục hồi sau khi đóng ứng dụng (Metadata-driven JIT Re-hydration)</h4>
+<ul>
+<li>📱💻 Khai thác <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code> và tập Metadata đệm từ SQLite tái thiết lập cấu trúc khung nhìn nguyên bản ngay khi hệ thống xoay vòng về trạng thái Active.</li>
+<li>📱💻🖥️ Kêu gọi tiến trình Just-In-Time (JIT) Fetching âm thầm tải và giải mã luồng Thumbnail bám sát Viewport, mang tới trải nghiệm Render liền mạch.</li>
+<li>📱💻 Bù đắp khoảng lặng phục hồi vài chục mili-giây bằng kỹ xảo sắc nét hóa từ lớp mờ Blurhash che giấu hoàn toàn hoạt ảnh trắng RAM bị dọn dẹp trước đó.</li>
+</ul>
+<h3 id="610-ép-xung-phần-cứng-nén-dữ-liệu-động-học-hardware-offloading-zero-knowledge-sddc">6.10 Ép xung Phần cứng & Nén Dữ liệu Động học (Hardware Offloading & Zero-Knowledge SDDC)</h3>
+<h4 id="ép-xung-phần-cứng-chuyên-trách-hardware-native-crypto-search-acceleration">Ép xung Phần cứng Chuyên trách (Hardware-Native Crypto & Search Acceleration)</h4>
+<ul>
+<li>📱💻 Khai thác sức mạnh tàng hình của hàm API Native (Metal API trên macOS/iOS, Vulkan/NNAPI trên Android) đẩy tác vụ đồ họa, tìm kiếm sang luồng GPU/NPU chuyên biệt.</li>
+<li>📱💻🖥️ Kích hoạt chip phần cứng tăng tốc mã hóa (Hardware AES-NI/ARM NEON) ép khuôn tốc độ xả mã luồng băm AEAD theo thời gian thực.</li>
+<li>📱💻 Vận hành mô tơ tìm kiếm NPU-Optimized FTS5 dội bom từ khóa thẳng vào khối logic xử lý hình ảnh nội tại, tìm kiếm không giới hạn lịch sử cục bộ.</li>
+</ul>
+<h4 id="native-hardware-offloading-via-apple-neural-engine-ane">Native Hardware Offloading via Apple Neural Engine (ANE)</h4>
+<ul>
+<li>📱 Biên dịch chéo mô hình SLM/ONNX sang định dạng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.mlmodelc</code> tương thích hoàn toàn với nền tảng Core ML.</li>
+<li>📱 Xây dựng cầu nối FFI (Foreign Function Interface) điều phối dữ liệu trực tiếp từ Rust Core sang khối NPU.</li>
+<li>📱 Tận dụng Apple Neural Engine (ANE) nhằm tăng tốc xử lý ma trận Vector, ép xung tiêu thụ điện năng điện toán SLM xuống mức tối thiểu.</li>
+</ul>
+<h4 id="nén-dữ-liệu-động-học-zero-knowledge-shared-dictionary-delta-compression-sddc">Nén Dữ liệu Động học (Zero-Knowledge Shared Dictionary Delta Compression - SDDC)</h4>
+<ul>
+<li>📱💻 Thực thi chu trình mã hóa và giải mã Zero-Knowledge Compression ngay tại phân vùng rìa cấu trúc biên (Client-Edge) trước khi đóng hộp E2EE lên Cloud.</li>
+<li>📱💻🖥️ Nén tín hiệu trao đổi với thuật toán Zstd Pre-trained Dictionary được vi điều chỉnh riêng rẽ mài giũa cho ngôn ngữ văn bản doanh nghiệp mượt mà.</li>
+<li>📱💻🖥️ Áp dụng giao thức chuyển đổi vi phân JSON Delta Encoding phân giải và truyền tải riêng biệt những mảnh chênh lệch nhỏ xíu lọt thỏm trong CRDT Event Log.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="7-ecosystem-integration">7. Ecosystem & Integration</h2>
+<h3 id="71-wasm-sandbox-tapp-dual-registry">7.1 WASM Sandbox (.tapp) & Dual-Registry</h3>
+<h4 id="phân-vùng-thực-thi-sandbox-vs-enclave">Phân vùng Thực thi (Sandbox vs Enclave)</h4>
+<ul>
+<li><strong>Phân vùng 1 (UI Sandbox):</strong> Chuyên trách bề mặt UI <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> siêu nhẹ (10-50KB), tải nóng trực tiếp qua IPC Bridge phục vụ các tác vụ tương tác.</li>
+<li><strong>Phân vùng 2 (AI Enclave):</strong> Chuyên trách mô hình AI/SLM. Sử dụng <strong>Tiered Storage (Tầng 3)</strong> kéo mô hình (ví dụ 100MB) về máy tĩnh cục bộ.</li>
+<li><strong>Zero-Copy Map:</strong> Lõi Rust dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap()</code> trỏ thẳng vùng nhớ ảo của mô hình để phân bổ cho AI Enclave, không bao giờ nhồi tệp &gt;10MB qua SharedArrayBuffer để tránh nghẽn cổ chai IPC.</li>
+</ul>
+<h4 id="dynamic-header-slot-pinned-utility-registry-launchpad-quick-bar">Dynamic Header Slot & Pinned Utility Registry (Launchpad Quick-Bar)</h4>
+<ul>
+<li>📱💻🖥️ Ánh xạ bảng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">pinned_utilities</code> cục bộ sử dụng cơ chế lưu trữ SQLite WAL bảo mật.</li>
+<li>📱💻🖥️ Thiết lập Unidirectional State Sync (Rust-to-UI Signal) nhằm tự động đồng bộ khi có tiện ích được gắn pin.</li>
+<li>💻🖥️ Render cửa sổ Floating WASM Window phục vụ thao tác Quick-Execute dành riêng cho nền tảng Desktop.</li>
+<li>📱 Nhúng Horizontal Mini-Dock Scroll tích hợp UI di chuyển siêu tốc cho nền tảng Mobile.</li>
+</ul>
+<h4 id="cấu-trúc-tapp-3-tầng">Cấu trúc .tapp (3 Tầng)</h4>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Tầng 1 — Web Marketplace (marketplace.terachat.io)]
+  • Danh mục .tapp ký duyệt bảo mật (Ed25519 — TeraChat CA)
+  • Admin bấm "Install" → lệnh xuống VPS
+           │
+           ▼
+[Tầng 2 — VPS Control Plane]
+  • Kéo .tapp (WASM + JSON Schema) về Cluster
+  • Cấp bảng SQL trống (Blind Storage) làm Backend Sync
+  • Phân phối .tapp xuống thiết bị qua App Sync
+  • ❌ KHÔNG phải kênh phân phối Native App (Rust/Tauri Binary)
+  • ❌ KHÔNG thực thi logic App — chỉ lưu blob mã hóa mù
+&gt; **Phân biệt rạch ròi:**
+&gt; - **Cập nhật Native App (TeraChat Binary):** Phải kiểm tra chữ ký `TeraChat_Global_CA`. Mobile đi qua App Store. Desktop đi qua VPS nhưng xác thực chữ ký tĩnh Ed25519 trước khi nạp.
+&gt; - **Cập nhật `.tapp` (Tiện ích nội bộ):** Được ký bởi `Enterprise_CA` nội bộ. VPS phân phối bằng CRDT Event Log.
+           │
+           ▼
+[Tầng 3 — Device Data Plane (Desktop / Mobile)]
+  • UI Sandbox thực thi 100% logic bằng CPU thiết bị (&lt;= 50KB).
+  • AI Enclave nạp model qua mmap(), tránh ArrayBuffer.
+  • UI map JSON Schema (Server-Driven UI — Adaptive Cards).
+  • Per-app SQLCipher (cô lập hoàn toàn).
+  • ❌ VPS không đọc được dữ liệu — Zero-Knowledge</code></pre></div>
+<h4 id="security-gates-hot-reload-chống-tiêm-nhiễm-rollback">Security Gates & Hot-Reload (Chống Tiêm nhiễm & Rollback)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Offline Hot-Reload via Pinned Root Keys:</strong> Chữ ký số Ed25519 xác thực tính chính chủ của gói <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> (WASM). Khóa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise_App_Signing_PubKey</code> neo cứng trong Secure Enclave/StrongBox tạo Hardware Root of Trust. Toàn vẹn Hash được đối soát ngay trên RAM.</li>
+<li>📱💻🖥️ <strong>Anti-Downgrade Protection:</strong> Lớp kiểm tra <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Version_Tag</code> ngăn chặn tuyệt đối các cuộc tấn công Rollback ép hạ cấp module WASM.</li>
+<li>📱💻🖥️ <strong>JIT RAM-only Hot-Reload:</strong> Sử dụng FFI Pointer bắn thẳng vùng nhớ chứa WASM Module sạch vào JIT Engine mà không quẹt qua Disk I/O. Cơ chế luồng Unidirectional State Sync kích hoạt Zero-downtime render cho UI mà không cần khởi động lại.</li>
+</ul>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Gate</th>
+<th>Mechanism</th>
+<th>When</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Digital Signature</strong></td>
+<td>Ed25519 (TeraChat CA hoặc Enterprise CA)</td>
+<td>Upload</td>
+</tr>
+<tr>
+<td><strong>Integrity Hash</strong></td>
+<td>SHA-256 khớp Manifest</td>
+<td>Download</td>
+</tr>
+<tr>
+<td><strong>Admin Approval</strong></td>
+<td>OPA Policy check</td>
+<td>Before Push</td>
+</tr>
+<tr>
+<td><strong>Sandbox</strong></td>
+<td>WASM container, no OS syscall</td>
+<td>Runtime</td>
+</tr>
+<tr>
+<td><strong>Permission Model</strong></td>
+<td>Manifest-driven, Core cấp đúng quyền khai báo</td>
+<td>Runtime</td>
+</tr>
+</tbody></table></div>
+<h4 id="wasm-network-rules-bàn-tay-sắt">WASM Network Rules (Bàn tay sắt)</h4>
+<ul>
+<li>WASM <strong>không bao giờ</strong> chạm vào Network Socket trực tiếp.</li>
+<li>Mọi luồng mạng ra/vào phải đi qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">host_bindings</code> của Rust Core (kiểm duyệt Permission).</li>
+<li>API Key không bao giờ hardcode trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bytecode — phân phối qua E2EE.</li>
+</ul>
+<h4 id="3-gateway-modes-cho-tapp">3 Gateway Modes cho .tapp</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Gateway</th>
+<th>Dùng khi</th>
+<th>VPS biết</th>
+<th>Bảo mật</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>E1 — Client-Side Direct</strong></td>
+<td>Thiết bị có Internet</td>
+<td>Không gì</td>
+<td>Zero-Knowledge 100%</td>
+</tr>
+<tr>
+<td><strong>E2 — VPS Egress Proxy</strong></td>
+<td>LAN air-gapped</td>
+<td>Chỉ URL đích + Ciphertext tạm (RAM-only, không log)</td>
+<td>Ephemeral Pipe</td>
+</tr>
+<tr>
+<td><strong>E3 — Blind Webhook</strong></td>
+<td>Nhận event từ ngoài vào</td>
+<td>Blob mã hóa mù (Curve25519 ECIES)</td>
+<td>VPS không giải mã được</td>
+</tr>
+</tbody></table></div>
+<h4 id="opa-payload-sanitization-byte-quota-enforcement">OPA Payload Sanitization & Byte-Quota Enforcement</h4>
+<ul>
+<li>📱💻🖥️ Kích hoạt Whitelist Header Sanitization chỉ cho phép các trường <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Content-Type</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Authorization</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Accept</code> đi qua kênh IPC.</li>
+<li>📱💻🖥️ Thực thi JSON Schema Enforcement qua OPA để kiểm tra độ dài và kiểu dữ liệu của từng trường trong Payload nhắm tới Data Steganography.</li>
+<li>☁️🗄️ Xây dựng hệ thống giám sát ngưỡng rò rỉ (Exfiltration Quota) sử dụng kiến trúc Redis Bloom Filter đặt tại Edge.</li>
+</ul>
+<h4 id="llm-iron-dome-3-lớp-phòng-ngự-prompt-injection">LLM Iron Dome — 3 Lớp phòng ngự Prompt Injection</h4>
+<ul>
+<li>📱💻🖥️ <strong>Lớp 1 — Egress Firewall:</strong> WASM chỉ truyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">User Intent</code> + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">File ID</code>. Rust Core trích xuất file từ SQLite, nhúng vào template chuẩn, gọi LLM. Chỉ kết nối Whitelist Domains.</li>
+<li>📱💻🖥️ <strong>Lớp 2 — Markdown AST Sanitizer:</strong> Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">&lt;img src="..."&gt;</code> / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;"><img src="url" alt="alt" style="max-width:100%;border-radius:8px;margin:1rem 0;"></code> trỏ external URL bị chặn hoàn toàn. Chỉ cho phép <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">localhost</code> (VFS) hoặc base64 nội bộ.</li>
+<li>💻🖥️ <strong>Lớp 3 — Local Semantic Guardrail (Enterprise):</strong> Model NLP ONNX tại biên kiểm tra file gửi đi — block Jailbreak / System instruction spoofing patterns.</li>
+</ul>
+<h3 id="72-context-aware-edge-defense-dlp-smart-clipboard">7.2 Context-Aware Edge Defense & DLP Smart Clipboard</h3>
+<h4 id="dlp-desktop">DLP — Desktop</h4>
+<ul>
+<li>💻🖥️ <strong>Memory Air-Gap:</strong> TeraChat Core và External Sandbox (Zalo/Telegram WebView) chạy 2 Process riêng biệt cấp OS. Crash/XSS từ Sandbox không dump được memory Core.</li>
+<li>💻🖥️ <strong>Smart Clipboard Controller (Rust module):</strong> Hook OS Clipboard API real-time. Phân loại nội dung: nội bộ TeraChat → block paste vào Sandbox. OPA Policy quyết định per-channel.</li>
+<li>💻🖥️ <strong>Drag & Drop Blocking:</strong> Chặn kéo thả file từ TeraChat sang External Sandbox.</li>
+<li>💻🖥️ <strong>External Sandbox Isolation (Tauri):</strong> Mỗi app ngoài chạy Window riêng — không có Tauri IPC, không thấy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code>, Network độc lập (traffic đi thẳng Internet), Ephemeral Storage (có thể reset theo OPA Policy).</li>
+</ul>
+<h4 id="dlp-mobile">DLP — Mobile</h4>
+<ul>
+<li>📱 <strong>Android:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FLAG_SECURE</code> (WindowManager) — chặn Screenshot + Screen Recording cấp phần cứng.</li>
+<li>📱 <strong>iOS:</strong> Lắng nghe <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UIScreen.capturedDidChangeNotification</code> → phủ View đen khi bắt đầu quay màn hình.</li>
+<li>📱 <strong>In-App Copy Restriction:</strong> Không thể hook Clipboard iOS. Thay vào đó, chặn hành vi Copy từ Text Node SecureText trong TeraChat Mobile.</li>
+<li>📱 <strong>DLP OPA Policy cho Mobile:</strong> Admin cấu hình per-channel, per-department.</li>
+</ul>
+<h4 id="dlp-hard-rules-summary">DLP Hard Rules Summary</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Hành động</th>
+<th>Vùng 1 (Nội bộ)</th>
+<th>External Sandbox</th>
+<th>Mobile</th>
+</tr></thead><tbody>
+<tr>
+<td>Copy nội bộ → Paste ngoài</td>
+<td>N/A</td>
+<td>❌ Clipboard Controller</td>
+<td>❌ SecureText (Copy blocked)</td>
+</tr>
+<tr>
+<td>Drag & Drop file</td>
+<td>N/A</td>
+<td>❌ Chặn</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Screen Share</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌ FLAG_SECURE / Overlay</td>
+</tr>
+</tbody></table></div>
+<h3 id="74-ephemeral-identity-binding-threshold-based-reveal">7.4 Ephemeral Identity-Binding & Threshold-Based Reveal</h3>
+<ul>
+<li>☁️ Gán token vào IdP Session ID tạm thời tại thời điểm cấp phát (Binding được lưu trữ tại Vault, tuyệt đối không đính kèm vào Payload).</li>
+<li>☁️🖥️ Áp dụng Threshold-Based Reveal chỉ cho phép giải mã danh tính thực thông qua sự đồng thuận của M-of-N Admin Audit Log khi xảy ra vi phạm nghiêm trọng.</li>
+<li>☁️ Xây dựng logic cô lập tầng biên (Edge Blocking) dựa trên Token Hash thay vì truy nguyên User Identity.</li>
+</ul>
+<h3 id="73-ai-integration-gateway-dual-mask-protocol-tee-enclave">7.3 AI Integration Gateway (Dual-Mask Protocol, TEE Enclave)</h3>
+<h4 id="architecture">Architecture</h4>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Client (E2EE)] → [AI Gateway (Rust)] → [OpenAI / Claude / Azure AI]
+                         ├── PII Redactor (Regex + NER — Dynamic Tokenization)
+                         ├── Rate Limiter (per-tier, Bounded MPSC Channel)
+                         ├── Quota Management
+                         ├── Audit Logger (tamper-proof)
+                         └── Model Router (Org Policy)</code></pre></div>
+<ul>
+<li>☁️ AI Bot có KeyPair Ed25519 riêng, join MLS Group như member bình thường. Chỉ active khi User <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">@mention</code> hoặc Admin Add Bot. <strong>Không bao giờ auto-scan ngầm.</strong></li>
+</ul>
+<h4 id="dual-mask-protocol-dynamic-tokenization">Dual-Mask Protocol (Dynamic Tokenization)</h4>
+<ul>
+<li>📱💻🖥️ <strong>Tokenization Pass:</strong> Mỗi PII entity nhận alias riêng: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[REDACTED_PHONE_1]</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[REDACTED_PHONE_2]</code>. Session Vault tồn tại trong RAM duy nhất cho 1 request.</li>
+<li>📱💻🖥️ <strong>De-tokenization Pass:</strong> Sau khi nhận LLM response, thay alias trở lại giá trị thực trên Client.</li>
+<li>📱💻🖥️ <strong>Zero-Retention:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SessionVault::drop()</code> overwrite toàn bộ giá trị gốc bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> ngay sau De-tokenize (dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">zeroize</code> crate).</li>
+<li>☁️ Header <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">X-Zero-Retention: true</code> trên mọi request → ép API Provider không lưu trữ, không dùng để train model.</li>
+<li>☁️ <strong>BYOK (Bring Your Own Key):</strong> API Key lưu trong Secure Enclave / OS Keychain — không bao giờ plaintext trên Server.</li>
+</ul>
+<h4 id="tee-enclave-cho-ai-worker">TEE Enclave cho AI Worker</h4>
+<ul>
+<li>🗄️☁️ AI Worker chạy trong Intel SGX / AWS Nitro Enclave — cô lập hoàn toàn. Cloud provider không đọc được dữ liệu xử lý.</li>
+<li>☁️ <strong>Thread-Pool Isolation:</strong> Hai Tokio Runtime độc lập: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">core-messaging-runtime</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ai-heavy-io-runtime</code> giao tiếp qua Bounded MPSC Channel. Khi Channel đầy → reject AI request (ChannelFull) thay vì ngốn RAM.</li>
+<li>☁️ <strong>Circuit Breaker:</strong> OPEN ngay nếu AI Latency p99 \&gt;1500ms hoặc Packet Loss \&gt;5% trong 10s. Fail-fast về UI.</li>
+<li>💻🖥️📱 <strong>Local Fallback:</strong> Khi kết nối rớt → chuyển NLP tĩnh về Local WASM Sandbox (~100MB SLM). Session Ticket Caching: 4-RTT → 1-RTT.</li>
+</ul>
+<h4 id="ai-consent-opt-in-bắt-buộc">AI Consent / Opt-in (Bắt buộc)</h4>
+<ul>
+<li>Mọi lần AI truy cập dữ liệu ghi vào <strong>Tamper-Proof Audit Log</strong>.</li>
+<li>AI không bao giờ có thể truy cập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Channel_Key</code> hay <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Company_Key</code> — chỉ nhận alias đã tokenized.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Tài liệu này chỉ chứa App-layer implementation. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Core_Spec.md</code> cho Infrastructure/Security. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="8-large-file-handling-advanced-sync">8. Large File Handling & Advanced Sync</h2>
+<h3 id="81-xử-lý-file-khổng-lồ-mmap-blake3-segmented-merkle-local-http-streaming">8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Local HTTP Streaming</h3>
+<h4 id="zero-copy-io-qua-virtual-memory-mmap">Zero-Copy I/O qua Virtual Memory (mmap)</h4>
+<ul>
+<li>📱💻🖥️ Lõi Rust gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap()</code> ánh xạ file vật lý trực tiếp lên vùng nhớ ảo. Page Fault nạp từng mảnh on-demand — không dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">read/write</code> qua vRAM Buffer. RAM footprint &lt; 10MB bất kể file nặng hàng GB.</li>
+<li>📱💻🖥️ <strong>Strict Thread Isolation:</strong> UI chỉ truyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">File_URI</code> xuống Rust → Rust trả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ACK_START &lt; 16ms</code> giữ 60FPS. Toàn bộ tác vụ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap</code>, BLAKE3, AEAD nhốt vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tokio::task::spawn_blocking</code>.</li>
+</ul>
+<h4 id="os-aware-io-fallback-synchronous-ring-buffer-bẫy-sigbus-mmap-trên-ios">OS-Aware I/O Fallback & Synchronous Ring Buffer (Bẫy SIGBUS mmap trên iOS)</h4>
+<ul>
+<li>📱 Thay thế toàn diện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap()</code> bằng hệ thống lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">pread()</code> syscall để kiểm soát tường minh lỗi I/O chuẩn trên hạ tầng Mobile thay vì Kernel Panic.</li>
+<li>📱 Quản trị vòng đời Fixed-Size Ring Buffer (2MB/4MB) cấp phát tĩnh tại ngăn xếp RAM không gian người dùng (User-space).</li>
+<li>📱 Tiêm cơ chế catch lỗi văng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EIO/EPERM</code> để thực thi Graceful Abort và WAL Rollback ngay tích tắc khi thiết bị khóa màn hình (Data Protection Lock).</li>
+</ul>
+<h4 id="blake3-segmented-merkle-tree-xác-thực-chunk-không-freeze-ui">BLAKE3 Segmented Merkle Tree — Xác thực Chunk không Freeze UI</h4>
+<ul>
+<li>📱💻🖥️ <strong>Pipelined Segmented Merkle:</strong> Chia file thành Macro-Block 64MB. Rust băm BLAKE3 Macro-Block #1 (&lt;50ms) → gửi Root Hash qua Control Plane → nhồi chunks vào Data Plane → đồng thời băm Macro-Block #2. <strong>O(1) Initial Latency</strong> bất kể kích thước file.</li>
+<li>📱💻🖥️ <strong>AEAD Associated Data (Cryptographic Offset Binding):</strong> Mỗi chunk: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">AD = [File_ID] || [Chunk_Index] || [Byte_Offset]</code>. Receiver kiểm chứng AD_Expected trên RAM. Sai lệch → AEAD fail → Drop lập tức. Chặn <strong>Displacement Attack</strong> và <strong>Replay Attack</strong>.</li>
+<li>📱💻🖥️ <strong>Deterministic Nonce:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Nonce = HMAC-SHA256(Channel_Key, File_ID || Chunk_Index)</code>. Nonce lệch do tráo chunk → panic tại cửa bộ giải mã.</li>
+<li>Hiệu năng: BLAKE3 Out-of-Order verification ~6GB/s (Desktop CPU).</li>
+</ul>
+<h4 id="local-proxy-streaming-on-the-fly-decryption-local-loopback-proxy-jit-stream-decryption">Local Proxy Streaming & On-the-fly Decryption (Local Loopback Proxy & JIT Stream Decryption)</h4>
+<ul>
+<li>📱 Dựng Local HTTP Server ẩn danh tại vòng lặp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">127.0.0.1</code> chuyên trách giao tiếp cung cấp luồng phương tiện đa phương tiện với khung trình phát AVPlayer/ExoPlayer của hệ thống.</li>
+<li>📱💻🖥️ Triển khai JIT (Just-In-Time) Fetching nhằm cơ động tải trực giác đúng Chunk cần thiết dựa trên vị trí Byte Offset của thanh tiến trình (Seek bar).</li>
+<li>📱💻🖥️ Áp dụng luật ZeroizeOnDrop / RAII xóa triệt để dữ liệu Plaintext khỏi phân vùng RAM ngay lập tức sau thao tác xả Socket trả về Client.</li>
+<li>📱 Xác lập phân vùng 2MB Ring Buffer giới hạn ngặt nghèo bộ nhớ Memory Footprint duy trì trạng thái ổn định tĩnh &lt; 8MB bất chấp file gốc lên tới hàng GB.</li>
+<li>📱 <strong>Chunked AEAD (STREAM / OAE1):</strong> Chống lỗi Merkle Chain BLAKE3 theo chiều ngang bảo chứng chuỗi 1 bypte hỏng không phá bung tập dữ liệu 4GB tổng.</li>
+</ul>
+<h4 id="in-memory-pumping-via-custom-url-scheme-handler-lỗ-hổng-tcp-local-và-cleartext">In-Memory Pumping via Custom URL Scheme Handler (Lỗ hổng TCP Local và Cleartext)</h4>
+<ul>
+<li>📱 Triển khai <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">AVAssetResourceLoader</code> (iOS) và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MediaDataSource</code> (Android) để nạp gói tin dữ liệu luân chuyển trực tiếp qua bộ nhớ vật lý.</li>
+<li>📱 Giải mã cục bộ AES-GCM On-the-fly tốc độ cao ngay tại luồng bơm byte (Byte-stream) truyền phát.</li>
+<li>📱 Đúc kết cơ chế bypass hoàn toàn ATS (App Transport Security) và Network Security Configuration nhờ việc thủ tiêu vĩnh viễn cấu trúc Local TCP Socket.</li>
+</ul>
+<h4 id="os-level-ble-offloading-ký-sinh-tiến-trình-nền-os">OS-Level BLE Offloading (Ký sinh tiến trình nền OS)</h4>
+<ul>
+<li>📱 Sử dụng cơ chế State Preservation & Restoration (iOS CoreBluetooth) và PendingIntent (Android) để ủy quyền quét Service UUID cho phần cứng.</li>
+<li>📱 Chuyển Rust Core sang trạng thái Suspend (0% CPU) cho đến khi nhận tín hiệu đánh thức từ OS.</li>
+<li>📱 Lọc thiết bị qua băm mật mã UUID để giảm thiểu số lần thức giấc của App chính.</li>
+</ul>
+<h3 id="82-đồng-bộ-crdt-bằng-hybrid-logical-clocks-hlc-khi-offline">8.2 Đồng bộ CRDT bằng Hybrid Logical Clocks (HLC) — Khi Offline</h3>
+<h4 id="triệt-tiêu-clock-drift">Triệt tiêu Clock Drift</h4>
+<ul>
+<li>📱💻🖥️ <strong>HLC Timestamp:</strong> Mọi thao tác trạng thái định danh bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">(Lamport_Counter, Node_ID, Wall_Clock_HLC)</code>. HLC bảo vệ tính nhân quả (Causality) bất chấp đồng hồ phần cứng OS sai lệch hàng tiếng.</li>
+<li>📱💻🖥️ Tuyệt đối không dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SystemTime::now()</code> cho ordering — dùng NTP nội bộ Rust Core + Lamport Vector Clock.</li>
+</ul>
+<h4 id="dag-causal-graph-delta-state-crdt-pending-buffer">DAG Causal Graph + Delta-State CRDT Pending Buffer</h4>
+<ul>
+<li>📱💻🖥️ <strong>Delta-State CRDT:</strong> Chuyển đổi từ mô hình Op-based nguyên thủy sang Delta-State CRDT để chỉ truyền tải bản tóm tắt trạng thái cuối cùng (thay vì toàn bộ lịch sử thao tác).</li>
+<li>📱💻🖥️ Mỗi gói E2EE BLE kết nối vào DAG (Đồ thị có hướng không vòng). Event Out-of-Order thiếu gốc → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Pending_RAM_Buffer</code>. UI chỉ render khi gốc Đồ thị Nhân quả đã đầy đủ từ tất cả luồng Mesh.</li>
+<li>📱💻🖥️ <strong>Aggressive Tombstone Pruning:</strong> Sau khi Quorum (VD: 3/5 Super Nodes) xác nhận đồng bộ History X → Rust chạy lệnh Snapshot State → Xóa vĩnh viễn Tombstone khỏi SQLite. Cắt dung lượng từ 500MB xuống ~10MB.</li>
+</ul>
+<h4 id="giao-thức-vỏ-bọc-mờ-opaque-envelope-hash-invariance-đứt-gãy-đồ-thị-crdt">Giao thức Vỏ bọc mờ (Opaque Envelope) & Hash Invariance (Đứt gãy Đồ thị CRDT)</h4>
+<ul>
+<li>📱💻🖥️ Ràng buộc thuật toán Blake3 thực hiện băm trực tiếp trên dải byte thô (Raw Bytes) thay vì struct đã deserialize để bảo toàn tuyệt đối ID Node CRDT.</li>
+<li>📱💻🖥️ Tận dụng tính năng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UnknownFieldSet</code> của Protocol Buffers để lưu trữ nguyên bản và chuyển tiếp các trường dữ liệu mới mà nhánh thiết bị cũ chưa kịp nhận diện.</li>
+<li>📱💻🖥️ Thực thi cơ chế "Forward-Preservation" đảm bảo dữ liệu đến từ tương lai đi xuyên qua các node trung gian lỗi thời mà không bị bốc hơi dòng siêu dữ liệu cốt lõi.</li>
+</ul>
+<h4 id="shadow-execution-pre-flight-hash-consensus-split-brain-crdt">Shadow Execution & Pre-Flight Hash Consensus (Split-Brain CRDT)</h4>
+<ul>
+<li>📱💻🖥️ Vận hành cơ chế Shadow Execution thực thi lại (Replay) hàm WASM tại thiết bị nhận để đối soát chéo kết quả.</li>
+<li>📱💻🖥️ Sử dụng BLAKE3 State Hashing để kiểm chứng tính toàn vẹn tuyệt đối của Trạng thái đầu ra (Output State).</li>
+<li>📱💻🖥️ Thuật toán Byzantine Isolation tự động cô lập các node sinh dữ liệu dị thường (dấu hiệu chẻ nhánh) khỏi mạng lưới Mesh cục bộ.</li>
+</ul>
+<h4 id="constraints-ram-circuit-breaker">Constraints & RAM Circuit Breaker</h4>
+<ul>
+<li>⚠️ <strong>RAM Circuit Breaker:</strong> Tín hiệu CHOKE tự động phân rã lưới Mesh, ngăn chặn nạp dữ liệu vào bộ đệm Out-of-Order khi RAM vượt ngưỡng an toàn (Ví dụ: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">8MB Buffer / 24MB Limit</code> trên iOS NSE) để tránh Jetsam OOM-Kill.</li>
+<li>⚠️ CRDT Write Local-First &lt; 5ms. Garbage Collection Epoch &lt; 50ms. RAM Buffer Out-of-Order Event &lt; 8MB.</li>
+</ul>
+<h3 id="83-teravault-vfs-kéo-thả-cas-ref-mapping">8.3 TeraVault VFS — Kéo thả (cas_ref mapping)</h3>
+<h4 id="nguyên-lý-không-nhân-bản-file">Nguyên lý: Không nhân bản file</h4>
+<ul>
+<li>💻🖥️ TeraVault <strong>không copy file</strong> — toàn bộ cây thư mục ảo là bảng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings</code> (pointer <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code> → blob vật lý duy nhất trên Cluster).</li>
+</ul>
+<h4 id="drag-drop-chat-teravault-folder">Drag & Drop — Chat → TeraVault Folder</h4>
+<ul>
+<li>💻🖥️ Frontend gửi IPC: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault::pin_file(cas_ref, target_folder_id, display_name)</code> → Rust tạo thêm bản ghi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings</code> trỏ về cùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cas_ref</code>. File xuất hiện ở thư mục đích <strong>mà không bị sao chép</strong>.</li>
+<li>💻🖥️ E2EE không bị ảnh hưởng — <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">File_Key</code> vẫn nguyên vẹn. TeraVault chỉ quản lý metadata.</li>
+<li>📱 <strong>Auto-Mapping:</strong> Khi file gửi vào Channel → Rust Core tự tạo bản ghi ánh xạ vào thư mục mặc định tương ứng Channel.</li>
+</ul>
+<h4 id="cấu-trúc-folder">Cấu trúc Folder</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Cấp</th>
+<th>Nguồn</th>
+<th>Ví dụ</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Cấp 1 (Auto)</strong></td>
+<td>Tên Channel / Group Chat</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">📁 Dự án Alpha</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">📁 Phòng Kế Toán</code></td>
+</tr>
+<tr>
+<td><strong>Cấp 2+ (Manual)</strong></td>
+<td>Admin / User tạo thủ công</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">📁 Hợp đồng 2026</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">📁 Bản vẽ kỹ thuật Q1</code></td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>💻🖥️<strong>VFS Search:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">vault_file_mappings.file_name</code> + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tags</code> được index bằng PostgreSQL FTS (tsvector) hoặc local SQLite FTS5. Kết quả trả về FileStub → lazy-load từ Cluster.</li>
+</ul>
+<h3 id="84-cas-hash-dedup-trong-offline-mesh">8.4 CAS_Hash Dedup trong Offline Mesh</h3>
+<ul>
+<li>☁️🖥️ Xây dựng Deferred CRDT Sync dành riêng cho kho lưu trữ TeraVault VFS.</li>
+<li>📱💻🖥️ Khi upload trong mạng Mesh offline, Rust sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">FileStub_UUID = Hash(Device_ID + Local_Timestamp)</code>. Cho phép trao đổi P2P qua định danh này.</li>
+<li>☁️🗄️ Khi kết nối lại, multi-client push payload. Cụm Server kích hoạt hàm Arbitrator, chạy thuật toán CRDT "First-Seen-Wins" xử lý đụng độ cùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CAS_Hash</code>.</li>
+<li>📱💻🖥️ Trả về <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Canonical_VFS_ID</code> duy nhất. Client nhận ID này và update lại bảng SQLite FTS (Full-Text Search) cục bộ bằng một transaction duy nhất (Atomic write).</li>
+</ul>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>
