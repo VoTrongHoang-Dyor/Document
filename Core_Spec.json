@@ -1627,16 +1627,18 @@
                   "subsections": []
                 },
                 {
-                  "id": "chống-trùng-lặp-dữ-liệu-vật-lý-storage-bloat",
+                  "id": "chống-trùng-lặp-dữ-liệu-vật-lý-storage-bloat-tấn-công-kpa",
                   "level": 4,
-                  "heading": "Chống trùng lặp dữ liệu vật lý (Storage Bloat)",
+                  "heading": "Chống trùng lặp dữ liệu vật lý (Storage Bloat) & Tấn công KPA",
                   "content_blocks": [
                     {
                       "type": "list",
                       "data": [
-                        "☁️🗄️ Content-Addressable Storage (CAS) Deduplication: Khai thác mã băm BLAKE3 để định danh CAS_Hash nguyên bản của từng thực thể vật lý, ngăn chặn khởi tạo lại tài nguyên lưu trữ.",
-                        "☁️🗄️ Quản lý lưu trữ tập trung khối Encrypted_Blob trên nền tảng Blind Storage (MinIO) dựa hoàn toàn trên chuỗi hash thay vì đường dẫn định tuyến tĩnh như hệ thống truyền thống.",
-                        "☁️🗄️ Vận hành cơ chế Deduplication tự động đối chiếu băm nhằm trực tiếp cắt giảm mạnh mẽ 40–60% dung lượng lưu trữ thực tế trên toàn bộ cụm Server."
+                        "☁️🗄️ Content-Addressable Storage (CAS) Deduplication: Khai thác mã băm BLAKE3 để định danh CAS_Hash nguyên bản của từng thực thể vật lý, ngăn chặn khởi tạo lại tài nguyên lưu trữ và cắt giảm 40–60% dung lượng.",
+                        "📱💻🖥️ Salted Message-Locked Encryption (Salted MLE): Sử dụng thuật toán BLAKE3 kết hợp Channel_Key (từ cây MLS) để sinh khóa hội tụ có muối (Salted MLE) nhằm ngăn chặn dự đoán mã băm trên cụm MinIO.",
+                        "📱💻 Ownership Proof MAC: Triển khai cơ chế Ownership_Proof_MAC sử dụng HMAC-BLAKE3 ràng buộc chặt chẽ với Company_Key trong Secure Enclave để xác thực quyền sở hữu tệp tin một cách an toàn.",
+                        "☁️ Policy Enforcement: OPA Engine thực thi kiểm tra chính sách (Policy check) ngặt nghèo trên Server cho mọi lệnh ghim file (pin_file).",
+                        "📱💻🖥️ AES-256-GCM Armor: Lớp giáp mã hóa AES-256-GCM đảm bảo dữ liệu thô (Encrypted_Blob) trở nên vô dụng nếu kẻ tấn công không nắm giữ khóa giải mã nhóm."
                       ]
                     }
                   ],
