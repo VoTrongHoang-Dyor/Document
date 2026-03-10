@@ -7,6 +7,7 @@ Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệ
   * Phát hành `Invite Token` (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt `Epoch Rotation` và `Remote Wipe` (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.
   * Nắm giữ `Enterprise Escrow Key` (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.
   * **Thu hồi & Cấp lại Định danh (Social Escrow Fallback):** Khi nhân viên mất thiết bị mà Server đang sập, Admin có thể — khi Server trở lại — Revoke `Device_Key` cũ và kích hoạt Re-provision qua SCIM 2.0 để cấp định danh mới cho thiết bị thay thế.
+  * **C-Level Hardware Bypass (NFC Break-glass):** Bỏ qua yêu cầu Social Escrow (3/5) đối với các nhân sự cấp cao nếu họ chứng minh được sở hữu vật lý của phần cứng dự phòng thứ 2 (NFC Ring/YubiKey C-Type) kết hợp với mã PIN cấp thấp.
 
 * **Thiết lập Chính sách Bảo mật (OPA Policy & DLP):**
 * Định nghĩa các chính sách truy cập qua OPA Engine, bao gồm giới hạn tốc độ (Rate Limiting) theo phòng ban, thời gian lưu trữ tin nhắn (TTL), và quyền hiển thị ứng dụng.
@@ -44,6 +45,8 @@ Người dùng được trải nghiệm một môi trường làm việc bảo m
 * Sắp xếp, kéo thả file từ khung chat vào một cây thư mục ảo (Virtual File System) ngăn nắp mà không làm nhân bản dung lượng file.
 * Chủ động bật chế độ "Make Available Offline" (Tầng lưu trữ 3) để tải trước toàn bộ thư mục về máy khi chuẩn bị di chuyển vào vùng mất sóng.
 * Xem trước các file (PDF, CAD, Video) siêu nhanh nhờ cơ chế nạp "vỏ bọc" Zero-Byte Stub (~5KB).
+* 📱 **iOS:** Khi tải file dung lượng lớn, TeraChat giao hẳn URL E2EE cho `NSURLSession Background Transfer` để hệ điều hành tự tải ở chế độ nền; sau khi xong, Core Rust giải mã thẳng từ file tạm qua `mmap/pread` và xoá sạch, không cần app phải mở màn hình liên tục.
+* 📱 **Xem video không độ trễ:** Thay vì dựng Local HTTP Server `127.0.0.1`, trình phát AVPlayer/ExoPlayer được nối trực tiếp với Lõi Rust qua Native-to-Rust Media DataSource Bridge (AVAssetResourceLoaderDelegate/MediaDataSource). Người dùng chỉ thấy video phát mượt mà, seek tức thì, kể cả khi app bị đưa ra Background theo đúng giới hạn của iOS/Android.
 
 * **Sử dụng Tiện ích và Phê duyệt:**
 * Tương tác với các AI Bot ảo trực tiếp trong nhóm chat (bằng cách `@mention`) để tóm tắt tài liệu mà không lo rò rỉ dữ liệu cá nhân (nhờ cơ chế Dual-Mask).
@@ -101,3 +104,24 @@ Quá trình kết nối hai công ty diễn ra hoàn toàn an toàn mà không c
 * Khi một nhân viên Chi nhánh nghỉ việc hoặc bị sa thải, Admin Chi nhánh thao tác trên hệ thống nội bộ, bộ lắng nghe SCIM sẽ lập tức khóa tài khoản và xóa khóa thiết bị.
 * Ngay khi mất quyền ở Chi nhánh, nhân viên đó **tự động mất luôn quyền truy cập vào kênh mTLS sang HQ trong vòng chưa tới 30 giây**.
 * Điểm hay của kiến trúc này là Tổng công ty không cần biết nhân viên Chi nhánh bị đuổi, hệ thống của Chi nhánh sẽ tự dọn dẹp và ngắt luồng liên lạc.
+
+---
+
+## 5. Kiểm soát AI Privacy Shield (Admin/CISO Console)
+
+Admin/CISO là người duy nhất có quyền sinh sát đối với dòng chảy dữ liệu ra ngoài khi sử dụng tính năng `@ai`. Hệ thống không cấm đoán toàn bộ mà cung cấp 3 mức cấu hình linh hoạt:
+
+### Mức 1 — Strict Compliance (Mặc định)
+* AI Shield bắt buộc bật vĩnh viễn. Không một role nào được phép tắt.
+* Ứng dụng: Khối ngân hàng, bệnh viện (HIPAA), cơ quan nhà nước.
+* Kỹ thuật: OPA Policy trả về `allow: false` cho mọi `toggle_shield: true` request bất kể role.
+
+### Mức 2 — Role-Based Risk Acceptance (Chấp nhận Rủi ro theo Vai trò)
+* Admin cấp quyền `can_toggle_shield: true` cho các nhóm cụ thể (VD: `Role: Marketing`, `Role: C-Level`, `Role: R&D`).
+* Nhân viên các phòng ban được cấp phép khi gõ `@ai` sẽ thấy công tắc Shield có thể gạt sang OFF để lấy bối cảnh sâu nhất cho Prompt.
+* **Non-Repudiation Audit:** Mọi truy vấn khi tắt Shield bị gán cờ cảnh báo, lưu Plaintext Hash vào Tamper-Proof Audit Log (Ed25519 Signed) để quy trách nhiệm pháp lý nếu xảy ra rò rỉ dữ liệu.
+
+### Mức 3 — DLP Threshold (Chốt chặn cuối — không thể bypass)
+* Ngay cả khi Admin cho phép tắt Shield, Lõi Rust vẫn áp dụng **Byte-Quota Circuit Breaker**.
+* Nếu độ dài Payload > 4KB (tương đương ~1 trang A4 văn bản thô) → Lõi Rust tự động ngắt và trả lỗi: `"Khối lượng dữ liệu quá lớn. Vui lòng bật AI Shield hoặc cắt ngắn văn bản để chống Data Dumping."`
+* Kỹ thuật: OPA Policy Engine tại Rust Core check `payload_size > 4096 bytes` tại thời điểm IPC Bridge truyền Prompt — không thể bypass từ WASM Sandbox.

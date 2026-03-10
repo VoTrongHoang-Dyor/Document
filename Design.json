@@ -3,9 +3,9 @@
   "generated_at": "2026-02-23",
   "sections": [
     {
-      "id": "terachat-design-specification",
+      "id": "terachat-enterprise-sovereign-messenger-design-specification",
       "level": 1,
-      "heading": "TeraChat – Design Specification",
+      "heading": "TeraChat ( Enterprise Sovereign Messenger ) – Design Specification",
       "content_blocks": [
         {
           "type": "blockquote",
@@ -786,1295 +786,359 @@
                   "text": "Section 3 — Quick Tools (1 hàng icons):"
                 },
                 {
-                  "type": "code",
-                  "language": "",
-                  "code": "[Smart Approval] [CRM] [POS] [HR]     [Open Full Tools →]"
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "mesh-mode-home",
-              "level": 3,
-              "heading": "Mesh Mode — Home",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Background chuyển dark navy.",
-                    "Radar icon ở header.",
-                    "Banner: \"Mesh Active – Local secure network connected\"."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "layout-mobile",
-              "level": 3,
-              "heading": "Layout Mobile",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Single column.",
-                    "Pinned Channels: horizontal scroll cards.",
-                    "Activity Feed + Quick Tools bên dưới.",
-                    "Empty state hero text 60px: \"Secure Communication Infrastructure for Critical Operations.\""
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "10-chats",
-          "level": 2,
-          "heading": "10. Chats",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "layout-desktoplaptop",
-              "level": 3,
-              "heading": "Layout Desktop/Laptop",
-              "content_blocks": [
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "| Left Rail | Chat List (360px) | Chat Frame (fill) | Info Panel (overlay) |"
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "chat-list-panel",
-              "level": 3,
-              "heading": "Chat List Panel",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Search bar: \"Search chats…\", glass input, radius 12px, focus glow #24A1DE 30%.",
-                    "Group chats theo Section: Direct / Channels / Departments.",
-                    "Mỗi row:"
-                  ]
+                  "type": "paragraph",
+                  "text": "[Smart Approval] [CRM] [POS] [HR]     [Open Full Tools →]"
                 },
                 {
                   "type": "code",
                   "language": "",
-                  "code": "  [Avatar 36px] Channel Name              14:02\n                Last message preview      [3 unread badge]"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Hover: highlight 3%, indicator trái nhẹ.",
-                    "Right-click: Pin to Home / Mute / Leave."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "chat-header-56px",
-              "level": 3,
-              "heading": "Chat Header (56px)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Glass background blur 12–16px."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Bên trái:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Channel name 16px SemiBold",
-                    "Department tag badge",
-                    "🔒 E2EE Active icon"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Bên phải:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Search in conversation",
-                    "Call (nếu Zone 1)",
-                    "Screen share (Zone 1)",
-                    "Info icon (mở Info Panel)"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Mesh Mode:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Radar icon pulse",
-                    "Banner mỏng phía dưới header: \"Mesh Active – 12 nearby nodes connected\""
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "message-list-trọng-tâm-không-bubble",
-              "level": 3,
-              "heading": "Message List (Trọng tâm — KHÔNG BUBBLE)",
-              "content_blocks": [
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "[Avatar 28px]  Username          14:02\n               Message nội dung đầy đủ chiều rộng\n               [Attachment preview]\n───────────────────────────────────────────────────"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Typography:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Username: 13px Medium",
-                    "Timestamp: 12px muted",
-                    "Message: 14px Regular, line-height 1.6"
-                  ]
-                }
-              ],
-              "subsections": [
-                {
-                  "id": "khởi-động-lạnh-skeleton-ui-render-khung-xương-cứng",
-                  "level": 4,
-                  "heading": "Khởi động Lạnh & Skeleton UI (Render khung xương cứng)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "📱💻🖥️ Hardcoded Skeleton UI: Hiển thị tức thì (0ms - 50ms) khung xương mang phong cách Glassmorphism mà không cần chờ I/O từ cơ sở dữ liệu.",
-                        "📱💻🖥️ Pure Renderer Architecture: Logic xử lý dữ liệu được tách biệt hoàn toàn khỏi tầng hiển thị (Native/DOM), giúp UI không bị block bởi quá trình khởi động hệ thống tĩnh của Rust Core.",
-                        "📱 Quy tắc Điều hướng Thị giác: Layout Skeleton hardcode sẵn thanh Input và các khối tin nhắn dạng mờ (Blur) cố định để định hướng ánh nhìn của người dùng ngay khi app vừa mở."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "hiệu-ứng-magic-reveal-stubs-staggered-native-reveal",
-                  "level": 4,
-                  "heading": "Hiệu ứng Magic Reveal & Stubs (Staggered Native Reveal)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "📱 Staggered Slide-Up: Animation trượt so le từ trên xuống được thực thi trực tiếp trên Native Thread (tác động thẳng vào Transform Y và Opacity), đảm bảo đạt 120fps mà không chịu nghẽn luồng từ JS Bridge.",
-                        "📱💻🖥️ Zero-Byte Blur-Hash Stubbing: Trước khi tải ảnh gốc, UI lập tức render các \"Zero-Byte Stubs\" (<5KB JPEG E2EE chứa Hash Blur) tạo thành khối màu kính Glassmorphism mờ ảo.",
-                        "📱 Spring Physics: Áp dụng hiệu ứng nảy nhẹ (Spring) mang tính vật lý cho mỗi tin nhắn khi xuất hiện, tăng cảm giác chân thực và không gian tương tác."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "glassmorphism-state-update-glow-effect-hiệu-ứng-thông-minh",
-                  "level": 4,
-                  "heading": "Glassmorphism State Update & Glow Effect (Hiệu ứng Thông minh)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "📱💻🖥️ Trạng thái ai_ready: Cập nhật trạng thái hệ thống và giao diện UI thông qua luồng IPC siêu nhẹ để bật hiệu ứng Glow lóe sáng viền mượt mà mang phong cách kính khi AI rà quét (tìm kiếm thông minh) thành công 20 tin nhắn gần nhất, báo hiệu sẵn sàng xử lý siêu văn bản."
-                      ]
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "Nhóm message (cùng user < 5 phút):"
-                    },
-                    {
-                      "type": "code",
-                      "language": "",
-                      "code": "Avatar  User Name   14:02\n        Message 1\n        Message 2\n        Message 3"
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "Không lặp avatar. Hiển thị 20–25 dòng / màn hình 13\"."
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "Hover message:"
-                    },
-                    {
-                      "type": "code",
-                      "language": "",
-                      "code": "[React] [Reply] [Copy] [More…]"
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "Inline actions — không floating button lố. Background highlight 3%."
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "System messages:"
-                    },
-                    {
-                      "type": "code",
-                      "language": "",
-                      "code": "──────────── User X approved document ────────────"
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "Center aligned, muted text, không avatar."
-                    }
-                  ],
-                  "subsections": []
-                }
-              ]
-            },
-            {
-              "id": "attachments",
-              "level": 3,
-              "heading": "Attachments",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Ảnh:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "BlurHash placeholder → fade-in 0.3s khi load.",
-                    "Border subtle.",
-                    "Dynamic watermark nếu Zone 2 (Restricted)."
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "File card:"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "📄 Contract_v2.pdf    2.4MB | 🔒 Encrypted\n[Download]  [Preview]"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Glass card, radius 8px."
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "message-input-64px-min",
-              "level": 3,
-              "heading": "Message Input (64px min)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Glass container."
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "[+] [😊] [📎]   |  Type secure message…  |  [🎤] [➤]"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Enter = Send. Shift+Enter = New line.",
-                    "Disable Send nếu không có quyền (Zone DLP block).",
-                    "Loading spinner khi đang gửi.",
-                    "\"New messages ↓\" indicator khi scroll lên."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "info-panel-slide-từ-phải-025s",
-              "level": 3,
-              "heading": "Info Panel (Slide từ phải — 0.25s)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Click ℹ → slide từ phải."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Tabs: Members / Files / Audit Log / Permissions / Zone Status"
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "layout-mobile",
-              "level": 3,
-              "heading": "Layout Mobile",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Chat List: màn hình đầu tiên (full screen).",
-                    "Tap conversation → push sang Chat Frame (full screen).",
-                    "Header: Back trái + Channel name + Icons.",
-                    "Input bar cố định ở đáy, trên bàn phím khi mở.",
-                    "Info Panel → Bottom Sheet khi tap Info icon."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "11-notifications",
-          "level": 2,
-          "heading": "11. Notifications",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "filter-bar",
-              "level": 3,
-              "heading": "Filter bar",
-              "content_blocks": [
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "[All]  [Mentions]  [System]  [Approval]"
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "notification-row",
-              "level": 3,
-              "heading": "Notification row",
-              "content_blocks": [
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "[Icon type]  Title               14:02\n             Short description"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Approval: CTA [Review] inline.",
-                    "Security Alert: badge đỏ, tap mở detail.",
-                    "Audit Event: muted, không CTA."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "12-files-teravault",
-          "level": 2,
-          "heading": "12. Files (TeraVault)",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "layout-desktoplaptop",
-              "level": 3,
-              "heading": "Layout Desktop/Laptop",
-              "content_blocks": [
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "| Left Rail | File Sidebar (280px) | File Workspace (fill) |"
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "file-sidebar-glass-panel",
-              "level": 3,
-              "heading": "File Sidebar (Glass Panel)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Background: rgba(255,255,255,0.08), blur 18px, border 1px rgba(255,255,255,0.12), radius 20px."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Header:"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "Files\n[ + Upload ]"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Upload button: gradient nhẹ #24A1DE → transparent, icon arrow up, hover glow subtle."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Filter Section:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "All Files",
-                    "My Files",
-                    "Shared with Me",
-                    "Department Files",
-                    "Mesh Storage (nếu offline)"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Active item: nền glass sáng hơn 4%, viền trái accent #24A1DE 3px."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Quick Access (Pinned Files):"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "[PDF icon] Budget_2026.pdf\n           Finance Dept · Updated 2h ago"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Hover: elevation nhẹ, icon action ⋯ bên phải."
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "file-workspace",
-              "level": 3,
-              "heading": "File Workspace",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Header:"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "📁 Department / Finance     [Search files...]     [Sort ▼] [Filter]"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "View Toggle: Grid (default) / List."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Grid View:"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "┌──────────────┐\n│   [Icon]     │\n│ Budget.xlsx  │\n│   12 MB      │\n│ Updated 2h   │\n└──────────────┘"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Card: background rgba(255,255,255,0.06), blur 12px, radius 18px. Hover: sáng hơn 6%."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "File type color (subtle):"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "PDF → đỏ subtle",
-                    "Excel → xanh lá",
-                    "Doc → xanh dương",
-                    "Image → tím"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "List View:"
+                  "code": "\n### Mesh Mode — Home\n\n- Background chuyển dark navy.\n- Radar icon ở header.\n- Banner: `\"Mesh Active – Local secure network connected\"`.\n\n### Layout Mobile\n\n- Single column.\n- Pinned Channels: horizontal scroll cards.\n- Activity Feed + Quick Tools bên dưới.\n- Empty state hero text 60px: *\"Secure Communication Infrastructure for Critical Operations.\"*\n\n---\n\n## 10. Chats\n\n### Layout Desktop/Laptop\n"
                 },
                 {
                   "type": "table",
                   "headers": [
-                    "Name",
-                    "Owner",
-                    "Department",
-                    "Updated",
-                    "Size",
-                    "Security"
+                    "Left Rail",
+                    "Chat List (360px)",
+                    "Chat Frame (fill)",
+                    "Info Panel (overlay)"
                   ],
-                  "rows": [
-                    [
-                      "Budget.pdf",
-                      "Hoang",
-                      "Finance",
-                      "2h ago",
-                      "2.4MB",
-                      "🔒 Encrypted"
-                    ]
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Security column:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "🔒 Encrypted",
-                    "🌐 Cloud",
-                    "📡 Mesh Local"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Row hover: nền trắng 3%, border glow mỏng."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Security Badge (góc phải mỗi file):"
+                  "rows": []
                 },
                 {
                   "type": "code",
                   "language": "",
-                  "code": "[ENCRYPTED]  [CLASSIFIED]  [INTERNAL]  [PUBLIC]"
+                  "code": "\n### Chat List Panel\n\n- Search bar: `\"Search chats…\"`, glass input, radius 12px, focus glow `#24A1DE 30%`.\n- Group chats theo Section: **Direct** / **Channels** / **Departments**.\n- Mỗi row:\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Glass mini, blur 6px, text uppercase 10px."
+                  "text": "[Avatar 36px] Channel Name              14:02"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Smart Action Bar (khi click file):"
+                  "text": "Last message preview      [3 unread badge]"
                 },
                 {
                   "type": "code",
                   "language": "",
-                  "code": "Preview / Share / Generate Approval / AI Summary / Download / Move to Mesh"
+                  "code": "\n- Hover: highlight 3%, indicator trái nhẹ.\n- Right-click: Pin to Home / Mute / Leave.\n\n### Chat Header (56px)\n\nGlass background blur 12–16px.\n\n**Bên trái:**\n\n- Channel name `16px SemiBold`\n- Department tag badge\n- `🔒 E2EE Active` icon\n\n**Bên phải:**\n\n- Search in conversation\n- Call (nếu Zone 1)\n- Screen share (Zone 1)\n- Info icon (mở Info Panel)\n\n**Mesh Mode:**\n\n- Radar icon pulse\n- Banner mỏng phía dưới header: `\"Mesh Active – 12 nearby nodes connected\"`\n\n### Message List (Trọng tâm — KHÔNG BUBBLE)\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Floating glass panel, shadow nhẹ, border glow #24A1DE mờ."
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "mesh-mode-behavior",
-              "level": 3,
-              "heading": "Mesh Mode Behavior",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Header banner: \"Mesh Mode Active – Files syncing locally\""
+                  "text": "[Avatar 28px]  Username          14:02"
                 },
                 {
                   "type": "paragraph",
-                  "text": "File icons:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "📡 Local",
-                    "☁ Sync Pending"
-                  ]
+                  "text": "Message nội dung đầy đủ chiều rộng"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Sync animation: subtle pulse."
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "layout-mobile",
-              "level": 3,
-              "heading": "Layout Mobile",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "File Sidebar → Bottom Sheet filter thay thế.",
-                    "Grid 2 cột.",
-                    "Tap file → Bottom Sheet với Smart Actions."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "13-tools-tapp-enterprise-launchpad",
-          "level": 2,
-          "heading": "13. Tools (.tapp) — Enterprise Launchpad",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "desktoplaptop",
-              "level": 3,
-              "heading": "Desktop/Laptop",
-              "content_blocks": [
+                  "text": "[Attachment preview]"
+                },
                 {
                   "type": "paragraph",
-                  "text": "Click Tools icon → Glass Modal lớn trung tâm màn hình. Grid 3–4 cột:"
+                  "text": "───────────────────────────────────────────────────"
                 },
                 {
                   "type": "code",
                   "language": "",
-                  "code": "[Smart Approval] [CRM] [POS] [HR]\n[Internal App 1] [Internal App 2] ..."
+                  "code": "\n**Typography:**\n\n- Username: 13px Medium\n- Timestamp: 12px muted\n- Message: 14px Regular, line-height 1.6\n\n#### Khởi động Lạnh & Skeleton UI (Render khung xương cứng)\n\n- 📱💻🖥️ **Hardcoded Skeleton UI:** Hiển thị tức thì (0ms - 50ms) khung xương mang phong cách Glassmorphism mà không cần chờ I/O từ cơ sở dữ liệu.\n- 📱💻🖥️ **Pure Renderer Architecture:** Logic xử lý dữ liệu được tách biệt hoàn toàn khỏi tầng hiển thị (Native/DOM), giúp UI không bị block bởi quá trình khởi động hệ thống tĩnh của Rust Core.\n- 📱 **Quy tắc Điều hướng Thị giác:** Layout Skeleton hardcode sẵn thanh Input và các khối tin nhắn dạng mờ (Blur) cố định để định hướng ánh nhìn của người dùng ngay khi app vừa mở.\n\n#### Hiệu ứng Magic Reveal & Stubs (Staggered Native Reveal)\n\n- 📱 **Staggered Slide-Up:** Animation trượt so le từ trên xuống được thực thi trực tiếp trên Native Thread (tác động thẳng vào Transform Y và Opacity), đảm bảo đạt 120fps mà không chịu nghẽn luồng từ JS Bridge.\n- 📱💻🖥️ **Zero-Byte Blur-Hash Stubbing:** Trước khi tải ảnh gốc, UI lập tức render các \"Zero-Byte Stubs\" (<5KB JPEG E2EE chứa Hash Blur) tạo thành khối màu kính Glassmorphism mờ ảo.\n- 📱 **Spring Physics:** Áp dụng hiệu ứng nảy nhẹ (Spring) mang tính vật lý cho mỗi tin nhắn khi xuất hiện, tăng cảm giác chân thực và không gian tương tác.\n\n#### Glassmorphism State Update & Glow Effect (Hiệu ứng Thông minh)\n\n- 📱💻🖥️ **Trạng thái `ai_ready`:** Cập nhật trạng thái hệ thống và giao diện UI thông qua luồng IPC siêu nhẹ để bật hiệu ứng Glow lóe sáng viền mượt mà mang phong cách kính khi AI rà quét (tìm kiếm thông minh) thành công 20 tin nhắn gần nhất, báo hiệu sẵn sàng xử lý siêu văn bản.\n\n**Nhóm message** (cùng user < 5 phút):\n"
                 },
                 {
-                  "type": "list",
-                  "data": [
-                    "Card radius 16px, blur 12px.",
-                    "Hover: glow nhẹ #24A1DE 20%.",
-                    "Mỗi .tapp chạy trong WASM Sandbox — hoàn toàn cô lập.",
-                    "Nút bị mờ/disable nếu phòng ban không được cấp quyền (OPA Policy)."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "mobile",
-              "level": 3,
-              "heading": "Mobile",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Tools → Full screen Bottom Sheet dạng 2 cột.",
-                    ".tapp khi mở → full screen modal, header tên App + nút Close."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "pinned-tapp",
-              "level": 3,
-              "heading": "Pinned .tapp",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Right-click / long-press → \"Pin to Sidebar\".",
-                    "Animate slide-down vào Rail / Tab bar (dynamic zone).",
-                    "Badge alert nếu app có notification."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "14-settings",
-          "level": 2,
-          "heading": "14. Settings",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Section",
-                "Nội dung"
-              ],
-              "rows": [
-                [
-                  "**Account**",
-                  "Profile, Avatar, Display name"
-                ],
-                [
-                  "**Security**",
-                  "E2EE keys, Device list, Revoke sessions"
-                ],
-                [
-                  "**OPA Policy**",
-                  "Xem chính sách DLP (read-only cho user)"
-                ],
-                [
-                  "**Zone Config**",
-                  "Cấu hình Online / Mesh priority"
-                ],
-                [
-                  "**Storage**",
-                  "Ring Buffer info, Offline storage quota"
-                ],
-                [
-                  "**Developer Mode**",
-                  "Toggle (nếu được cấp quyền)"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "15-admin-console-role-based-chỉ-admin-thấy",
-          "level": 2,
-          "heading": "15. Admin Console (Role-based — chỉ Admin thấy)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Entry point: Settings → [Admin Console] button."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "tab-structure",
-              "level": 3,
-              "heading": "Tab Structure",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Tab",
-                    "Chức năng"
-                  ],
-                  "rows": [
-                    [
-                      "**User Management**",
-                      "Invite Token, Revoke, Remote Wipe"
-                    ],
-                    [
-                      "**Key Management**",
-                      "KMS Bootstrap, Master Key status, Epoch Rotation"
-                    ],
-                    [
-                      "**OPA Policies**",
-                      "Tạo/sửa/xóa chính sách per-department"
-                    ],
-                    [
-                      "**Federation**",
-                      "Invite Token liên tổ chức, trust registry"
-                    ],
-                    [
-                      "**Audit Log**",
-                      "Timeline filter theo user/action/time"
-                    ],
-                    [
-                      "**Tools Registry**",
-                      "Whitelist/blacklist `.tapp`, quản lý API Keys"
-                    ],
-                    [
-                      "**Infrastructure**",
-                      "Node health, Cluster scaling wizard"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "trải-nghiệm-quản-trị-1-chạm-wizard-driven-ux",
-              "level": 3,
-              "heading": "Trải nghiệm Quản trị 1-Chạm (Wizard-driven UX)",
-              "content_blocks": [],
-              "subsections": [
-                {
-                  "id": "khởi-tạo-cụm-trực-quan-cluster-setup-wizard",
-                  "level": 4,
-                  "heading": "Khởi tạo Cụm Trực quan (Cluster Setup Wizard)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "Pre-flight Check — Scan phần cứng + network. Status badge ✅ / ❌. Nút [Deploy Cluster] chỉ sáng khi đủ điều kiện.",
-                        "Config Form — Dropdown chọn provider (Vultr/DO), nhập 3 IP, drag-drop id_rsa. Không terminal.",
-                        "Deploy Progress Bar — Phân nấc WireGuard → Longhorn → K8s → Ready. Text ngôn ngữ tự nhiên, không log terminal.",
-                        "Bootstrap QR — QR code để Admin scan trên mobile → thiết lập kênh mTLS, tự đặt IP/Port.",
-                        "Day-2 Dashboard — Cluster health 3/3 Online, storage gauge, 1-click [Zero-Downtime Update]."
-                      ]
-                    }
-                  ],
-                  "subsections": []
+                  "type": "paragraph",
+                  "text": "Avatar  User Name   14:02"
                 },
                 {
-                  "id": "mở-rộng-cụm-không-gián-đoạn-add-node-wizard",
-                  "level": 4,
-                  "heading": "Mở rộng Cụm Không Gián Đoạn (Add Node Wizard)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "Bảng trượt tối giản: nhập 3 trường — IP Address, Node Label, SSH Key.",
-                        "Progress động: Initializing → Joining → Ready.",
-                        "Rollback tự động + thông báo tiếng người nếu Node thất bại."
-                      ]
-                    }
-                  ],
-                  "subsections": []
+                  "type": "paragraph",
+                  "text": "Message 1"
                 },
                 {
-                  "id": "phản-hồi-thời-gian-thực",
-                  "level": 4,
-                  "heading": "Phản hồi Thời gian thực",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "Biểu đồ động: WireGuard speed, Cluster capacity tăng gộp theo thời gian thực.",
-                        "K8s Scheduler tự cân bằng tải sang Node ít bận hơn."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "phần-iv-luồng-ux-bảo-mật",
-      "level": 1,
-      "heading": "PHẦN IV – LUỒNG UX BẢO MẬT",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "16-smart-approval-flow",
-          "level": 2,
-          "heading": "16. Smart Approval Flow",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "",
-              "code": "Notification → [Review] → Detail Modal → Ghi chú lý do\n→ [Biometric/PIN xác nhận] → Approved ✅ / Rejected ❌"
-            },
-            {
-              "type": "list",
-              "data": [
-                "Bắt buộc User Presence (Touch ID / Face ID / PIN) trước khi ký.",
-                "Processing spinner → Success / Error state."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "17-mesh-activation-flow",
-          "level": 2,
-          "heading": "17. Mesh Activation Flow",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "",
-              "code": "Detect mất kết nối\n→ Toast: \"Switching to Mesh Mode...\"\n→ UI fade sang Dark theme (0.3s)\n→ Banner: \"Mesh Active – N nodes\"\n→ Tiếp tục nhắn tin qua BLE/Wi-Fi Direct"
-            },
-            {
-              "type": "list",
-              "data": [
-                "Người dùng không cần thao tác — tự động.",
-                "Offline message queue: ⏱ đang chờ → ✓ đã đồng bộ."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "18-qr-enrollment-onboarding-nhân-viên",
-          "level": 2,
-          "heading": "18. QR Enrollment (Onboarding nhân viên)",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "",
-              "code": "Admin: Tạo Invite Token → Hiển thị QR\nNhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA"
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "19-file-approval-flow-zone-2-restricted",
-          "level": 2,
-          "heading": "19. File Approval Flow (Zone 2 Restricted)",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "",
-              "code": "Chọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]\nManager nhận notification → [Review] → Approve / Reject\nUser nhận thông báo kết quả"
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "phần-vi-các-giao-diện-mở-rộng-sso-liên-tổ-chức",
-      "level": 1,
-      "heading": "PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "22-giao-diện-đăng-nhập-enterprise-sso-login",
-          "level": 2,
-          "heading": "22. Giao diện Đăng nhập (Enterprise SSO Login)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "TeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "layout-desktopmobile-màn-hình-welcome",
-              "level": 3,
-              "heading": "Layout Desktop/Mobile (Màn hình Welcome)",
-              "content_blocks": [
+                  "type": "paragraph",
+                  "text": "Message 2"
+                },
                 {
-                  "type": "list",
-                  "data": [
-                    "Background (Layer 1): Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).",
-                    "Center Glass Card (Layer 4): Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, rgba(20,30,45,0.6)), viền phát sáng nhẹ rgba(255,255,255,0.1)."
-                  ]
+                  "type": "paragraph",
+                  "text": "Message 3"
                 },
                 {
                   "type": "code",
-                  "language": "text",
-                  "code": "┌─────────────────────────────────────────────┐\n│               [TeraChat Logo]               │\n│        Secure Enterprise Communication      │\n│                                             │\n│  [ Input: Khóa/Workspace ID (terachat...) ] │\n│                                             │\n│  [ 🔑 Log in with Microsoft Azure AD     ]  │\n│  [ 🛡️ Log in with Google Workspace       ]  │\n│                                             │\n│       ─ Hoặc xác thực phần cứng ─           │\n│           [ YubiKey / Security Key ]        │\n└─────────────────────────────────────────────┘"
+                  "language": "",
+                  "code": "\nKhông lặp avatar. Hiển thị 20–25 dòng / màn hình 13\".\n\n**Hover message:**\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "UX & Motion Logic (Zero-Trust Core Initialization):"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Biometric-Bound Initialization (Bắt buộc Sinh trắc học): Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID)."
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "*\"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)\"*",
-                    "Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Cryptographic PIN Fallback UI: Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).",
-                    "PIN được truyền thẳng qua FFI Pointer xuống Lõi Rust mà không lưu lại trên State của React Native.",
-                    "Phía dưới hiển thị dòng chữ cảnh báo mờ: Attempt X/5.",
-                    "Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization): Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh Remote Wipe.",
-                    "📱💻 Remote Wipe & Secure Enclave Wipe: Lệnh Remote Wipe thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.",
-                    "📱💻🖥️ Memory Zeroization: Cơ chế ZeroizeOnDrop (RAII) lập tức thực hiện ghi đè 0x00 lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.",
-                    "📱💻🖥️ Crypto-Shredding: Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.",
-                    "📱 Ruthless Visualization: Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).",
-                    "Tiến trình Khởi tạo mượt mà: Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu #24A1DE) chạy fade-in trong < 3 giây với dòng text \"Đang thiết lập Lõi Mật Mã...\".",
-                    "Input Workspace ID: Nền glass trắng mờ, outline chuyển #24A1DE cùng bóng đổ mờ khi focus/active.",
-                    "Button Style: Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "23-giao-diện-thiết-lập-chi-nhánh-cross-cluster-federation-handshake",
-          "level": 2,
-          "heading": "23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Luồng kết nối HQ và Chi nhánh được định vị tại Admin Console > Federation. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm \"Click & Connect\" trực quan."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "ở-phía-tổng-công-ty-hq-admin",
-              "level": 3,
-              "heading": "Ở phía Tổng công ty (HQ Admin)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "CTA Button: Nút [ + Generate Federation Invite ] nằm góc phải trên (Primary #24A1DE).",
-                    "Setup Modal (Slide từ trung tâm):",
-                    "Tên Chi nhánh: Khung Input field thường.",
-                    "Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: 👁️ Chỉ Reply, 💬 Nhắn tin).",
-                    "Thời hạn Token: Slider kéo thả linh hoạt 1h — 24h dán nhãn màu.",
-                    "Kết quả (Success State): Sinh JWT Token khổng lồ để mời Chi nhánh.",
-                    "Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút [ Copy Token ] + icon clipboard."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "ở-phía-chi-nhánh-branch-admin",
-              "level": 3,
-              "heading": "Ở phía Chi nhánh (Branch Admin)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Mở Admin Console > Federation. Click [ Join Federation Network ].",
-                    "Modal Nhập Token: Khung Paste lớn chiếm 50% modal. Ngay khi paste, Lõi Rust (WASM) phân tích realtime (<50ms) và load ra thẻ Info Card xác nhận tin cậy:"
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Animation [ Confirm & Handshake ]: Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick ✅ Connected sang mảng màu xanh Success tươi sáng."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "24-giao-diện-épthêm-member-directory-sync-invites",
-          "level": 2,
-          "heading": "24. Giao diện Ép/Thêm Member (Directory Sync & Invites)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Thiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại Admin Console > User Management."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "tab-1-directory-sync-scim-20-tự-động",
-              "level": 3,
-              "heading": "Tab 1: Directory Sync (SCIM 2.0 Tự động)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Dashboard Control (Dải Ribbon trên cùng):"
+                  "text": "[React] [Reply] [Copy] [More…]"
                 },
                 {
                   "type": "code",
-                  "language": "text",
-                  "code": "[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Status Badge: 🟢 Active (Xanh lá), 🟡 Warning (Vàng), 🔴 Error (Đỏ). Thêm hiệu ứng pulse nhấp nháy vào dấu chấm 🟢."
-                  ]
+                  "language": "",
+                  "code": "\nInline actions — không floating button lố. Background highlight 3%.\n\n**System messages:**\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Data Grid (Danh sách User dạng List View Glass):"
+                  "text": "──────────── User X approved document ────────────"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\nCenter aligned, muted text, không avatar.\n\n### Attachments\n\n**Ảnh:**\n\n- BlurHash placeholder → fade-in 0.3s khi load.\n- Border subtle.\n- Dynamic watermark nếu Zone 2 (Restricted).\n\n**File card:**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "📄 Contract_v2.pdf    2.4MB | 🔒 Encrypted"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[Download]  [Preview]"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\nGlass card, radius 8px.\n\n### Message Input (64px min)\n\nGlass container.\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[+] [😊] [📎]   |  Type secure message…  |  [🎤] [➤]"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n- **Enter** = Send. **Shift+Enter** = New line.\n- Disable Send nếu không có quyền (Zone DLP block).\n- Loading spinner khi đang gửi.\n- `\"New messages ↓\"` indicator khi scroll lên.\n\n### Info Panel (Slide từ phải — 0.25s)\n\nClick `ℹ` → slide từ phải.\n\nTabs: **Members** / **Files** / **Audit Log** / **Permissions** / **Zone Status**\n\n### Layout Mobile\n\n- Chat List: màn hình đầu tiên (full screen).\n- Tap conversation → push sang Chat Frame (full screen).\n- Header: Back trái + Channel name + Icons.\n- Input bar cố định ở đáy, trên bàn phím khi mở.\n- Info Panel → **Bottom Sheet** khi tap Info icon.\n\n---\n\n## 11. Notifications\n\n### Filter bar\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[All]  [Mentions]  [System]  [Approval]"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n### Notification row\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[Icon type]  Title               14:02"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Short description"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n- **Approval:** CTA `[Review]` inline.\n- **Security Alert:** badge đỏ, tap mở detail.\n- **Audit Event:** muted, không CTA.\n\n#### Trạng thái Skeleton khi đang giải mã an toàn từ NSE\n\n- 📱💻 Khi Notification đến từ NSE nhưng Main App chưa kịp đồng bộ khóa mới (OOB Push Ratchet), UI **không** hiển thị ngay nội dung thực mà dùng một hàng Skeleton cố định:\n  - Title dạng generic: `\"Thông báo bảo mật đang được giải mã...\"` hoặc `\"Đang giải mã an toàn...\"`.\n  - Subtitle hiển thị Blur/Skeleton bar (khối mờ 60–70% width), không lộ từ khóa hay nội dung nhạy cảm.\n- 📱 Ngay khi Main App mở và đồng bộ xong `Push_Key`/MLS Epoch, hàng Skeleton được thay thế bằng nội dung thật bằng hiệu ứng fade 0.15s; nếu đồng bộ thất bại, Skeleton chuyển thành trạng thái lỗi an toàn `\"Không thể giải mã — chạm để thử lại\"` thay vì hiển thị rác.\n\n---\n\n## 12. Files (TeraVault)\n\n### Layout Desktop/Laptop\n"
                 },
                 {
                   "type": "table",
                   "headers": [
-                    "Username",
-                    "Department",
-                    "Sync Source",
-                    "Tình trạng Khóa (E2EE)",
-                    "Action"
+                    "Left Rail",
+                    "File Sidebar (280px)",
+                    "File Workspace (fill)"
                   ],
-                  "rows": [
-                    [
-                      "Nguyen Van A",
-                      "Finance",
-                      "Azure AD",
-                      "🟢 Provisioned",
-                      "`[Revoke]`"
-                    ],
-                    [
-                      "Tran Thi B",
-                      "Sales",
-                      "Azure AD",
-                      "🟡 Pending Login",
-                      "`[Resend]`"
-                    ]
-                  ]
+                  "rows": []
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n### File Sidebar (Glass Panel)\n\nBackground: `rgba(255,255,255,0.08)`, blur 18px, border 1px `rgba(255,255,255,0.12)`, radius 20px.\n\n**Header:**\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "UX Logic (Offboarding Không Chạm):"
+                  "text": "Files"
                 },
-                {
-                  "type": "list",
-                  "data": [
-                    "Khi nhân sự nghỉ việc trên hệ thống mẹ (IdP), hàng dữ liệu của nhân sự lập tức đổi màu đỏ nhạt (Red Glass, opacity 10%) và nhãn Auth đổi thành 🔒 Revoked.",
-                    "Các nút Action biến mất hoặc bị disable (mờ đi) kèm tooltip rõ ràng: \"Managed by IdP. Khóa thiết bị đã bị hủy.\""
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "tab-2-manual-guest-invites",
-              "level": 3,
-              "heading": "Tab 2: Manual / Guest Invites",
-              "content_blocks": [
                 {
                   "type": "paragraph",
-                  "text": "Dành cho nhà thầu hoặc đối tác outsource tạm thời."
+                  "text": "[ + Upload ]"
                 },
                 {
-                  "type": "list",
-                  "data": [
-                    "Click [ + Generate Invite Token ].",
-                    "Cấu hình (Modal): Nhập Tên cá nhân, Dropdown chọn Role (Guest, Contractor), Khung Box nhập Thời gian (12 giờ, 24 giờ).",
-                    "Màn hình Trả ra (Output Modal):",
-                    "Mã QR xuất hiện trung tâm khổng lồ. (Lưu ý: Card Glass chứa QR cần lót nền trắng phía dưới để Camera quét được).",
-                    "Đi kèm nút Copy URL bảo mật.",
-                    "End-user Onboarding (Người nhận trên Mobile):",
-                    "Trên màn hình Mobile của đối tác hiện nút Scan cực lớn [ 📷 Scan QR to Join ].",
-                    "UI bật khung ngắm (Viewfinder blur) bắt viền lấy nét QR siêu nhanh.",
-                    "Khi bắt được QR -> Hiệu ứng màn hình mở khóa (Unlock animation chớp nhoáng), tự động thiết lập chứng chỉ Certificate và thả rơi user thẳng vào Chat Room mà không hỏi mật khẩu."
-                  ]
+                  "type": "code",
+                  "language": "",
+                  "code": "\nUpload button: gradient nhẹ `#24A1DE → transparent`, icon arrow up, hover glow subtle.\n\n**Filter Section:**\n\n- All Files\n- My Files\n- Shared with Me\n- Department Files\n- Mesh Storage (nếu offline)\n\nActive item: nền glass sáng hơn 4%, viền trái accent `#24A1DE` 3px.\n\n**Quick Access (Pinned Files):**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[PDF icon] Budget_2026.pdf"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Finance Dept · Updated 2h ago"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\nHover: elevation nhẹ, icon action `⋯` bên phải.\n\n### File Workspace\n\n**Header:**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "📁 Department / Finance     [Search files...]     [Sort ▼] [Filter]"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n**View Toggle:** Grid (default) / List.\n\n**Grid View:**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "┌──────────────┐"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│   [Icon]     │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│ Budget.xlsx  │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│   12 MB      │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│ Updated 2h   │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "└──────────────┘"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\nCard: background `rgba(255,255,255,0.06)`, blur 12px, radius 18px. Hover: sáng hơn 6%.\n\nFile type color (subtle):\n\n- PDF → đỏ subtle\n- Excel → xanh lá\n- Doc → xanh dương\n- Image → tím\n\n**List View:**\n\n| Name | Owner | Department | Updated | Size | Security |\n|---|---|---|---|---|---|\n| Budget.pdf | Hoang | Finance | 2h ago | 2.4MB | 🔒 Encrypted |\n\nSecurity column:\n\n- 🔒 Encrypted\n- 🌐 Cloud\n- 📡 Mesh Local\n\nRow hover: nền trắng 3%, border glow mỏng.\n\n**Security Badge (góc phải mỗi file):**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[ENCRYPTED]  [CLASSIFIED]  [INTERNAL]  [PUBLIC]"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\nGlass mini, blur 6px, text uppercase 10px.\n\n**Smart Action Bar (khi click file):**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Preview / Share / Generate Approval / AI Summary / Download / Move to Mesh"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\nFloating glass panel, shadow nhẹ, border glow `#24A1DE` mờ.\n\n### Mesh Mode Behavior\n\nHeader banner: `\"Mesh Mode Active – Files syncing locally\"`\n\nFile icons:\n\n- 📡 Local\n- ☁ Sync Pending\n\nSync animation: subtle pulse.\n\n#### Skeleton UI cho File được mở từ Notification khi nội dung còn đang giải mã\n\n- 📱💻 Khi người dùng chạm vào Notification dẫn tới một file (PDF/Video) được bảo vệ E2EE, màn `Files`/Viewer phải hiển thị **khung xương an toàn** trong lúc Core Rust đang giải mã:\n  - Khung preview file là một card Glassmorphism xám mờ, icon file dạng placeholder, kèm dòng text `\"Đang giải mã an toàn...\"`.\n  - Thanh timeline video (nếu có) hiển thị dạng skeleton bar, không cho seek cho đến khi có đủ key/byte đầu tiên từ Native-to-Rust Media DataSource Bridge.\n- 📱Ngay khi pipeline giải mã/streaming sẵn sàng, Skeleton fade-out 0.2s và thay bằng preview/video thực; nếu phát hiện key desync, Skeleton giữ nguyên kèm CTA nhỏ `\"Thử đồng bộ lại\"` thay vì crash hoặc để UI trắng.\n\n### Layout Mobile\n\n- File Sidebar → **Bottom Sheet** filter thay thế.\n- Grid 2 cột.\n- Tap file → Bottom Sheet với Smart Actions.\n\n---\n\n## 13. Tools (.tapp) — Enterprise Launchpad\n\n### Desktop/Laptop\n\nClick Tools icon → **Glass Modal lớn** trung tâm màn hình. Grid 3–4 cột:\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[Smart Approval] [CRM] [POS] [HR]"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[Internal App 1] [Internal App 2] ..."
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n- Card radius 16px, blur 12px.\n- Hover: glow nhẹ `#24A1DE 20%`.\n- Mỗi `.tapp` chạy trong **WASM Sandbox** — hoàn toàn cô lập.\n- Nút bị mờ/disable nếu phòng ban không được cấp quyền (OPA Policy).\n\n### Mobile\n\n- Tools → **Full screen Bottom Sheet** dạng 2 cột.\n- `.tapp` khi mở → full screen modal, header tên App + nút Close.\n\n### Pinned .tapp\n\n- Right-click / long-press → `\"Pin to Sidebar\"`.\n- Animate slide-down vào Rail / Tab bar (dynamic zone).\n- Badge alert nếu app có notification.\n\n---\n\n## 14. Settings\n\n| Section | Nội dung |\n|---|---|\n| **Account** | Profile, Avatar, Display name |\n| **Security** | E2EE keys, Device list, Revoke sessions |\n| **OPA Policy** | Xem chính sách DLP (read-only cho user) |\n| **Zone Config** | Cấu hình Online / Mesh priority |\n| **Storage** | Ring Buffer info, Offline storage quota |\n| **Developer Mode** | Toggle (nếu được cấp quyền) |\n\n---\n\n## 15. Admin Console (Role-based — chỉ Admin thấy)\n\nEntry point: Settings → `[Admin Console]` button.\n\n### Tab Structure\n\n| Tab | Chức năng |\n|---|---|\n| **User Management** | Invite Token, Revoke, Remote Wipe |\n| **Key Management** | KMS Bootstrap, Master Key status, Epoch Rotation |\n| **OPA Policies** | Tạo/sửa/xóa chính sách per-department |\n| **Federation** | Invite Token liên tổ chức, trust registry |\n| **Audit Log** | Timeline filter theo user/action/time |\n| **Tools Registry** | Whitelist/blacklist `.tapp`, quản lý API Keys |\n| **Infrastructure** | Node health, Cluster scaling wizard |\n\n### Trải nghiệm Quản trị 1-Chạm (Wizard-driven UX)\n\n#### Khởi tạo Cụm Trực quan (Cluster Setup Wizard)\n\n1. **Pre-flight Check** — Scan phần cứng + network. Status badge ✅ / ❌. Nút `[Deploy Cluster]` chỉ sáng khi đủ điều kiện.\n2. **Config Form** — Dropdown chọn provider (Vultr/DO), nhập 3 IP, drag-drop `id_rsa`. Không terminal.\n3. **Deploy Progress Bar** — Phân nấc `WireGuard → Longhorn → K8s → Ready`. Text ngôn ngữ tự nhiên, không log terminal.\n4. **Bootstrap QR** — QR code để Admin scan trên mobile → thiết lập kênh mTLS, tự đặt IP/Port.\n5. **Day-2 Dashboard** — Cluster health `3/3 Online`, storage gauge, 1-click `[Zero-Downtime Update]`.\n\n#### Mở rộng Cụm Không Gián Đoạn (Add Node Wizard)\n\n- Bảng trượt tối giản: nhập 3 trường — IP Address, Node Label, SSH Key.\n- Progress động: `Initializing → Joining → Ready`.\n- Rollback tự động + thông báo tiếng người nếu Node thất bại.\n\n#### Phản hồi Thời gian thực\n\n- Biểu đồ động: WireGuard speed, Cluster capacity tăng gộp theo thời gian thực.\n- K8s Scheduler tự cân bằng tải sang Node ít bận hơn.\n\n---\n\n# PHẦN IV – LUỒNG UX BẢO MẬT\n\n## 16. Smart Approval Flow\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Notification → [Review] → Detail Modal → Ghi chú lý do"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "→ [Biometric/PIN xác nhận] → Approved ✅ / Rejected ❌"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n- Bắt buộc **User Presence** (Touch ID / Face ID / PIN) trước khi ký.\n- Processing spinner → Success / Error state.\n\n---\n\n## 17. Mesh Activation Flow\n\n- 📱💻🖥️ Khi mất mạng (Offline Mode), UI hiển thị một Modal Overlap (Glassmorphism với nền Dark Navy `#0F172A`).\n- 📱 iOS Màn hình áp dụng hiệu ứng `UIBlurEffectStyle.systemUltraThinMaterialDark`.\n- 📱💻 Nút CTA chính (Màu Đỏ Cam cảnh báo): \"Khởi động mạng Mesh để duy trì liên lạc\". Kèm theo cảnh báo phụ: \"Thiết bị sẽ phát sóng vô tuyến cục bộ. Đảm bảo bạn đang ở trong khu vực an toàn.\"\n- 📱💻 Giao diện tự động vô hiệu hóa toàn bộ hiệu ứng Animation nặng để tiết kiệm pin cho thiết bị trong kịch bản thảm họa.\n\n---\n\n## 18. QR Enrollment (Onboarding nhân viên)\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Admin: Tạo Invite Token → Hiển thị QR"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Nhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n---\n\n## 19. File Approval Flow (Zone 2 Restricted)\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Chọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Manager nhận notification → [Review] → Approve / Reject"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "User nhận thông báo kết quả"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n---\n\n# PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)\n\n## 22. Giao diện Đăng nhập (Enterprise SSO Login)\n\nTeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta.\n\n### Layout Desktop/Mobile (Màn hình Welcome)\n\n- **Background (Layer 1):** Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).\n- **Center Glass Card (Layer 4):** Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, `rgba(20,30,45,0.6)`), viền phát sáng nhẹ `rgba(255,255,255,0.1)`.\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "┌─────────────────────────────────────────────┐"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│               [TeraChat Logo]               │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│        Secure Enterprise Communication      │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│                                             │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│  [ Input: Khóa/Workspace ID (terachat...) ] │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│                                             │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│  [ 🔑 Log in with Microsoft Azure AD     ]  │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│  [ 🛡️ Log in with Google Workspace       ]  │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│                                             │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│       ─ Hoặc xác thực phần cứng ─           │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "│           [ YubiKey / Security Key ]        │"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "└─────────────────────────────────────────────┘"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n**UX & Motion Logic (Zero-Trust Core Initialization):**\n\n- **Biometric-Bound Initialization (Bắt buộc Sinh trắc học):** Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).\n  > *\"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)\"*\n  > Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.\n- **Cryptographic PIN Fallback UI:** Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).\n  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của React Native.\n  - Phía dưới hiển thị dòng chữ cảnh báo mờ: `Attempt X/5`.\n- **Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization):** Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh `Remote Wipe`.\n  - 📱💻 **Remote Wipe & Secure Enclave Wipe:** Lệnh `Remote Wipe` thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.\n  - 📱💻🖥️ **Memory Zeroization:** Cơ chế `ZeroizeOnDrop` (RAII) lập tức thực hiện ghi đè `0x00` lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.\n  - 📱💻🖥️ **Crypto-Shredding:** Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.\n  - 📱 **Ruthless Visualization:** Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).\n- **Tiến trình Khởi tạo mượt mà:** Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu `#24A1DE`) chạy fade-in trong `< 3 giây` với dòng text *\"Đang thiết lập Lõi Mật Mã...\"*.\n- **Input Workspace ID:** Nền glass trắng mờ, outline chuyển `#24A1DE` cùng bóng đổ mờ khi focus/active.\n- **Button Style:** Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.\n\n---\n\n## 23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)\n\nLuồng kết nối HQ và Chi nhánh được định vị tại **Admin Console > Federation**. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm \"Click & Connect\" trực quan.\n\n### Ở phía Tổng công ty (HQ Admin)\n\n1. **CTA Button:** Nút `[ + Generate Federation Invite ]` nằm góc phải trên (Primary `#24A1DE`).\n2. **Setup Modal (Slide từ trung tâm):**\n   - Tên Chi nhánh: Khung Input field thường.\n   - Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: `👁️ Chỉ Reply`, `💬 Nhắn tin`).\n   - Thời hạn Token: Slider kéo thả linh hoạt `1h — 24h` dán nhãn màu.\n3. **Kết quả (Success State):** Sinh JWT Token khổng lồ để mời Chi nhánh.\n   - Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút `[ Copy Token ]` + icon clipboard.\n\n### Ở phía Chi nhánh (Branch Admin)\n\n1. Mở Admin Console > Federation. Click `[ Join Federation Network ]`.\n2. **Modal Nhập Token:** Khung Paste lớn chiếm 50% modal. Ngay khi paste, **Lõi Rust (WASM)** phân tích realtime (<50ms) và load ra thẻ Info Card xác nhận tin cậy:\n   > ⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*.\n3. **Animation `[ Confirm & Handshake ]`:** Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick `✅ Connected` sang mảng màu xanh Success tươi sáng.\n\n---\n\n## 24. Giao diện Ép/Thêm Member (Directory Sync & Invites)\n\nThiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại **Admin Console > User Management**.\n\n### Tab 1: Directory Sync (SCIM 2.0 Tự động)\n\n**Dashboard Control (Dải Ribbon trên cùng):**\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]"
                 }
               ],
               "subsections": []
             }
           ]
-        },
-        {
-          "id": "25-giao-diện-đăng-nhập-ngầm-phân-quyền-hr-magic-deep-link-sso",
-          "level": 2,
-          "heading": "25. Giao diện Đăng nhập Ngầm & Phân quyền HR (Magic Deep-Link SSO)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Bài toán mâu thuẫn giữa Bảo mật cao (Zero-Trust + SSO) và Trải nghiệm người mới (Frictionless Onboarding) được giải quyết qua luồng Delegated Provisioning kết hợp Magic Deep-Link SSO."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "phần-1-phân-quyền-mời-delegation-via-opa",
-              "level": 3,
-              "heading": "Phần 1: Phân quyền Mời (Delegation via OPA)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Super Admin sẽ không đi mời từng người, mà ủy quyền (Delegate) cho bộ phận HR thông qua OPA Engine mà không làm hỏng tính toàn vẹn hệ thống."
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Ủy quyền: Sếp tạo nhóm HR_Department trong Admin Console.",
-                    "Tiêm luật OPA: Gán Policy đặc biệt để Lõi Rust kiểm tra nội bộ:"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "allow if user.group == \"HR_Department\" and action == \"generate_invite_token\""
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "UX hiển thị: Chỉ những account thuộc HR_Department mới thấy xuất hiện nút [ + Mời nhân viên ] trên giao diện."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "phần-2-workflow-1-tap-magic-sso",
-              "level": 3,
-              "heading": "Phần 2: Workflow 1-Tap Magic SSO",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Luồng này loại bỏ hoàn toàn giao diện gõ email/mật khẩu thủ công thông qua 3 bước chớp nhoáng:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "HR Phát hành Lời mời:",
-                    "HR nhập email công ty của nhân viên mới (VD: nhanvien@congty.com).",
-                    "Lõi Rust sinh Invite_Token (Signed JWT) hạn 24h và tự động gửi một Email chứa nút \"Tham gia TeraChat\".",
-                    "Người dùng Chạm 1-Tap (Magic Deep-Link):",
-                    "Nhân viên bấm nút từ Email (app Gmail/Outlook trên điện thoại).",
-                    "Lớp OS (iOS/Android) sẽ không mở trình duyệt mà kích hoạt Universal Link/App Link truyền thẳng URL: https://join.terachat.com/invite?token=abc&hint=nhanvien@congty.com vào app TeraChat.",
-                    "Đăng nhập Ngầm (Zero-Click SSO - Dưới 0.5s):",
-                    "Thay vì hiện màn hình đăng nhập 2 nút (Azure/Google), Lõi Rust chộp lấy hint=nhanvien@congty.com và kích hoạt luồng OIDC (PKCE).",
-                    "Ép gửi tham số prompt=none & login_hint=email. Nhờ việc người dùng đang mở app Mail nội bộ, máy điện thoại đã có sẵn Session SSO.",
-                    "Hệ thống tự động xác thực ngầm, trình duyệt hệ thống bật lên chớp nhoáng rồi tắt, sau đó Lõi Rust sinh khóa E2EE (Device_Key) thả thẳng người dùng vào nhóm Chat."
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**TỔNG KẾT 4 KỸ THUẬT LÕI ĐƯỢC ÁP DỤNG:**",
-                    "1. **Deferred Deep Linking:** Ghi nhớ URL lời mời kể cả khi người dùng phải bay qua App Store tải App lần đầu.",
-                    "2. **OIDC `login_hint` & `prompt=none`:** Kỹ thuật ép SSO không được hiện màn hình chọn Account màn lấy luôn Session hiện tại.",
-                    "3. **Smart Routing OPA:** Quyền sinh JWT Pre-approved được chốt chặt ở lõi hệ thống.",
-                    "4. **AppAuth (PKCE):** Giao thức bảo mật bắt buộc để nhận Token trên thiết bị di động không cần Client Secret."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "phần-vii-accessibility-checklist",
-      "level": 1,
-      "heading": "PHẦN VII – ACCESSIBILITY & CHECKLIST",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "26-accessibility",
-          "level": 2,
-          "heading": "26. Accessibility",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "Minimum contrast 4.5:1 cho text chính.",
-                "Keyboard navigable: Tab order Rail → Panel → Main.",
-                "Tất cả icon phải có aria-label hoặc tooltip.",
-                "Focus ring: outline 2px #24A1DE, offset 2px.",
-                "Screen reader support cho alerts và security status badges."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "27-checklist-cho-designer",
-          "level": 2,
-          "heading": "27. Checklist cho Designer",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "[ ] Thiết kế Online Mode và Mesh Mode cho từng màn hình.",
-                "[ ] Component Library: Button, Input, Card (Glass), Badge, Toast, Modal, Bottom Sheet.",
-                "[ ] Icon set monochrome (không màu mè, không multicolor).",
-                "[ ] Responsive breakpoints: Mobile / Tablet / Laptop / Desktop.",
-                "[ ] Admin Console screens (tách biệt rõ với UI giao diện tương tác User).",
-                "[ ] Empty states (màn hình hero khi chưa có dữ liệu).",
-                "[ ] Error states (Cảnh báo mất kết nối, Cấm quyền, Lỗi đồng bộ SCIM).",
-                "[ ] Onboarding flow 1: Luồng Enterprise SSO Login truyền thống (Hiệu ứng Lõi Zero-Trust).",
-                "[ ] Máy Quét Thuật toán Biometric-bound Key Generation (FaceID/TouchID Prompt UI).",
-                "[ ] Cryptographic PIN Fallback Dialpad (Bàn phím FFI 6 số siêu tối giản, không track state).",
-                "[ ] Hoạt cảnh Ruthless Self-Destruct (Màn hình nháy đỏ + Shredding Effect 1s).",
-                "[ ] Onboarding flow 2: Luồng Quét QR Enroll nội bộ.",
-                "[ ] Onboarding flow 3: Luồng 1-Tap Magic Deep-Link SSO cho nhân sự mới (1-chú chạm từ Email, bypass Login).",
-                "[ ] Smart Approval biometric prompt screen (Modal phê duyệt sinh trắc học).",
-                "[ ] Cluster Setup Wizard (Admin — Desktop only).",
-                "[ ] Cross-Cluster Federation Handshake (Modal sinh mời + Giao diện Paste Token).",
-                "[ ] User Management & UI Tự động Đồng bộ SCIM 2.0 / Phân quyền HR.",
-                "[ ] Indicator AI Privacy Shield (Icon khiên che chắn dữ liệu khi bật tính năng AI Blind Inference)."
-              ]
-            }
-          ],
-          "subsections": []
         }
       ]
     }

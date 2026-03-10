@@ -117,7 +117,23 @@ Biên lợi nhuận gộp > 90% cho phép:
 - Tamper-proof Audit Log (Merkle Tree) — yêu cầu pháp lý.
 - Legal Hold (đóng băng tài khoản điều tra).
 
----
+### 2.6 AI Risk Governance (Lợi thế Quản trị Rủi ro AI)
+
+**Thách thức của đối thủ:** Slack/Teams tích hợp AI một cách "mù quáng" — doanh nghiệp buộc phải tin tưởng nhà cung cấp AI xử lý dữ liệu khách hàng, dẫn đến e ngại từ khối Enterprise nhạy cảm về tuân thủ.
+
+**Giải pháp TeraChat — Giao quyền làm chủ cho CISO:**
+
+| Tính năng | Đối thủ (Slack/Teams) | TeraChat |
+|---|---|---|
+| Kiểm soát PII trước khi gửi AI | ❌ Không có | ✅ Local Micro-NER Masking |
+| Admin toggle AI Exposure | ❌ All-or-nothing | ✅ OPA 3-Level Dynamic Toggle |
+| Audit Log khi AI dùng dữ liệu | ❌ Không có | ✅ Ed25519 Tamper-Proof Log |
+| Trách nhiệm pháp lý rò rỉ | Nhà cung cấp | ✅ IT doanh nghiệp tự quyết định |
+
+**Chiến lược Risk Delegation:** Bằng cách đẩy trách nhiệm chấp nhận rủi ro (Risk Acceptance) về phía bộ phận IT của khách hàng thông qua OPA Toggle, TeraChat:
+- Tự bảo vệ khỏi cáo buộc pháp lý nếu API bên thứ 3 bị rò rỉ.
+- Cung cấp công cụ Audit Log sắc bén nhất cho doanh nghiệp chứng minh compliance.
+- Giải quyết vấn đề Shadow IT: hệ thống linh hoạt ngăn người dùng "đi cửa sau" dùng AI ngoài.
 
 ## 3. Go-to-Market Strategy & Operations
 
@@ -184,6 +200,10 @@ sudo bash /tmp/install.sh --token=[License_Key]
 **Giữ khách bằng dữ liệu:** Dữ liệu (chat history, CRM, audit log) nằm trong Private Cluster của doanh nghiệp. Chuyển sang đối thủ = mất continuity toàn bộ lịch sử.
 
 ---
+
+### 3.5 Gói Upsell (Bán chéo) "Enterprise Survival Kit"
+
+- **Biến điểm yếu thành cơ hội kinh doanh:** Đóng gói bán kèm giải pháp phần cứng. Khách hàng mua License TeraChat sẽ được chào mời mua thêm gói phần cứng cứu hộ (YubiKey chuẩn FIDO2 do TeraChat phân phối) định tuyến riêng cho C-Level với giá Premium, gia tăng biên lợi nhuận.
 
 ## 4. Licensing & IP Strategy (Open-Core)
 

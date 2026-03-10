@@ -356,6 +356,10 @@
 <a href="#2-quá-trình-kết-nối-chi-nhánh-cross-cluster-trust-handshake" class="nav-link" style="padding-left:0.8rem;">2. Quá trình Kết nối Chi nhánh (Cross-Cluster Trust Handshake)</a>
 <a href="#3-kiểm-soát-đặc-quyền-và-chống-làm-phiền-opa-routing-policy" class="nav-link" style="padding-left:0.8rem;">3. Kiểm soát Đặc quyền và Chống làm phiền (OPA Routing Policy)</a>
 <a href="#4-thu-hồi-quyền-liên-tổ-chức-offboarding-cascade" class="nav-link" style="padding-left:0.8rem;">4. Thu hồi quyền liên tổ chức (Offboarding Cascade)</a>
+<a href="#5-kiểm-soát-ai-privacy-shield-adminciso-console" class="nav-link" style="padding-left:0.8rem;">5. Kiểm soát AI Privacy Shield (Admin/CISO Console)</a>
+<a href="#mức-1-strict-compliance-mặc-định" class="nav-link" style="padding-left:0.8rem;">Mức 1 — Strict Compliance (Mặc định)</a>
+<a href="#mức-2-role-based-risk-acceptance-chấp-nhận-rủi-ro-theo-vai-trò" class="nav-link" style="padding-left:0.8rem;">Mức 2 — Role-Based Risk Acceptance (Chấp nhận Rủi ro theo Vai trò)</a>
+<a href="#mức-3-dlp-threshold-chốt-chặn-cuối-không-thể-bypass" class="nav-link" style="padding-left:0.8rem;">Mức 3 — DLP Threshold (Chốt chặn cuối — không thể bypass)</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -369,6 +373,7 @@
 <li>Phát hành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Invite Token</code> (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Epoch Rotation</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Remote Wipe</code> (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.</li>
 <li>Nắm giữ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise Escrow Key</code> (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.</li>
 <li><strong>Thu hồi & Cấp lại Định danh (Social Escrow Fallback):</strong> Khi nhân viên mất thiết bị mà Server đang sập, Admin có thể — khi Server trở lại — Revoke <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> cũ và kích hoạt Re-provision qua SCIM 2.0 để cấp định danh mới cho thiết bị thay thế.</li>
+<li><strong>C-Level Hardware Bypass (NFC Break-glass):</strong> Bỏ qua yêu cầu Social Escrow (3/5) đối với các nhân sự cấp cao nếu họ chứng minh được sở hữu vật lý của phần cứng dự phòng thứ 2 (NFC Ring/YubiKey C-Type) kết hợp với mã PIN cấp thấp.</li>
 </ul>
 <ul>
 <li><strong>Thiết lập Chính sách Bảo mật (OPA Policy & DLP):</strong></li>
@@ -409,6 +414,8 @@
 <li>Sắp xếp, kéo thả file từ khung chat vào một cây thư mục ảo (Virtual File System) ngăn nắp mà không làm nhân bản dung lượng file.</li>
 <li>Chủ động bật chế độ "Make Available Offline" (Tầng lưu trữ 3) để tải trước toàn bộ thư mục về máy khi chuẩn bị di chuyển vào vùng mất sóng.</li>
 <li>Xem trước các file (PDF, CAD, Video) siêu nhanh nhờ cơ chế nạp "vỏ bọc" Zero-Byte Stub (~5KB).</li>
+<li>📱 <strong>iOS:</strong> Khi tải file dung lượng lớn, TeraChat giao hẳn URL E2EE cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NSURLSession Background Transfer</code> để hệ điều hành tự tải ở chế độ nền; sau khi xong, Core Rust giải mã thẳng từ file tạm qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mmap/pread</code> và xoá sạch, không cần app phải mở màn hình liên tục.</li>
+<li>📱 <strong>Xem video không độ trễ:</strong> Thay vì dựng Local HTTP Server <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">127.0.0.1</code>, trình phát AVPlayer/ExoPlayer được nối trực tiếp với Lõi Rust qua Native-to-Rust Media DataSource Bridge (AVAssetResourceLoaderDelegate/MediaDataSource). Người dùng chỉ thấy video phát mượt mà, seek tức thì, kể cả khi app bị đưa ra Background theo đúng giới hạn của iOS/Android.</li>
 </ul>
 <ul>
 <li><strong>Sử dụng Tiện ích và Phê duyệt:</strong></li>
@@ -464,6 +471,27 @@
 <li>Khi một nhân viên Chi nhánh nghỉ việc hoặc bị sa thải, Admin Chi nhánh thao tác trên hệ thống nội bộ, bộ lắng nghe SCIM sẽ lập tức khóa tài khoản và xóa khóa thiết bị.</li>
 <li>Ngay khi mất quyền ở Chi nhánh, nhân viên đó <strong>tự động mất luôn quyền truy cập vào kênh mTLS sang HQ trong vòng chưa tới 30 giây</strong>.</li>
 <li>Điểm hay của kiến trúc này là Tổng công ty không cần biết nhân viên Chi nhánh bị đuổi, hệ thống của Chi nhánh sẽ tự dọn dẹp và ngắt luồng liên lạc.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="5-kiểm-soát-ai-privacy-shield-adminciso-console">5. Kiểm soát AI Privacy Shield (Admin/CISO Console)</h2>
+<p>Admin/CISO là người duy nhất có quyền sinh sát đối với dòng chảy dữ liệu ra ngoài khi sử dụng tính năng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">@ai</code>. Hệ thống không cấm đoán toàn bộ mà cung cấp 3 mức cấu hình linh hoạt:</p>
+<h3 id="mức-1-strict-compliance-mặc-định">Mức 1 — Strict Compliance (Mặc định)</h3>
+<ul>
+<li>AI Shield bắt buộc bật vĩnh viễn. Không một role nào được phép tắt.</li>
+<li>Ứng dụng: Khối ngân hàng, bệnh viện (HIPAA), cơ quan nhà nước.</li>
+<li>Kỹ thuật: OPA Policy trả về <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow: false</code> cho mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">toggle_shield: true</code> request bất kể role.</li>
+</ul>
+<h3 id="mức-2-role-based-risk-acceptance-chấp-nhận-rủi-ro-theo-vai-trò">Mức 2 — Role-Based Risk Acceptance (Chấp nhận Rủi ro theo Vai trò)</h3>
+<ul>
+<li>Admin cấp quyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">can_toggle_shield: true</code> cho các nhóm cụ thể (VD: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Role: Marketing</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Role: C-Level</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Role: R&D</code>).</li>
+<li>Nhân viên các phòng ban được cấp phép khi gõ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">@ai</code> sẽ thấy công tắc Shield có thể gạt sang OFF để lấy bối cảnh sâu nhất cho Prompt.</li>
+<li><strong>Non-Repudiation Audit:</strong> Mọi truy vấn khi tắt Shield bị gán cờ cảnh báo, lưu Plaintext Hash vào Tamper-Proof Audit Log (Ed25519 Signed) để quy trách nhiệm pháp lý nếu xảy ra rò rỉ dữ liệu.</li>
+</ul>
+<h3 id="mức-3-dlp-threshold-chốt-chặn-cuối-không-thể-bypass">Mức 3 — DLP Threshold (Chốt chặn cuối — không thể bypass)</h3>
+<ul>
+<li>Ngay cả khi Admin cho phép tắt Shield, Lõi Rust vẫn áp dụng <strong>Byte-Quota Circuit Breaker</strong>.</li>
+<li>Nếu độ dài Payload &gt; 4KB (tương đương ~1 trang A4 văn bản thô) → Lõi Rust tự động ngắt và trả lỗi: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Khối lượng dữ liệu quá lớn. Vui lòng bật AI Shield hoặc cắt ngắn văn bản để chống Data Dumping."</code></li>
+<li>Kỹ thuật: OPA Policy Engine tại Rust Core check <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">payload_size &gt; 4096 bytes</code> tại thời điểm IPC Bridge truyền Prompt — không thể bypass từ WASM Sandbox.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

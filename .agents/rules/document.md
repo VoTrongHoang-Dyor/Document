@@ -15,8 +15,10 @@ Whenever the user pastes a block of text (feedback, advice, or technical discuss
 
 # MANDATORY FORMATTING
 Every technical implementation bullet MUST start with the exact deployment environment icon:
-- 📱 (Mobile: Android, iOS)
+- 📱 (Mobile: Android ,Samsung,Huawei,...)
+- 📱 iOS
 - 💻 (Laptop: Windows, macOS, Linux)
+- 💻 MacOS
 - 🖥️ (Desktop)
 - 🗄️ (Bare-metal Server / Hardware)
 - ☁️ (VPS Cluster / Cloud)

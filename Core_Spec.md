@@ -222,7 +222,8 @@
 #### Air-Gapped Linear Memory Isolation (Chống trích xuất khóa từ RAM)
 
 - 📱💻🖥️ Cấp phát dải bộ nhớ ảo (Linear Memory) hoàn toàn độc lập và cách ly cho WASM Sandbox để ngăn chặn con trỏ (pointer) thoát luồng.
-- 📱💻🖥️ Khóa cứng vùng nhớ chứa `Company_Key` và `Device_Key` bằng lệnh `mlock()` tại Lõi Rust để chống quét (scan) hoặc trích xuất (dump) RAM của hệ thống.
+- 💻🖥️ Khóa cứng vùng nhớ chứa `Company_Key` và `Device_Key` bằng lệnh `mlock()` tại Lõi Rust để chống quét (scan) hoặc trích xuất (dump) RAM của hệ thống, **chỉ trên các nền tảng Desktop/Server** được biên dịch với cờ điều kiện `#[cfg(not(any(target_os = "ios", target_os = "android")))]`.
+- 📱 Trên Mobile (iOS/Android), **tuyệt đối không gọi `mlock()`** để tránh Jetsam/Low-Memory Kill; thay vào đó, mọi struct chứa khóa (`Company_Key`, `Device_Key`, `Epoch_Key`, v.v.) bắt buộc dùng `ZeroizeOnDrop` và lưu Private Key gốc trong Secure Enclave/StrongBox; plaintext key-material chỉ tồn tại trong RAM trong các vùng scope cực ngắn và không được giữ qua bất kỳ `await`/`suspend` point.
 
 #### OPA-driven IPC Bridge & Manifest Control (Kiểm soát I/O trái phép)
 
@@ -556,6 +557,13 @@
 - ☁️ **Multi-Device Queue:** N bản copy (1/device). Device ACK → xóa bản đó. TTL 14 ngày → Crypto-Shred KEK.
 - ☁️ **Enterprise Escrow KEM:** Shamir's Secret Sharing — M-of-N Recovery Key cho Supervisors. Audit Log bắt buộc (HIPAA/SOC2).
 
+#### OOB Symmetric Push Ratchet song song với TreeKEM (Push Notification siêu nhẹ)
+
+- 📱💻 **Mục tiêu:** Tách hoàn toàn luồng khóa dùng cho Push Notification ra khỏi cây MLS TreeKEM cồng kềnh, tránh kéo cả cấu trúc `TreeKEM_Update_Path` vào các tiến trình footprint thấp như iOS NSE / Android FCM Service.
+- 📱 `Push_Key` là khóa đối xứng AES-256-GCM dãn xuất từ `HKDF(Company_Key, "push-ratchet" || chat_id || push_epoch)` theo chuỗi hash-chain một chiều (`push_epoch` tăng dần), hoạt động **song song** với `Epoch_Key` của MLS nhưng không phụ thuộc vào cấu trúc cây.
+- 📱 `Push_Key` được lưu trong vùng bảo mật phần cứng (Shared Keychain trên iOS, StrongBox/Keystore trên Android) với RAM footprint tối thiểu; Main App khi Foreground chịu trách nhiệm thực hiện bước ratchet tiếp theo (tăng `push_epoch`, derive `Push_Key_new`) sau khi nhận signal MLS Epoch Rotation.
+- 📱 **NSE/FCM Service không bao giờ tái dựng TreeKEM:** Khi push đến, tiến trình nhẹ chỉ cần đọc `Push_Key_current` từ vùng chia sẻ, giải mã payload CBOR/AES-GCM với $O(1)$ RAM (< 5MB), hiển thị Notification, rồi `ZeroizeOnDrop` để tránh Crypto Blindness và Desync trạng thái giữa MLS Epoch và lớp Notification.
+
 ### 4.3 Hardware Isolation & Crypto-Shredding
 
 #### Hardware-Backed Signing
@@ -624,8 +632,9 @@
 
 - 📱 `UNNotificationServiceExtension` + `mutable-content: 1` (chuẩn Signal/WhatsApp).
 - 📱 **NSE Micro-Crypto Build Target:** Loại bỏ 100% MLS, CRDT Automerge, SQLCipher. Chỉ giữ AES-256-GCM decrypt + Shared Keychain read. Footprint ~4MB (safe dưới 24MB Apple limit).
-- 📱 **Push Payload ≤ 4KB:** fields: `chat_id`, `sender_display`, `preview_ct` (AES-256-GCM), `has_attachment`, `epoch`. Không HTTP GET trong NSE.
-- 📱 **Push Key Rotation:** Đồng bộ với MLS Epoch. Key per-chat trong Shared Keychain (App Group).
+- 📱 **Push Payload ≤ 4KB:** fields: `chat_id`, `sender_display`, `preview_ct` (AES-256-GCM), `has_attachment`, `push_epoch`. Không HTTP GET trong NSE.
+- 📱 **OOB Symmetric Push Ratchet (Tách khỏi MLS TreeKEM):** `Push_Key` là khóa đối xứng siêu nhẹ (AES-256-GCM) được dãn xuất từ `HKDF(Company_Key, "push-ratchet" || chat_id || push_epoch)` theo chuỗi hash-chain một chiều, **hoàn toàn độc lập với cây khóa MLS TreeKEM**.
+- 📱 `Push_Key` được lưu trong Shared Keychain (App Group) dưới dạng bản sao tối thiểu, chỉ chứa material cần thiết cho AES-256-GCM; Main App khi ở Foreground chịu trách nhiệm đồng bộ/rotate `Push_Key` mới sau mỗi lần thay đổi MLS Epoch hoặc khi nhận tín hiệu Key Desync, NSE chỉ đọc `Push_Key` hiện tại và giải mã payload trong vòng RAM < 5MB theo độ phức tạp $O(1)$ rồi `ZeroizeOnDrop`.
 - 📱 **Key Desync Fallback:** Không tìm thấy Key → fallback text an toàn, không crash.
 
 #### E2EE Push Notification — Android (FCM)
@@ -1119,6 +1128,82 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 📱💻🖥️ Đẩy luồng trích xuất dữ liệu thô (In-memory DAG Reconciliation) xuống Client với giới hạn độ phức tạp $O(N \log N)$ cho thao tác xếp đặt HLC.
 - ☁️🗄️ Giải tỏa nút thắt IOPS tại cụm trung tâm bằng mô thức Pub/Sub trao đổi siêu dữ liệu đồ thị dạng mù (Zero-Knowledge).
 - 📱💻🖥️ Ghi chuỗi Atomic Write đồng bộ trực tiếp xuống bảng SQLite FTS ở bước cuối để chốt khóa trạng thái hợp nhất cục bộ.
+
+---
+
+## 7. Cross-Cluster Federation & Enterprise Deployment
+
+### 7.1 Cross-Cluster Federation Handshake Protocol
+
+- ☁️ **mTLS Mutual Auth (không dùng CA công cộng):** Thiết lập kênh truyền tin cậy giữa các cụm máy chủ HQ và Chi nhánh bằng PKI nội bộ, loại bỏ hoàn toàn sự phụ thuộc vào Certificate Authority công cộng.
+- ☁️ **Signed JWT Federation_Invite_Token:** Xác thực lời mời kết nối thông qua Identity Broker (Keycloak/Dex) để ngăn chặn rò rỉ lời mời và giả mạo thông tin kết nối liên cụm.
+- ☁️ **Federation Trust Registry:** Lưu trữ Public Key của các Cluster liên kết vào sổ cái PKI nội bộ (`federation_trust_registry`) để định danh vĩnh viễn; cập nhật bất đồng bộ qua CRDT Gossip.
+- ☁️ **Sealed Sender Protocol:** Mã hóa header người gửi bằng Public Key người nhận để Server Chi nhánh không thể biết danh tính thực của cấp quản lý HQ — bảo vệ siêu dữ liệu liên cụm.
+- ☁️ **Identity Broker (OIDC/SAML):** Keycloak/Dex liên kết định danh OIDC/SAML giữa Tổng công ty và Chi nhánh, cho phép SSO xuyên Cluster mà không cần đồng bộ toàn bộ User Directory.
+
+### 7.2 Federated OPA Policy Engine & Circuit Breaker
+
+- ☁️ **OPA (Open Policy Agent) ABAC tại API Gateway:** Thực thi chính sách ABAC dựa trên `sender_role` và trạng thái `allow_reply` để lọc gói tin liên cụm — chặn Spam và kiểm soát quyền truy cập xuyên tổ chức.
+- ☁️ **Rate Limiting (Redis ZSET Sliding Window):** Tự động kích hoạt Circuit Breaker khi tần suất tin nhắn liên cụm vượt ngưỡng an toàn cấu hình; trạng thái OPEN fail-fast về UI trong < 1s.
+- ☁️ **Z3 Formal Verification trên Federated Policy:** OPA Policy liên cụm được chạy qua SMT Model → Z3 Solver để phát hiện xung đột chính sách trước khi triển khai.
+
+### 7.3 Immutable Infrastructure-as-Code (IaC) Orchestration — B2B 1-Touch
+
+- ☁️ **Hardened Docker Compose (CAP_IPC_LOCK):** Đóng gói toàn bộ hạ tầng (Blind Relay, PostgreSQL, Redis, NATS) thành một khối bất biến với cơ chế `CAP_IPC_LOCK` bảo vệ vùng nhớ nhạy cảm không bị swap xuống đĩa.
+- ☁️ **TeraChat Blind Relay (Rust):** Xử lý định tuyến mù, mã hóa E2EE và thực thi các giao thức mTLS/WebSocket — không lưu bất kỳ Plaintext nào trên disk.
+- ☁️ **MinIO Erasure Coding (EC+4):** Sharding dữ liệu trên 3–5 nodes cho phép tự phục hồi khi mất 1 node và tối ưu dung lượng lưu trữ Blind Storage.
+- ☁️ **PostgreSQL HA (pgRepmgr + PgPool):** Đảm bảo tính sẵn sàng cao và failover tự động thông qua Streaming Replication; WAL Archiving hỗ trợ Point-in-Time Recovery.
+- ☁️ **HA TURN Array (Floating IP):** Đảm bảo độ trễ thấp cho các cuộc gọi WebRTC trong môi trường VPS Cluster với cơ chế Floating IP failover < 3s.
+
+### 7.4 Secure Workspace Bootstrap & HKMS
+
+- 📱💻🖥️☁️ **HKMS (Hierarchical Key Management System):** Phân cấp Master Key thành các KEK (Key Encryption Key) và DEK (Data Encryption Key) để mã hóa database và file trong toàn bộ hệ sinh thái. Sơ đồ: `Master Key → KEK → DEK → [DB / File / Channel / API Key]`.
+- 📱💻🖥️☁️ **Master Key Binding (Hardware Enclave):** Giam khóa Master trong Hardware Enclave (HSM/TPM 2.0/Secure Enclave) của Admin; yêu cầu lưu trữ file `.terakey` ngoại vi trên thiết bị vật lý. Master Key không bao giờ rời chip.
+- ☁️ **Zero-Knowledge Blind Storage (MinIO):** Lưu trữ ciphertext theo đường dẫn `cas_hash` để triệt tiêu mọi thông tin về tên file thực tế — Server không biết gì về nội dung hay metadata file.
+- 📱💻🖥️ **KMS Bootstrap Ritual:** Khởi tạo Workspace kích hoạt xuất mảnh khóa ra các thiết bị phần cứng FIDO2 (YubiKey/Smartcard); Lõi Rust Block tạo Database cho đến khi Admin xác nhận lưu Key Backup thành công.
+
+### 7.5 Push Key Rotation & Hardware-Backed Key Storage
+
+- 📱☁️ **Push Key Rotation đồng bộ MLS Epoch:** Mỗi lần MLS Epoch Rotation xảy ra, Push Notification Key được rotate đồng bộ để đảm bảo tính Forward Secrecy cho mọi thông báo — kẻ tấn công có Key cũ không giải mã được Push cũ.
+- 📱 **Shared Keychain (iOS App Group):** NSE (Notification Service Extension) truy cập khóa giải mã thông báo trong trạng thái Background thông qua Shared Keychain mà không cần can thiệp sinh trắc học — giữ footprint < 24MB.
+- 📱 **StrongBox Keymaster (Android):** Lưu trữ Symmetric Push Key tại cấp phần cứng StrongBox, ngăn chặn việc xuất khóa trái phép kể cả khi Root/ADB.
+
+---
+
+## 8. AI Infrastructure Security & Legal Compliance
+
+### 8.1 TEE Enclave Isolation — AI Worker Security
+
+- ☁️🗄️ **Hardware TEE Enclaves (Intel SGX / AWS Nitro):** Cô lập vùng nhớ AI Worker ở cấp độ phần cứng; ngăn chặn Root Admin và Cloud Provider trích xuất bộ nhớ hoặc can thiệp vào dữ liệu đang xử lý.
+- ☁️ **Thread-Pool Isolation (Bounded MPSC Channel):** Phân tách `core-messaging-runtime` (ưu tiên cao) và `ai-heavy-io-runtime` (trọng tải AI) qua Bounded MPSC Channel để bảo vệ hiệu năng hệ thống messaging khỏi quá tải AI.
+- ☁️ **Circuit Breaker (AI Latency p99 > 1500ms):** Tự động chuyển trạng thái OPEN và fail-fast về UI nếu AI Latency p99 > 1500ms hoặc Packet Loss > 5% trong 10s — bảo vệ throughput messaging core.
+
+### 8.2 Threshold Cryptography Escrow (Trích xuất Pháp lý Không Backdoor)
+
+- 📱💻🖥️☁️ **Shamir's Secret Sharing (SSS):** Băm nát Private Key thành $N$ mảnh phân tán, loại bỏ điểm yếu Master Key đơn điểm; mặc định 3-of-5 hoặc cấu hình M-of-N theo chính sách doanh nghiệp.
+- 💻🖥️ **Lagrange Interpolation tái tạo Escrow_Private_Key:** Thực hiện nội suy Lagrange trực tiếp trong vùng nhớ `mlock()` để ngăn chặn swap xuống đĩa; plaintext Key chỉ tồn tại trong RAM < 100ms.
+- ☁️ **Escrow Ciphertext Blob:** Lưu trữ khóa phiên (Session Key) được mã hóa bằng cơ chế KEM tại Server — Server chỉ thấy ciphertext, không thể tự giải mã mà không có đủ mảnh khóa.
+
+### 8.3 KMS Bootstrap Ritual & Multi-Sig Hardware Fragments
+
+- 📱💻🖥️ **KMS Bootstrap + FIDO2 YubiKey/Smartcard:** Khởi tạo Workspace và xuất mảnh khóa ra các thiết bị phần cứng FIDO2 (YubiKey hoặc Smartcard); yêu cầu xác thực vật lý để tái hợp nhất khóa.
+- 📱💻🖥️☁️ **Master Key trong HSM/Secure Enclave (Hardware Root of Trust):** Khóa Master không bao giờ rời chip vật lý; mọi thao tác ký/giải mã đều diễn ra trong Enclave với xác thực sinh trắc học bắt buộc.
+- 📱💻🖥️ **ZeroizeOnDrop (RAII):** Thực hiện ghi đè `0x00` xóa sạch dấu vết khóa trong RAM ngay sau khi phiên giải mã kết thúc; không có window nào để key tồn tại trên heap.
+
+### 8.4 Immutable Audit Log & Append-Only Hash Chain
+
+- ☁️ **HIPAA/SOC2 Compliant Audit Log:** Ghi lại bắt buộc mọi hành vi trích xuất dữ liệu nhạy cảm với timestamp chống giả mạo; log được lưu trên Append-Only storage không thể sửa đổi ngược.
+- 📱💻🖥️☁️ **Ed25519 Digital Signature:** Xác thực tính nguyên bản và chống chối bỏ (Non-Repudiation) cho toàn bộ lịch sử chat được trích xuất; mỗi entry Audit Log mang chữ ký Ed25519 độc lập.
+- 📱💻 **Dead Man Switch (Monotonic Hardware Counter):** Kết hợp Monotonic Hardware Counter (TPM 2.0/Secure Enclave) với timestamp để chống tấn công quay ngược thời gian (Time Travel Attack) trên Audit Log; `Counter < Server's Value` → từ chối + Self-Destruct.
+
+## 9. Kiến trúc Phân tán Bù nhìn (Offline Distributed Encrypted Sharding - ODES)
+
+### 9.1 Cơ chế Phân mảnh Mù (Blind Shard)
+
+- 🗄️ **Đáp ứng ISO 27001:** Lõi Rust triển khai ODES để đảm bảo tính liên tục của An toàn thông tin. Khi C-Level soạn tài liệu tối mật trong Mesh Mode, tệp tin được mã hóa bằng `Session_Key` (Chỉ Chủ tịch giữ).
+- 📱💻 **Blind Shard Deployment:** Ciphertext được chia thành n mảnh (Erasure Coding) và đẩy qua BLE sang thiết bị của 3 nhân viên gần nhất dưới dạng Blind Shard. Latency ~150ms cho việc phân tán mảnh rác qua BLE 5.0. Throughput đạt 2Mbps (giới hạn của BLE), chỉ áp dụng cho Text/Document nhỏ.
+- 📱💻 **Giảm thiểu Attack Surface:** Kẻ thù thu thập đủ 3 thiết bị của nhân viên cũng chỉ nhận được Ciphertext vô nghĩa vì không có `Session_Key` của Chủ tịch.
+- 📱💻 **Break-glass Recovery:** Chủ tịch mang theo một NFC/FIDO2 Hardware Ring (Nhẫn thông minh/YubiKey) chứa bản sao của `Device_Key`. Khi mất điện thoại, chạm nhẫn vào điện thoại mới, đồng bộ lại các Blind Shard từ mạng Mesh xung quanh → Khôi phục dữ liệu 100% không cần Server hay Social Escrow.
 
 ---
 

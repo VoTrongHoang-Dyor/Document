@@ -282,15 +282,15 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 
 #### Ghi dữ liệu ngoại tuyến (JIT Mesh-to-VFS Stream Processing)
 
-- 📱 Bơm nguyên khối dữ liệu thẳng vào trình phát System Player thông qua cổng truyền Local HTTP Streaming tại `127.0.0.1` bỏ qua mọi bước đệm vắt kiệt RAM.
-- 📱💻🖥️ Cấu hình API `mmap()` tham chiếu trực diện bộ nhớ lưu trữ vật lý lên không gian bộ nhớ ảo nhằm ghi đè vòng lặp liên tục (Ring-Buffer).
+- 📱 Bơm nguyên khối dữ liệu thẳng vào trình phát System Player thông qua **Native-to-Rust Media DataSource Bridge** (AVAssetResourceLoaderDelegate/MediaDataSource/Custom Protocol Handler) thay vì Local HTTP Streaming `127.0.0.1`, bỏ qua mọi bước đệm TCP để giảm Latency và tránh giới hạn Background trên iOS.
+- 📱💻🖥️ Cấu hình API `mmap()` (hoặc `pread()` fallback trên iOS) tham chiếu trực diện bộ nhớ lưu trữ vật lý lên không gian bộ nhớ ảo nhằm ghi đè vòng lặp liên tục (Ring-Buffer).
 - 📱💻 Đánh dấu các mảng bộ nhớ an toàn là `FREE_SPACE` để tiến hành ghi đè trực tiếp theo quy chuẩn Crypto-Shredding bảo vệ vòng đời hao mòn SSD nội hạt.
 
-#### Xung đột Bất đối xứng Không gian VFS (Local Anonymous HTTP Loopback Streaming)
+#### Native Media DataSource Bridge vs. Legacy Local HTTP Loopback
 
-- 📱 Thiết lập Local HTTP Server ẩn danh tại vòng lặp `127.0.0.1` chỉ có quyền lắng nghe loopback để phục vụ cổng trích xuất nội dung cho Media Player hệ thống.
-- 📱💻🖥️ Khai thác liên kết `mmap()` phản chiếu kích thước file vật lý lên phân vùng nhớ ảo, nạp linh hoạt từng mảnh con 2MB on-demand để kìm hãm RAM footprint < 10MB.
-- 📱 Triển khai mã hóa Chunked AEAD (STREAM/OAE1) giải mã trực tiếp phía trên Ring Buffer và gọi hàm `Drop()` giải phóng lập tức dung lượng ngay khi Socket xả lưu lượng.
+- 📱 **Mobile (Chuẩn bắt buộc):** Tuyệt đối **không** được thiết lập Local HTTP Server ẩn danh tại vòng lặp `127.0.0.1` để phục vụ Media Player — iOS sẽ thu hồi Socket khi vào Background, gây đứt gãy streaming. Chuẩn duy nhất là Native-to-Rust Media DataSource Bridge mô tả tại §8.1.
+- 💻🖥️ **Desktop (Tuỳ chọn):** Có thể duy trì Local HTTP Loopback cho compatibility cũ, nhưng khuyến nghị chuyển dần sang Custom Protocol Handler/FFI trực tiếp để giảm Attack Surface TCP nội bộ.
+- 📱💻🖥️ Dù ở chế độ nào, `mmap()`/`pread()` vẫn phản chiếu kích thước file vật lý lên phân vùng nhớ ảo, nạp linh hoạt từng mảnh con 2MB on-demand để kìm hãm RAM footprint < 10MB, mã hóa/giải mã bằng Chunked AEAD (STREAM/OAE1) ngay trên Ring Buffer và gọi `Drop()`/`ZeroizeOnDrop` giải phóng dung lượng ngay sau khi trình phát tiêu thụ xong.
 
 #### Memory Segmentation & RAII Zeroization
 
@@ -422,6 +422,7 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
   - **Background (NSE):** Vô hiệu hóa LRU Cache. Chỉ nạp module **Micro-Crypto** với Footprint tĩnh ~4MB. Luồng xử lý: Nhận payload (<4KB) → giải mã trực tiếp → đẩy thông báo → gọi `Drop()` ngay lập tức để giải phóng RAM dưới ngưỡng 24MB.
 - 📱 **Tuyệt đối không dùng `mlock()`** — Jetsam OOM-Kill app ngay lập tức.
 - 📱 **ZeroizeOnDrop (RAII):** Mọi biến plaintext wrap trong `zeroize::Zeroize`. Không giữ plaintext qua bất kỳ `await` hay `suspend` point.
+- 📱 **OOB Symmetric Push Ratchet Only trong NSE:** Tiến trình NSE **không bao giờ** nạp hoặc tái cấu trúc cây MLS TreeKEM. NSE chỉ đọc một `Push_Key` đối xứng siêu nhẹ (AES-256-GCM) đã được Main App derive sẵn từ OOB HKDF chain và lưu vào Shared Keychain (App Group), dùng key này để giải mã payload rồi `ZeroizeOnDrop`; mọi thao tác MLS Epoch Rotation được thực hiện khi Main App hoạt động ở Foreground.
 - 📱 **FTS5 Indexing — Adaptive Micro-Batch (Chống Jetsam OOM-Kill):**
   - NSE **TUYỆT ĐỐI CẤM** kích hoạt FTS5 Tokenizer. NSE chỉ ghi raw Blob mã hóa vào Append-Only table (`is_indexed = false`), không phân tích cú pháp.
   - Main App (Foreground): Sau khi Mesh reconnect và CRDT merge hoàn tất, Lõi Rust mới khởi động Indexer qua Background Task API — **không chạy ngay lập tức**.
@@ -506,10 +507,10 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 
 ### 6.6 APNs Payload Collapse & Notification Degradation
 
-- 📱 Triển khai giải mã tĩnh trực tiếp tại Notification Service Extension (NSE) cho nền tảng Mobile.
-- ☁️ Cấu hình Server push APNs Payload (<4KB) chứa Ciphertext đã nén bằng chuẩn CBOR.
-- 📱 Khởi tạo Rust FFI siêu nhẹ (Micro-Crypto) gắn vào NSE. Đọc Payload -> Giải mã CBOR Ciphertext -> Đẩy notification ra UI -> Gọi lệnh `drop()` lập tức giải phóng RAM.
-- 📱 Định nghĩa luồng Ghost Push: Nếu Payload > 4KB, Server trả `Fallback=True`. NSE render chuỗi tĩnh (Generic Text), đồng thời bắn `content-available: 1` đánh thức App ngầm kéo SQLite.
+- 📱 Triển khai giải mã tĩnh trực tiếp tại Notification Service Extension (NSE) cho nền tảng Mobile, **chỉ sử dụng OOB Symmetric `Push_Key`** đã được sinh ra từ HKDF chain độc lập với MLS TreeKEM (xem §6.7 và `Core_Spec.md §4.2`).
+- ☁️ Cấu hình Server push APNs Payload (<4KB) chứa Ciphertext đã nén bằng chuẩn CBOR, kèm `push_epoch` hiện tại; trường `epoch` của MLS chỉ dùng để báo hiệu cần đồng bộ lại khóa khi lệch, không dùng cho giải mã trực tiếp trong NSE.
+- 📱 Khởi tạo Rust FFI siêu nhẹ (Micro-Crypto) gắn vào NSE. Đọc Payload → Lấy `Push_Key_current` từ Shared Keychain/StrongBox → Giải mã CBOR Ciphertext → Đẩy notification ra UI → Gọi lệnh `drop()`/`ZeroizeOnDrop` lập tức giải phóng RAM, tuyệt đối không dựng lại cây MLS trong NSE.
+- 📱 Định nghĩa luồng Ghost Push: Nếu Payload > 4KB **hoặc** `Push_Key_current` bị lệch `push_epoch`, Server trả `Fallback=True`. NSE render chuỗi tĩnh (Generic Text `"Đang giải mã an toàn..."`), đồng thời bắn `content-available: 1` đánh thức App ngầm để Main App sync lại MLS Epoch + `Push_Key` mới và cập nhật nội dung chi tiết sau đó.
 
 ### 6.7 Out-of-Band Notification Key Ratchet & Ghost Push Wakeup
 
@@ -766,7 +767,7 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 
 ## 8. Large File Handling & Advanced Sync
 
-### 8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Local HTTP Streaming
+### 8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Native-to-Rust Media DataSource Bridge
 
 #### Zero-Copy I/O qua Virtual Memory (mmap)
 
@@ -783,7 +784,7 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 
 - 📱💻🖥️ **Xác thực Phân mảnh Hiện đại:** Chia nhỏ file dung lượng khổng lồ thành nhiều `SegmentedMerkleBlock` để phân rã tiến trình xác thực tệp từng phần, triệt tiêu viễn cảnh đóng băng (Freeze) giao diện UI.
 - 📱💻🖥️ **Cơ chế Lazy-Load:** Kích hoạt thuộc tính tải trễ tĩnh (Lazy-load) chỉ tự động phân phát gói tin dữ liệu đúng vào thời điểm phát sinh yêu cầu truy xuất thực tế từ bộ nhớ.
-- 📱 Cắm chốt hệ thống giải mã thời gian thực (On-the-fly) luân chuyển ngầm qua chốt Local HTTP Server ẩn danh để phát trực tiếp nội dung truyền thông đa phương tiện mượt mà.
+- 📱 Cắm chốt hệ thống giải mã thời gian thực (On-the-fly) luân chuyển ngầm trực tiếp qua **Native-to-Rust Media DataSource Bridge**: byte sau khi giải mã chảy thẳng từ Ring Buffer 2MB trong Lõi Rust sang trình phát hệ điều hành thông qua FFI (AVAssetResourceLoader/MediaDataSource/Tauri protocol handler), không dựng bất kỳ Local HTTP Server `127.0.0.1` nào.
 
 #### BLAKE3 Segmented Merkle Tree — Xác thực Chunk không Freeze UI
 
@@ -792,13 +793,13 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 - 📱💻🖥️ **Deterministic Nonce:** `Nonce = HMAC-SHA256(Channel_Key, File_ID || Chunk_Index)`. Nonce lệch do tráo chunk → panic tại cửa bộ giải mã.
 - Hiệu năng: BLAKE3 Out-of-Order verification ~6GB/s (Desktop CPU).
 
-#### Local Proxy Streaming & On-the-fly Decryption (Local Loopback Proxy & JIT Stream Decryption)
+#### Native-to-Rust Media DataSource Bridge & On-the-fly Decryption (FFI Byte Pumping, No Local HTTP)
 
-- 📱 Dựng Local HTTP Server ẩn danh tại vòng lặp `127.0.0.1` chuyên trách giao tiếp cung cấp luồng phương tiện đa phương tiện với khung trình phát AVPlayer/ExoPlayer của hệ thống.
-- 📱💻🖥️ Triển khai JIT (Just-In-Time) Fetching nhằm cơ động tải trực giác đúng Chunk cần thiết dựa trên vị trí Byte Offset của thanh tiến trình (Seek bar).
-- 📱💻🖥️ Áp dụng luật ZeroizeOnDrop / RAII xóa triệt để dữ liệu Plaintext khỏi phân vùng RAM ngay lập tức sau thao tác xả Socket trả về Client.
-- 📱 Xác lập phân vùng 2MB Ring Buffer giới hạn ngặt nghèo bộ nhớ Memory Footprint duy trì trạng thái ổn định tĩnh < 8MB bất chấp file gốc lên tới hàng GB.
-- 📱 **Chunked AEAD (STREAM / OAE1):** Chống lỗi Merkle Chain BLAKE3 theo chiều ngang bảo chứng chuỗi 1 bypte hỏng không phá bung tập dữ liệu 4GB tổng.
+- 📱 **iOS — AVAssetResourceLoaderDelegate:** Ứng dụng Native đăng ký `AVAssetResourceLoaderDelegate` làm cầu nối. Mỗi request từ AVPlayer tương ứng với một khoảng `[offset, length]` trong stream; Delegate gọi FFI `terachat_media_read(chat_id, file_id, offset, length)` để đọc byte đã giải mã trực tiếp từ `Ring_Buffer_2MB` của Lõi Rust, trả về cho AVPlayer dưới dạng `NSData`. Không có TCP Socket, không loopback `127.0.0.1`, iOS Background/Foreground hoạt động ổn định.
+- 📱 **Android — MediaDataSource:** Trình phát ExoPlayer/MediaPlayer dùng `MediaDataSource` tùy biến, ánh xạ các lệnh `readAt(position, buffer, size)` → FFI sang Rust để rót plaintext chunk vào `ByteBuffer` Dart/Native, bơm thẳng vào pipeline giải mã của hệ điều hành.
+- 💻🖥️ **Desktop — Custom Protocol Handler:** Trên Desktop, WebView/Tauri sử dụng Custom URL Scheme (`terastream://...`) hoặc Protocol Interceptor mapping trực tiếp sang FFI gọi Rust, đọc từ `Ring_Buffer_2MB` thay vì Local HTTP Server; vẫn giữ lợi thế Seek ngẫu nhiên nhưng không mở rộng bề mặt TCP.
+- 📱💻🖥️ Triển khai JIT (Just-In-Time) Fetching nhằm cơ động tải trực giác đúng Chunk cần thiết dựa trên vị trí Byte Offset của thanh tiến trình (Seek bar); mọi plaintext trong Ring Buffer được đánh dấu `ZeroizeOnDrop`/RAII và Memory Footprint giữ ổn định < 8MB bất kể file gốc hàng GB.
+- 📱 **Chunked AEAD (STREAM / OAE1):** Chống lỗi Merkle Chain BLAKE3 theo chiều ngang bảo chứng chuỗi 1 byte hỏng không phá bung tập dữ liệu 4GB tổng.
 
 #### In-Memory Pumping via Custom URL Scheme Handler (Lỗ hổng TCP Local và Cleartext)
 
@@ -872,3 +873,40 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 - 📱💻🖥️ Khi upload trong mạng Mesh offline, Rust sinh `FileStub_UUID = Hash(Device_ID + Local_Timestamp)`. Cho phép trao đổi P2P qua định danh này.
 - ☁️🗄️ Khi kết nối lại, multi-client push payload. Cụm Server kích hoạt hàm Arbitrator, chạy thuật toán CRDT "First-Seen-Wins" xử lý đụng độ cùng `CAS_Hash`.
 - 📱💻🖥️ Trả về `Canonical_VFS_ID` duy nhất. Client nhận ID này và update lại bảng SQLite FTS (Full-Text Search) cục bộ bằng một transaction duy nhất (Atomic write).
+
+---
+
+## 9. Federation Client Sync & Privacy Pipeline
+
+### 9.1 Unidirectional Federated State Sync
+
+- 📱💻🖥️ **Unidirectional State Sync (StateChanged Signal):** Bắn tín hiệu `StateChanged(table, version)` qua IPC để UI chủ động kéo snapshot thay vì Rust đẩy JSON cục bộ — tránh tình trạng treo thread do push data lớn từ các cụm Federation.
+- 📱💻🖥️ **IPC Bridge Zero-Copy (~500MB/s):** Sử dụng JSI C++ Shared Memory (iOS) hoặc `SharedArrayBuffer` (Desktop) đạt tốc độ ~500MB/s cho các payload lớn — đảm bảo không có bottleneck khi đồng bộ trạng thái liên cụm.
+- 📱💻🖥️ **Lazy UI Hydration (Sliding Window):** Giới hạn việc nạp dữ liệu trong viewport hiện tại (20 tin nhắn gần nhất); phần còn lại tải qua Infinite Scroll — giảm thiểu RAM footprint khi nhận tin nhắn batch từ Federation.
+
+### 9.2 Zero-Knowledge Push Notification & JIT Decryption
+
+- 📱 **Notification Service Extension (NSE — iOS):** Sử dụng `UNNotificationServiceExtension` + `mutable-content: 1` để đánh thức tiến trình con xử lý ciphertext mà không hiển thị trực tiếp Plaintext lên hệ điều hành.
+- 📱 **Data Messages (Android):** FCM Data Message → `FirebaseMessagingService` → giải mã Rust FFI trong tiến trình con cô lập, không để APNs/FCM server thấy nội dung thông báo.
+- 📱 **Micro-Crypto Build Target (Rust FFI ~4MB):** Loại bỏ các module nặng (MLS full, CRDT Automerge, SQLCipher) khỏi NSE build — chỉ giữ AES-256-GCM decrypt + Shared Keychain read; duy trì footprint ~4MB dưới ngưỡng 24MB giới hạn của iOS NSE.
+- 📱☁️ **Blind Payload Architecture (CBOR + Dummy Alert):** Sử dụng ciphertext nén bằng chuẩn CBOR kết hợp chuỗi Dummy Alert tĩnh để ngăn chặn Apple/Google thu thập Business Intelligence từ nội dung thông báo.
+- 📱 **ZeroizeOnDrop sau NSE:** Thực thi ghi đè `0x00` xóa sạch plaintext khỏi RAM ngay sau khi trả kết quả thông báo cho Native OS — không có window nào để key hay plaintext bị trích xuất.
+
+### 9.3 Client-Side Dual-Mask Protocol (Dynamic PII Tokenization)
+
+- 📱💻🖥️ **Local NER (ONNX/WASM < 10MB):** Sử dụng mô hình NLP ONNX/WASM siêu nhẹ (< 10MB) thực thi trực tiếp tại biên thiết bị để nhận diện thực thể nhạy cảm (PII/PCI/PHI) trước khi gửi Prompt lên AI.
+- 📱💻🖥️ **Entity Mapping Table (RAM-only):** Lưu trữ tạm thời trên RAM (mlock'd) để ánh xạ dữ liệu thật sang Token giả mạo (`[REDACTED_PHONE_1]`, `[REDACTED_EMAIL_2]`) — bảo toàn cấu trúc câu cho AI mà không để lộ PII.
+- 📱💻🖥️ **ZeroizeOnDrop (RAII):** Thực thi ghi đè `0x00` tiêu hủy Entity Mapping Table ngay sau khi quá trình De-tokenization hoàn tất; Session Vault tồn tại trong RAM duy nhất cho 1 request.
+
+### 9.4 LLM Iron Dome & Markdown AST Sanitizer (Mở rộng)
+
+- 📱💻🖥️ **Markdown AST Sanitizer (Chống Pixel Tracking):** Chặn đứng các thẻ `<img src="...">` hoặc liên kết `![alt](external_url)` trỏ tới URL bên ngoài; chỉ cho phép hiển thị nội dung từ Local VFS (`localhost` hoặc base64 nội bộ).
+- 📱💻🖥️ **Egress Firewall (WASM Sandbox Whitelist):** Giới hạn kết nối mạng của WASM Sandbox chỉ đến các Whitelist Domains đã được phê duyệt bởi Admin qua OPA Policy — ngăn chặn data exfiltration qua markdown content.
+- 💻🖥️ **Local Semantic Guardrail (NLP nội bộ):** Sử dụng mô hình NLP ONNX tại biên để kiểm soát và chặn các mẫu System Instruction Spoofing, Jailbreak Pattern trước khi gửi đến LLM — bảo vệ khỏi Prompt Injection nâng cao.
+
+### 9.5 State Machine cho Offline Survival & Bảo vệ dữ liệu RAM (mlock)
+
+- 📱💻 **State 1 (Disconnected):** Ngắt IPC Socket tới Server.
+- 📱💻 **State 2 (Prompting):** UI gọi hàm FFI/JSI `request_mesh_activation()`.
+- 📱💻 **State 3 (Mesh Active):** Sau khi User đồng ý (nhấn nút), Lõi Rust gọi API Native OS (`CoreBluetooth` trên iOS / `WifiP2PManager` trên Android) để bắt đầu Broadcasting.
+- 📱💻🖥️ **Bảo vệ dữ liệu RAM (mlock):** Dù ở Mesh Mode, `Epoch_Key` vẫn bị khóa chặt trong RAM bằng lệnh `mlock()`. Nếu thiết bị tắt nguồn (sập pin/bị đập nát), khóa bay màu ngay lập tức để chống Memory Dump.

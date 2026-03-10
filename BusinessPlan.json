@@ -316,6 +316,64 @@
                 }
               ],
               "subsections": []
+            },
+            {
+              "id": "26-ai-risk-governance-lợi-thế-quản-trị-rủi-ro-ai",
+              "level": 3,
+              "heading": "2.6 AI Risk Governance (Lợi thế Quản trị Rủi ro AI)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Thách thức của đối thủ: Slack/Teams tích hợp AI một cách \"mù quáng\" — doanh nghiệp buộc phải tin tưởng nhà cung cấp AI xử lý dữ liệu khách hàng, dẫn đến e ngại từ khối Enterprise nhạy cảm về tuân thủ."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Giải pháp TeraChat — Giao quyền làm chủ cho CISO:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tính năng",
+                    "Đối thủ (Slack/Teams)",
+                    "TeraChat"
+                  ],
+                  "rows": [
+                    [
+                      "Kiểm soát PII trước khi gửi AI",
+                      "❌ Không có",
+                      "✅ Local Micro-NER Masking"
+                    ],
+                    [
+                      "Admin toggle AI Exposure",
+                      "❌ All-or-nothing",
+                      "✅ OPA 3-Level Dynamic Toggle"
+                    ],
+                    [
+                      "Audit Log khi AI dùng dữ liệu",
+                      "❌ Không có",
+                      "✅ Ed25519 Tamper-Proof Log"
+                    ],
+                    [
+                      "Trách nhiệm pháp lý rò rỉ",
+                      "Nhà cung cấp",
+                      "✅ IT doanh nghiệp tự quyết định"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Chiến lược Risk Delegation: Bằng cách đẩy trách nhiệm chấp nhận rủi ro (Risk Acceptance) về phía bộ phận IT của khách hàng thông qua OPA Toggle, TeraChat:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Tự bảo vệ khỏi cáo buộc pháp lý nếu API bên thứ 3 bị rò rỉ.",
+                    "Cung cấp công cụ Audit Log sắc bén nhất cho doanh nghiệp chứng minh compliance.",
+                    "Giải quyết vấn đề Shadow IT: hệ thống linh hoạt ngăn người dùng \"đi cửa sau\" dùng AI ngoài."
+                  ]
+                }
+              ],
+              "subsections": []
             }
           ]
         },
@@ -447,6 +505,20 @@
                 {
                   "type": "paragraph",
                   "text": "Giữ khách bằng dữ liệu: Dữ liệu (chat history, CRM, audit log) nằm trong Private Cluster của doanh nghiệp. Chuyển sang đối thủ = mất continuity toàn bộ lịch sử."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "35-gói-upsell-bán-chéo-enterprise-survival-kit",
+              "level": 3,
+              "heading": "3.5 Gói Upsell (Bán chéo) \"Enterprise Survival Kit\"",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "Biến điểm yếu thành cơ hội kinh doanh: Đóng gói bán kèm giải pháp phần cứng. Khách hàng mua License TeraChat sẽ được chào mời mua thêm gói phần cứng cứu hộ (YubiKey chuẩn FIDO2 do TeraChat phân phối) định tuyến riêng cho C-Level với giá Premium, gia tăng biên lợi nhuận."
+                  ]
                 }
               ],
               "subsections": []

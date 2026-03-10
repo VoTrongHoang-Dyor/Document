@@ -9,7 +9,9 @@ TeraChat là Hệ điều hành Công việc (Operating System for Work) dành c
 * **Zero-Knowledge:** Máy chủ hoạt động như một "Blind Relay", chỉ chuyển tiếp các gói tin mã hóa. Máy chủ không giữ khóa giải mã, không biết nội dung thảo luận, danh tính thực của người gửi, hay lịch sử tìm kiếm.
 * **End-to-End Encryption (E2EE):** Toàn bộ dữ liệu (tin nhắn, gọi thoại, tệp tin) được mã hóa ngay tại thiết bị đầu cuối bằng `Company_Key` trước khi truyền đi. Dữ liệu không bao giờ tồn tại trên mạng dưới dạng plaintext.
 * **Hardware Security:** Private Key được bảo vệ bằng phần cứng chuyên dụng (Secure Enclave trên iOS, StrongBox trên Android, TPM 2.0 trên Desktop, YubiKey) và tuyệt đối không bao giờ rời khỏi vi mạch này.
-* **Offline Survival:** Hệ thống duy trì liên lạc nội bộ thông qua mạng lưới P2P cục bộ (BLE 5.0, Wi-Fi Direct) tự hình thành khi mạng Internet bị cắt đứt.
+* **Offline Survival:** Hệ thống duy trì liên lạc nội bộ thông qua mạng lưới P2P cục bộ (BLE 5.0, Wi-Fi Direct) khi mạng Internet bị cắt đứt.
+    * 📱💻 **Explicit Mesh Opt-in:** Survival Mesh KHÔNG tự động kích hoạt. Khi hệ thống phát hiện mất kết nối với Control Plane (Server), Lõi Rust sẽ tạm dừng toàn bộ I/O network. Người dùng phải xác nhận thủ công qua thông báo: "Khởi động mạng Mesh để duy trì liên lạc" để hệ thống cấp điện cho module BLE 5.0 / Wi-Fi Direct.
+    * 📱💻🖥️ **Blind Shard Backup:** Để chống "Zero-Access" cho C-Level, hệ thống áp dụng cơ chế sao lưu phân mảnh mù. Dữ liệu cục bộ của VIP sẽ được băm nhỏ, mã hóa và "gửi nhờ" trên thiết bị của các nhân viên xung quanh trong mạng Mesh mà họ không hề hay biết và không thể giải mã.
 
 ### 1.2 Feature Scope & Out-of-Scope
 
@@ -44,6 +46,11 @@ Thiết kế này bắt buộc hình thành vì 3 lý do:
 2. **Loại trừ rò rỉ bộ nhớ:** JS thread (UI) rất dễ bị trích xuất dữ liệu, giam toàn bộ Crypto Runtime trong lõi độc lập bảo vệ an toàn tối đa cho RAM.
 3. **Hiệu năng xuyên không gian:** Tránh được rào cản quá tải vòng lặp Event-Loop chậm chạp, tận dụng băng thông chia sẻ (Shared Memory) khổng lồ đẩy tốc độ I/O lên hơn 400MB/s.
 
+**Hardware-Adaptive Core (Lõi tương thích phần cứng):**
+
+- **Một lõi, đa hình theo nền tảng:** Cùng một bộ mã Rust được biên dịch thành các binary khác nhau tùy nền tảng, sử dụng `#[cfg(...)]` để **mlock() RAM chứa key trên Desktop/Server** nhưng tự động chuyển sang `ZeroizeOnDrop` + Secure Enclave/StrongBox trên iOS/Android (tuyệt đối không gọi `mlock()` trên Mobile để tránh Jetsam).
+- **JIT vs AOT & Streaming Bridge:** Trên Desktop, `.tapp` và pipeline media có thể tận dụng SharedArrayBuffer, mmap và JIT/Interpreter linh hoạt; trên iOS, Core tự động kích hoạt chế độ Interpreter/AOT tuân thủ W^X và dùng Native-to-Rust Media DataSource Bridge (AVAssetResourceLoaderDelegate/MediaDataSource) thay vì Local HTTP `127.0.0.1` để giữ trải nghiệm đồng nhất nhưng không vi phạm ràng buộc hệ điều hành.
+
 ### 1.5 The Life of a Message (Dòng chảy Dữ liệu)
 
 1. **Khởi tạo và Mã hóa (Thiết bị gửi [A]):** Người dùng [A] soạn tin nhắn. Lõi Rust trên máy [A] sử dụng `Company_Key` và thuật toán cây TreeKEM để mã hóa nội dung E2EE nguyên khối ngay trong vi mạch thiết bị.
@@ -51,6 +58,8 @@ Thiết kế này bắt buộc hình thành vì 3 lý do:
 3. **Trung chuyển Mù (Blind Relay Server):** Máy chủ làm nhiệm vụ lưu trữ và phân phối. Giống một trạm bưu điện không quyền bóc thư, hệ thống không giữ Private Key, đẩy nguyên khối gói tin tới hàng chờ (Queue) của thiết bị [B].
 4. **Nhận và Giải mã (Thiết bị nhận [B]):** Thiết bị hạ du [B] kéo gói tin về. Lõi Rust trên máy [B] kích hoạt Private Key (được giữ chặt trong chip TPM/Secure Enclave) để giải thuật Sealed Sender, sau đó bung gói E2EE thành dữ liệu văn bản thuần (plaintext).
 5. **Vẽ giao diện và Tiêu hủy Ký ức (UI & Crypto-Shredding):** Sau khi văn bản được vẽ (Paint) tức thì trên màn hình nhờ cầu nối UI Component, khối khóa giải mã và mọi tàn dư trên RAM bị "hủy diệt" (kiến trúc Zeroize — tự đè `0x00`). Không một phần mềm Malware nào có thể trích xuất ra (Memory Dumped) khóa gốc.
+
+> **Biến hình theo phần cứng:** Trên Desktop, cùng luồng tin nhắn này có thể đi qua SharedArrayBuffer/JSI Pointer với `mlock()` RAM chứa `Company_Key`; trên iOS/Android, pipeline logic vẫn giữ nguyên nhưng Core tự động dùng Secure Enclave/StrongBox + `ZeroizeOnDrop` và Native-to-Rust Media/DataSource Bridge để vừa đạt mục tiêu \<50ms latency, vừa tuân thủ giới hạn Background và W^X của hệ điều hành.
 
 ### 1.6 Documentation Map
 
