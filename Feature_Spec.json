@@ -1209,7 +1209,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱 Pha 1 — Write (NSE, realtime): Khởi chạy Rust Core Lightweight Mode (chỉ nạp module Cryptography) để kìm hãm RAM footprint < 10MB dưới ngưỡng an toàn NSE. Chỉ ghi Blob vào inbox.sqlite với is_indexed = false. Tuyệt đối không gọi bất kỳ FTS5 API nào.",
+                        "📱 Pha 1 — Write (NSE, realtime): Khởi chạy Rust Core Lightweight Mode (chỉ nạp module Cryptography) để kìm hãm RAM footprint < 10MB dưới ngưỡng an toàn NSE. Chỉ ghi Blob vào nse_staging.db với is_indexed = false. Tuyệt đối không gọi bất kỳ FTS5 API nào.",
                         "📱 Pha 2 — Index (Main App, deferred): Thiết lập cơ chế Shared App Group đồng bộ SQLite giữa NSE và Main App. Gán cờ is_vectorized đánh dấu dữ liệu chờ AI. Lắng nghe trigger BGProcessingTask để batch-index âm thầm khi thiết bị idle, với Circuit Breaker tự Suspend() khi RAM > 80%."
                       ]
                     }
@@ -1217,16 +1217,17 @@
                   "subsections": []
                 },
                 {
-                  "id": "inbox-queue-architecture-kiến-trúc-hộp-thư-đến-tách-biệt",
+                  "id": "kiến-trúc-hàng-đợi-trung-chuyển-bất-đối-xứng-asymmetric-staging-queue-lock-free-sync",
                   "level": 4,
-                  "heading": "Inbox Queue Architecture (Kiến trúc Hộp thư đến tách biệt)",
+                  "heading": "Kiến trúc Hàng đợi Trung chuyển Bất đối xứng (Asymmetric Staging Queue & Lock-Free Sync)",
                   "content_blocks": [
                     {
                       "type": "list",
                       "data": [
-                        "📱 Khởi tạo cơ sở dữ liệu phụ inbox.sqlite dạng Append-Only nhằm cô lập tuyệt đối luồng ghi của tiến trình NSE hạn hẹp.",
-                        "📱 Tận dụng Shared App Group để thiết lập vùng đệm dữ liệu trung gian giữa Extension Service và hệ quản trị Main App.",
-                        "📱 Áp dụng cơ chế Consumer Pattern tại Main App để hút và đồng bộ triệt để khối dữ liệu vào main.sqlite ngay khi ứng dụng mở lại ở Foreground."
+                        "📱 Phân lập Vùng chứa (App Group Isolation & Staging DB): Bật tính năng iOS App Groups (group.com.terachat.alpha) để chia sẻ thư mục giữa NSE và Main App. NSE tuyệt đối không được cấp quyền chạm vào hot_dag.db chính. Thay vào đó, khởi tạo một cơ sở dữ liệu phụ là nse_staging.db (được mã hóa bằng SQLCipher). Lõi Micro-Core trong NSE chỉ có đặc quyền Append-Only (Chỉ ghi thêm). Sau khi giải mã thành công, NSE đẩy Ciphertext đã giải mã, MAC tag, và Message Counter mới vào đây rồi đóng luồng.",
+                        "📱 Cơ chế Hút dữ liệu & Hợp nhất (Atomic Drain & Squashing): Main App đóng vai trò là \"Consumer\" duy nhất. Khi người dùng mở app (Foreground), Lõi Rust đầy đủ thực thi quá trình Atomic Drain. Nó đọc toàn bộ bản ghi từ nse_staging.db, tính toán Delta-State CRDT, và thực hiện gộp (Squashing) vào hot_dag.db chính. Chỉ khi quá trình Squashing commit thành công vào WAL của hot_dag.db, Lõi Rust mới phát lệnh DELETE làm sạch nse_staging.db, đảm bảo tính ACID tuyệt đối.",
+                        "📱 Giao tiếp Liên tiến trình qua Darwin Notifications (IPC Signaling): Để Main App biết lúc nào cần \"hút\" dữ liệu, NSE sẽ bắn một tín hiệu OS-level thông qua CFNotificationCenterGetDarwinNotifyCenter (ví dụ: com.terachat.state.dirty). Tín hiệu này vượt qua các rào cản Sandbox của iOS mà không tốn tài nguyên bộ nhớ. Nếu Main App đang Suspended trong RAM, nó sẽ được đánh thức ngầm khoảnh khắc ngắn để chuẩn bị Buffer.",
+                        "📱 Khóa POSIX Cấp Hệ điều hành (POSIX Advisory Locks): Tại kịch bản cạnh tranh luồng (Race Condition) ngặt nghèo khi người dùng mở app đúng lúc NSE đang ghi dở vào Staging DB, Lõi Rust sử dụng fcntl() POSIX lock trên file nse_staging.db. Nếu Main App phát hiện file đang bị khóa, nó áp dụng thuật toán Exponential Backoff (chờ 5ms, 10ms, 20ms) cho đến khi NSE nhả khóa, triệt tiêu rủi ro đọc Partial Write."
                       ]
                     }
                   ],

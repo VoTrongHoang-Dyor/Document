@@ -516,7 +516,7 @@ Tabs: **Members** / **Files** / **Audit Log** / **Permissions** / **Zone Status*
 - 📱💻 Khi Notification đến từ NSE nhưng Main App chưa kịp đồng bộ khóa mới (OOB Push Ratchet) hoặc **khi Circuit Breaker bị kích hoạt do payload quá lớn (chẳng hạn đợt Epoch Rotation cho group 50,000 người)**, UI **không** hiển thị ngay nội dung thực mà dùng một hàng Skeleton cố định:
   - Title dạng generic: `"🔒 Bạn có một tin nhắn mã hóa mới"`.
   - Subtitle hiển thị Blur/Skeleton bar (khối mờ 60–70% width), không lộ từ khóa hay nội dung nhạy cảm.
-- 📱 Ngay khi người dùng chạm vào thông báo mở Main App (Foreground Mode) và Lõi Rust phân bổ RAM để giải mã xong, hàng Skeleton được thay thế bằng nội dung thật thông qua hiệu ứng fade 0.15s (Giao diện hiển thị bộ khung Skeleton Loading dạng Glassmorphism mờ đục trong 0.2s trước khi text xuất hiện). Nếu đồng bộ thất bại, Skeleton chuyển thành trạng thái lỗi an toàn `"Không thể giải mã — chạm để thử lại"`.
+- 📱 Ngay khi người dùng chạm vào thông báo mở Main App (Foreground Mode) và Lõi Rust phân bổ RAM để giải mã xong (quá trình Atomic Drain tốn chưa tới 15ms), hàng Skeleton được thay thế bằng nội dung thật thông qua hiệu ứng fade 0.15s (Giao diện hiển thị bộ khung Skeleton Loading dạng Glassmorphism mờ đục trong 0.2s che phủ độ trễ này mượt mà). Nếu đồng bộ thất bại, Skeleton chuyển thành trạng thái lỗi an toàn `"Không thể giải mã — chạm để thử lại"`.
 
 ---
 

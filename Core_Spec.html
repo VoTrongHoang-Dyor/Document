@@ -1324,6 +1324,11 @@
 <li>App tự hash <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.text section</code> khi khởi chạy. Hash thay đổi → Silent Crash.</li>
 <li>☁️ <strong>Smoke Fuzz (PR Gate):</strong> 10 phút / Crash → Block Merge. <strong>Deep Fuzz (Nightly):</strong> 24h LibFuzzer + AFL++ + Stateful MLS Fuzzing. LLVM Sanitizers: ASan, MSan, UBSan.</li>
 </ul>
+<h4 id="cắt-bỏ-cục-bộ-tự-phục-hồi-dag-surgical-amputation-dag-self-healing">Cắt bỏ Cục bộ & Tự phục hồi DAG (Surgical Amputation & DAG Self-Healing)</h4>
+<ul>
+<li>📱 <strong>Surgical Amputation (Xử lý SIGKILL):</strong> Tình huống iOS "chém đứt" (SIGKILL) tiến trình NSE trong lúc ghi dở vào SQLite WAL là kịch bản rủi ro cao. Nếu sự cố xảy ra tạo ra các file database lỗi, cơ chế Atomic Drain tại Main App có khả năng nhận biết Transaction hỏng (Incomplete WAL Frame) và thực hiện cắt bỏ cục bộ (Surgical Amputation) đoạn bị hỏng, ngăn ngừa cascading failure sang <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> chính.</li>
+<li>📱 <strong>DAG Self-Healing (Tự phục hồi Cấu trúc Hash Chain):</strong> Nếu một mắt xích (Message Block) bị lỗi/thiếu do SIGKILL NSE, Lõi Rust phát hiện lỗ hổng chuỗi (Missing Vector Clock / Missing Hash Parent) khi dựng lại DAG. Ngay lập tức, thuật toán Self-Healing tự động gửi tín hiệu Sync-Request (qua P2P hoặc Server) để lấy lại dung sai (Delta) chính xác bị khuyết để hàn gắn cây Hash Chain của giao thức MLS, duy trì vẹn toàn thông điệp thay vì panic đổ vỡ toàn cục.</li>
+</ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="5-network-communication-protocols">5. Network & Communication Protocols</h2>
 <h3 id="51-real-time-messaging">5.1 Real-time Messaging</h3>

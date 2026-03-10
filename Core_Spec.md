@@ -625,6 +625,11 @@
 - App tự hash `.text section` khi khởi chạy. Hash thay đổi → Silent Crash.
 - ☁️ **Smoke Fuzz (PR Gate):** 10 phút / Crash → Block Merge. **Deep Fuzz (Nightly):** 24h LibFuzzer + AFL++ + Stateful MLS Fuzzing. LLVM Sanitizers: ASan, MSan, UBSan.
 
+#### Cắt bỏ Cục bộ & Tự phục hồi DAG (Surgical Amputation & DAG Self-Healing)
+
+- 📱 **Surgical Amputation (Xử lý SIGKILL):** Tình huống iOS "chém đứt" (SIGKILL) tiến trình NSE trong lúc ghi dở vào SQLite WAL là kịch bản rủi ro cao. Nếu sự cố xảy ra tạo ra các file database lỗi, cơ chế Atomic Drain tại Main App có khả năng nhận biết Transaction hỏng (Incomplete WAL Frame) và thực hiện cắt bỏ cục bộ (Surgical Amputation) đoạn bị hỏng, ngăn ngừa cascading failure sang `hot_dag.db` chính.
+- 📱 **DAG Self-Healing (Tự phục hồi Cấu trúc Hash Chain):** Nếu một mắt xích (Message Block) bị lỗi/thiếu do SIGKILL NSE, Lõi Rust phát hiện lỗ hổng chuỗi (Missing Vector Clock / Missing Hash Parent) khi dựng lại DAG. Ngay lập tức, thuật toán Self-Healing tự động gửi tín hiệu Sync-Request (qua P2P hoặc Server) để lấy lại dung sai (Delta) chính xác bị khuyết để hàn gắn cây Hash Chain của giao thức MLS, duy trì vẹn toàn thông điệp thay vì panic đổ vỡ toàn cục.
+
 ---
 
 ## 5. Network & Communication Protocols
