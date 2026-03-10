@@ -225,11 +225,12 @@
 - 📱💻🖥️ Áp dụng thuật toán Bogon Space Validation đối chiếu IP trả về với dải `127.0.0.0/8`, `10.0.0.0/8` ngăn chặn SSRF xâm nhập nội bộ.
 - 📱💻🖥️ Kích hoạt kỹ thuật IP Pinning cố định địa chỉ đích ngay tại tầng Socket để triệt tiêu chiến thuật đổi IP giữa chừng.
 
-#### Air-Gapped Linear Memory Isolation (Chống trích xuất khóa từ RAM)
+#### Air-Gapped Linear Memory Isolation & W^X Strict Compliance
 
+- 📱💻🖥️ **Pure AOT WASM & W^X Lockdown:** Tuyệt đối KHÔNG sử dụng JIT Compiler. Cấu hình WASM3 dưới dạng Pure AOT (Ahead-of-Time) Interpreter và liên kết tĩnh (Statically Linked) trực tiếp vào file nhị phân `.ipa` từ khâu CI/CD. Bằng cách khóa cứng W^X, bề mặt tấn công RCE qua Push Notification bị triệt tiêu hoàn toàn.
 - 📱💻🖥️ Cấp phát dải bộ nhớ ảo (Linear Memory) hoàn toàn độc lập và cách ly cho WASM Sandbox để ngăn chặn con trỏ (pointer) thoát luồng.
-- 💻🖥️ Khóa cứng vùng nhớ chứa `Company_Key` và `Device_Key` bằng lệnh `mlock()` tại Lõi Rust để chống quét (scan) hoặc trích xuất (dump) RAM của hệ thống, **chỉ trên các nền tảng Desktop/Server** được biên dịch với cờ điều kiện `#[cfg(not(any(target_os = "ios", target_os = "android")))]`.
-- 📱 Trên Mobile (iOS/Android), **tuyệt đối không gọi `mlock()`** để tránh Jetsam/Low-Memory Kill; thay vào đó, mọi struct chứa khóa (`Company_Key`, `Device_Key`, `Epoch_Key`, v.v.) bắt buộc dùng `ZeroizeOnDrop` và lưu Private Key gốc trong Secure Enclave/StrongBox; plaintext key-material chỉ tồn tại trong RAM trong các vùng scope cực ngắn và không được giữ qua bất kỳ `await`/`suspend` point.
+- 💻🖥️ Khóa cứng vùng nhớ chứa `Company_Key` và `Device_Key` bằng lệnh `mlock()` tại Lõi Rust để chống quét (scan) hoặc trích xuất (dump) RAM của hệ thống, **chỉ trên nền tảng Desktop/Server**.
+- 📱 **ZeroizeOnDrop (Stack Memory Crypto-Shredding):** Do iOS không cho phép ứng dụng gọi `mlock()` (yêu cầu quyền root) trong NSE, hệ thống mô phỏng cơ chế này bằng macro `ZeroizeOnDrop` của Rust ngay trên Stack Memory. Khóa giải mã `Epoch_Key` chỉ tồn tại dạng biến cục bộ (Local Variable) trên stack và tự động bị ghi đè `0x00` (Crypto-Shredding) ngay khi hàm trả kết quả về cho OS, không để lại dấu vết chống Memory Dump.
 
 #### OPA-driven IPC Bridge & Manifest Control (Kiểm soát I/O trái phép)
 

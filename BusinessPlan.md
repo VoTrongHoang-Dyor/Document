@@ -254,6 +254,11 @@ sudo bash /tmp/install.sh --token=[License_Key]
 
 > **Tóm lại:** Chúng ta mở cửa phòng khách (Client, Thuật toán mã hóa) để khách hàng thấy nhà sạch và an toàn. Nhưng khóa chặt phòng bếp và két sắt (Admin Console, AI, Tích hợp doanh nghiệp).
 
+### 4.4 Tuân thủ Chính sách Apple Review (W^X & Static Crypto)
+
+- **Khai báo Minh bạch:** Trong tài liệu nộp cho Apple Review, TeraChat khai báo rõ `terachat-nse-core` chỉ là một thư viện mật mã thuần túy (Static Crypto Library). Tiến trình chạy ngầm (NSE) tuyệt đối không tải bất kỳ file `.tapp` nào qua mạng.
+- **W^X Lockdown:** Không sử dụng JIT Compiler. Cấu hình WASM3 dưới dạng Pure AOT (Ahead-of-Time). Mọi plugin AI/WASM chỉ được thực thi ở Foreground (Main App) để vượt ải kiểm duyệt khắt khe của Apple về rủi ro Remote Code Execution (RCE) qua Push Notification.
+
 ---
 
 ## 5. Anti-Fragmentation & Forced Upgrade Strategy

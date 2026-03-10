@@ -2427,7 +2427,9 @@
                   "data": [
                     "📱 Notification Service Extension (NSE — iOS): Sử dụng UNNotificationServiceExtension + mutable-content: 1 để đánh thức tiến trình con xử lý ciphertext mà không hiển thị trực tiếp Plaintext lên hệ điều hành.",
                     "📱 Data Messages (Android): FCM Data Message → FirebaseMessagingService → giải mã Rust FFI trong tiến trình con cô lập, không để APNs/FCM server thấy nội dung thông báo.",
-                    "📱 Micro-Crypto Build Target (Rust FFI ~4MB): Loại bỏ các module nặng (MLS full, CRDT Automerge, SQLCipher) khỏi NSE build — chỉ giữ AES-256-GCM decrypt + Shared Keychain read; duy trì footprint ~4MB dưới ngưỡng 24MB giới hạn của iOS NSE.",
+                    "📱 Micro-Crypto Build Target (terachat-nse-core.a): Xây dựng bản build Rust thu gọn (stripped-down) tước bỏ toàn bộ WASM Runtime, TEE AI, và Mesh Networking. Nhiệm vụ duy nhất là nhận Ciphertext từ APNs, đọc DeviceIdentityKey từ Keychain (không dùng Secure Enclave ở background để tránh timeout), và giải mã bằng X25519/Kyber768.",
+                    "📱 Static Memory Arena (10MB Limit): Lõi Micro-Crypto thay vì cấp phát Heap (malloc), khởi tạo sẵn một Static Memory Arena 10MB ngay khi NSE khởi động. Toàn bộ quá trình giải mã chỉ tái sử dụng buffer trong vùng 10MB này để đảm bảo an toàn bộ nhớ.",
+                    "📱 Latency & Execution Constraint: Tối ưu hóa vi kiến trúc để đảm bảo thời gian giải mã một tin nhắn MLS dưới 50ms, tuyệt đối tránh vi phạm thời gian sống tối đa 30 giây của tiến trình iOS NSE.",
                     "📱☁️ Blind Payload Architecture (CBOR + Dummy Alert): Sử dụng ciphertext nén bằng chuẩn CBOR kết hợp chuỗi Dummy Alert tĩnh để ngăn chặn Apple/Google thu thập Business Intelligence từ nội dung thông báo.",
                     "📱 ZeroizeOnDrop sau NSE: Thực thi ghi đè 0x00 xóa sạch plaintext khỏi RAM ngay sau khi trả kết quả thông báo cho Native OS — không có window nào để key hay plaintext bị trích xuất."
                   ]

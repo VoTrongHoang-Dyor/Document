@@ -434,6 +434,7 @@
 </ul>
 <h3 id="4-chức-năng-vận-hành-cứu-hộ-dành-cho-devopssecops">4. Chức năng Vận hành & Cứu hộ (Dành cho DevOps/SecOps)</h3>
 <ul>
+<li><strong>Graceful Degradation & Circuit Breaker (Quá tải RAM NSE):</strong> Tự động bảo vệ mức RAM eo hẹp 24MB của tiến trình xử lý thông báo ngầm (iOS NSE/Android FCM). Nếu payload mã hóa đẩy về quá lớn (như đợt xoay vòng khóa Epoch Rotation cho group chat 50,000 người) dẫn đến nguy cơ tiêu thụ bộ nhớ vượt 20MB, Micro-Core tự động kích hoạt Circuit Breaker chặn luồng giải mã ngầm, giúp tránh OOM-Kill. Thay vào đó, hệ thống chỉ đánh thức Lõi Rust tiêu chuẩn vào lúc người dùng mở App ở Foreground (nơi trần RAM cho phép lên đến 2GB) để đảm bảo an toàn tuyệt đối.</li>
 <li><strong>Khôi phục Thảm họa Cơ sở dữ liệu (PostgreSQL PITR):</strong> Chức năng "cỗ máy thời gian" thông qua WAL Archiving. Nếu Admin vô tình chạy lệnh xóa nhầm dữ liệu, hệ thống có thể dựng lại nguyên vẹn Database về đúng một mốc thời gian cụ thể (ví dụ: 14:03:00) dựa trên các log được sao lưu định kỳ.</li>
 <li><strong>Lưu trữ Tự chủ (BYOS - Bring Your Own Storage):</strong> Không ép buộc Doanh nghiệp dùng Cloud của TeraChat. Hệ thống tích hợp chuẩn S3-Compatible (MinIO), cho phép IT tự cắm thêm ổ cứng vật lý để mở rộng dung lượng và lưu trữ lịch sử vô hạn (Infinite Retention).</li>
 <li><strong>Cập nhật Không cần Mạng (Air-Gapped Patching):</strong> Cho phép triển khai các bản vá lỗi siêu nhỏ (Delta Patch - BSDiff) cục bộ cho các máy trạm nằm trong mạng nội bộ đóng kín hoàn toàn với Internet.</li>
