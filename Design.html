@@ -373,6 +373,26 @@
 <a href="#layout-desktoplaptop-2-cột-35-65" class="nav-link" style="padding-left:0.8rem;">Layout Desktop/Laptop (2 cột — 35% / 65%)</a>
 <a href="#left-column-pinned-channels" class="nav-link" style="padding-left:0.8rem;">LEFT COLUMN — Pinned Channels</a>
 <a href="#right-column-dashboard" class="nav-link" style="padding-left:0.8rem;">RIGHT COLUMN — Dashboard</a>
+<a href="#18-thiết-kế-luồng-self-recovery-glassmorphism-ui" class="nav-link" style="padding-left:0.8rem;">18. Thiết kế Luồng Self-Recovery (Glassmorphism UI)</a>
+<a href="#19-qr-enrollment-onboarding-nhân-viên" class="nav-link" style="padding-left:0.8rem;">19. QR Enrollment (Onboarding nhân viên)</a>
+<a href="#19-file-approval-flow-zone-2-restricted" class="nav-link" style="padding-left:0.8rem;">19. File Approval Flow (Zone 2 Restricted)</a>
+<a href="#phần-vi-các-giao-diện-mở-rộng-sso-liên-tổ-chức" class="nav-link" style="">PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)</a>
+<a href="#22-giao-diện-đăng-nhập-enterprise-sso-login" class="nav-link" style="padding-left:0.8rem;">22. Giao diện Đăng nhập (Enterprise SSO Login)</a>
+<a href="#layout-desktopmobile-màn-hình-welcome" class="nav-link" style="padding-left:0.8rem;">Layout Desktop/Mobile (Màn hình Welcome)</a>
+<a href="#23-giao-diện-thiết-lập-chi-nhánh-cross-cluster-federation-handshake" class="nav-link" style="padding-left:0.8rem;">23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)</a>
+<a href="#ở-phía-tổng-công-ty-hq-admin" class="nav-link" style="padding-left:0.8rem;">Ở phía Tổng công ty (HQ Admin)</a>
+<a href="#ở-phía-chi-nhánh-branch-admin" class="nav-link" style="padding-left:0.8rem;">Ở phía Chi nhánh (Branch Admin)</a>
+<a href="#24-giao-diện-épthêm-member-directory-sync-invites" class="nav-link" style="padding-left:0.8rem;">24. Giao diện Ép/Thêm Member (Directory Sync & Invites)</a>
+<a href="#tab-1-directory-sync-scim-20-tự-động" class="nav-link" style="padding-left:0.8rem;">Tab 1: Directory Sync (SCIM 2.0 Tự động)</a>
+<a href="#tab-2-manual-guest-invites" class="nav-link" style="padding-left:0.8rem;">Tab 2: Manual / Guest Invites</a>
+<a href="#25-giao-diện-đăng-nhập-ngầm-phân-quyền-hr-magic-deep-link-sso" class="nav-link" style="padding-left:0.8rem;">25. Giao diện Đăng nhập Ngầm & Phân quyền HR (Magic Deep-Link SSO)</a>
+<a href="#phần-1-phân-quyền-mời-delegation-via-opa" class="nav-link" style="padding-left:0.8rem;">Phần 1: Phân quyền Mời (Delegation via OPA)</a>
+<a href="#phần-2-workflow-1-tap-magic-sso" class="nav-link" style="padding-left:0.8rem;">Phần 2: Workflow 1-Tap Magic SSO</a>
+<a href="#phần-vii-accessibility-checklist" class="nav-link" style="">PHẦN VII – ACCESSIBILITY & CHECKLIST</a>
+<a href="#26-accessibility" class="nav-link" style="padding-left:0.8rem;">26. Accessibility</a>
+<a href="#27-checklist-cho-designer" class="nav-link" style="padding-left:0.8rem;">27. Checklist cho Designer</a>
+<a href="#phần-viii-cross-platform-architecture" class="nav-link" style="">PHẦN VIII – CROSS-PLATFORM ARCHITECTURE</a>
+<a href="#28-tầng-ui-chỉ-đóng-vai-trò-là-pure-renderer-thợ-vẽ-thuần-túy-tước-bỏ-toàn-bộ-logic-và-chỉ-hiển-thị-những-thay-đổi-trạng-thái-statechanged-do-core-báo-về-việc-cấm-tuyệt-đối-port-crypto-hay-business-logic-lên-luồng-jsdart-là-bắt-buộc-để-tránh-rò-rỉ-bộ-nhớ-và-đảm-bảo-nhất-quán-mật-mã-trên-cả-5-nền-tảng" class="nav-link" style="padding-left:0.8rem;">28.   Tầng UI chỉ đóng vai trò là "Pure Renderer" (Thợ vẽ thuần túy) – tước bỏ toàn bộ logic và chỉ hiển thị những thay đổi trạng thái (StateChanged) do Core báo về. Việc cấm tuyệt đối port Crypto hay Business Logic lên luồng JS/Dart là bắt buộc để tránh rò rỉ bộ nhớ và đảm bảo nhất quán mật mã trên cả 5 nền tảng</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -1216,105 +1236,247 @@ Entry point: Settings → `[Admin Console]` button.
 
 ---
 
-## 17. Mesh Activation Flow
-
-- 📱💻🖥️ Khi mất mạng (Offline Mode), UI hiển thị một Modal Overlap (Glassmorphism với nền Dark Navy `#0F172A`).
-- 📱 iOS Màn hình áp dụng hiệu ứng `UIBlurEffectStyle.systemUltraThinMaterialDark`.
-- 📱💻 Nút CTA chính (Màu Đỏ Cam cảnh báo): "Khởi động mạng Mesh để duy trì liên lạc". Kèm theo cảnh báo phụ: "Thiết bị sẽ phát sóng vô tuyến cục bộ. Đảm bảo bạn đang ở trong khu vực an toàn."
-- 📱💻 Giao diện tự động vô hiệu hóa toàn bộ hiệu ứng Animation nặng để tiết kiệm pin cho thiết bị trong kịch bản thảm họa.
-
----
-
-## 18. QR Enrollment (Onboarding nhân viên)
-</code></pre></div>
-<p>Admin: Tạo Invite Token → Hiển thị QR</p>
-<p>Nhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA</p>
+## 17. Mesh Activation Flow</code></pre></div>
+<p>Detect mất kết nối</p>
+<p>→ Toast: "Switching to Mesh Mode..."</p>
+<p>→ UI fade sang Dark theme (0.3s)</p>
+<p>→ Banner: Nút CTA chính (Màu Đỏ Cam cảnh báo): "Khởi động mạng Mesh để duy trì liên lạc".</p>
+<p>→ Tiếp tục nhắn tin qua BLE/Wi-Fi Direct</p>
+<ul>
+<li>Offline message queue: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">⏱ đang chờ</code> → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">✓ đã đồng bộ</code>.</li>
+<li>📱💻🖥️ Khi mất mạng (Offline Mode), UI hiển thị một Modal Overlap (Glassmorphism với nền Dark Navy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code>).</li>
+<li>📱 iOS Màn hình áp dụng hiệu ứng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UIBlurEffectStyle.systemUltraThinMaterialDark</code>.</li>
+<li>📱💻 Giao diện tự động vô hiệu hóa toàn bộ hiệu ứng Animation nặng để tiết kiệm pin cho thiết bị trong kịch bản thảm họa.</li>
+</ul>
+<h2 id="18-thiết-kế-luồng-self-recovery-glassmorphism-ui">18. Thiết kế Luồng Self-Recovery (Glassmorphism UI)</h2>
+<ul>
+<li>💻🖥️ <strong>Màn hình KMS Bootstrap:</strong> Nền tối (Mesh Mode Dark Navy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code>). Ở giữa hiển thị biểu tượng YubiKey xoay 3D với viền sáng mờ. Thông báo: "Đang chờ xác thực phần cứng C-Level..."</li>
+<li>💻🖥️ <strong>FIDO2 Prompt:</strong> Pop-up hệ thống nổi lên yêu cầu mã PIN hoặc vân tay trên YubiKey. Giao diện TeraChat bị khóa mờ (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UIBlurEffect</code>) hoàn toàn để tránh can thiệp click-jacking.</li>
+<li>📱💻 <strong>Cảnh báo TH2 (Tự phế truất):</strong> Khi thực hiện "Revoke", nút bấm phải sử dụng màu Đỏ Cảnh Báo (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#EF4444</code>) và yêu cầu gõ lại chữ "REVOKE" để xác nhận, tránh thao tác nhầm trên thiết bị còn lại.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="19-qr-enrollment-onboarding-nhân-viên">19. QR Enrollment (Onboarding nhân viên)</h2>
 <div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>
----
-
-## 19. File Approval Flow (Zone 2 Restricted)
+Admin: Tạo Invite Token → Hiển thị QR
+Nhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA
 </code></pre></div>
-<p>Chọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]</p>
-<p>Manager nhận notification → [Review] → Approve / Reject</p>
-<p>User nhận thông báo kết quả</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="19-file-approval-flow-zone-2-restricted">19. File Approval Flow (Zone 2 Restricted)</h2>
 <div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>
----
-
-# PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO &amp; LIÊN TỔ CHỨC)
-
-## 22. Giao diện Đăng nhập (Enterprise SSO Login)
-
-TeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta.
-
-### Layout Desktop/Mobile (Màn hình Welcome)
-
-- **Background (Layer 1):** Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).
-- **Center Glass Card (Layer 4):** Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, `rgba(20,30,45,0.6)`), viền phát sáng nhẹ `rgba(255,255,255,0.1)`.
+Chọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]
+Manager nhận notification → [Review] → Approve / Reject
+User nhận thông báo kết quả
 </code></pre></div>
-<p>┌─────────────────────────────────────────────┐</p>
-<p>│               [TeraChat Logo]               │</p>
-<p>│        Secure Enterprise Communication      │</p>
-<p>│                                             │</p>
-<p>│  [ Input: Khóa/Workspace ID (terachat...) ] │</p>
-<p>│                                             │</p>
-<p>│  [ 🔑 Log in with Microsoft Azure AD     ]  │</p>
-<p>│  [ 🛡️ Log in with Google Workspace       ]  │</p>
-<p>│                                             │</p>
-<p>│       ─ Hoặc xác thực phần cứng ─           │</p>
-<p>│           [ YubiKey / Security Key ]        │</p>
-<p>└─────────────────────────────────────────────┘</p>
-<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>
-**UX &amp; Motion Logic (Zero-Trust Core Initialization):**
-
-- **Biometric-Bound Initialization (Bắt buộc Sinh trắc học):** Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).
-  &gt; *"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)"*
-  &gt; Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.
-- **Cryptographic PIN Fallback UI:** Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).
-  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của React Native.
-  - Phía dưới hiển thị dòng chữ cảnh báo mờ: `Attempt X/5`.
-- **Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct &amp; Memory Zeroization):** Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh `Remote Wipe`.
-  - 📱💻 **Remote Wipe &amp; Secure Enclave Wipe:** Lệnh `Remote Wipe` thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.
-  - 📱💻🖥️ **Memory Zeroization:** Cơ chế `ZeroizeOnDrop` (RAII) lập tức thực hiện ghi đè `0x00` lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.
-  - 📱💻🖥️ **Crypto-Shredding:** Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.
-  - 📱 **Ruthless Visualization:** Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).
-- **Tiến trình Khởi tạo mượt mà:** Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu `#24A1DE`) chạy fade-in trong `&lt; 3 giây` với dòng text *"Đang thiết lập Lõi Mật Mã..."*.
-- **Input Workspace ID:** Nền glass trắng mờ, outline chuyển `#24A1DE` cùng bóng đổ mờ khi focus/active.
-- **Button Style:** Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.
-
----
-
-## 23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)
-
-Luồng kết nối HQ và Chi nhánh được định vị tại **Admin Console &gt; Federation**. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm "Click &amp; Connect" trực quan.
-
-### Ở phía Tổng công ty (HQ Admin)
-
-1. **CTA Button:** Nút `[ + Generate Federation Invite ]` nằm góc phải trên (Primary `#24A1DE`).
-2. **Setup Modal (Slide từ trung tâm):**
-   - Tên Chi nhánh: Khung Input field thường.
-   - Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: `👁️ Chỉ Reply`, `💬 Nhắn tin`).
-   - Thời hạn Token: Slider kéo thả linh hoạt `1h — 24h` dán nhãn màu.
-3. **Kết quả (Success State):** Sinh JWT Token khổng lồ để mời Chi nhánh.
-   - Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút `[ Copy Token ]` + icon clipboard.
-
-### Ở phía Chi nhánh (Branch Admin)
-
-1. Mở Admin Console &gt; Federation. Click `[ Join Federation Network ]`.
-2. **Modal Nhập Token:** Khung Paste lớn chiếm 50% modal. Ngay khi paste, **Lõi Rust (WASM)** phân tích realtime (&lt;50ms) và load ra thẻ Info Card xác nhận tin cậy:
-   &gt; ⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*.
-3. **Animation `[ Confirm &amp; Handshake ]`:** Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick `✅ Connected` sang mảng màu xanh Success tươi sáng.
-
----
-
-## 24. Giao diện Ép/Thêm Member (Directory Sync &amp; Invites)
-
-Thiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại **Admin Console &gt; User Management**.
-
-### Tab 1: Directory Sync (SCIM 2.0 Tự động)
-
-**Dashboard Control (Dải Ribbon trên cùng):**
-</code></pre></div>
-<p>[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-vi-các-giao-diện-mở-rộng-sso-liên-tổ-chức">PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)</h1>
+<h2 id="22-giao-diện-đăng-nhập-enterprise-sso-login">22. Giao diện Đăng nhập (Enterprise SSO Login)</h2>
+<p>TeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta.</p>
+<h3 id="layout-desktopmobile-màn-hình-welcome">Layout Desktop/Mobile (Màn hình Welcome)</h3>
+<ul>
+<li><strong>Background (Layer 1):</strong> Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).</li>
+<li><strong>Center Glass Card (Layer 4):</strong> Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(20,30,45,0.6)</code>), viền phát sáng nhẹ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">rgba(255,255,255,0.1)</code>.</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>┌─────────────────────────────────────────────┐
+│               [TeraChat Logo]               │
+│        Secure Enterprise Communication      │
+│                                             │
+│  [ Input: Khóa/Workspace ID (terachat...) ] │
+│                                             │
+│  [ 🔑 Log in with Microsoft Azure AD     ]  │
+│  [ 🛡️ Log in with Google Workspace       ]  │
+│                                             │
+│       ─ Hoặc xác thực phần cứng ─           │
+│           [ YubiKey / Security Key ]        │
+└─────────────────────────────────────────────┘</code></pre></div>
+<p><strong>UX & Motion Logic (Zero-Trust Core Initialization):</strong></p>
+<ul>
+<li><strong>Biometric-Bound Initialization (Bắt buộc Sinh trắc học):</strong> Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).</li>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><em>"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)"</em></p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.</p>
+<li><strong>Cryptographic PIN Fallback UI:</strong> Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).</li>
+<li>PIN được truyền thẳng qua <strong>FFI Pointer</strong> xuống Lõi Rust mà không lưu lại trên State của React Native.</li>
+<li>Phía dưới hiển thị dòng chữ cảnh báo mờ: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Attempt X/5</code>.</li>
+<li><strong>Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization):</strong> Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Remote Wipe</code>.</li>
+<li>📱💻 <strong>Remote Wipe & Secure Enclave Wipe:</strong> Lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Remote Wipe</code> thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.</li>
+<li>📱💻🖥️ <strong>Memory Zeroization:</strong> Cơ chế <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> (RAII) lập tức thực hiện ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.</li>
+<li>📱💻🖥️ <strong>Crypto-Shredding:</strong> Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.</li>
+<li>📱 <strong>Ruthless Visualization:</strong> Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).</li>
+<li><strong>Tiến trình Khởi tạo mượt mà:</strong> Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code>) chạy fade-in trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">&lt; 3 giây</code> với dòng text <em>"Đang thiết lập Lõi Mật Mã..."</em>.</li>
+<li><strong>Input Workspace ID:</strong> Nền glass trắng mờ, outline chuyển <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code> cùng bóng đổ mờ khi focus/active.</li>
+<li><strong>Button Style:</strong> Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="23-giao-diện-thiết-lập-chi-nhánh-cross-cluster-federation-handshake">23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)</h2>
+<p>Luồng kết nối HQ và Chi nhánh được định vị tại <strong>Admin Console &gt; Federation</strong>. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm "Click & Connect" trực quan.</p>
+<h3 id="ở-phía-tổng-công-ty-hq-admin">Ở phía Tổng công ty (HQ Admin)</h3>
+<ol>
+<li><strong>CTA Button:</strong> Nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ + Generate Federation Invite ]</code> nằm góc phải trên (Primary <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code>).</li>
+<li><strong>Setup Modal (Slide từ trung tâm):</strong></li>
+</ol>
+<ul>
+<li>Tên Chi nhánh: Khung Input field thường.</li>
+<li>Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">👁️ Chỉ Reply</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">💬 Nhắn tin</code>).</li>
+<li>Thời hạn Token: Slider kéo thả linh hoạt <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">1h — 24h</code> dán nhãn màu.</li>
+</ul>
+<ol>
+<li><strong>Kết quả (Success State):</strong> Sinh JWT Token khổng lồ để mời Chi nhánh.</li>
+</ol>
+<ul>
+<li>Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ Copy Token ]</code> + icon clipboard.</li>
+</ul>
+<h3 id="ở-phía-chi-nhánh-branch-admin">Ở phía Chi nhánh (Branch Admin)</h3>
+<ol>
+<li>Mở Admin Console &gt; Federation. Click <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ Join Federation Network ]</code>.</li>
+<li><strong>Modal Nhập Token:</strong> Khung Paste lớn chiếm 50% modal. Ngay khi paste, <strong>Lõi Rust (WASM)</strong> phân tích realtime (&lt;50ms) và load ra thẻ Info Card xác nhận tin cậy:</li>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">⚠️ <strong>Bảo mật:</strong> Bạn đang yêu cầu kết nối mTLS với máy chủ <strong>[Tên HQ]</strong>. Trạng thái chứng chỉ: <em>Hợp lệ</em>.</p>
+<li><strong>Animation <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ Confirm & Handshake ]</code>:</strong> Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">✅ Connected</code> sang mảng màu xanh Success tươi sáng.</li>
+</ol>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="24-giao-diện-épthêm-member-directory-sync-invites">24. Giao diện Ép/Thêm Member (Directory Sync & Invites)</h2>
+<p>Thiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại <strong>Admin Console &gt; User Management</strong>.</p>
+<h3 id="tab-1-directory-sync-scim-20-tự-động">Tab 1: Directory Sync (SCIM 2.0 Tự động)</h3>
+<p><strong>Dashboard Control (Dải Ribbon trên cùng):</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]</code></pre></div>
+<ul>
+<li><strong>Status Badge:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🟢 Active (Xanh lá)</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🟡 Warning (Vàng)</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🔴 Error (Đỏ)</code>. Thêm hiệu ứng pulse nhấp nháy vào dấu chấm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🟢</code>.</li>
+</ul>
+<p><strong>Data Grid (Danh sách User dạng List View Glass):</strong></p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Username</th>
+<th>Department</th>
+<th>Sync Source</th>
+<th>Tình trạng Khóa (E2EE)</th>
+<th>Action</th>
+</tr></thead><tbody>
+<tr>
+<td>Nguyen Van A</td>
+<td>Finance</td>
+<td>Azure AD</td>
+<td>🟢 Provisioned</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Revoke]</code></td>
+</tr>
+<tr>
+<td>Tran Thi B</td>
+<td>Sales</td>
+<td>Azure AD</td>
+<td>🟡 Pending Login</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[Resend]</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>UX Logic (Offboarding Không Chạm):</strong></p>
+<ul>
+<li>Khi nhân sự nghỉ việc trên hệ thống mẹ (IdP), hàng dữ liệu của nhân sự lập tức <strong>đổi màu đỏ nhạt (Red Glass, opacity 10%)</strong> và nhãn Auth đổi thành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">🔒 Revoked</code>.</li>
+<li>Các nút Action biến mất hoặc bị disable (mờ đi) kèm tooltip rõ ràng: <em>"Managed by IdP. Khóa thiết bị đã bị hủy."</em></li>
+</ul>
+<h3 id="tab-2-manual-guest-invites">Tab 2: Manual / Guest Invites</h3>
+<p>Dành cho nhà thầu hoặc đối tác outsource tạm thời.</p>
+<ol>
+<li>Click <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ + Generate Invite Token ]</code>.</li>
+<li><strong>Cấu hình (Modal):</strong> Nhập Tên cá nhân, Dropdown chọn Role (Guest, Contractor), Khung Box nhập Thời gian (12 giờ, 24 giờ).</li>
+<li><strong>Màn hình Trả ra (Output Modal):</strong></li>
+</ol>
+<ul>
+<li>Mã QR xuất hiện trung tâm khổng lồ. (Lưu ý: Card Glass chứa QR cần lót nền trắng phía dưới để Camera quét được).</li>
+<li>Đi kèm nút Copy URL bảo mật.</li>
+</ul>
+<ol>
+<li><strong>End-user Onboarding (Người nhận trên Mobile):</strong></li>
+</ol>
+<ul>
+<li>Trên màn hình Mobile của đối tác hiện nút Scan cực lớn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ 📷 Scan QR to Join ]</code>.</li>
+<li>UI bật khung ngắm (Viewfinder blur) bắt viền lấy nét QR siêu nhanh.</li>
+<li>Khi bắt được QR -&gt; Hiệu ứng màn hình mở khóa (Unlock animation chớp nhoáng), tự động thiết lập chứng chỉ Certificate và thả rơi user thẳng vào Chat Room mà không hỏi mật khẩu.</li>
+</ul>
+<h2 id="25-giao-diện-đăng-nhập-ngầm-phân-quyền-hr-magic-deep-link-sso">25. Giao diện Đăng nhập Ngầm & Phân quyền HR (Magic Deep-Link SSO)</h2>
+<p>Bài toán mâu thuẫn giữa Bảo mật cao (Zero-Trust + SSO) và Trải nghiệm người mới (Frictionless Onboarding) được giải quyết qua luồng <strong>Delegated Provisioning kết hợp Magic Deep-Link SSO</strong>.</p>
+<h3 id="phần-1-phân-quyền-mời-delegation-via-opa">Phần 1: Phân quyền Mời (Delegation via OPA)</h3>
+<p>Super Admin sẽ không đi mời từng người, mà <strong>ủy quyền (Delegate) cho bộ phận HR</strong> thông qua OPA Engine mà không làm hỏng tính toàn vẹn hệ thống.</p>
+<ol>
+<li><strong>Ủy quyền:</strong> Sếp tạo nhóm <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HR_Department</code> trong Admin Console.</li>
+<li><strong>Tiêm luật OPA:</strong> Gán Policy đặc biệt để Lõi Rust kiểm tra nội bộ:</li>
+</ol>
+<p>   <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow if user.group == "HR_Department" and action == "generate_invite_token"</code></p>
+<ol>
+<li><strong>UX hiển thị:</strong> Chỉ những account thuộc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HR_Department</code> mới thấy xuất hiện nút <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[ + Mời nhân viên ]</code> trên giao diện.</li>
+</ol>
+<h3 id="phần-2-workflow-1-tap-magic-sso">Phần 2: Workflow 1-Tap Magic SSO</h3>
+<p>Luồng này loại bỏ hoàn toàn giao diện gõ email/mật khẩu thủ công thông qua 3 bước chớp nhoáng:</p>
+<ol>
+<li><strong>HR Phát hành Lời mời:</strong></li>
+</ol>
+<ul>
+<li>HR nhập email công ty của nhân viên mới (VD: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">nhanvien@congty.com</code>).</li>
+<li>Lõi Rust sinh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Invite_Token</code> (Signed JWT) hạn 24h và tự động gửi một Email chứa nút <strong>"Tham gia TeraChat"</strong>.</li>
+</ul>
+<ol>
+<li><strong>Người dùng Chạm 1-Tap (Magic Deep-Link):</strong></li>
+</ol>
+<ul>
+<li>Nhân viên bấm nút từ Email (app Gmail/Outlook trên điện thoại).</li>
+<li>Lớp OS (iOS/Android) sẽ không mở trình duyệt mà kích hoạt <strong>Universal Link/App Link</strong> truyền thẳng URL: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">https://join.terachat.com/invite?token=abc&hint=nhanvien@congty.com</code> vào app TeraChat.</li>
+</ul>
+<ol>
+<li><strong>Đăng nhập Ngầm (Zero-Click SSO - Dưới 0.5s):</strong></li>
+</ol>
+<ul>
+<li>Thay vì hiện màn hình đăng nhập 2 nút (Azure/Google), Lõi Rust chộp lấy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hint=nhanvien@congty.com</code> và kích hoạt luồng OIDC (PKCE).</li>
+<li>Ép gửi tham số <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">prompt=none & login_hint=email</code>. Nhờ việc người dùng đang mở app Mail nội bộ, máy điện thoại <strong>đã có sẵn Session SSO</strong>.</li>
+<li>Hệ thống tự động xác thực ngầm, trình duyệt hệ thống bật lên chớp nhoáng rồi tắt, sau đó Lõi Rust sinh khóa E2EE (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code>) thả thẳng người dùng vào nhóm Chat.</li>
+</ul>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>TỔNG KẾT 4 KỸ THUẬT LÕI ĐƯỢC ÁP DỤNG:</strong></p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">1. <strong>Deferred Deep Linking:</strong> Ghi nhớ URL lời mời kể cả khi người dùng phải bay qua App Store tải App lần đầu.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">2. <strong>OIDC <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">login_hint</code> & <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">prompt=none</code>:</strong> Kỹ thuật ép SSO không được hiện màn hình chọn Account màn lấy luôn Session hiện tại.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">3. <strong>Smart Routing OPA:</strong> Quyền sinh JWT Pre-approved được chốt chặt ở lõi hệ thống.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">4. <strong>AppAuth (PKCE):</strong> Giao thức bảo mật bắt buộc để nhận Token trên thiết bị di động không cần Client Secret.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h1 id="phần-vii-accessibility-checklist">PHẦN VII – ACCESSIBILITY & CHECKLIST</h1>
+<h2 id="26-accessibility">26. Accessibility</h2>
+<ul>
+<li>Minimum contrast <strong>4.5:1</strong> cho text chính.</li>
+<li>Keyboard navigable: Tab order <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Rail → Panel → Main</code>.</li>
+<li>Tất cả icon phải có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">aria-label</code> hoặc tooltip.</li>
+<li>Focus ring: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">outline 2px #24A1DE, offset 2px</code>.</li>
+<li>Screen reader support cho alerts và security status badges.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="27-checklist-cho-designer">27. Checklist cho Designer</h2>
+<ul>
+<li>[ ] Thiết kế Online Mode và Mesh Mode cho <strong>từng màn hình</strong>.</li>
+<li>[ ] Component Library: Button, Input, Card (Glass), Badge, Toast, Modal, Bottom Sheet.</li>
+<li>[ ] Icon set <strong>monochrome</strong> (không màu mè, không multicolor).</li>
+<li>[ ] Responsive breakpoints: Mobile / Tablet / Laptop / Desktop.</li>
+<li>[ ] Admin Console screens (tách biệt rõ với UI giao diện tương tác User).</li>
+<li>[ ] Empty states (màn hình hero khi chưa có dữ liệu).</li>
+<li>[ ] Error states (Cảnh báo mất kết nối, Cấm quyền, Lỗi đồng bộ SCIM).</li>
+<li>[ ] <strong>Onboarding flow 1:</strong> Luồng Enterprise SSO Login truyền thống (Hiệu ứng Lõi Zero-Trust).</li>
+<li>[ ] Máy Quét Thuật toán <strong>Biometric-bound Key Generation</strong> (FaceID/TouchID Prompt UI).</li>
+<li>[ ] <strong>Cryptographic PIN Fallback Dialpad</strong> (Bàn phím FFI 6 số siêu tối giản, không track state).</li>
+<li>[ ] Hoạt cảnh <strong>Ruthless Self-Destruct</strong> (Màn hình nháy đỏ + Shredding Effect 1s).</li>
+<li>[ ] <strong>Onboarding flow 2:</strong> Luồng Quét QR Enroll nội bộ.</li>
+<li>[ ] <strong>Onboarding flow 3:</strong> Luồng 1-Tap Magic Deep-Link SSO cho nhân sự mới (1-chú chạm từ Email, bypass Login).</li>
+<li>[ ] Smart Approval biometric prompt screen (Modal phê duyệt sinh trắc học).</li>
+<li>[ ] Cluster Setup Wizard (Admin — Desktop only).</li>
+<li>[ ] <strong>Cross-Cluster Federation Handshake</strong> (Modal sinh mời + Giao diện Paste Token).</li>
+<li>[ ] <strong>User Management & UI Tự động Đồng bộ SCIM 2.0 / Phân quyền HR</strong>.</li>
+<li>[ ] Indicator <strong>AI Privacy Shield</strong> (Icon khiên che chắn dữ liệu khi bật tính năng AI Blind Inference).</li>
+</ul>
+<h1 id="phần-viii-cross-platform-architecture">PHẦN VIII – CROSS-PLATFORM ARCHITECTURE</h1>
+<h2 id="28-tầng-ui-chỉ-đóng-vai-trò-là-pure-renderer-thợ-vẽ-thuần-túy-tước-bỏ-toàn-bộ-logic-và-chỉ-hiển-thị-những-thay-đổi-trạng-thái-statechanged-do-core-báo-về-việc-cấm-tuyệt-đối-port-crypto-hay-business-logic-lên-luồng-jsdart-là-bắt-buộc-để-tránh-rò-rỉ-bộ-nhớ-và-đảm-bảo-nhất-quán-mật-mã-trên-cả-5-nền-tảng">28.   Tầng UI chỉ đóng vai trò là "Pure Renderer" (Thợ vẽ thuần túy) – tước bỏ toàn bộ logic và chỉ hiển thị những thay đổi trạng thái (StateChanged) do Core báo về. Việc cấm tuyệt đối port Crypto hay Business Logic lên luồng JS/Dart là bắt buộc để tránh rò rỉ bộ nhớ và đảm bảo nhất quán mật mã trên cả 5 nền tảng</h2>
+<p>Dưới đây là các ngôn ngữ và framework được sử dụng để đồng bộ đa nền tảng:</p>
+<ol>
+<li>Phân hệ Desktop / Laptop (Windows, macOS, Linux)</li>
+</ol>
+<p>Framework: Hệ thống sử dụng Tauri để xây dựng giao diện.</p>
+<p>Giao tiếp (IPC Bridge): Tách biệt Control Plane và Data Plane. Giao tiếp với Lõi Rust qua SharedArrayBuffer và Protobuf.</p>
+<p>Hiệu năng: Cơ chế Zero-Copy Flow cho phép thông lượng truyền tải qua RAM vật lý đạt ngưỡng ~500MB/s mà không gây nghẽn cổ chai IPC.</p>
+<ol>
+<li>Phân hệ Mobile (iOS, Android)</li>
+</ol>
+<p>Frameworks: Sử dụng kết hợp React Native và Flutter.</p>
+<p>Tích hợp iOS: Áp dụng cổng React Native JSI bọc con trỏ C++ Shared Memory (std::unique_ptr) đâm thẳng vào luồng nhận của Rust FFI, bỏ qua WebView Bridge truyền thống.</p>
+<p>Tích hợp Android: Áp dụng giao diện Dart FFI TypedData thực thi tín hiệu Zero-Copy nạp thẳng sang kiến trúc C ABI tĩnh.</p>
+<p>Hiệu năng: Cả hai nền tảng Mobile đều đạt thông lượng (throughput) ~400MB/s khi giao tiếp giữa UI và Lõi Rust.</p>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

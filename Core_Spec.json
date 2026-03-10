@@ -350,6 +350,22 @@
                     "☁️ Fallback Admin (khi Server khả dụng trở lại): Admin Console → User Management → [Revoke Device_Key cũ] + [Re-provision] → Lõi Rust cấp Identity mới qua SCIM 2.0.",
                     "📱 Bảo vệ chống lạm dụng: Beacon BLE SOS phải được ký bởi chứng chỉ Enterprise CA hợp lệ. Đồng nghiệp chỉ thấy yêu cầu từ người trong cùng organizational unit (OU). Mỗi user_id chỉ được phép phát SOS 1 lần/24h để chống replay attack."
                   ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "113-giao-thức-giải-cứu-disaster-recovery-protocols",
+              "level": 3,
+              "heading": "1.1.3 Giao thức Giải cứu (Disaster Recovery Protocols)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "🗄️💻 CTAP2 Hardware Challenge: Khi cắm YubiKey vào thiết bị mới, Lõi Rust phát sinh Challenge nội bộ. YubiKey thực thi giải mã ngay trong Secure Element. Ràng buộc cứng: Bắt buộc cấu hình FIDO2 UV = Required (Yêu cầu nhập mã PIN 6 số hoặc Sinh trắc học trực tiếp trên YubiKey) để chống kẻ gian nhặt được chìa khóa.",
+                    "☁️💻 Intermittent Sync Engine: Đối với điều kiện mạng \"lúc on lúc off\", Lõi Rust duy trì một Delta-State CRDT Buffer. Ngay khi thiết bị mới quét được mạng (dù chỉ vài giây), nó lập tức bắn gói tin Broadcast báo hiệu \"Thiết bị cũ đã bị vô hiệu hóa\" và tải cục bộ danh bạ Mesh, sau đó có thể hoạt động offline hoàn toàn.",
+                    "💻📱 Self-Revocation & Epoch Rotation (Dành cho TH2): Khi mất 1 thiết bị, thiết bị còn lại sẽ tự động sinh Epoch_Key mới, cập nhật lên Merkle Tree và ký bằng DeviceIdentityKey. Bất kỳ yêu cầu kết nối nào từ thiết bị đã mất đều bị mạng Mesh hoặc Server từ chối tức khắc ở tầng giao thức."
+                  ]
                 },
                 {
                   "type": "table",

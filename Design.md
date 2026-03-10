@@ -760,15 +760,28 @@ Notification → [Review] → Detail Modal → Ghi chú lý do
 ---
 
 ## 17. Mesh Activation Flow
+```
 
+Detect mất kết nối
+→ Toast: "Switching to Mesh Mode..."
+→ UI fade sang Dark theme (0.3s)
+→ Banner: Nút CTA chính (Màu Đỏ Cam cảnh báo): "Khởi động mạng Mesh để duy trì liên lạc".
+→ Tiếp tục nhắn tin qua BLE/Wi-Fi Direct
+
+- Offline message queue: `⏱ đang chờ` → `✓ đã đồng bộ`.
 - 📱💻🖥️ Khi mất mạng (Offline Mode), UI hiển thị một Modal Overlap (Glassmorphism với nền Dark Navy `#0F172A`).
 - 📱 iOS Màn hình áp dụng hiệu ứng `UIBlurEffectStyle.systemUltraThinMaterialDark`.
-- 📱💻 Nút CTA chính (Màu Đỏ Cam cảnh báo): "Khởi động mạng Mesh để duy trì liên lạc". Kèm theo cảnh báo phụ: "Thiết bị sẽ phát sóng vô tuyến cục bộ. Đảm bảo bạn đang ở trong khu vực an toàn."
 - 📱💻 Giao diện tự động vô hiệu hóa toàn bộ hiệu ứng Animation nặng để tiết kiệm pin cho thiết bị trong kịch bản thảm họa.
+
+## 18. Thiết kế Luồng Self-Recovery (Glassmorphism UI)
+
+- 💻🖥️ **Màn hình KMS Bootstrap:** Nền tối (Mesh Mode Dark Navy `#0F172A`). Ở giữa hiển thị biểu tượng YubiKey xoay 3D với viền sáng mờ. Thông báo: "Đang chờ xác thực phần cứng C-Level..."
+- 💻🖥️ **FIDO2 Prompt:** Pop-up hệ thống nổi lên yêu cầu mã PIN hoặc vân tay trên YubiKey. Giao diện TeraChat bị khóa mờ (`UIBlurEffect`) hoàn toàn để tránh can thiệp click-jacking.
+- 📱💻 **Cảnh báo TH2 (Tự phế truất):** Khi thực hiện "Revoke", nút bấm phải sử dụng màu Đỏ Cảnh Báo (`#EF4444`) và yêu cầu gõ lại chữ "REVOKE" để xác nhận, tránh thao tác nhầm trên thiết bị còn lại.
 
 ---
 
-## 18. QR Enrollment (Onboarding nhân viên)
+## 19. QR Enrollment (Onboarding nhân viên)
 
 ```
 

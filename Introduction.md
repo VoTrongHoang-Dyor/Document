@@ -9,9 +9,12 @@ TeraChat là Hệ điều hành Công việc (Operating System for Work) dành c
 * **Zero-Knowledge:** Máy chủ hoạt động như một "Blind Relay", chỉ chuyển tiếp các gói tin mã hóa. Máy chủ không giữ khóa giải mã, không biết nội dung thảo luận, danh tính thực của người gửi, hay lịch sử tìm kiếm.
 * **End-to-End Encryption (E2EE):** Toàn bộ dữ liệu (tin nhắn, gọi thoại, tệp tin) được mã hóa ngay tại thiết bị đầu cuối bằng `Company_Key` trước khi truyền đi. Dữ liệu không bao giờ tồn tại trên mạng dưới dạng plaintext.
 * **Hardware Security:** Private Key được bảo vệ bằng phần cứng chuyên dụng (Secure Enclave trên iOS, StrongBox trên Android, TPM 2.0 trên Desktop, YubiKey) và tuyệt đối không bao giờ rời khỏi vi mạch này.
+* **Hardware-Backed Self-Sovereign Recovery:**
+  * 🗄️ Khái niệm Zero-Access không chỉ áp dụng cho Hacker mà phải loại trừ rủi ro cho chính C-Level. Trong kịch bản ngắt kết nối với Control Plane (Intermittent/Offline), C-Level nắm giữ quyền tự phục hồi định danh vĩnh viễn thông qua Enterprise Survival Kit (YubiKey/NFC Ring) mà không cần sự can thiệp của Admin Server.
+  * 📱💻 Phần cứng bảo mật này đóng vai trò như một "Admin bỏ túi", lưu trữ phân mảnh của Master Key, cho phép Bootstrap lại toàn bộ hệ thống ngay cả khi đang ở môi trường Air-Gapped.
 * **Offline Survival:** Hệ thống duy trì liên lạc nội bộ thông qua mạng lưới P2P cục bộ (BLE 5.0, Wi-Fi Direct) khi mạng Internet bị cắt đứt.
-    * 📱💻 **Explicit Mesh Opt-in:** Survival Mesh KHÔNG tự động kích hoạt. Khi hệ thống phát hiện mất kết nối với Control Plane (Server), Lõi Rust sẽ tạm dừng toàn bộ I/O network. Người dùng phải xác nhận thủ công qua thông báo: "Khởi động mạng Mesh để duy trì liên lạc" để hệ thống cấp điện cho module BLE 5.0 / Wi-Fi Direct.
-    * 📱💻🖥️ **Blind Shard Backup:** Để chống "Zero-Access" cho C-Level, hệ thống áp dụng cơ chế sao lưu phân mảnh mù. Dữ liệu cục bộ của VIP sẽ được băm nhỏ, mã hóa và "gửi nhờ" trên thiết bị của các nhân viên xung quanh trong mạng Mesh mà họ không hề hay biết và không thể giải mã.
+  * 📱💻 **Explicit Mesh Opt-in:** Survival Mesh KHÔNG tự động kích hoạt. Khi hệ thống phát hiện mất kết nối với Control Plane (Server), Lõi Rust sẽ tạm dừng toàn bộ I/O network. Người dùng phải xác nhận thủ công qua thông báo: "Khởi động mạng Mesh để duy trì liên lạc" để hệ thống cấp điện cho module BLE 5.0 / Wi-Fi Direct.
+  * 📱💻🖥️ **Blind Shard Backup:** Để chống "Zero-Access" cho C-Level, hệ thống áp dụng cơ chế sao lưu phân mảnh mù. Dữ liệu cục bộ của VIP sẽ được băm nhỏ, mã hóa và "gửi nhờ" trên thiết bị của các nhân viên xung quanh trong mạng Mesh mà họ không hề hay biết và không thể giải mã.
 
 ### 1.2 Feature Scope & Out-of-Scope
 
@@ -48,8 +51,8 @@ Thiết kế này bắt buộc hình thành vì 3 lý do:
 
 **Hardware-Adaptive Core (Lõi tương thích phần cứng):**
 
-- **Một lõi, đa hình theo nền tảng:** Cùng một bộ mã Rust được biên dịch thành các binary khác nhau tùy nền tảng, sử dụng `#[cfg(...)]` để **mlock() RAM chứa key trên Desktop/Server** nhưng tự động chuyển sang `ZeroizeOnDrop` + Secure Enclave/StrongBox trên iOS/Android (tuyệt đối không gọi `mlock()` trên Mobile để tránh Jetsam).
-- **JIT vs AOT & Streaming Bridge:** Trên Desktop, `.tapp` và pipeline media có thể tận dụng SharedArrayBuffer, mmap và JIT/Interpreter linh hoạt; trên iOS, Core tự động kích hoạt chế độ Interpreter/AOT tuân thủ W^X và dùng Native-to-Rust Media DataSource Bridge (AVAssetResourceLoaderDelegate/MediaDataSource) thay vì Local HTTP `127.0.0.1` để giữ trải nghiệm đồng nhất nhưng không vi phạm ràng buộc hệ điều hành.
+* **Một lõi, đa hình theo nền tảng:** Cùng một bộ mã Rust được biên dịch thành các binary khác nhau tùy nền tảng, sử dụng `#[cfg(...)]` để **mlock() RAM chứa key trên Desktop/Server** nhưng tự động chuyển sang `ZeroizeOnDrop` + Secure Enclave/StrongBox trên iOS/Android (tuyệt đối không gọi `mlock()` trên Mobile để tránh Jetsam).
+* **JIT vs AOT & Streaming Bridge:** Trên Desktop, `.tapp` và pipeline media có thể tận dụng SharedArrayBuffer, mmap và JIT/Interpreter linh hoạt; trên iOS, Core tự động kích hoạt chế độ Interpreter/AOT tuân thủ W^X và dùng Native-to-Rust Media DataSource Bridge (AVAssetResourceLoaderDelegate/MediaDataSource) thay vì Local HTTP `127.0.0.1` để giữ trải nghiệm đồng nhất nhưng không vi phạm ràng buộc hệ điều hành.
 
 ### 1.5 The Life of a Message (Dòng chảy Dữ liệu)
 

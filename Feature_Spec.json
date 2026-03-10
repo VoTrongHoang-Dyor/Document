@@ -2483,6 +2483,34 @@
                 }
               ],
               "subsections": []
+            },
+            {
+              "id": "96-trạng-thái-mạng-chập-chờn-intermittent-network-state-machine",
+              "level": 3,
+              "heading": "9.6 Trạng thái Mạng chập chờn (Intermittent Network State Machine)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 Thay vì chỉ có On/Off, hệ thống áp dụng trạng thái Zombie_Sync. Nếu Sếp ở TH1 vừa dùng YubiKey khôi phục máy tính mới, thiết bị sẽ chuyển sang chế độ gom nhặt dữ liệu (Hydration) theo từng khối (Chunk) nhỏ qua BLE từ các nhân viên đi cùng, hoặc bắt từng nhịp sóng Wi-Fi yếu để kéo hot_dag.db về mà không làm hỏng file."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "97-nfc-ring-khôi-phục-mobile",
+              "level": 3,
+              "heading": "9.7 NFC Ring Khôi phục Mobile",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Thiết bị Mobile không có cổng USB-A, hệ thống sử dụng module Native OS (CoreNFC trên iOS, NfcAdapter trên Android) để đọc ISO 7816 Smart Card Applet từ NFC Ring."
+                  ]
+                }
+              ],
+              "subsections": []
             }
           ]
         }

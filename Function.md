@@ -8,7 +8,9 @@ Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệ
   * Nắm giữ `Enterprise Escrow Key` (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.
   * **Thu hồi & Cấp lại Định danh (Social Escrow Fallback):** Khi nhân viên mất thiết bị mà Server đang sập, Admin có thể — khi Server trở lại — Revoke `Device_Key` cũ và kích hoạt Re-provision qua SCIM 2.0 để cấp định danh mới cho thiết bị thay thế.
   * **C-Level Hardware Bypass (NFC Break-glass):** Bỏ qua yêu cầu Social Escrow (3/5) đối với các nhân sự cấp cao nếu họ chứng minh được sở hữu vật lý của phần cứng dự phòng thứ 2 (NFC Ring/YubiKey C-Type) kết hợp với mã PIN cấp thấp.
-
+  * **Quy trình Xử lý Khủng hoảng Thiết bị (Device Loss Scenarios):**
+    * 💻 **TH1 (Mất CẢ Laptop & Điện thoại):** Áp dụng Lựa chọn B (Tự chủ cao nhất). Sếp mua máy mới. Rút YubiKey từ két sắt khách sạn -> Cắm vào máy tính mới. Lõi Rust gọi KMS Bootstrap để khôi phục định danh C-Level. Thiết bị mới lập tức phát lệnh Remote Wipe & Revoke tới 2 thiết bị đã mất. Khi 2 máy kia vừa chạm mạng (Online), Lõi Rust trên chúng tự động `ZeroizeOnDrop` toàn bộ DB.
+    * 📱💻 **TH2 (Chỉ mất Điện thoại, Laptop vẫn còn an toàn):** Sếp mở Laptop, vào Device Management -> Nhấn "Revoke Phone". Mua điện thoại mới, dùng tính năng Cross-Signature Pairing (Quét QR hoặc Bluetooth P2P) để Laptop mã hóa và bơm `Company_Key` sang Điện thoại mới. Tự xử lý cục bộ 100%, không cần Admin.
 * **Thiết lập Chính sách Bảo mật (OPA Policy & DLP):**
 * Định nghĩa các chính sách truy cập qua OPA Engine, bao gồm giới hạn tốc độ (Rate Limiting) theo phòng ban, thời gian lưu trữ tin nhắn (TTL), và quyền hiển thị ứng dụng.
 * Thiết lập cấu hình OPA Policy Enforcement nhằm giới hạn quyền hiển thị trên Launchpad (nút khởi chạy tự động vô hiệu hóa/mờ đi nếu phòng ban không được cấp quyền).

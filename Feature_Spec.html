@@ -394,6 +394,8 @@
 <a href="#93-client-side-dual-mask-protocol-dynamic-pii-tokenization" class="nav-link" style="padding-left:0.8rem;">9.3 Client-Side Dual-Mask Protocol (Dynamic PII Tokenization)</a>
 <a href="#94-llm-iron-dome-markdown-ast-sanitizer-mở-rộng" class="nav-link" style="padding-left:0.8rem;">9.4 LLM Iron Dome & Markdown AST Sanitizer (Mở rộng)</a>
 <a href="#95-state-machine-cho-offline-survival-bảo-vệ-dữ-liệu-ram-mlock" class="nav-link" style="padding-left:0.8rem;">9.5 State Machine cho Offline Survival & Bảo vệ dữ liệu RAM (mlock)</a>
+<a href="#96-trạng-thái-mạng-chập-chờn-intermittent-network-state-machine" class="nav-link" style="padding-left:0.8rem;">9.6 Trạng thái Mạng chập chờn (Intermittent Network State Machine)</a>
+<a href="#97-nfc-ring-khôi-phục-mobile" class="nav-link" style="padding-left:0.8rem;">9.7 NFC Ring Khôi phục Mobile</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -1501,6 +1503,14 @@
 <li>📱💻 <strong>State 2 (Prompting):</strong> UI gọi hàm FFI/JSI <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">request_mesh_activation()</code>.</li>
 <li>📱💻 <strong>State 3 (Mesh Active):</strong> Sau khi User đồng ý (nhấn nút), Lõi Rust gọi API Native OS (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CoreBluetooth</code> trên iOS / <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">WifiP2PManager</code> trên Android) để bắt đầu Broadcasting.</li>
 <li>📱💻🖥️ <strong>Bảo vệ dữ liệu RAM (mlock):</strong> Dù ở Mesh Mode, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Epoch_Key</code> vẫn bị khóa chặt trong RAM bằng lệnh <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">mlock()</code>. Nếu thiết bị tắt nguồn (sập pin/bị đập nát), khóa bay màu ngay lập tức để chống Memory Dump.</li>
+</ul>
+<h3 id="96-trạng-thái-mạng-chập-chờn-intermittent-network-state-machine">9.6 Trạng thái Mạng chập chờn (Intermittent Network State Machine)</h3>
+<ul>
+<li>📱💻 Thay vì chỉ có On/Off, hệ thống áp dụng trạng thái <strong>Zombie_Sync</strong>. Nếu Sếp ở TH1 vừa dùng YubiKey khôi phục máy tính mới, thiết bị sẽ chuyển sang chế độ gom nhặt dữ liệu (Hydration) theo từng khối (Chunk) nhỏ qua BLE từ các nhân viên đi cùng, hoặc bắt từng nhịp sóng Wi-Fi yếu để kéo <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> về mà không làm hỏng file.</li>
+</ul>
+<h3 id="97-nfc-ring-khôi-phục-mobile">9.7 NFC Ring Khôi phục Mobile</h3>
+<ul>
+<li>📱 Thiết bị Mobile không có cổng USB-A, hệ thống sử dụng module Native OS (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CoreNFC</code> trên iOS, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NfcAdapter</code> trên Android) để đọc ISO 7816 Smart Card Applet từ NFC Ring.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

@@ -1,4 +1,4 @@
-# TeraChat V0.2.1 — Business Plan & Go-to-Market Strategy
+# TeraChat V0.2.2 — Business Plan & Go-to-Market Strategy
 
 > **Document Owner:** CEO / Co-founders / Business Team
 > **Audience:** Investors (VC), Executives, Sales, Business Development
@@ -204,6 +204,9 @@ sudo bash /tmp/install.sh --token=[License_Key]
 ### 3.5 Gói Upsell (Bán chéo) "Enterprise Survival Kit"
 
 - **Biến điểm yếu thành cơ hội kinh doanh:** Đóng gói bán kèm giải pháp phần cứng. Khách hàng mua License TeraChat sẽ được chào mời mua thêm gói phần cứng cứu hộ (YubiKey chuẩn FIDO2 do TeraChat phân phối) định tuyến riêng cho C-Level với giá Premium, gia tăng biên lợi nhuận.
+- **Enterprise Survival Kit:** Bán chéo combo 1 YubiKey FIDO2 Type-C + 1 NFC Smart Ring bọc Titan.
+  - **Thông điệp GTM (Go-to-Market):** "CEO của bạn có thể mất mọi hành lý, ở vùng không có Internet, nhưng không bao giờ mất quyền kiểm soát dữ liệu công ty."
+  - Định giá gói phần cứng này ở mức Premium ($500 - $1,000/set) dành riêng cho C-Level, vì nó giải quyết nỗi sợ hãi cốt lõi của họ.
 
 ## 4. Licensing & IP Strategy (Open-Core)
 

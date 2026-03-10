@@ -910,3 +910,11 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 - 📱💻 **State 2 (Prompting):** UI gọi hàm FFI/JSI `request_mesh_activation()`.
 - 📱💻 **State 3 (Mesh Active):** Sau khi User đồng ý (nhấn nút), Lõi Rust gọi API Native OS (`CoreBluetooth` trên iOS / `WifiP2PManager` trên Android) để bắt đầu Broadcasting.
 - 📱💻🖥️ **Bảo vệ dữ liệu RAM (mlock):** Dù ở Mesh Mode, `Epoch_Key` vẫn bị khóa chặt trong RAM bằng lệnh `mlock()`. Nếu thiết bị tắt nguồn (sập pin/bị đập nát), khóa bay màu ngay lập tức để chống Memory Dump.
+
+### 9.6 Trạng thái Mạng chập chờn (Intermittent Network State Machine)
+
+- 📱💻 Thay vì chỉ có On/Off, hệ thống áp dụng trạng thái **Zombie_Sync**. Nếu Sếp ở TH1 vừa dùng YubiKey khôi phục máy tính mới, thiết bị sẽ chuyển sang chế độ gom nhặt dữ liệu (Hydration) theo từng khối (Chunk) nhỏ qua BLE từ các nhân viên đi cùng, hoặc bắt từng nhịp sóng Wi-Fi yếu để kéo `hot_dag.db` về mà không làm hỏng file.
+
+### 9.7 NFC Ring Khôi phục Mobile
+
+- 📱 Thiết bị Mobile không có cổng USB-A, hệ thống sử dụng module Native OS (`CoreNFC` trên iOS, `NfcAdapter` trên Android) để đọc ISO 7816 Smart Card Applet từ NFC Ring.
