@@ -3,20 +3,86 @@
   "generated_at": "2026-02-23",
   "sections": [
     {
-      "id": "terachat-enterprise-sovereign-messenger-design-specification",
+      "id": "designmd-terachat-alpha-v030",
       "level": 1,
-      "heading": "TeraChat ( Enterprise Sovereign Messenger ) – Design Specification",
+      "heading": "Design.md — TeraChat Alpha v0.3.0",
       "content_blocks": [
         {
           "type": "blockquote",
           "alert_type": "note",
           "lines": [
-            "**Phiên bản:** Alpha 1.0 | **Nền tảng:** Desktop 🖥️ / Laptop 💻 / Mobile 📱",
-            "**Gửi tới:** Đội ngũ UX/UI Design"
+            "**Status:** `ACTIVE — Design Reference`",
+            "**Audience:** UX/UI Designer · Frontend Engineer · Product Manager",
+            "**Scope:** Glassmorphism Design System, Component Library, Screen Flows, Animation Specs, State Machine Visual Mapping",
+            "**Platform:** Desktop 🖥️ · Laptop 💻 · Mobile 📱",
+            "**Last Updated:** 2026-03-11",
+            "**Depends On:** `Feature_Spec.md` (IPC signals that trigger UI state changes), `Function.md` (user flows)",
+            "**Consumed By:** React Native / Tauri frontend implementation"
           ]
         }
       ],
-      "subsections": []
+      "subsections": [
+        {
+          "id": "changelog",
+          "level": 2,
+          "heading": "CHANGELOG",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Version",
+                "Date",
+                "Change Summary"
+              ],
+              "rows": [
+                [
+                  "v0.3.0",
+                  "2026-03-11",
+                  "Add §30–36: Memory pressure feedback UI; Byzantine fault visual indicators; Crypto-Shred animation spec"
+                ],
+                [
+                  "v0.2.9",
+                  "2026-03-05",
+                  "Add §28 Ruthless Self-Destruct Visualization; §29 Memory Zeroization overlay spec"
+                ],
+                [
+                  "v0.2.8",
+                  "2026-03-04",
+                  "Add §25 Magnetic Collapse animation; §26 FCP Red Border overlay; §27 Hazard-Stripe sealed session view"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "design-contract-non-negotiable-ui-rules",
+          "level": 2,
+          "heading": "DESIGN CONTRACT: Non-Negotiable UI Rules",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Vi phạm bất kỳ ràng buộc nào dưới đây → thiết kế bị reject, không review merge.**"
+              ]
+            },
+            {
+              "type": "list",
+              "data": [
+                "[ ] Mesh Mode visual state phải khác biệt rõ ràng với Online Mode: dark navy #0F172A, radar pulse, banner \"Mesh Active\". Không được merge UI trông giống nhau.",
+                "[ ] Glassmorphism áp dụng nhất quán: backdrop blur 20px, rgba(255,255,255,0.08) bg, 1px stroke rgba(255,255,255,0.12).",
+                "[ ] Typography: Chỉ dùng Inter (body), JetBrains Mono (code/mono elements). Không dùng system font.",
+                "[ ] Accent color: #24A1DE (Online) / #F59E0B (Warning) / #EF4444 (Danger). Không dùng màu tự ý.",
+                "[ ] Không có bubble chat kiểu WhatsApp. Layout phải theo Data Density model — thông tin dày đặc, compact.",
+                "[ ] Mọi security event (Self-Destruct, Shatter, Crypto-Shred) phải có animation spec trước khi implement.",
+                "[ ] Mọi UI state change do Lõi Rust trigger phải được document trong section tương ứng với IPC signal reference."
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
     },
     {
       "id": "phần-i-triết-lý-hệ-thống-thiết-kế",
@@ -69,7 +135,12 @@
                   "type": "list",
                   "data": [
                     "Online Mode — Kết nối Server chuẩn: Nền sáng, blur trắng, accent #24A1DE.",
-                    "Mesh Mode — Offline P2P qua BLE/Wi-Fi Direct: Nền #0F172A dark navy, radar pulse trên logo, banner \"Mesh Active – N nodes connected\"."
+                    "QUIC 0-RTT Status HUD: Góc phải dưới màn hình hiển thị HUD siêu nhỏ (frost glass blur, backdrop-filter: blur(8px), border-radius: 8px, opacity: 0.85) với text QUIC: 0-RTT ✓ màu #24A1DE, font Inter 10px SemiBold. HUD chỉ hiển thị 3 giây sau khi kết nối/tái kết nối thành công rồi fade out (transition: opacity 0.5s ease). Không hiện khi ở chế độ ổn định liên tục > 30s. Không block interaction.",
+                    "Mesh Mode — Offline P2P qua BLE/Wi-Fi Direct: Nền #0F172A dark navy, radar pulse trên logo, banner \"Mesh Active – N nodes connected\".",
+                    "Dual-Beam Radar Pulse (Hybrid Mesh Bonding): Khi Hybrid Mesh Bonding kích hoạt, Radar Pulse phát ra hai tia song song thay vì một vòng sóng đơn màu xám:",
+                    "Tia Cyan #00D4FF — Control Plane (BLE): Xung ngắn (~1.5s period), biên độ nhỏ (r: 16→32px), opacity: 0.9→0. Dispatch bởi Lõi Rust event MESH_BLE_CONTROL_SENT.",
+                    "Tia Amber #F59E0B — Data Plane (AWDL/Wi-Fi Direct): Xung dài và rộng (~3s period), biên độ lớn (r: 16→64px), opacity: 0.7→0. Dispatch bởi event MESH_DATA_PLANE_ACTIVE. Tia chỉ xuất hiện khi có Data Plane active (đang transfer file/DB).",
+                    "Cả hai tia là Event-driven SVG — không dùng CSS animation loop. GPU cost = 0 khi không có packet."
                   ]
                 }
               ],
@@ -267,7 +338,9 @@
                     "Glass: backdrop-filter: none — thay bằng mã màu phẳng (Flat Dark) rgba(255,255,255,0.06) không blur",
                     "Text sáng: #E2E8F0",
                     "Radar — Event-driven SVG (không dùng CSS loop): Biểu tượng radar là SVG tĩnh, chỉ thay đổi opacity (0.3 → 1.0 → 0.3) khi Loo iRust Core dispatch tín hiệu MESH_PACKET_RECEIVED. Không có setInterval hay animation: pulse infinite.",
-                    "Banner top: \"Mesh Active – N nodes connected\" (cập nhật mỗi lần node join/leave, không animate liên tục)"
+                    "Banner top: \"Mesh Active – N nodes connected\" (cập nhật mỗi lần node join/leave, không animate liên tục)",
+                    "📱 State: \"Missing Local Network Permission\" (iOS 14+): Khi quyền Local Network bị từ chối, banner chuyển sang màu Amber Warning #F59E0B: \"⚠️ Thiếu quyền Mạng Cục bộ — Mesh chỉ hoạt động qua BLE. Vào Cài đặt → TeraChat để cấp quyền đầy đủ.\" Nút CTA \"Mở Cài đặt\" deep-link thẳng đến UIApplication.openSettingsURLString. Icon Radar chuyển sang pulse chậm (opacity: 0.2 → 0.5) thay vì full-active.",
+                    "📱💻 State: \"Warming up Neural Engine...\": Khi người dùng mở tính năng AI (Smart Summarize / DLP Scan) lần đầu sau khi khởi động app, hiển thị inline progress bar nhỏ bên dưới Input Box: \"⚙️ Đang khởi động Neural Engine...\" với spinner nhỏ 16px. Biến mất sau khi CoreML/NNAPI hoàn thành pre-warm. Không block UI, người dùng vẫn gõ được bình thường."
                   ]
                 },
                 {
@@ -275,7 +348,32 @@
                   "text": "Transition: fade 0.1s (rút ngắn từ 0.3s để giảm GPU frame render khi chuyển sang Mesh Mode)"
                 }
               ],
-              "subsections": []
+              "subsections": [
+                {
+                  "id": "re-sync-adaptive-ui-degradation-skeleton-fallback-gián-đoạn-hiển-thị-trong-re-sync",
+                  "level": 4,
+                  "heading": "Re-sync Adaptive UI Degradation & Skeleton Fallback — Gián đoạn Hiển thị trong Re-sync",
+                  "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Bài toán:** Quá trình Deterministic State Reconciliation (kéo Delta-State Gap từ server) kéo dài 2-10 giây tùy kích thước gap. Nếu UI block chờ — trải nghiệm người dùng bị phá vỡ hoàn toàn."
+                      ]
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 Hardcoded Skeleton UI + Progress Bar (Online Mode): Trong toàn bộ thời gian Re-sync, UI render ngay Skeleton UI tĩnh (hardcoded placeholder, không cần fetch dữ liệu) kết hợp Progress Bar tuyến tính bên dưới header: \"🔄 Đang đồng bộ dữ liệu... X%\". Skeleton dùng màu #1E293B (Slate-800), không có shimmer animation để tránh tốn GPU.",
+                        "📱 Event-driven SVG Radar Pulse (Mesh Mode): Nếu Re-sync xảy ra trong Mesh Mode (không có Internet), biểu tượng SVG Radar Pulse được kích hoạt theo model Event-driven: opacity thay đổi (0.3 → 1.0) mỗi khi Lõi Rust dispatch tín hiệu MESH_CHUNK_RECEIVED — không dùng CSS animation loop, không tốn GPU frame liên tục.",
+                        "📱 Sub-300ms Cryptographic State Label: Phía dưới Progress Bar, một label nhỏ cập nhật liên tục dưới ngưỡng 300ms (debounced): \"⚙️ Verifying Cryptographic State... [Merkle Chunk N/M]\". Label chỉ cập nhật text content (innerText), không re-render DOM — tránh layout thrashing. Biến mất ngay khi commit transaction cuối cùng vào hot_dag.db thành công.",
+                        "📱 Skeleton Mode iOS — Background Thread Overflow Trigger: Bắt buộc kích hoạt Skeleton Mode (không phải optional) khi Lõi Rust phát tín hiệu IPC_EVENT: BACKGROUND_THREAD_PAYLOAD_OVERFLOW — tức là khi payload TreeKEM/Epoch vượt quá ngưỡng xử lý an toàn của Background Thread trên Mobile (giới hạn cứng: 4KB cho NSE, 48MB cho BGTask). UI không được block. Toàn bộ logic giải mã nặng bị delegate sang Main Thread queue ngay khi user mở app. Skeleton hiển thị trạng thái: \"🔐 Đang đồng bộ mã hóa ở nền... Tin nhắn sẽ hiện sau vài giây.\""
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
+              ]
             }
           ]
         },
@@ -924,7 +1022,20 @@
                 {
                   "type": "code",
                   "language": "",
-                  "code": "\n- **Approval:** CTA `[Review]` inline.\n- **Security Alert:** badge đỏ, tap mở detail.\n- **Audit Event:** muted, không CTA.\n\n#### Trạng thái Skeleton khi đang giải mã an toàn từ NSE\n\n- 📱💻 Khi Notification đến từ NSE nhưng Main App chưa kịp đồng bộ khóa mới (OOB Push Ratchet) hoặc **khi Circuit Breaker bị kích hoạt do payload quá lớn (chẳng hạn đợt Epoch Rotation cho group 50,000 người)**, UI **không** hiển thị ngay nội dung thực mà dùng một hàng Skeleton cố định:\n  - Title dạng generic: `\"🔒 Bạn có một tin nhắn mã hóa mới\"`.\n  - Subtitle hiển thị Blur/Skeleton bar (khối mờ 60–70% width), không lộ từ khóa hay nội dung nhạy cảm.\n- 📱 Ngay khi người dùng chạm vào thông báo mở Main App (Foreground Mode) và Lõi Rust phân bổ RAM để giải mã xong (quá trình Atomic Drain tốn chưa tới 15ms), hàng Skeleton được thay thế bằng nội dung thật thông qua hiệu ứng fade 0.15s (Giao diện hiển thị bộ khung Skeleton Loading dạng Glassmorphism mờ đục trong 0.2s che phủ độ trễ này mượt mà). Nếu đồng bộ thất bại, Skeleton chuyển thành trạng thái lỗi an toàn `\"Không thể giải mã — chạm để thử lại\"`.\n\n---\n\n## 12. Files (TeraVault)\n\n### Layout Desktop/Laptop\n"
+                  "code": "\n### Skeleton Row (Trạng thái đang Giải mã từ NSE)\n"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "[Lock Icon]  ███████████ (Pulse) 14:02"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Đang giải mã an toàn..."
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n- **Approval:** CTA `[Review]` inline.\n- **Security Alert:** badge đỏ, tap mở detail.\n- **Audit Event:** muted, không CTA.\n\n#### Trạng thái Skeleton khi đang giải mã an toàn từ NSE\n\n- 📱💻 Khi Notification đến từ NSE nhưng Main App chưa kịp đồng bộ khóa mới (OOB Push Ratchet) hoặc **khi Circuit Breaker bị kích hoạt do payload quá lớn (chẳng hạn đợt Epoch Rotation cho group 50,000 người)**, UI **không** hiển thị ngay nội dung thực mà dùng một hàng Skeleton cố định:\n  - Title dạng generic: `\"🔒 Bạn có một tin nhắn mã hóa mới\"`.\n  - Subtitle hiển thị Blur/Skeleton bar (khối mờ 60–70% width), không lộ từ khóa hay nội dung nhạy cảm.\n- 📱 Ngay khi người dùng chạm vào thông báo mở Main App (Foreground Mode) và Lõi Rust phân bổ RAM để giải mã xong (quá trình Atomic Drain tốn chưa tới 15ms), hàng Skeleton được thay thế bằng nội dung thật thông qua hiệu ứng fade 0.15s (Giao diện hiển thị bộ khung Skeleton Loading dạng Glassmorphism mờ đục trong 0.2s che phủ độ trễ này mượt mà). Nếu đồng bộ thất bại, Skeleton chuyển thành trạng thái lỗi an toàn `\"Không thể giải mã — chạm để thử lại\"`.\n\n---\n\n### Tương tác nhóm (Conflict Resolution)\n\n- 💻 **Git-Diff Glassmorphism Pop-ups:** Khi ấn vào một Shadow Node, UI hiển thị modal Glassmorphism (nền mờ `#0F172A`) với giao diện split-view hoặc inline-diff (Màu xanh cho dòng thêm mới, Đỏ gạch ngang cho dòng xóa).\n- 📱 **Smart Approval Biometric Prompt:** Đối với các đề xuất thay đổi lớn (sửa Smart Contract, thay đổi Policy mạng), UI yêu cầu xác thực Face ID/Touch ID sinh trắc học trước khi cấp phép hệ thống ký Ed25519.\n- 🖥️💻📱 **Bulk Resolution UI (Giao diện Xử lý Hàng loạt):** Trong Pop-up quản lý xung đột, thay vì từng nút duyệt lẻ tẻ, hiển thị danh sách dạng Bảng (Table List) với các Checkboxes cho phép Author tick chọn nhiều nhánh cùng lúc.\n- 🖥️💻 **Action Bar Glassmorphism:** Khi Author tick chọn nhiều nhánh, một thanh công cụ (Floating Action Bar) nổi lên với hiệu ứng Heavy Background Blur, cung cấp các nút: **Merge Selected** (Gộp các mục đã chọn), **Reject Selected** (Xóa), **Reject All**.\n- 📱 **Mesh Mode Disablement:** Khi ứng dụng chuyển sang nền Dark Navy (Mesh Mode), toàn bộ các nút \"Đề xuất sửa\" (Propose) bị làm mờ (Greyed Out) kèm theo tooltip: *\"Tính năng cộng tác nhánh tạm khóa khi không có kết nối Server\"*.\n\n---\n\n## 12. Files (TeraVault)\n\n### Layout Desktop/Laptop\n"
                 },
                 {
                   "type": "table",
@@ -1002,196 +1113,138 @@
                 {
                   "type": "code",
                   "language": "",
-                  "code": "\nCard: background `rgba(255,255,255,0.06)`, blur 12px, radius 18px. Hover: sáng hơn 6%.\n\nFile type color (subtle):\n\n- PDF → đỏ subtle\n- Excel → xanh lá\n- Doc → xanh dương\n- Image → tím\n\n**List View:**\n\n| Name | Owner | Department | Updated | Size | Security |\n|---|---|---|---|---|---|\n| Budget.pdf | Hoang | Finance | 2h ago | 2.4MB | 🔒 Encrypted |\n\nSecurity column:\n\n- 🔒 Encrypted\n- 🌐 Cloud\n- 📡 Mesh Local\n\nRow hover: nền trắng 3%, border glow mỏng.\n\n**Security Badge (góc phải mỗi file):**\n"
+                  "code": "\nCard: background `rgba(255,255,255,0.06)`, blur 12px, radius 18px. Hover: sáng hơn 6%.\n\nFile type color (subtle):\n\n- PDF → đỏ subtle\n- Excel → xanh lá\n- Doc → xanh dương\n- Image → tím\n\n**List View:**\n\n| Name | Owner | Department | Updated | Size | Security |\n|---|---|---|---|---|---|\n| Budget.pdf | Hoang | Finance | 2h ago | 2.4MB | 🔒 Encrypted |\n\nSecurity column:\n\n- 🔒 Encrypted\n- 🌐 Cloud\n- 📡 Mesh Local\n\nRow hover: nền trắng 3%, border glow mỏng.\n\n**Security Badge (góc phải mỗi file):**\n\n#### Token Auth Failure — Static Noise/Glitch Screen (Video Stream Security)\n\n> **Trigger:** Khi Video Stream nhận phản hồi `UNAUTHORIZED_SCHEME_ACCESS` từ Lõi Rust (Token OTP hết hạn, sai PID, hoặc bị hijack bởi app lạ trên cùng máy).\n\n- 📱💻🖥️ **Không được crash:** UI tuyệt đối không crash hay hiển thị màn hình trắng/đen khi token stream xác thực thất bại. Thay vào đó, Video Player chuyển sang trạng thái **Static Noise/Glitch Screen**: hiệu ứng nhiễu hạt (noise grain) CSS filter `contrast(200%) brightness(0.3) saturate(0)`, animation nhấp nháy 4Hz trong 0.5 giây.\n- 📱💻🖥️ **Inline Alert (không modal):** Bên dưới video frame, xuất hiện inline banner với nội dung: *\"🔐 Kết nối luồng an toàn bị gián đoạn. Nhấn để thử lại.\"* — màu `#EF4444` (Red-500), icon shield-slash, không block thao tác khác trên UI.\n- 📱💻🖥️ **Auto-Retry:** Nếu user không nhấn sau 5 giây, Lõi Rust tự động request token mới và thử lại stream (tối đa 3 lần). Nếu vẫn fail sau 3 lần → hiển thị alert cứng: *\"Phiên stream đã hết hạn. Vui lòng mở lại file.\"*\n- 📱💻🖥️ **Security Log Toast (DevMode only):** Trong Developer Mode, thêm toast nhỏ ở góc phải dưới: *\"Security event: SCHEME_HIJACK_ATTEMPT detected from PID [xxxx]\"* — hỗ trợ DevOps trace incident nhanh.\n\n\n\n[ENCRYPTED]  [CLASSIFIED]  [INTERNAL]  [PUBLIC]\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "[ENCRYPTED]  [CLASSIFIED]  [INTERNAL]  [PUBLIC]"
+                  "text": "Glass mini, blur 6px, text uppercase 10px."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Smart Action Bar (khi click file):"
                 },
                 {
                   "type": "code",
                   "language": "",
-                  "code": "\nGlass mini, blur 6px, text uppercase 10px.\n\n**Smart Action Bar (khi click file):**\n"
+                  "code": "\nPreview / Share / Generate Approval / AI Summary / Download / Move to Mesh\n"
                 },
                 {
                   "type": "paragraph",
-                  "text": "Preview / Share / Generate Approval / AI Summary / Download / Move to Mesh"
-                },
+                  "text": "Floating glass panel, shadow nhẹ, border glow #24A1DE mờ."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "mesh-mode-behavior",
+              "level": 3,
+              "heading": "Mesh Mode Behavior",
+              "content_blocks": [
                 {
-                  "type": "code",
-                  "language": "",
-                  "code": "\nFloating glass panel, shadow nhẹ, border glow `#24A1DE` mờ.\n\n### Mesh Mode Behavior\n\nHeader banner: `\"Mesh Mode Active – Files syncing locally\"`\n\nFile icons:\n\n- 📡 Local\n- ☁ Sync Pending\n\nSync animation: subtle pulse.\n\n#### Skeleton UI cho File được mở từ Notification khi nội dung còn đang giải mã\n\n- 📱💻 Khi người dùng chạm vào Notification dẫn tới một file (PDF/Video) được bảo vệ E2EE, màn `Files`/Viewer phải hiển thị **khung xương an toàn** trong lúc Core Rust đang giải mã:\n  - Khung preview file là một card Glassmorphism xám mờ, icon file dạng placeholder, kèm dòng text `\"Đang giải mã an toàn...\"`.\n  - Thanh timeline video (nếu có) hiển thị dạng skeleton bar, không cho seek cho đến khi có đủ key/byte đầu tiên từ Native-to-Rust Media DataSource Bridge.\n- 📱Ngay khi pipeline giải mã/streaming sẵn sàng, Skeleton fade-out 0.2s và thay bằng preview/video thực; nếu phát hiện key desync, Skeleton giữ nguyên kèm CTA nhỏ `\"Thử đồng bộ lại\"` thay vì crash hoặc để UI trắng.\n\n### Layout Mobile\n\n- File Sidebar → **Bottom Sheet** filter thay thế.\n- Grid 2 cột.\n- Tap file → Bottom Sheet với Smart Actions.\n\n---\n\n## 13. Tools (.tapp) — Enterprise Launchpad\n\n### Desktop/Laptop\n\nClick Tools icon → **Glass Modal lớn** trung tâm màn hình. Grid 3–4 cột:\n"
+                  "type": "paragraph",
+                  "text": "Header banner: \"Mesh Mode Active – Files syncing locally\""
                 },
                 {
                   "type": "paragraph",
-                  "text": "[Smart Approval] [CRM] [POS] [HR]"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "[Internal App 1] [Internal App 2] ..."
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "\n- Card radius 16px, blur 12px.\n- Hover: glow nhẹ `#24A1DE 20%`.\n- Mỗi `.tapp` chạy trong **WASM Sandbox** — hoàn toàn cô lập.\n- Nút bị mờ/disable nếu phòng ban không được cấp quyền (OPA Policy).\n\n### Mobile\n\n- Tools → **Full screen Bottom Sheet** dạng 2 cột.\n- `.tapp` khi mở → full screen modal, header tên App + nút Close.\n\n### Pinned .tapp\n\n- Right-click / long-press → `\"Pin to Sidebar\"`.\n- Animate slide-down vào Rail / Tab bar (dynamic zone).\n- Badge alert nếu app có notification.\n\n---\n\n## 14. Settings\n\n| Section | Nội dung |\n|---|---|\n| **Account** | Profile, Avatar, Display name |\n| **Security** | E2EE keys, Device list, Revoke sessions |\n| **OPA Policy** | Xem chính sách DLP (read-only cho user) |\n| **Zone Config** | Cấu hình Online / Mesh priority |\n| **Storage** | Ring Buffer info, Offline storage quota |\n| **Developer Mode** | Toggle (nếu được cấp quyền) |\n\n---\n\n## 15. Admin Console (Role-based — chỉ Admin thấy)\n\nEntry point: Settings → `[Admin Console]` button.\n\n### Tab Structure\n\n| Tab | Chức năng |\n|---|---|\n| **User Management** | Invite Token, Revoke, Remote Wipe |\n| **Key Management** | KMS Bootstrap, Master Key status, Epoch Rotation |\n| **OPA Policies** | Tạo/sửa/xóa chính sách per-department |\n| **Federation** | Invite Token liên tổ chức, trust registry |\n| **Audit Log** | Timeline filter theo user/action/time |\n| **Tools Registry** | Whitelist/blacklist `.tapp`, quản lý API Keys |\n| **Infrastructure** | Node health, Cluster scaling wizard |\n\n### Trải nghiệm Quản trị 1-Chạm (Wizard-driven UX)\n\n#### Khởi tạo Cụm Trực quan (Cluster Setup Wizard)\n\n1. **Pre-flight Check** — Scan phần cứng + network. Status badge ✅ / ❌. Nút `[Deploy Cluster]` chỉ sáng khi đủ điều kiện.\n2. **Config Form** — Dropdown chọn provider (Vultr/DO), nhập 3 IP, drag-drop `id_rsa`. Không terminal.\n3. **Deploy Progress Bar** — Phân nấc `WireGuard → Longhorn → K8s → Ready`. Text ngôn ngữ tự nhiên, không log terminal.\n4. **Bootstrap QR** — QR code để Admin scan trên mobile → thiết lập kênh mTLS, tự đặt IP/Port.\n5. **Day-2 Dashboard** — Cluster health `3/3 Online`, storage gauge, 1-click `[Zero-Downtime Update]`.\n\n#### Mở rộng Cụm Không Gián Đoạn (Add Node Wizard)\n\n- Bảng trượt tối giản: nhập 3 trường — IP Address, Node Label, SSH Key.\n- Progress động: `Initializing → Joining → Ready`.\n- Rollback tự động + thông báo tiếng người nếu Node thất bại.\n\n#### Phản hồi Thời gian thực\n\n- Biểu đồ động: WireGuard speed, Cluster capacity tăng gộp theo thời gian thực.\n- K8s Scheduler tự cân bằng tải sang Node ít bận hơn.\n\n---\n\n# PHẦN IV – LUỒNG UX BẢO MẬT\n\n## 16. Smart Approval Flow\n"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Notification → [Review] → Detail Modal → Ghi chú lý do"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "→ [Biometric/PIN xác nhận] → Approved ✅ / Rejected ❌"
-                },
-                {
-                  "type": "code",
-                  "language": "",
-                  "code": "\n- Bắt buộc **User Presence** (Touch ID / Face ID / PIN) trước khi ký.\n- Processing spinner → Success / Error state.\n\n---\n\n## 17. Mesh Activation Flow"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Detect mất kết nối"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "→ Toast: \"Switching to Mesh Mode...\""
-                },
-                {
-                  "type": "paragraph",
-                  "text": "→ UI fade sang Dark theme (0.3s)"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "→ Banner: Nút CTA chính (Màu Đỏ Cam cảnh báo): \"Khởi động mạng Mesh để duy trì liên lạc\"."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "→ Tiếp tục nhắn tin qua BLE/Wi-Fi Direct"
+                  "text": "File icons:"
                 },
                 {
                   "type": "list",
                   "data": [
-                    "Offline message queue: ⏱ đang chờ → ✓ đã đồng bộ.",
-                    "📱💻🖥️ Khi mất mạng (Offline Mode), UI hiển thị một Modal Overlap (Glassmorphism với nền Dark Navy #0F172A).",
-                    "📱 iOS Màn hình áp dụng hiệu ứng UIBlurEffectStyle.systemUltraThinMaterialDark.",
-                    "📱💻 Giao diện tự động vô hiệu hóa toàn bộ hiệu ứng Animation nặng để tiết kiệm pin cho thiết bị trong kịch bản thảm họa."
+                    "📡 Local",
+                    "☁ Sync Pending"
                   ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Sync animation: subtle pulse."
                 }
               ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "18-thiết-kế-luồng-self-recovery-glassmorphism-ui",
-          "level": 2,
-          "heading": "18. Thiết kế Luồng Self-Recovery (Glassmorphism UI)",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "💻🖥️ Màn hình KMS Bootstrap: Nền tối (Mesh Mode Dark Navy #0F172A). Ở giữa hiển thị biểu tượng YubiKey xoay 3D với viền sáng mờ. Thông báo: \"Đang chờ xác thực phần cứng C-Level...\"",
-                "💻🖥️ FIDO2 Prompt: Pop-up hệ thống nổi lên yêu cầu mã PIN hoặc vân tay trên YubiKey. Giao diện TeraChat bị khóa mờ (UIBlurEffect) hoàn toàn để tránh can thiệp click-jacking.",
-                "📱💻 Cảnh báo TH2 (Tự phế truất): Khi thực hiện \"Revoke\", nút bấm phải sử dụng màu Đỏ Cảnh Báo (#EF4444) và yêu cầu gõ lại chữ \"REVOKE\" để xác nhận, tránh thao tác nhầm trên thiết bị còn lại."
+              "subsections": [
+                {
+                  "id": "visual-threat-intelligence-asynchronous-progress-rendering-iso-27001-a822",
+                  "level": 4,
+                  "heading": "Visual Threat Intelligence & Asynchronous Progress Rendering (ISO 27001 A.8.2.2)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱 iOS Hazard-Stripe Red/Orange Toast Notification: Khi Lõi Rust phát hiện OS Restriction (Background Execution bị OS cắt, Jetsam sắp kích hoạt, hoặc BLE bị throttle), UI hiển thị Toast mỏng 32px phía trên thanh Input với sọc cảnh báo màu đỏ cam (#EF4444 / #F59E0B) — cung cấp Visual Threat Intelligence tức thời, không modal, không block thao tác.",
+                        "📱 Independent Main-Thread 1px/2px ProgressBar Rendering: Thanh tiến trình DAG Sync (1px khi đang tải nhẹ, 2px khi đang tải nặng) được render hoàn toàn độc lập trên Main-Thread Native — không phụ thuộc JS Bridge, đảm bảo ProgressBar không bao giờ bị đóng băng kể cả khi Data Plane đang bận tải DAG lớn."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "large-transfer-ui-mesh-mode-wi-fi-direct-10gb-không-qua-server",
+                  "level": 4,
+                  "heading": "Large Transfer UI — Mesh Mode (Wi-Fi Direct 10GB, Không qua Server)",
+                  "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Trigger:** Khi 2 thiết bị phát hiện cùng LAN/Wi-Fi Direct range và file cần transfer > 100MB, hệ thống tự động trigger \"Mesh Large Transfer Mode\" — bypass hoàn toàn VPS/Cloud."
+                      ]
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻🖥️ Background Color: Nền #0F172A (Dark Navy — Mesh Mode). Toàn bộ Glassmorphism effect (backdrop-filter, box-shadow) TẮT để tiết kiệm GPU/CPU cho băng thông tối đa.",
+                        "📱💻🖥️ Transfer Card — Center Stage:"
+                      ]
+                    },
+                    {
+                      "type": "code",
+                      "language": "",
+                      "code": "  ┌─────────────────────────────────────────┐\n  │  📡 Mesh Transfer — Không qua Cloud      │\n  │  budget_2025.mp4 → Nguyen Van A          │\n  │  ████████████████░░░░  80% — 8.0/10GB    │\n  │  ⚡ 950 MB/s  |  ETA: 00:02:13            │\n  │  [ Hủy ]                                  │\n  └─────────────────────────────────────────┘"
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "Border: 1px rgba(99,102,241,0.4) (Indigo tím nhẹ — màu \"secure local link\").",
+                        "Progress bar: gradient #6366F1 → #22D3EE (Indigo → Cyan), animate left-to-right.",
+                        "Speed badge: #22C55E (Green) khi speed > 100MB/s, #F59E0B (Amber) khi < 100MB/s.",
+                        "📱💻🖥️ Radar Pulse Animation: Biểu tượng SVG Radar (như Mesh Mode) nhấp nháy opacity: 0.4 → 1.0 mỗi khi Lõi Rust dispatch event MESH_CHUNK_SENT — event-driven, không CSS loop.",
+                        "📱💻🖥️ Security Micro-badge: Góc phải card hiển thị 🔒 E2EE Mesh — Direct Link badge màu rgba(34,197,94,0.15) nền xanh mờ, nhắc nhở user file đi thẳng P2P, không qua bất kỳ server nào.",
+                        "📱💻🖥️ Completion Toast: Khi transfer xong → Toast 3 giây: \"✅ budget_2025.mp4 — Đã truyền qua Mesh an toàn. Tốc độ trung bình: 870 MB/s. Băng thông Cloud tiết kiệm: 10GB.\"",
+                        "💻🖥️ Fallback Trigger: Nếu Wi-Fi Direct không khả dụng (VD: iOS background) → tự động chuyển sang S3 Multipart Upload qua NSURLSession Background Transfer, header banner đổi thành: \"Uploading via Secure Cloud — Mesh unavailable\"."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "skeleton-ui-cho-file-được-mở-từ-notification-khi-nội-dung-còn-đang-giải-mã",
+                  "level": 4,
+                  "heading": "Skeleton UI cho File được mở từ Notification khi nội dung còn đang giải mã",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "📱💻 Khi người dùng chạm vào Notification dẫn tới một file (PDF/Video) được bảo vệ E2EE, màn Files/Viewer phải hiển thị khung xương an toàn trong lúc Core Rust đang giải mã:",
+                        "Khung preview file là một card Glassmorphism xám mờ, icon file dạng placeholder, kèm dòng text \"Đang giải mã an toàn...\".",
+                        "Thanh timeline video (nếu có) hiển thị dạng skeleton bar, không cho seek cho đến khi có đủ key/byte đầu tiên từ Native-to-Rust Media DataSource Bridge.",
+                        "📱Ngay khi pipeline giải mã/streaming sẵn sàng, Skeleton fade-out 0.2s và thay bằng preview/video thực; nếu phát hiện key desync, Skeleton giữ nguyên kèm CTA nhỏ \"Thử đồng bộ lại\" thay vì crash hoặc để UI trắng."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                }
               ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "19-qr-enrollment-onboarding-nhân-viên",
-          "level": 2,
-          "heading": "19. QR Enrollment (Onboarding nhân viên)",
-          "content_blocks": [
+            },
             {
-              "type": "code",
-              "language": "",
-              "code": "\nAdmin: Tạo Invite Token → Hiển thị QR\nNhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA\n"
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "19-file-approval-flow-zone-2-restricted",
-          "level": 2,
-          "heading": "19. File Approval Flow (Zone 2 Restricted)",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "",
-              "code": "\nChọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]\nManager nhận notification → [Review] → Approve / Reject\nUser nhận thông báo kết quả\n"
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "phần-vi-các-giao-diện-mở-rộng-sso-liên-tổ-chức",
-      "level": 1,
-      "heading": "PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "22-giao-diện-đăng-nhập-enterprise-sso-login",
-          "level": 2,
-          "heading": "22. Giao diện Đăng nhập (Enterprise SSO Login)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "TeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "layout-desktopmobile-màn-hình-welcome",
+              "id": "layout-mobile",
               "level": 3,
-              "heading": "Layout Desktop/Mobile (Màn hình Welcome)",
+              "heading": "Layout Mobile",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Background (Layer 1): Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).",
-                    "Center Glass Card (Layer 4): Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, rgba(20,30,45,0.6)), viền phát sáng nhẹ rgba(255,255,255,0.1)."
-                  ]
-                },
-                {
-                  "type": "code",
-                  "language": "text",
-                  "code": "┌─────────────────────────────────────────────┐\n│               [TeraChat Logo]               │\n│        Secure Enterprise Communication      │\n│                                             │\n│  [ Input: Khóa/Workspace ID (terachat...) ] │\n│                                             │\n│  [ 🔑 Log in with Microsoft Azure AD     ]  │\n│  [ 🛡️ Log in with Google Workspace       ]  │\n│                                             │\n│       ─ Hoặc xác thực phần cứng ─           │\n│           [ YubiKey / Security Key ]        │\n└─────────────────────────────────────────────┘"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "UX & Motion Logic (Zero-Trust Core Initialization):"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Biometric-Bound Initialization (Bắt buộc Sinh trắc học): Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID)."
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "*\"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)\"*",
-                    "Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Cryptographic PIN Fallback UI: Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).",
-                    "PIN được truyền thẳng qua FFI Pointer xuống Lõi Rust mà không lưu lại trên State của React Native.",
-                    "Phía dưới hiển thị dòng chữ cảnh báo mờ: Attempt X/5.",
-                    "Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization): Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh Remote Wipe.",
-                    "📱💻 Remote Wipe & Secure Enclave Wipe: Lệnh Remote Wipe thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.",
-                    "📱💻🖥️ Memory Zeroization: Cơ chế ZeroizeOnDrop (RAII) lập tức thực hiện ghi đè 0x00 lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.",
-                    "📱💻🖥️ Crypto-Shredding: Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.",
-                    "📱 Ruthless Visualization: Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).",
-                    "Tiến trình Khởi tạo mượt mà: Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu #24A1DE) chạy fade-in trong < 3 giây với dòng text \"Đang thiết lập Lõi Mật Mã...\".",
-                    "Input Workspace ID: Nền glass trắng mờ, outline chuyển #24A1DE cùng bóng đổ mờ khi focus/active.",
-                    "Button Style: Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể."
+                    "File Sidebar → Bottom Sheet filter thay thế.",
+                    "Grid 2 cột.",
+                    "Tap file → Bottom Sheet với Smart Actions."
                   ]
                 }
               ],
@@ -1200,59 +1253,63 @@
           ]
         },
         {
-          "id": "23-giao-diện-thiết-lập-chi-nhánh-cross-cluster-federation-handshake",
+          "id": "13-tools-tapp-enterprise-launchpad",
           "level": 2,
-          "heading": "23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Luồng kết nối HQ và Chi nhánh được định vị tại Admin Console > Federation. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm \"Click & Connect\" trực quan."
-            }
-          ],
+          "heading": "13. Tools (.tapp) — Enterprise Launchpad",
+          "content_blocks": [],
           "subsections": [
             {
-              "id": "ở-phía-tổng-công-ty-hq-admin",
+              "id": "desktoplaptop",
               "level": 3,
-              "heading": "Ở phía Tổng công ty (HQ Admin)",
+              "heading": "Desktop/Laptop",
               "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Click Tools icon → Glass Modal lớn trung tâm màn hình. Grid 3–4 cột:"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "\n[Smart Approval] [CRM] [POS] [HR]\n[Internal App 1] [Internal App 2] ...\n"
+                },
                 {
                   "type": "list",
                   "data": [
-                    "CTA Button: Nút [ + Generate Federation Invite ] nằm góc phải trên (Primary #24A1DE).",
-                    "Setup Modal (Slide từ trung tâm):",
-                    "Tên Chi nhánh: Khung Input field thường.",
-                    "Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: 👁️ Chỉ Reply, 💬 Nhắn tin).",
-                    "Thời hạn Token: Slider kéo thả linh hoạt 1h — 24h dán nhãn màu.",
-                    "Kết quả (Success State): Sinh JWT Token khổng lồ để mời Chi nhánh.",
-                    "Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút [ Copy Token ] + icon clipboard."
+                    "Card radius 16px, blur 12px.",
+                    "Hover: glow nhẹ #24A1DE 20%.",
+                    "Mỗi .tapp chạy trong WASM Sandbox — hoàn toàn cô lập.",
+                    "Nút bị mờ/disable nếu phòng ban không được cấp quyền (OPA Policy)."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "ở-phía-chi-nhánh-branch-admin",
+              "id": "mobile",
               "level": 3,
-              "heading": "Ở phía Chi nhánh (Branch Admin)",
+              "heading": "Mobile",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Mở Admin Console > Federation. Click [ Join Federation Network ].",
-                    "Modal Nhập Token: Khung Paste lớn chiếm 50% modal. Ngay khi paste, Lõi Rust (WASM) phân tích realtime (<50ms) và load ra thẻ Info Card xác nhận tin cậy:"
+                    "Tools → Full screen Bottom Sheet dạng 2 cột.",
+                    ".tapp khi mở → full screen modal, header tên App + nút Close."
                   ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*."
-                  ]
-                },
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "pinned-tapp",
+              "level": 3,
+              "heading": "Pinned .tapp",
+              "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Animation [ Confirm & Handshake ]: Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick ✅ Connected sang mảng màu xanh Success tươi sáng."
+                    "Right-click / long-press → \"Pin to Sidebar\".",
+                    "Animate slide-down vào Rail / Tab bar (dynamic zone).",
+                    "Badge alert nếu app có notification."
                   ]
                 }
               ],
@@ -1261,301 +1318,285 @@
           ]
         },
         {
-          "id": "24-giao-diện-épthêm-member-directory-sync-invites",
+          "id": "14-settings",
           "level": 2,
-          "heading": "24. Giao diện Ép/Thêm Member (Directory Sync & Invites)",
+          "heading": "14. Settings",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Section",
+                "Nội dung"
+              ],
+              "rows": [
+                [
+                  "**Account**",
+                  "Profile, Avatar, Display name"
+                ],
+                [
+                  "**Security**",
+                  "E2EE keys, Device list, Revoke sessions"
+                ],
+                [
+                  "**OPA Policy**",
+                  "Xem chính sách DLP (read-only cho user)"
+                ],
+                [
+                  "**Zone Config**",
+                  "Cấu hình Online / Mesh priority"
+                ],
+                [
+                  "**Storage**",
+                  "Ring Buffer info, Offline storage quota"
+                ],
+                [
+                  "**Developer Mode**",
+                  "Toggle (nếu được cấp quyền)"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "15-admin-console-role-based-chỉ-admin-thấy",
+          "level": 2,
+          "heading": "15. Admin Console (Role-based — chỉ Admin thấy)",
           "content_blocks": [
             {
               "type": "paragraph",
-              "text": "Thiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại Admin Console > User Management."
+              "text": "Entry point: Settings → [Admin Console] button."
             }
           ],
           "subsections": [
             {
-              "id": "tab-1-directory-sync-scim-20-tự-động",
+              "id": "tab-structure",
               "level": 3,
-              "heading": "Tab 1: Directory Sync (SCIM 2.0 Tự động)",
+              "heading": "Tab Structure",
               "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Dashboard Control (Dải Ribbon trên cùng):"
-                },
-                {
-                  "type": "code",
-                  "language": "text",
-                  "code": "[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Status Badge: 🟢 Active (Xanh lá), 🟡 Warning (Vàng), 🔴 Error (Đỏ). Thêm hiệu ứng pulse nhấp nháy vào dấu chấm 🟢."
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Data Grid (Danh sách User dạng List View Glass):"
-                },
                 {
                   "type": "table",
                   "headers": [
-                    "Username",
-                    "Department",
-                    "Sync Source",
-                    "Tình trạng Khóa (E2EE)",
-                    "Action"
+                    "Tab",
+                    "Chức năng"
                   ],
                   "rows": [
                     [
-                      "Nguyen Van A",
-                      "Finance",
-                      "Azure AD",
-                      "🟢 Provisioned",
-                      "`[Revoke]`"
+                      "**User Management**",
+                      "Invite Token, Revoke, Remote Wipe"
                     ],
                     [
-                      "Tran Thi B",
-                      "Sales",
-                      "Azure AD",
-                      "🟡 Pending Login",
-                      "`[Resend]`"
+                      "**Key Management**",
+                      "KMS Bootstrap, Master Key status, Epoch Rotation"
+                    ],
+                    [
+                      "**OPA Policies**",
+                      "Tạo/sửa/xóa chính sách per-department"
+                    ],
+                    [
+                      "**Federation**",
+                      "Invite Token liên tổ chức, trust registry"
+                    ],
+                    [
+                      "**Audit Log**",
+                      "Timeline filter theo user/action/time"
+                    ],
+                    [
+                      "**Tools Registry**",
+                      "Whitelist/blacklist `.tapp`, quản lý API Keys"
+                    ],
+                    [
+                      "**Infrastructure**",
+                      "Node health, Cluster scaling wizard"
                     ]
                   ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "UX Logic (Offboarding Không Chạm):"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Khi nhân sự nghỉ việc trên hệ thống mẹ (IdP), hàng dữ liệu của nhân sự lập tức đổi màu đỏ nhạt (Red Glass, opacity 10%) và nhãn Auth đổi thành 🔒 Revoked.",
-                    "Các nút Action biến mất hoặc bị disable (mờ đi) kèm tooltip rõ ràng: \"Managed by IdP. Khóa thiết bị đã bị hủy.\""
-                  ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "tab-2-manual-guest-invites",
+              "id": "trải-nghiệm-quản-trị-1-chạm-wizard-driven-ux",
               "level": 3,
-              "heading": "Tab 2: Manual / Guest Invites",
-              "content_blocks": [
+              "heading": "Trải nghiệm Quản trị 1-Chạm (Wizard-driven UX)",
+              "content_blocks": [],
+              "subsections": [
                 {
-                  "type": "paragraph",
-                  "text": "Dành cho nhà thầu hoặc đối tác outsource tạm thời."
+                  "id": "khởi-tạo-cụm-trực-quan-cluster-setup-wizard",
+                  "level": 4,
+                  "heading": "Khởi tạo Cụm Trực quan (Cluster Setup Wizard)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "Pre-flight Check — Scan phần cứng + network. Status badge ✅ / ❌. Nút [Deploy Cluster] chỉ sáng khi đủ điều kiện.",
+                        "Config Form — Dropdown chọn provider (Vultr/DO), nhập 3 IP, drag-drop id_rsa. Không terminal.",
+                        "Deploy Progress Bar — Phân nấc WireGuard → Longhorn → K8s → Ready. Text ngôn ngữ tự nhiên, không log terminal.",
+                        "Bootstrap QR — QR code để Admin scan trên mobile → thiết lập kênh mTLS, tự đặt IP/Port.",
+                        "Day-2 Dashboard — Cluster health 3/3 Online, storage gauge, 1-click [Zero-Downtime Update]."
+                      ]
+                    }
+                  ],
+                  "subsections": []
                 },
                 {
-                  "type": "list",
-                  "data": [
-                    "Click [ + Generate Invite Token ].",
-                    "Cấu hình (Modal): Nhập Tên cá nhân, Dropdown chọn Role (Guest, Contractor), Khung Box nhập Thời gian (12 giờ, 24 giờ).",
-                    "Màn hình Trả ra (Output Modal):",
-                    "Mã QR xuất hiện trung tâm khổng lồ. (Lưu ý: Card Glass chứa QR cần lót nền trắng phía dưới để Camera quét được).",
-                    "Đi kèm nút Copy URL bảo mật.",
-                    "End-user Onboarding (Người nhận trên Mobile):",
-                    "Trên màn hình Mobile của đối tác hiện nút Scan cực lớn [ 📷 Scan QR to Join ].",
-                    "UI bật khung ngắm (Viewfinder blur) bắt viền lấy nét QR siêu nhanh.",
-                    "Khi bắt được QR -> Hiệu ứng màn hình mở khóa (Unlock animation chớp nhoáng), tự động thiết lập chứng chỉ Certificate và thả rơi user thẳng vào Chat Room mà không hỏi mật khẩu."
-                  ]
+                  "id": "mở-rộng-cụm-không-gián-đoạn-add-node-wizard",
+                  "level": 4,
+                  "heading": "Mở rộng Cụm Không Gián Đoạn (Add Node Wizard)",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "Bảng trượt tối giản: nhập 3 trường — IP Address, Node Label, SSH Key.",
+                        "Progress động: Initializing → Joining → Ready.",
+                        "Rollback tự động + thông báo tiếng người nếu Node thất bại."
+                      ]
+                    }
+                  ],
+                  "subsections": []
+                },
+                {
+                  "id": "phản-hồi-thời-gian-thực",
+                  "level": 4,
+                  "heading": "Phản hồi Thời gian thực",
+                  "content_blocks": [
+                    {
+                      "type": "list",
+                      "data": [
+                        "Biểu đồ động: WireGuard speed, Cluster capacity tăng gộp theo thời gian thực.",
+                        "K8s Scheduler tự cân bằng tải sang Node ít bận hơn."
+                      ]
+                    }
+                  ],
+                  "subsections": []
                 }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "25-giao-diện-đăng-nhập-ngầm-phân-quyền-hr-magic-deep-link-sso",
-          "level": 2,
-          "heading": "25. Giao diện Đăng nhập Ngầm & Phân quyền HR (Magic Deep-Link SSO)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Bài toán mâu thuẫn giữa Bảo mật cao (Zero-Trust + SSO) và Trải nghiệm người mới (Frictionless Onboarding) được giải quyết qua luồng Delegated Provisioning kết hợp Magic Deep-Link SSO."
-            }
-          ],
-          "subsections": [
-            {
-              "id": "phần-1-phân-quyền-mời-delegation-via-opa",
-              "level": 3,
-              "heading": "Phần 1: Phân quyền Mời (Delegation via OPA)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Super Admin sẽ không đi mời từng người, mà ủy quyền (Delegate) cho bộ phận HR thông qua OPA Engine mà không làm hỏng tính toàn vẹn hệ thống."
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Ủy quyền: Sếp tạo nhóm HR_Department trong Admin Console.",
-                    "Tiêm luật OPA: Gán Policy đặc biệt để Lõi Rust kiểm tra nội bộ:"
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "allow if user.group == \"HR_Department\" and action == \"generate_invite_token\""
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "UX hiển thị: Chỉ những account thuộc HR_Department mới thấy xuất hiện nút [ + Mời nhân viên ] trên giao diện."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "phần-2-workflow-1-tap-magic-sso",
-              "level": 3,
-              "heading": "Phần 2: Workflow 1-Tap Magic SSO",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Luồng này loại bỏ hoàn toàn giao diện gõ email/mật khẩu thủ công thông qua 3 bước chớp nhoáng:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "HR Phát hành Lời mời:",
-                    "HR nhập email công ty của nhân viên mới (VD: nhanvien@congty.com).",
-                    "Lõi Rust sinh Invite_Token (Signed JWT) hạn 24h và tự động gửi một Email chứa nút \"Tham gia TeraChat\".",
-                    "Người dùng Chạm 1-Tap (Magic Deep-Link):",
-                    "Nhân viên bấm nút từ Email (app Gmail/Outlook trên điện thoại).",
-                    "Lớp OS (iOS/Android) sẽ không mở trình duyệt mà kích hoạt Universal Link/App Link truyền thẳng URL: https://join.terachat.com/invite?token=abc&hint=nhanvien@congty.com vào app TeraChat.",
-                    "Đăng nhập Ngầm (Zero-Click SSO - Dưới 0.5s):",
-                    "Thay vì hiện màn hình đăng nhập 2 nút (Azure/Google), Lõi Rust chộp lấy hint=nhanvien@congty.com và kích hoạt luồng OIDC (PKCE).",
-                    "Ép gửi tham số prompt=none & login_hint=email. Nhờ việc người dùng đang mở app Mail nội bộ, máy điện thoại đã có sẵn Session SSO.",
-                    "Hệ thống tự động xác thực ngầm, trình duyệt hệ thống bật lên chớp nhoáng rồi tắt, sau đó Lõi Rust sinh khóa E2EE (Device_Key) thả thẳng người dùng vào nhóm Chat."
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**TỔNG KẾT 4 KỸ THUẬT LÕI ĐƯỢC ÁP DỤNG:**",
-                    "1. **Deferred Deep Linking:** Ghi nhớ URL lời mời kể cả khi người dùng phải bay qua App Store tải App lần đầu.",
-                    "2. **OIDC `login_hint` & `prompt=none`:** Kỹ thuật ép SSO không được hiện màn hình chọn Account màn lấy luôn Session hiện tại.",
-                    "3. **Smart Routing OPA:** Quyền sinh JWT Pre-approved được chốt chặt ở lõi hệ thống.",
-                    "4. **AppAuth (PKCE):** Giao thức bảo mật bắt buộc để nhận Token trên thiết bị di động không cần Client Secret."
-                  ]
-                }
-              ],
-              "subsections": []
+              ]
             }
           ]
         }
       ]
     },
     {
-      "id": "phần-vii-accessibility-checklist",
+      "id": "phần-iv-luồng-ux-bảo-mật",
       "level": 1,
-      "heading": "PHẦN VII – ACCESSIBILITY & CHECKLIST",
+      "heading": "PHẦN IV – LUỒNG UX BẢO MẬT",
       "content_blocks": [],
       "subsections": [
         {
-          "id": "26-accessibility",
+          "id": "16-smart-approval-flow",
           "level": 2,
-          "heading": "26. Accessibility",
+          "heading": "16. Smart Approval Flow",
           "content_blocks": [
+            {
+              "type": "code",
+              "language": "",
+              "code": "\nNotification → [Review] → Detail Modal → Ghi chú lý do\n→ [Biometric/PIN xác nhận] → Approved ✅ / Rejected ❌\n"
+            },
             {
               "type": "list",
               "data": [
-                "Minimum contrast 4.5:1 cho text chính.",
-                "Keyboard navigable: Tab order Rail → Panel → Main.",
-                "Tất cả icon phải có aria-label hoặc tooltip.",
-                "Focus ring: outline 2px #24A1DE, offset 2px.",
-                "Screen reader support cho alerts và security status badges."
+                "Bắt buộc User Presence (Touch ID / Face ID / PIN) trước khi ký.",
+                "Processing spinner → Success / Error state."
               ]
             }
           ],
           "subsections": []
         },
         {
-          "id": "27-checklist-cho-designer",
+          "id": "17-mesh-activation-flow",
           "level": 2,
-          "heading": "27. Checklist cho Designer",
+          "heading": "17. Mesh Activation Flow",
           "content_blocks": [
             {
-              "type": "list",
-              "data": [
-                "[ ] Thiết kế Online Mode và Mesh Mode cho từng màn hình.",
-                "[ ] Component Library: Button, Input, Card (Glass), Badge, Toast, Modal, Bottom Sheet.",
-                "[ ] Icon set monochrome (không màu mè, không multicolor).",
-                "[ ] Responsive breakpoints: Mobile / Tablet / Laptop / Desktop.",
-                "[ ] Admin Console screens (tách biệt rõ với UI giao diện tương tác User).",
-                "[ ] Empty states (màn hình hero khi chưa có dữ liệu).",
-                "[ ] Error states (Cảnh báo mất kết nối, Cấm quyền, Lỗi đồng bộ SCIM).",
-                "[ ] Onboarding flow 1: Luồng Enterprise SSO Login truyền thống (Hiệu ứng Lõi Zero-Trust).",
-                "[ ] Máy Quét Thuật toán Biometric-bound Key Generation (FaceID/TouchID Prompt UI).",
-                "[ ] Cryptographic PIN Fallback Dialpad (Bàn phím FFI 6 số siêu tối giản, không track state).",
-                "[ ] Hoạt cảnh Ruthless Self-Destruct (Màn hình nháy đỏ + Shredding Effect 1s).",
-                "[ ] Onboarding flow 2: Luồng Quét QR Enroll nội bộ.",
-                "[ ] Onboarding flow 3: Luồng 1-Tap Magic Deep-Link SSO cho nhân sự mới (1-chú chạm từ Email, bypass Login).",
-                "[ ] Smart Approval biometric prompt screen (Modal phê duyệt sinh trắc học).",
-                "[ ] Cluster Setup Wizard (Admin — Desktop only).",
-                "[ ] Cross-Cluster Federation Handshake (Modal sinh mời + Giao diện Paste Token).",
-                "[ ] User Management & UI Tự động Đồng bộ SCIM 2.0 / Phân quyền HR.",
-                "[ ] Indicator AI Privacy Shield (Icon khiên che chắn dữ liệu khi bật tính năng AI Blind Inference)."
-              ]
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "phần-viii-cross-platform-architecture",
-      "level": 1,
-      "heading": "PHẦN VIII – CROSS-PLATFORM ARCHITECTURE",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "28-tầng-ui-chỉ-đóng-vai-trò-là-pure-renderer-thợ-vẽ-thuần-túy-tước-bỏ-toàn-bộ-logic-và-chỉ-hiển-thị-những-thay-đổi-trạng-thái-statechanged-do-core-báo-về-việc-cấm-tuyệt-đối-port-crypto-hay-business-logic-lên-luồng-jsdart-là-bắt-buộc-để-tránh-rò-rỉ-bộ-nhớ-và-đảm-bảo-nhất-quán-mật-mã-trên-cả-5-nền-tảng",
-          "level": 2,
-          "heading": "28.   Tầng UI chỉ đóng vai trò là \"Pure Renderer\" (Thợ vẽ thuần túy) – tước bỏ toàn bộ logic và chỉ hiển thị những thay đổi trạng thái (StateChanged) do Core báo về. Việc cấm tuyệt đối port Crypto hay Business Logic lên luồng JS/Dart là bắt buộc để tránh rò rỉ bộ nhớ và đảm bảo nhất quán mật mã trên cả 5 nền tảng",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Dưới đây là các ngôn ngữ và framework được sử dụng để đồng bộ đa nền tảng:"
-            },
-            {
-              "type": "list",
-              "data": [
-                "Phân hệ Desktop / Laptop (Windows, macOS, Linux)"
-              ]
+              "type": "code",
+              "language": "",
+              "code": "\nDetect mất kết nối\n→ Toast: \"Switching to Mesh Mode...\"\n→ UI fade sang Dark theme (0.3s)\n→ Banner: Nút CTA chính (Màu Đỏ Cam cảnh báo): \"Khởi động mạng Mesh để duy trì liên lạc\".\n→ Tiếp tục nhắn tin qua BLE/Wi-Fi Direct\n\n- Offline message queue: `⏱ đang chờ` → `✓ đã đồng bộ`.\n- 📱💻🖥️ Khi mất mạng (Offline Mode), UI hiển thị một Modal Overlap (Glassmorphism với nền Dark Navy `#0F172A`).\n- 📱 iOS Màn hình áp dụng hiệu ứng `UIBlurEffectStyle.systemUltraThinMaterialDark`.\n- 📱💻 Giao diện tự động vô hiệu hóa toàn bộ hiệu ứng Animation nặng để tiết kiệm pin cho thiết bị trong kịch bản thảm họa.\n\n## 18. Thiết kế Luồng Self-Recovery & HR Recovery (Glassmorphism UI)\n\n- 📱🖥️ **Recovery Room UI (Glassmorphism):** Giao diện khôi phục sử dụng tone màu Mesh Mode (Nền `#0F172A`).\n- 📱 **Radar Pulse Visual:** Khi chờ HR/Admin phê duyệt qua BLE, màn hình hiển thị radar pulse màu cam cảnh báo (Security Accent).\n- 📱 **Multi-Sig Indicator:** Hiển thị progress bar dạng tinh thể kính (Glass step-tracker) báo hiệu: \"Đã nhận 1/2 chữ ký quản trị. Đang chờ thiết bị HR thứ hai...\".\n- 💻🖥️ **Màn hình KMS Bootstrap:** Nền tối (Mesh Mode Dark Navy `#0F172A`). Ở giữa hiển thị biểu tượng YubiKey xoay 3D với viền sáng mờ. Thông báo: \"Đang chờ xác thực phần cứng C-Level...\"\n- 💻🖥️ **FIDO2 Prompt:** Pop-up hệ thống nổi lên yêu cầu mã PIN hoặc vân tay trên YubiKey. Giao diện TeraChat bị khóa mờ (`UIBlurEffect`) hoàn toàn để tránh can thiệp click-jacking.\n- 📱💻 **Cảnh báo TH2 (Tự phế truất):** Khi thực hiện \"Revoke\", nút bấm phải sử dụng màu Đỏ Cảnh Báo (`#EF4444`) và yêu cầu gõ lại chữ \"REVOKE\" để xác nhận, tránh thao tác nhầm trên thiết bị còn lại.\n\n---\n\n## 19. QR Enrollment (Onboarding nhân viên)\n"
             },
             {
               "type": "paragraph",
-              "text": "Framework: Hệ thống sử dụng Tauri để xây dựng giao diện."
+              "text": "Admin: Tạo Invite Token → Hiển thị QR"
             },
             {
               "type": "paragraph",
-              "text": "Giao tiếp (IPC Bridge): Tách biệt Control Plane và Data Plane. Giao tiếp với Lõi Rust qua SharedArrayBuffer và Protobuf."
+              "text": "Nhân viên: Mở TeraChat → Scan QR → Auto thiết lập E2EE + CA"
+            },
+            {
+              "type": "code",
+              "language": "",
+              "code": "\n---\n\n## 19. File Approval Flow (Zone 2 Restricted)\n"
             },
             {
               "type": "paragraph",
-              "text": "Hiệu năng: Cơ chế Zero-Copy Flow cho phép thông lượng truyền tải qua RAM vật lý đạt ngưỡng ~500MB/s mà không gây nghẽn cổ chai IPC."
-            },
-            {
-              "type": "list",
-              "data": [
-                "Phân hệ Mobile (iOS, Android)"
-              ]
+              "text": "Chọn file → [Generate Approval] → Điền lý do → [Gửi yêu cầu]"
             },
             {
               "type": "paragraph",
-              "text": "Frameworks: Sử dụng kết hợp React Native và Flutter."
+              "text": "Manager nhận notification → [Review] → Approve / Reject"
             },
             {
               "type": "paragraph",
-              "text": "Tích hợp iOS: Áp dụng cổng React Native JSI bọc con trỏ C++ Shared Memory (std::unique_ptr) đâm thẳng vào luồng nhận của Rust FFI, bỏ qua WebView Bridge truyền thống."
+              "text": "User nhận thông báo kết quả"
+            },
+            {
+              "type": "code",
+              "language": "",
+              "code": "\n---\n\n# PHẦN VI – CÁC GIAO DIỆN MỞ RỘNG (SSO & LIÊN TỔ CHỨC)\n\n## 22. Giao diện Đăng nhập (Enterprise SSO Login)\n\nTeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi luồng Login đều qua Identity Broker (Keycloak/Dex) kết nối Azure AD, Google Workspace hoặc Okta.\n\n### Layout Desktop/Mobile (Màn hình Welcome)\n\n- **Background (Layer 1):** Dark navy gradient tĩnh, blur sâu tạo cảm giác chìm sâu (immerse).\n- **Center Glass Card (Layer 4):** Khối thẻ xác thực lơ lửng giữa màn hình, radius 24px. Glass Dark (blur 20px, `rgba(20,30,45,0.6)`), viền phát sáng nhẹ `rgba(255,255,255,0.1)`.\n"
             },
             {
               "type": "paragraph",
-              "text": "Tích hợp Android: Áp dụng giao diện Dart FFI TypedData thực thi tín hiệu Zero-Copy nạp thẳng sang kiến trúc C ABI tĩnh."
+              "text": "┌─────────────────────────────────────────────┐"
             },
             {
               "type": "paragraph",
-              "text": "Hiệu năng: Cả hai nền tảng Mobile đều đạt thông lượng (throughput) ~400MB/s khi giao tiếp giữa UI và Lõi Rust."
+              "text": "│               [TeraChat Logo]               │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│        Secure Enterprise Communication      │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│                                             │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│  [ Input: Khóa/Workspace ID (terachat...) ] │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│                                             │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│  [ 🔑 Log in with Microsoft Azure AD     ]  │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│  [ 🛡️ Log in with Google Workspace       ]  │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│                                             │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│       ─ Hoặc xác thực phần cứng ─           │"
+            },
+            {
+              "type": "paragraph",
+              "text": "│           [ YubiKey / Security Key ]        │"
+            },
+            {
+              "type": "paragraph",
+              "text": "└─────────────────────────────────────────────┘"
+            },
+            {
+              "type": "code",
+              "language": "",
+              "code": "\n**UX & Motion Logic (Zero-Trust Core Initialization):**\n\n- **Biometric-Bound Initialization (Bắt buộc Sinh trắc học):** Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).\n  > *\"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)\"*\n  > Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.\n- **Cryptographic PIN Fallback UI:** Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).\n  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của React Native.\n  - Phía dưới hiển thị dòng chữ cảnh báo mờ: `Attempt X/5`.\n- **Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization):** Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh `Remote Wipe`.\n  - 📱💻 **Remote Wipe & Secure Enclave Wipe:** Lệnh `Remote Wipe` thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.\n  - 📱💻🖥️ **Memory Zeroization:** Cơ chế `ZeroizeOnDrop` (RAII) lập tức thực hiện ghi đè `0x00` lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.\n  - 📱💻🖥️ **Crypto-Shredding:** Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.\n  - 📱 **Ruthless Visualization:** Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).\n- **Tiến trình Khởi tạo mượt mà:** Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu `#24A1DE`) chạy fade-in trong `< 3 giây` với dòng text *\"Đang thiết lập Lõi Mật Mã...\"*.\n- **Input Workspace ID:** Nền glass trắng mờ, outline chuyển `#24A1DE` cùng bóng đổ mờ khi focus/active.\n- **Button Style:** Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.\n\n---\n\n## 23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)\n\nLuồng kết nối HQ và Chi nhánh được định vị tại **Admin Console > Federation**. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm \"Click & Connect\" trực quan.\n\n### Ở phía Tổng công ty (HQ Admin)\n\n1. **CTA Button:** Nút `[ + Generate Federation Invite ]` nằm góc phải trên (Primary `#24A1DE`).\n2. **Setup Modal (Slide từ trung tâm):**\n   - Tên Chi nhánh: Khung Input field thường.\n   - Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: `👁️ Chỉ Reply`, `💬 Nhắn tin`).\n   - Thời hạn Token: Slider kéo thả linh hoạt `1h — 24h` dán nhãn màu.\n3. **Kết quả (Success State):** Sinh JWT Token khổng lồ để mời Chi nhánh.\n   - Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút `[ Copy Token ]` + icon clipboard.\n\n### Ở phía Chi nhánh (Branch Admin)\n\n1. Mở Admin Console > Federation. Click `[ Join Federation Network ]`.\n2. **Modal Nhập Token:** Khung Paste lớn chiếm 50% modal. Ngay khi paste, **Lõi Rust (WASM)** phân tích realtime (<50ms) và load ra thẻ Info Card xác nhận tin cậy:\n   > ⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*.\n3. **Animation `[ Confirm & Handshake ]`:** Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick `✅ Connected` sang mảng màu xanh Success tươi sáng.\n\n---\n\n## 24. Giao diện Ép/Thêm Member (Directory Sync & Invites)\n\nThiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại **Admin Console > User Management**.\n\n### Tab 1: Directory Sync (SCIM 2.0 Tự động)\n\n**Dashboard Control (Dải Ribbon trên cùng):**\n"
+            },
+            {
+              "type": "paragraph",
+              "text": "[Trạng thái SCIM 2.0: 🟢 ACTIVE]   |   Lần đồng bộ: 2 phút trước  |  [Sync Now] [Config Rules]"
             }
           ],
           "subsections": []

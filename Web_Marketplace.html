@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraChat — Web Marketplace & Extensions</title>
+    <style>
+    
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #020617;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --accent-pink: #f472b6;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #334155;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+        .brand span { color: var(--accent-purple); }
+
+        .nav-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.8rem;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.05);
+            border-left-color: var(--accent-blue);
+        }
+
+        .main {
+            padding: 4rem 4rem;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+
+        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .scenario-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .scenario-card::before {
+            content: "USER EXPERIENCE";
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--border);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+        }
+
+        .scenario-step {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            align-items: baseline;
+        }
+
+        @media (max-width: 768px) {
+            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            text-align: right;
+        }
+
+        .tech-box {
+            background: #0f1219;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tech-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 600px;
+        }
+
+        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
+        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+        .new-way { color: var(--success); font-weight: 500; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+            }
+            .main {
+                padding: 2rem 1.5rem;
+                width: 100%;
+            }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.5rem; margin-top: 2rem; }
+        }
+        
+    
+        /* Search Box */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: var(--font-main, system-ui);
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .search-input:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .search-shortcut {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+        .nav-link.search-hidden {
+            display: none !important;
+        }
+        .search-no-results {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.8rem;
+            opacity: 0.6;
+            display: none;
+        }
+
+        /* Tech Properties */
+        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
+        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
+        
+        .badge-prop {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
+        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+
+        /* Platform Chips */
+        .platform-list {
+            margin: 0.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        .platform-chip {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <a href="#" class="brand">TeraChat <span>Web Marketplace & Extensions</span></a>
+
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
+        <span class="search-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-header">Table of Contents</div><a href="#web-marketplacemd-terachat-alpha-v030" class="nav-link" style="">Web_Marketplace.md — TeraChat Alpha v0.3.0</a>
+<a href="#changelog" class="nav-link" style="padding-left:0.8rem;">CHANGELOG</a>
+<a href="#contract-plugin-publishing-requirements" class="nav-link" style="padding-left:0.8rem;">CONTRACT: Plugin Publishing Requirements</a>
+<a href="#1-decentralized-plugin-provisioning-signature-verification" class="nav-link" style="padding-left:0.8rem;">1. Decentralized Plugin Provisioning & Signature Verification</a>
+<a href="#11-kiến-trúc-phân-phối-manifest-driven-wasm-distribution" class="nav-link" style="padding-left:0.8rem;">1.1 Kiến trúc Phân phối (Manifest-driven WASM Distribution)</a>
+<a href="#12-ed25519-signature-verification" class="nav-link" style="padding-left:0.8rem;">1.2 Ed25519 Signature Verification</a>
+<a href="#13-opa-policy-injection" class="nav-link" style="padding-left:0.8rem;">1.3 OPA Policy Injection</a>
+<a href="#14-publisher-trust-tiers" class="nav-link" style="padding-left:0.8rem;">1.4 Publisher Trust Tiers</a>
+<a href="#15-revocation-emergency-kill-switch" class="nav-link" style="padding-left:0.8rem;">1.5 Revocation & Emergency Kill-switch</a>
+<a href="#2-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration" class="nav-link" style="padding-left:0.8rem;">2. Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)</a>
+<a href="#3-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze" class="nav-link" style="padding-left:0.8rem;">3. Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</a>
+<a href="#4-automated-static-scan-security-manifest-audit" class="nav-link" style="padding-left:0.8rem;">4. Automated Static Scan & Security Manifest Audit</a>
+<a href="#5-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích" class="nav-link" style="padding-left:0.8rem;">5. Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</a>
+<a href="#nguyên-tắc-wx-write-xor-execute" class="nav-link" style="padding-left:0.8rem;">Nguyên tắc W^X (Write XOR Execute)</a>
+<a href="#capability-declaration-manifest-whitelist" class="nav-link" style="padding-left:0.8rem;">Capability Declaration (Manifest Whitelist)</a>
+<a href="#6-dlp-bypass-prevention-wasm-egress-circuit-breaker" class="nav-link" style="padding-left:0.8rem;">6. DLP Bypass Prevention — WASM Egress Circuit Breaker</a>
+<a href="#chống-kênh-rò-rỉ-ngầm-qua-data-diode-timing-covert-channel" class="nav-link" style="padding-left:0.8rem;">Chống Kênh Rò rỉ Ngầm qua Data Diode (Timing Covert Channel)</a>
+<a href="#7-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82" class="nav-link" style="padding-left:0.8rem;">7. Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)</a>
+<a href="#71-ed25519-signed-policy-bundles" class="nav-link" style="padding-left:0.8rem;">7.1 Ed25519 Signed Policy Bundles</a>
+<a href="#72-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum" class="nav-link" style="padding-left:0.8rem;">7.2 M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)</a>
+<a href="#9-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity" class="nav-link" style="padding-left:0.8rem;">9. Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</a>
+<a href="#8-static-egress-schema-declaration-manifest-contract-tapp-publisher" class="nav-link" style="padding-left:0.8rem;">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</a>
+<a href="#81-egress-schema-trong-manifestjson" class="nav-link" style="padding-left:0.8rem;">8.1 Egress Schema trong `manifest.json`</a>
+
+    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+</nav>
+
+<div class="main">
+    <h1 id="web-marketplacemd-terachat-alpha-v030">Web_Marketplace.md — TeraChat Alpha v0.3.0</h1>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Status:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ACTIVE — Implementation Reference</code></p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> Platform Engineer · Plugin/App Dev · Security Auditor</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Scope:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Plugin Lifecycle, Signature Verification, OPA Policy Distribution, WASM Runtime Limits</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Last Updated:</strong> 2026-03-11</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Depends On:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Core_Spec.md</code> §5.24 (EMIP Plugin Integrity), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> §8.1 (WASM Sandbox)</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Consumed By:</strong> Admin Console plugin management UI</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="changelog">CHANGELOG</h2>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change Summary</th>
+</tr></thead><tbody>
+<tr>
+<td>v0.3.0</td>
+<td>2026-03-11</td>
+<td>Add §4 Automated Static Scan & Security Manifest Audit; Publisher Trust Tier table</td>
+</tr>
+<tr>
+<td>v0.2.9</td>
+<td>2026-03-05</td>
+<td>Add §3 WASM Sandbox resource limits (CPU 10%, RAM 64MB cap); egress rate limiting</td>
+</tr>
+<tr>
+<td>v0.2.8</td>
+<td>2026-03-03</td>
+<td>Initial spec: §1 Decentralized Provisioning; §2 Ed25519 Signature flow; §3 OPA injection</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="contract-plugin-publishing-requirements">CONTRACT: Plugin Publishing Requirements</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> submit lên Marketplace phải pass toàn bộ các gate dưới đây trước khi được listed.</strong></p>
+<ul>
+<li>[ ] <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> <strong>phải</strong> khai báo đầy đủ: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">publisher_public_key</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> whitelist, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">permissions</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">version_hash</code> (BLAKE3).</li>
+<li>[ ] WASM bytecode <strong>phải</strong> pass Static Analysis Scanner — không có syscall nằm ngoài allowlist.</li>
+<li>[ ] Bundle <strong>phải</strong> được ký <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Ed25519</code> bởi Publisher Key đã đăng ký trên Merkle Registry.</li>
+<li>[ ] Egress endpoint <strong>phải</strong> nằm trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> whitelist — bất kỳ outbound call nào ra ngoài danh sách → bị block ở Lõi Rust.</li>
+<li>[ ] RAM usage trong Sandbox <strong>phải</strong> ≤ 64MB (softcap) — vượt ngưỡng → OOM-kill không warning.</li>
+<li>[ ] CPU usage <strong>phải</strong> ≤ 10% sustained — spike được phép nhưng không kéo dài &gt; 500ms.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="1-decentralized-plugin-provisioning-signature-verification">1. Decentralized Plugin Provisioning & Signature Verification</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Tầm nhìn:</strong> TeraChat Marketplace không phải App Store truyền thống. Đây là một <strong>Decentralized Trust Registry</strong> — nơi Publisher ký <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bằng chính Private Key của mình, TeraChat chỉ đóng vai trò xác minh chữ ký và forward. Không có server trung gian nào có thể "inject" mã độc vào plugin.</p>
+<h3 id="11-kiến-trúc-phân-phối-manifest-driven-wasm-distribution">1.1 Kiến trúc Phân phối (Manifest-driven WASM Distribution)</h3>
+<ul>
+<li>☁️ <strong>Manifest-driven WASM Distribution:</strong> Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> được đóng gói thành bundle: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{ logic.wasm, manifest.json, assets/ }</code>. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> khai báo: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">publisher_public_key</code> (Ed25519), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> (whitelist URL), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">permissions</code> (scope), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">version_hash</code> (BLAKE3 của WASM bytecode).</li>
+<li>☁️ <strong>Content-Addressed Distribution (CAS):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bundle được lưu trên Marketplace CDN theo địa chỉ nội dung <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CAS_UUID = BLAKE3(bundle_bytes)</code>. URL tải về là xác định (deterministic) — mọi thiết bị tải cùng UUID sẽ nhận byte-for-byte identical bundle. Không thể silently swap backend.</li>
+<li>☁️ <strong>Incremental Update (Delta Manifest):</strong> Khi Publisher release update, chỉ Delta manifest (diff của <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> + nếu WASM đổi thì WASM mới) được publish. Thiết bị client tải delta, verify lại BLAKE3 + Ed25519, áp dụng atomic update.</li>
+</ul>
+<h3 id="12-ed25519-signature-verification">1.2 Ed25519 Signature Verification</h3>
+<ul>
+<li>☁️ <strong>Publisher Key Registration:</strong> Publisher đăng ký <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Ed25519_PublicKey</code> trên Marketplace Registry (on-chain hoặc self-hosted Merkle Log). Key registration event được ghi vào append-only log — không thể revoke retroactively mà không để lại dấu vết.</li>
+<li>🗄️☁️ <strong>Ed25519 Digital Signature Flow:</strong></li>
+</ul>
+<ol>
+<li>Publisher sign <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SHA3-256(manifest.json || logic.wasm)</code> bằng Private Key → tạo <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">bundle.sig</code>.</li>
+<li>Marketplace server verify signature trước khi accept upload — server không thể tamper bundle vì không có Private Key.</li>
+<li>Client (Lõi Rust) verify lại signature khi install và mỗi khi Egress được yêu cầu (EMIP — xem Core_Spec.md §5.24).</li>
+</ol>
+<h3 id="13-opa-policy-injection">1.3 OPA Policy Injection</h3>
+<ul>
+<li>☁️ <strong>Manifest-to-OPA Compiler:</strong> Khi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> được install, Marketplace backend biên dịch <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> thành OPA Rego Policy và bundle kèm vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Policy này enforce: egress endpoint whitelist, max payload size, required consent level, rate limiting.</li>
+<li>☁️ <strong>Policy Version Pinning:</strong> Mỗi OPA Policy bundle được gán <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">policy_hash</code> (BLAKE3). Lõi Rust từ chối load <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nếu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">policy_hash</code> không khớp với hash được ký trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> — ngăn server-side policy swap.</li>
+<li>💻📱 <strong>Local Manifest Validation (Boot-time):</strong> Xem Core_Spec.md §5.24 EMIP cho chi tiết boot-time validation flow.</li>
+</ul>
+<h3 id="14-publisher-trust-tiers">1.4 Publisher Trust Tiers</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tier</th>
+<th>Điều kiện</th>
+<th>Egress Privilege</th>
+<th>Marketplace Badge</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Unverified</strong></td>
+<td>Chỉ có Ed25519 key</td>
+<td>HTTP GET only, no file, &lt; 1KB payload</td>
+<td>🔵 Community</td>
+</tr>
+<tr>
+<td><strong>Verified</strong></td>
+<td>KYC + Key + Review</td>
+<td>Egress file &lt; 10MB, standard consent</td>
+<td>✅ Verified</td>
+</tr>
+<tr>
+<td><strong>Enterprise</strong></td>
+<td>SOC2/ISO27001 cert</td>
+<td>Full file egress, custom consent flow</td>
+<td>🏢 Enterprise</td>
+</tr>
+<tr>
+<td><strong>TeraChat Native</strong></td>
+<td>First-party <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code></td>
+<td>Unrestricted (subject to OPA)</td>
+<td>⭐ Native</td>
+</tr>
+</tbody></table></div>
+<h3 id="15-revocation-emergency-kill-switch">1.5 Revocation & Emergency Kill-switch</h3>
+<ul>
+<li>☁️ <strong>Publisher Key Revocation:</strong> Publisher có thể revoke key bằng cách sign <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">REVOKE { key_hash, timestamp }</code> bundle bằng Master Recovery Key (stored offline). Marketplace push revocation event đến tất cả tenants — Lõi Rust nhận và disable tất cả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> từ key đó.</li>
+<li>☁️ <strong>TeraChat Emergency Suspension:</strong> Xem Function.md §9 PARA — Control Plane có thể push <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">REVOKE_TAPP</code> bundle đến toàn bộ fleet khi phát hiện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bị compromise, không cần store review hay app update.</li>
+<li>☁️ <strong>Transparency Log:</strong> Mọi sự kiện (publish, update, revocation, suspension) được ghi vào Transparency Log (append-only, Merkle-proofed). CISO của bất kỳ tenant nào có thể audit log độc lập để verify không có tampering.</li>
+</ul>
+<h2 id="2-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration">2. Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Tiện ích AI tải về từ Marketplace có thể độc hại ngầm, thu thập ngữ cảnh tài liệu và lén lút tuồn dữ liệu (Exfiltration) ra máy chủ của bên thứ ba qua các API ẩn.</p>
+<ul>
+<li>☁️ <strong>OPA Egress Whitelist (Domain & Port):</strong> Lõi Rust nhúng bộ quy tắc OPA (Open Policy Agent) trực tiếp vào ranh giới mạng của Sandbox. Bất kỳ nỗ lực mở socket nào nằm ngoài danh sách Whitelist Domain & Port đã đăng ký từ trước đều bị chặt đứt ngay lập tức ở tầng OS.</li>
+<li>📱💻 <strong>Metadata Stripping Proxy:</strong> Trước khi payload HTTP/RPC rời khỏi thiết bị đến máy chủ của Tiện ích thứ 3, nó phải đi qua Proxy Kiểm duyệt cục bộ để gọt sạch mọi siêu dữ liệu nhạy cảm (User-Agent, IP, Thiết bị, Thời gian) — không chừa lại bất kỳ dấu vết định danh nào (Fingerprinting).</li>
+<li>🗄️ <strong>BPF Syscall Trapping (Socket/File I/O):</strong> Ép khâu giám sát vào cấp độ nhân hệ điều hành bằng Kernel Seccomp-BPF. Mọi lời gọi hệ thống (Syscalls) yêu cầu mở file I/O hay tạo Socket mới đều bị Trap và đối chiếu thời gian thực (Real-time).</li>
+</ul>
+<h2 id="3-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze">3. Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Các mô hình thuật toán chạy trong WASM có thể tiêu tốn 100% CPU (CPU-Bound), làm nghẽn Event Loop và đóng băng (Freeze) giao diện nhắn tin chính.</p>
+<ul>
+<li>📱💻 <strong>WasmEdge AOT Compiler (Ahead-of-Time):</strong> Chuyển đổi toàn bộ Bytecode của WASM Plugin rườm rà sang Machine Code bản địa (Native) ngay tại thời điểm tải về. Thao tác AOT này triệt tiêu hoàn toàn độ trễ của JIT (Just-In-Time) Compiler, tăng tốc thông lượng thực thi lên gấp 5 lần.</li>
+<li>☁️ <strong>SIMD (Single Instruction, Multiple Data) Vectorization:</strong> Bật cờ phần cứng SIMD (WebAssembly SIMD128) để xử lý ma trận và phép băm mã hóa song song, giải phóng băng thông cho bộ xử lý tín hiệu lõi.</li>
+<li>🗄️ <strong>Pre-warmed WASM Instance Pool:</strong> Desktop và Server duy trì sẵn một hồ bơi (Pool) các Instance WASM đã "ngâm nóng" (Pre-warmed memory). Khi người dùng kích hoạt Plugin, thời gian Cold-Start giảm từ 300ms xuống &lt; 5ms (chấm dứt tình trạng giật cục).</li>
+</ul>
+<h2 id="4-automated-static-scan-security-manifest-audit">4. Automated Static Scan & Security Manifest Audit</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> độc hại lách luật kiểm duyệt thông qua hướng dẫn mang chữ ký hợp lệ nhưng chứa Bytecode thóa mã xượng vầt qua OPA Policy.</p>
+<ul>
+<li>☁️ <strong>Static WASM Syscall Scan (Chặn lệnh nhảy trái phép):</strong> Phân tích tĩnh toàn bộ Bytecode WASM bằng Abstract Interpretation trước khi chấp nhận Publish. Ký hiệu nhảy trực tiếp ra ngoài Sandbox (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">call_indirect</code> không khai báo) → Từ chối ngay lập tức.</li>
+<li>💻 <strong>Manifest Whitelist Enforcement (Khóa cứng allowed_domains):</strong> Trước khi nhận bandt tải lên, Marketplace vác định dạng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> và so sánh danh sách <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> với Registry Domain Whitelist — phát hiện bất kỳ domain nẳm ngoài dải cho phép ngưng Upload ngượng cưa.</li>
+<li>🗄️ <strong>Ed25519 Signed Bundle (Chứng thực CA từ TeraChat HQ):</strong> Mọi bundle <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> phải mang chữ ký hợp lệ từ ít nhất 1 trong 3 Root CA offline của TeraChat HQ. Không có chữ ký → Lõi Rust từ chối nạp.</li>
+</ul>
+<h2 id="5-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích">5. Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Lập trường Kiến trúc:</strong> Không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nào được phép yêu cầu "exception" khỏi Sandbox. Mọi Exception Policy đều phá vỡ Zero-Trust. Thay vào đó, mọi capability cần thiết đều được khai báo tường minh trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> và được OPA Policy kiểm soát.</p>
+<h3 id="nguyên-tắc-wx-write-xor-execute">Nguyên tắc W^X (Write XOR Execute)</h3>
+<ul>
+<li>📱💻 <strong>WASM No-Syscall Isolation:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> chạy trong WasmEdge runtime với profile Seccomp-BPF khắt khe — toàn bộ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">execve</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fork</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ptrace</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">socket</code> bị drop ở tầng kernel. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không thể tạo process con hay mở raw socket.</li>
+<li>📱 <strong>iOS AOT W^X Compliance:</strong> Trên iOS, WASM phải được biên dịch AOT (Ahead-of-Time) sang machine code trước khi deploy. JIT interpreter bị cấm vì vi phạm W^X policy của iOS — vùng nhớ chỉ có thể Write OR Execute, không bao giờ cả hai.</li>
+<li>📱💻 <strong>Linear Memory Isolation:</strong> Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> instance được cấp một vùng Linear Memory cô lập (max 64MB, configurable). Không có shared memory giữa các instance. Overflow sang vùng TeraChat Core → SIGSEGV + instance kill.</li>
+<li>💻 🖥️ <strong>AOT Compilation (Cranelift) & seccomp-bpf cjail:</strong> Áp dụng kiến trúc Strict AOT Architecture thay thế JIT Compilation để đóng băng nguy cơ WASM Sandbox Escape.</li>
+<li>📱 <strong>Pure Interpreter Mode (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">--jitless</code>):</strong> Kích hoạt vận hành trình thông dịch thuần túy ngăn chặn tuyệt đối can thiệp Dynamic Memory trên nền tảng di động.</li>
+<li>🗄️ <strong>ARMv9 MTE SIGSEGV Hard-Kill:</strong> Kích nổ rào chắn Hardware Memory Tagging Extension, tiêu diệt lập tức luồng tiến trình dị thường qua tín hiệu SIGSEGV.</li>
+<li>☁️ <strong>Marketplace Ed25519 Signing Gate (Publish-time):</strong> Khi Publisher submit <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>:</li>
+</ul>
+<ol>
+<li>Marketplace backend chạy Static WASM Analysis (Abstract Interpretation)</li>
+<li>Kiểm tra <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> capability list vs. OPA Policy Registry</li>
+<li>Nếu pass → ký bundle bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TeraChat_Marketplace_CA_Key</code> (Ed25519)</li>
+<li>Bundle unsigned hoặc capability khai báo không khớp bytecode → reject, không refund</li>
+</ol>
+<h3 id="capability-declaration-manifest-whitelist">Capability Declaration (Manifest Whitelist)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Capability</th>
+<th>Điều kiện cấp phép</th>
+<th>Default</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">network.egress</code></td>
+<td>Chỉ domain list trong manifest</td>
+<td>❌ Blocked</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">clipboard.read</code></td>
+<td>User consent per-session</td>
+<td>❌ Blocked</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">file.read</code></td>
+<td>Explicit user file picker</td>
+<td>❌ Blocked</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">crypto.sign</code></td>
+<td>Publisher Ed25519 identity proof</td>
+<td>❌ Blocked</td>
+</tr>
+<tr>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">push.notify</code></td>
+<td>Admin whitelist per-tenant</td>
+<td>❌ Blocked</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>📱💻 <strong>Runtime Capability Check:</strong> Mọi syscall từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> đều bị intercept tại WASM host function boundary. Rust Core kiểm tra <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">granted_capabilities</code> trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OPA Policy</code> trước khi forward. Capability không được khai báo → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PermissionDenied</code> error về sandbox, không crash app.</li>
+</ul>
+<h2 id="6-dlp-bypass-prevention-wasm-egress-circuit-breaker">6. DLP Bypass Prevention — WASM Egress Circuit Breaker</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Lỗ hổng:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> độc hại có thể tích lũy dữ liệu chat qua nhiều callback nhỏ (Salami Attack) và exfiltrate qua endpoint hợp lệ trong whitelist nhưng với payload bất thường.</p>
+<ul>
+<li>☁️ <strong>Automated WASM O-LLVM Scan (Pre-publish):</strong> Marketplace backend chạy LLVM IR analysis trên WASM bytecode: phát hiện data accumulation pattern (buffer tăng dần qua multiple calls), obfuscated string construction, unusual control flow graph. Plugin nghi ngờ → manual security review queue.</li>
+<li>💻🖥️ <strong>OPA Policy Engine Firewall (Runtime):</strong> Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress</code> call từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bị OPA intercept tại Rust boundary. OPA check: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">payload_size</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">destination_domain</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">call_frequency_per_minute</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cumulative_bytes_per_session</code>. Vi phạm bất kỳ threshold → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EgressBlocked</code>.</li>
+<li>📱💻 <strong>Byte-Quota Circuit Breaker (4096 Bytes Threshold):</strong> Hard limit mỗi egress call = <strong>4096 Bytes</strong>. Bất kỳ attempt gửi payload &gt; 4KB → Circuit Breaker ngắt kết nối ngay, log <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EgressQuotaExceeded {plugin_id, bytes_attempted, timestamp}</code> vào Tamper-Proof Audit Log (Ed25519 signed). Sau 3 vi phạm trong 1 session → plugin bị terminate và quarantine.</li>
+<li>☁️ <strong>Cumulative Session Quota:</strong> Tổng egress của 1 <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> instance trong 1 session không được vượt <strong>512KB</strong>. Vượt ngưỡng → tự động suspend instance, alert Admin Console.</li>
+<li>📱💻 <strong>No Persistent Storage Egress:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không được phép read từ local persistent storage rồi immediate egress. Pipeline <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">storage.read → network.write</code> phải có user consent dialog intervene per attempt.</li>
+</ul>
+<h3 id="chống-kênh-rò-rỉ-ngầm-qua-data-diode-timing-covert-channel">Chống Kênh Rò rỉ Ngầm qua Data Diode (Timing Covert Channel)</h3>
+<ul>
+<li>💻 🖥️ <strong>Strict Token Bucket & Ring Buffer:</strong> Áp đặt Time-Laundering với Constant-Rate Egress Shaper dập tắt nhiễu loạn băng thông triệt tiêu Kênh rò rỉ ngầm (Timing Covert Channel).</li>
+<li>💻 🖥️ <strong>5ms Fixed-Interval Dispatch Metronome:</strong> Cưỡng chế nhịp độ xuất phát gói tin cố định che giấu tín hiệu phân tích tần suất gửi từ Data Diode.</li>
+<li>💻 🖥️ <strong>ChaCha20 Cryptographic Noise Padding:</strong> Bơm đệm ngẫu nhiên ngụy trang kích thước Payload gốc vô hiệu hóa thuật toán dò thám dung lượng gói tin.</li>
+</ul>
+<h2 id="7-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82">7. Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Mối đe dọa:</strong> Insider threat hoặc kẻ tấn công chiếm quyền Admin có thể sửa OPA Policy để tắt DLP, mở egress whitelist hoặc leo thang đặc quyền.</p>
+<h3 id="71-ed25519-signed-policy-bundles">7.1 Ed25519 Signed Policy Bundles</h3>
+<ul>
+<li>☁️ <strong>Signed OPA Bundle:</strong> Mọi OPA Policy bundle (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tar.gz</code>) phải được ký bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise_CA Ed25519 key</code> trước khi distribute. Lõi Rust trên mọi client verify signature khi boot và khi nhận policy update — policy không có chữ ký hợp lệ bị reject toàn bộ, không apply partial.</li>
+<li>☁️ <strong>Content-Hash Pinning:</strong> Sau khi verify signature, Lõi Rust tính BLAKE3 hash của policy bundle và pin vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">policy_hash_registry</code>. Mọi runtime OPA evaluation check <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">active_policy_hash</code> khớp pin — tránh in-memory policy tampering.</li>
+<li>🗄️ <strong>Tamper-Proof Audit Log (Policy Changes):</strong> Mọi thay đổi policy (upload bundle mới, revoke policy) đều được append vào Ed25519-signed Audit Log Merkle Chain. Không thể xóa lịch sử thay đổi mà không phá vỡ chain.</li>
+</ul>
+<h3 id="72-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum">7.2 M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Không có cá nhân đơn lẻ nào — kể cả CEO hay CISO — có thể đơn phương thay đổi OPA Policy sản xuất.</strong></p>
+<ul>
+<li>🗄️📱 <strong>HSM Quorum M-of-N (mặc định 2/3):</strong> Policy bundle mới phải được ký bởi ít nhất <strong>2 trong 3</strong> Hardware Security Key (YubiKey 5 FIPS / NFC-backed device) thuộc các C-Level khác nhau: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CISO</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CTO</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Legal</code>. Thiếu chữ ký → bundle bị server từ chối deploy.</li>
+<li>🗄️ <strong>Offline Signing Ceremony:</strong> CISO và CTO ký offline (air-gapped laptop) bằng HSM. Legal ký online qua NFC NitroKey. Ba chữ ký được aggregate bằng Ed25519 Multi-Signature scheme (Ristretto255 schnorr) → một bundle signature duy nhất.</li>
+<li>💻🖥️ <strong>Local OPA Enforcement in WASM Sandbox:</strong> Mỗi client <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> runtime sử dụng OPA WASM build (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">opa_wasm</code>) để enforce policy locally mà không cần round-trip server. WASM OPA binary được hash-pin và phân phối cùng với policy bundle — không thể substitute OPA engine.</li>
+<li>☁️ <strong>Policy Rollback Protection (Monotonic Version Counter):</strong> Policy bundle chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">version: u64</code> (monotonic, không thể giảm). Nếu server cố push bundle version nhỏ hơn version hiện tại của client → client từ chối và alert <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">POLICY_ROLLBACK_ATTACK</code> vào Audit Log.</li>
+</ul>
+<h2 id="9-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity">9. Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Vấn đề:</strong> Triển khai mạng diện rộng VPS Enclave (SGX/Nitro/SEV) để load logic <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Heavyweight đòi hỏi chứng chỉ DevOps/SME rất lớn, tạo rào cản quá cao cho doanh nghiệp tự host (Self-hosted).</p>
+<ul>
+<li>💻 <strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> CLI (Zero-Touch Provisioning):</strong> Bọc toàn bộ các vòng lặp tay biên dịch hệ thống. IT Admin thuộc doanh nghiệp chỉ cần cung cấp Access Key (AWS/GCP), gõ 1 lệnh CLI, mọi tham chiếu Cloud sẽ tự động map 100%.</li>
+<li>☁️ <strong>Infrastructure as Code (Terraform):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> kích hoạt tự động các module ☁️ Terraform (đã pre-audited bởi TeraChat Core Team). Tự động spin-up EC2 Nitro Enclaves, set up VPC isolation, TLS Passthrough rule, và IAM roles với Least Privilege (Giới hạn quyền hẹp nhất có thể).</li>
+<li>🗄️ <strong>Enclave Image Format (EIF) Auto-Build:</strong> Tiến trình Build Pipeline dịch Lõi Server Rust thành 🗄️ Enclave Image Format (EIF) và băm tĩnh ra các mã PCR (Platform Configuration Register) hash. Các mã này sẽ auto-inject trực tiếp vào OPA Policy Trust Store — CISO có checklist để apply mà không cần hiểu tầng Base Assembly.</li>
+</ul>
+<h2 id="8-static-egress-schema-declaration-manifest-contract-tapp-publisher">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Yêu cầu:</strong> Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> muốn publish lên TeraChat Marketplace <strong>bắt buộc</strong> khai báo tĩnh JSON Schema của tất cả payload dự định gửi qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Egress_Outbox</code>. Không khai báo = không được publish.</p>
+<h3 id="81-egress-schema-trong-manifestjson">8.1 Egress Schema trong `manifest.json`</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>{
+  "tapp_id": "crm-integration-v2",
+  "publisher": "Acme Corp",
+  "egress_schemas": [
+    {
+      "endpoint": "api.acme.com/summarize",
+      "method": "POST",
+      "tls_pin": "sha256/ABC123...",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "summary": { "type": "string", "maxLength": 2048 },
+          "ticket_id": { "type": "string", "pattern": "^TKT-[0-9]+$" }
+        },
+        "required": ["summary", "ticket_id"],
+        "additionalProperties": false
+      },
+      "max_payload_bytes": 4096
+    }
+  ]
+}</code></pre></div>
+<ul>
+<li>📱💻🖥️ <strong>Schema Bắt buộc trong Manifest:</strong> Mỗi endpoint egress phải có: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">endpoint</code> (domain), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tls_pin</code> (SHA-256 HPKP), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">schema</code> (JSON Schema Draft 7), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">max_payload_bytes</code> (tối đa 4096). Thiếu bất kỳ field nào → CI/CD Marketplace pipeline reject.</li>
+<li>📱💻🖥️ <strong>Runtime Schema Validation (Egress Daemon):</strong> Trước khi dispatch HTTP request, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera_egress_daemon</code> deserialize Outbox payload và validate chống JSON Schema đã khai báo trong Manifest (sử dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">jsonschema</code> Rust crate). Payload không khớp schema → drop + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EGRESS_SCHEMA_VIOLATION</code> alert + audit log.</li>
+<li>☁️ <strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">additionalProperties: false</code> Enforced:</strong> Egress Daemon thêm thêm rule <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">additionalProperties: false</code> vào mọi schema khi validate — kể cả Developer quên khai báo. Điều này ngăn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nhồi thêm key-value secret vào payload mà không khai báo.</li>
+<li>🗄️ <strong>Marketplace Pre-publish Schema Audit:</strong> Trước khi bundle được ký và publish, Marketplace Backend chạy static analysis: kiểm tra schema có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">maxLength</code> cho mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">string</code> field (ngăn dump toàn bộ conversation), kiểm tra không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">type: "any"</code>, không có schema <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{}</code> rỗng. Vi phạm → require manual security review.</li>
+<li>📱💻 <strong>BLAKE3 Hash Verification Chain:</strong> Payload bytes sau khi qua JSON Schema validation → Egress Daemon tính <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BLAKE3(validated_payload)</code> → đối chiếu với hash Lõi Rust cấp trước đó → mismatch = tampering detected → block + alert. Đây là lớp bảo vệ cuối cùng trước khi data ra Internet.</li>
+</ul>
+
+    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
+                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
+        <p>TeraChat Enterprise OS &copy; 2026</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('tocSearch');
+    const noResults = document.getElementById('searchNoResults');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    // Filter TOC on input
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        navLinks.forEach(function(link) {
+            if (!query) {
+                link.classList.remove('search-hidden');
+                visibleCount++;
+            } else {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    link.classList.remove('search-hidden');
+                    visibleCount++;
+                } else {
+                    link.classList.add('search-hidden');
+                }
+            }
+        });
+
+        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
+    });
+
+    // Ctrl+K shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

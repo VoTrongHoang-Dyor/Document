@@ -607,6 +607,9 @@
 - 📱💻🖥️ **Zero-Copy IPC (SharedArrayBuffer / JSI):** Dữ liệu nhạy cảm di chuyển giữa các process (Core ↔ UI) qua Shared Memory Buffer — không serialize/copy qua message queue. Giảm số bản copy plaintext trong RAM từ N xuống 1. Buffer được `ZeroizeOnDrop` ngay sau khi consumer đọc xong.
 - 💻🖥️ **BitLocker/FileVault Enforcement:** Rust Core kiểm tra trạng thái Disk Encryption khi khởi động. Nếu `BitLocker == OFF` (Windows) hoặc `FileVault == OFF` (macOS) → từ chối khởi động và hiển thị `SECURITY_POLICY_VIOLATION`. Không có exception.
 - 🗄️ **Server RAM Isolation (NUMA-aware + Memory Guard Page):** Vùng nhớ chứa Master Key được cấp phát trên NUMA node riêng biệt với Guard Page trên 2 đầu. Bất kỳ truy cập ngoài biên → SIGSEGV ngay lập tức → process crash + Core Dump encrypted → alert CISO.
+- 🗄️ **Secure Enclave / TPM 2.0 Device_Key Binding:** Khóa gốc `Device_Key` tuyệt đối không bao giờ được thiết kế để xuất ra khỏi phần cứng. Khóa này bị ép kỹ thuật phần cứng (Bound) để tồn tại độc nhất trong Hardware Security Module. Quá trình tính toán mật mã luôn bị ép phải thực hiện phía trong vùng an toàn (TEE Bindings).
+- 🗄️ **CPU Registers Ephemeral Key Storage:** Các chìa khóa tạm thời (Ephemeral Key) chỉ được phép nạp trực tiếp vào các thanh ghi CPU (Register-level) mà không cấp phát xuống RAM, miễn nhiễm hoàn toàn với các cuộc tấn công khai thác DMA (Direct Memory Access) hay nhổ RAM vật lý.
+- 💻📱 **Inline RAM Scrambling (ChaCha8 Keystream XOR):** Chống lại Trích xuất RAM lạnh (Cold Boot Attack) bằng thiết kế Software-defined RAM Scrambling. Bất kỳ Plaintext nào tồn tại quá 1ms trong mảng nhớ cấp phát sẽ bị mã hóa tức thời (XORed) bằng một dòng chảy ngẫu nhiên (Keystream) ChaCha8. Điều này làm cho kẻ tấn công dù có đóng băng RAM và can thiệp bằng Nitơ lỏng cũng chỉ thu thập được đống dữ liệu rác vô nghĩa.
 
 #### OOB Symmetric Push Ratchet song song với TreeKEM (Push Notification siêu nhẹ)
 
@@ -700,6 +703,9 @@ Step 3 │ WebSocket Secure (wss:// over TCP:443)
 - ☁️🗄️ **Terraform/Helm Chart cho IT Admin:** TeraChat cung cấp sẵn file `terraform/network-policy.tf` và `helm/values-network.yaml` khai báo rõ: `udp_port_443: optional` + `tcp_port_443: required` + Token Bucket Rate-Limit config chống UDP Amplification. IT Admin của Ngân hàng có toàn quyền quyết định enable UDP hay không — TeraChat không lách luật.
 - 📱💻 **Strict Compliance Mode (No UDP Probe):** Khi Admin kích hoạt `Strict Compliance Network Mode` trên CISO Console, Client bỏ qua Step 1 hoàn toàn, kết nối thẳng bằng gRPC TCP — tiết kiệm 50ms probe time trong môi trường Firewall đã biết chắc DROP UDP.
 - ☁️ Áp dụng QUIC-Pinning State Machine ở chế độ Strict Compliance Mode chặn Protocol Downgrade Attack (QUIC → WSS).
+- ☁️ **Strict ALPN Enclave & HTTP/3 QUIC (ISO 27001 A.14.1.2):** Để chống Tấn công giáng cấp mạng (Downgrade Attack) trên Custom Socket, cô lập quá trình ngầm định danh (Handshake) thông qua tầng Strict ALPN với thông số `h3` hoặc giao thức siêu nhẹ `Noise_XX_25519_ChaChaPoly_BLAKE2s`. Sự bất đối xứng trong khai báo đầu cuối sẽ đá văng mọi máy chủ mạo danh.
+- ☁️ **SHA-256 Certificate Pinning (rustls Strict Compliance):** Khóa cứng (HPKP) dấu vân tay SHA-256 của chứng chỉ vào cấu trúc nhị phân của Lõi Rust. Phân tử `rustls` sẽ lập tức Reject kết nối nếu Server dâng lên chứng thư ngoại lai, dù cho Root CA đó có hợp pháp ở cấp độ OS.
+- 💻 **Socket Panic Circuit Breaker:** Khi phát hiện có dấu hiệu giáng cấp mạng hoặc Handshake bị thao túng liên tục, Cầu dao (Circuit Breaker) cắt đứng luồng Socket Panic, từ chối cấp phát kết nối TCP/UDP mới trong 30 giây để bảo toàn Plaintext.
 - ☁️ Kích hoạt Network Circuit Breaker để vứt bỏ các kết nối có dấu hiệu tấn công.
 - ☁️ Sử dụng HTTP/3 Stream QUIC Tunneling bảo mật để ngụy trang lưu lượng mạng.
 
@@ -845,6 +851,9 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Direct-Link Only Media (File/Video):** Trong `Mesh Mode`, Lõi Rust đóng băng công năng định tuyến multi-hop đối với mọi tệp tin nặng nề. Dữ liệu băng thông cao bắt buộc giao dịch P2P Wi-Fi Aware khép kín chỉ khi 2 máy chạm bán kính trực diện (< 20 mét). Khung UI hiển thị "Chỉ gửi file khi ở gần".
 - 📱 **Passive Network Sensing (Cảm biến Mạng Thụ động):** Vận dụng bộ ngắm OS Native (`NWPathMonitor` iOS / `ConnectivityManager` Android) để bắt sự kiện luồng sóng tắt / mở Baseband. Đánh thức Tầng Logic Swift/Kotlin thay vì rượt vòng lặp dò quét tiêu pin điên cuồng ở lớp Lõi Rust, kéo mức Base Energy Consumption sát 0.
 - 📱💻🖥️ **BLE Duty-Cycle Management:** Răm rắp duy trì thuật toán vắt kiệt cường độ xung quét BLE: Tỉnh lược 200ms Advertising/Scanning xen lẫn 800ms chu kỳ Sleep để giảm hỏa 80% công suất tải ăn nguồn. Kết cấu Heartbeat Advertising rời rạc kết nạp linh động MTU Fragmentation cực hẹp.
+- 📱 💻 **Store-and-Forward Routing & Gossip Protocol:** Thực thi Asynchronous Data Muling định tuyến phi đồng bộ giải phóng ách tắc Phân mảnh Mesh Island do chia cắt vật lý.
+- 📱 **E2EE MLS Merkle DAG Diffs (Zstandard) qua Wi-Fi Direct:** Trao đổi gói nén trạng thái dị biệt đa thức đảm bảo kết nối mạng ngang hàng.
+- 💻 **UI Mesh Mode Radar Bridge Synced Event:** Đồng bộ hóa tín hiệu biến tập hợp hiển thị giao diện tức thời nối liền đảo mạng.
 
 #### Tối ưu hóa Băng thông Mạng lưới Sinh tồn (Hybrid Multipath Transport Plane)
 
@@ -1072,6 +1081,9 @@ trait MeshTransport: Send + Sync {
 - ☁️📱 **MLS Epoch-bound Forward Secrecy:** Mỗi Shun command và Proof_Bundle bị ràng buộc với MLS Epoch hiện tại. Khi MLS Key Rotation xảy ra (epoch tăng), toàn bộ bằng chứng từ epoch cũ trở thành **invalid** — không thể recycled để cáo buộc trong epoch mới.
 - 💻📱 **24h Temporal Validation Window:** Lõi Rust duy trì một Bloom Filter lưu `Evidence_Hash` trong 24h. Bất kỳ `Proof_Bundle` có hash đã tồn tại trong Bloom Filter → từ chối ngay với lỗi `EVIDENCE_REPLAYED`. Bloom Filter tự xóa sạch mỗi 24h để tránh tích lũy bộ nhớ.
 - 📱 **Monotonic Hardware Counter Binding:** Trên iOS (Secure Enclave), mỗi `Proof_Bundle` được gắn thêm giá trị từ **Monotonic Counter** của Secure Enclave — bộ đếm phần cứng không thể đặt lại (rollback-proof). Nếu Counter trong Proof_Bundle thấp hơn giá trị hiện tại của thiết bị phát hiện → cờ `COUNTER_ROLLBACK`, reject.
+- 📱 💻 🖥️ **Physical Time Bounded Drift Truncation (± 5s):** Đóng gói biên độ Bounded Drift Tolerance loại bỏ bóc tách Time-Drift Attack đánh sập HLC Timestamp.
+- 📱 💻 🖥️ **Merkle DAG Topological Override:** Triển khai cưỡng chế DAG Topological Enforcement niêm phong trật tự đồ thị dữ liệu trước âm mưu tua ngược thời gian.
+- 📱 💻 🖥️ **Byzantine_Fault Hash-Chain Validation:** Xác thực chuỗi băm chống nhiễu loạn Byzantine chặn đứng các Node phát hành Timestamp giả mạo.
 
 #### Quản lý Danh tính & Hạn mức Mesh (Hardware-bound Offline Trust Tokens)
 
@@ -1142,6 +1154,10 @@ trait MeshTransport: Send + Sync {
 - 📱💻 Cấu hình `Online_Ratchet_Tree`: Ràng buộc định tuyến qua TCP/WebSocket. Xoay khóa TLS/MLS liên tục, hardcode `Max_Gap = 2000` messages.
 - 📱💻 Cấu hình `OOB_Mesh_Ratchet`: Bypass luồng online nếu `Is_Mesh = True`. Sinh `Mesh_Session_Key` qua quá trình X3DH đã thiết lập trước.
 - 📱💻 Thiết lập CRDT Vector Clock. Khi reconnect Internet, trigger hàm Rust hợp nhất (merge) Mesh State vào Online State. Zeroize RAM ngay sau khi merge để chống OOM do jump KDF.
+- 📱 💻 **Noise Protocol Framework & Double Ratchet (PFS):** Triển khai Perfect Forward Secrecy bảo vệ Device_Key trước rủi ro trích xuất khóa qua Spectre/Meltdown v2 — mỗi phiên sinh một luồng Ephemeral Key hoàn toàn mới.
+- 📱 💻 **X25519 Ephemeral Keypair in RAM:** Cấp phát cặp khóa X25519 ngắn hạn độc lập trên heap RAM, không lưu vào disk hay Secure Enclave, ngắt hoàn toàn attack surface vật lý.
+- 📱 💻 **Ephemeral Key Zeroization (0x00):** Cưỡng chế ghi đè toàn bộ vùng nhớ khóa phiên bằng byte 0x00 ngay sau khi phiên kết thúc, triệt phá khả năng phục hồi qua cold-boot hay DMA dump.
+
 
 ### 5.12 Phân xử Phi tập trung Hậu phân mảnh mạng (Tie-Breaker Hash Election)
 
@@ -1198,6 +1214,9 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Append-Only Tuyệt đối không Rollback:** Mọi sự kiện (Tin nhắn, Xóa, Sửa, Rời nhóm, Đổi quyền) đều là các mắt xích gắn chặt vào chuỗi băm (Hash Chain) một chiều. Cơ chế Append-Only cấm tuyệt đối việc rollback hay chỉnh sửa dữ liệu quá khứ.
 - 📱💻🖥️ **Cấu trúc DAG Tham chiếu Phân nhánh (Tombstone References):** Các phân nhánh đứt gãy hoặc sự kiện bị xóa không bao giờ bị xóa bỏ vật lý khỏi DB ngay lập tức. Chúng được lưu dưới dạng các nút tham chiếu mới (Tombstone Stub) móc nối vào DAG, bảo toàn hoàn hảo đường đi của dữ liệu.
 - 📱💻🖥️ **Byzantine Fault Tolerance Hồi phục Frontier Hợp lệ:** Mạng duy trì một "Frontier" hợp lệ và có khả năng tự chữa lành (Self-healing). Mọi thao tác dối trá bẻ cong lịch sử sẽ lập tức bị mạng lật tẩy và reject thông qua việc xác thực bắt buộc bằng chữ ký Ed25519 của tác giả trên từng mắt xích.
+- ☁️ **Ed25519 Cryptographic Signature Audit Log (ISO 27001 A.10.1.1):** Ký số bất đối xứng Ed25519 trên mọi entry nhật ký Audit Log — đảm bảo tính nguyên vẹn tuyệt đối của mọi sự kiện, chống giả mạo và thao túng lịch sử Audit bởi Insider Threat.
+- ☁️ **HLC Real-time Time-stamping:** Gắn nhãn thời gian HLC (Hybrid Logical Clock) thời gian thực cho mọi entry nhật ký, đảm bảo thứ tự nhân quả bất biến dù Server clock bị thao túng.
+
 
 ### 5.18 Chống Rò rỉ `Company_Key` qua WASM Sandbox — Kiến trúc Data Diode (ISO 27001 A.6.1.2 / A.13.1.3)
 
@@ -1208,6 +1227,13 @@ trait MeshTransport: Send + Sync {
 - 🖥️💻 **Desktop/Server — `mlock()` / `VirtualLock()`:** Lõi Rust ghim cứng toàn bộ vùng nhớ `Company_Key`, `Session_Key`, `Epoch_Key` vào RAM vật lý — chống Paging, chống Memory Dump, chống Cold DMA Attack. `mlock()` giới hạn: `ulimit -l` được set 512MB trên daemon.
 - 📱 **Mobile — ZeroizeOnDrop (RAII) thuần túy:** **Tuyệt đối không gọi `mlock()` trên iOS/Android** — iOS NSE giới hạn 24MB RAM, gọi `mlock()` → Jetsam OOM-Kill ngay lập tức. Thay thế: `zeroize::ZeroizeOnDrop` RAII tự động overwrite `0x00` ngay khi biến ra khỏi scope. Kết hợp `kCFAllocatorMallocZone` (iOS) để che giấu allocation khỏi Crash Dump. Window rò rỉ RAM < 5ms.
 - 📱💻🖥️ **ZeroizeOnDrop (Bắt buộc cho mọi platform):** Trait `ZeroizeOnDrop` là hard requirement. Mọi struct chứa key material phải implement trait này. Nếu không: CI/CD pipeline fail build.
+- 💻 📱 🖥️ **sqlite3_vfs Custom Wrapper (Ephemeral VFS RAM-Drive & Memory Locking):** Triển khai `sqlite3_vfs` tùy chỉnh định hướng toàn bộ I/O vào RAM-Drive (Volatile Memory) kết hợp Memory Locking — loại bỏ hoàn toàn rủi ro Forensic Extraction khai thác qua NAND Wear-Leveling (ISO 27001 A.8.3.2).
+- 💻 📱 🖥️ **mmap() MAP_ANONYMOUS | MAP_PRIVATE Volatile Memory:** Dữ liệu SQLite được neo thẳng vào RAM qua mapping ẩn danh Private. Đảm bảo DB sống 100% trên bộ nhớ khả biến mà không dây dưa tới physical disk blocks.
+- 💻 🖥️ **mlock() Anti-Swap/Page-out:** Khóa chặt phân vùng RAM chứa VFS này bằng `mlock()` ngay lập tức để OS tuyệt đối không Swap/Page-out DB xuống Disk (trên Mobile sẽ fallback về ZeroizeOnDrop để tránh Jetsam).
+- 💻 **Linux / Android memfd RAM-Drive:** Tạo vùng nhớ vô danh `memfd_create()` qua libc — DB session không bao giờ chạm đến NAND và biến mất khi tiến trình kết thúc.
+- 💻 📱 **macOS / iOS MAP_ANON | MAP_SHARED:** Lật ngược giới hạn Sandbox bằng mmap anonymous ẩn giấu DB trong RAM Volatile, chặn đứng đường tấn công Forensic qua iTunes Backup.
+- 🗄️ **ZeroizeOnDrop Hardware Memory Purge:** Kết hợp `ZeroizeOnDrop` RAII với tín hiệu phá hủy phần cứng (Secure Enclave Wipe) thực hiện purge tầng vật lý, triệt phá mọi dấu vết plaintext trên DRAM ngay cả khi bị cold-boot.
+
 
 #### Data Diode Architecture — Tách vật lý Crypto Core khỏi .tapp Network
 
@@ -1518,6 +1544,9 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 💻 **SIMD/Neon Intrinsics ZeroizeOnDrop:** Khai thác tập lệnh vector (SIMD/Neon) để tăng tốc độ ghi đè `0x00` tiêu hủy trang nhớ ngay trong tích tắc (ZeroizeOnDrop) trước khi ngắt tiến trình.
 - 🗄️ **PRAGMA cipher_memory_security = ON:** Bắt buộc kích hoạt cờ bảo mật này kết hợp với VFS cấp thấp, đảm bảo mọi cache page của SQLCipher không bao giờ bị Paging OS dội xuống SSD Swap.
 - 💻 **macOS FileVault Integration:** Trên macOS, các thành phần tệp phụ trợ phải nằm trong thư mục được FileVault 2 (XTS-AES-128) mã hóa, cộng thêm lớp SQLCipher bên trên (Double Encryption layer).
+- 📱 **OOM-Kill Prevention (Atomic Flush Threshold):** Để giải quyết bài toán OOM-Kill do Ephemeral VFS nuốt RAM trên các thiết bị cũ, triển khai API `sqlite3_wal_checkpoint_v2` với luồng `SQLITE_CHECKPOINT_TRUNCATE` giới hạn ở mức 16MB. Khi WAL rượt tới ngưỡng này, hệ thống sẽ chốt và xả dữ liệu dứt khoát.
+- 📱 **XChaCha20-Poly1305 Chunking Encryption:** Chia nhỏ khối dữ liệu RAM-Drive thành các Chunk mã hóa XChaCha20-Poly1305 tốc độ cao, ngăn chặn việc phân bổ RAM cục bộ nguyên mảng lớn.
+- 📱 **SIMD 0x00 Ring Buffer Memory Pool:** Tái sử dụng lại các trang nhớ thông qua kỹ thuật Ring Buffer Memory Pool, kết hợp lệnh SIMD để xóa vết nguyên khối (`0x00`) với chi phí O(1) ngay trước khi trả lại Heap, đảm bảo vòng xoay bộ nhớ không làm nổ GC.
 
 ### 4.10 Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)
 

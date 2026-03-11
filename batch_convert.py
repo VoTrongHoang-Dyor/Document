@@ -21,6 +21,7 @@ TARGET_FILES = [
     "Design.md",
     "Core_Spec.md",
     "BusinessPlan.md",
+    "Web_Marketplace.md",
 ]
 
 TITLES = {
@@ -30,6 +31,7 @@ TITLES = {
     "Design.md":        "TeraChat — Product Requirements Document",
     "Core_Spec.md":     "TeraChat — Core Technical Specification",
     "BusinessPlan.md":  "TeraChat — Business Plan & GTM Strategy",
+    "Web_Marketplace.md": "TeraChat — Web Marketplace & Extensions",
 }
 
 # ──────────────────────────────────────────
