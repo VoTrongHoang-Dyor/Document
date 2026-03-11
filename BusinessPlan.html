@@ -557,7 +557,7 @@
 <li>☁️🗄️ <strong>Zero Storage Cost Model:</strong> File 10GB của doanh nghiệp được mã hóa từng chunk 2MB và đẩy thẳng lên <strong>AWS S3 / MinIO riêng của doanh nghiệp</strong> (BYOS — Bring Your Own Storage). TeraChat VPS chỉ relay metadata Stub (&lt; 512 bytes) và Merkle Root Hash — không một byte nào của video 10GB chạm vào hạ tầng Terachat.</li>
 <li>📱💻🖥️ <strong>Streaming Encryption = Chi phí Server ~0:</strong> Lõi Rust dùng Streaming AEAD (không Monolithic Encryption) — mã hóa và đẩy từng chunk 2MB. Không cần server buffer toàn bộ plaintext, không cần RAM server &gt; 10GB. CPU overhead trên VPS là 0 cho tác vụ này.</li>
 <li>📱💻🖥️ <strong>Wi-Fi Direct Local Bypass:</strong> Nếu 2 nhân viên cùng phòng, file 10GB đi P2P qua Wi-Fi Direct tốc độ <strong>~1Gbps</strong> (~80 giây) — không qua Internet, không qua Cloud, băng thông WAN = <strong>0 bytes consumed</strong>. Đây là điểm độc nhất vô nhị không một SaaS competitor nào có thể làm được.</li>
-<li>☁️ <strong>Pitch to CISO/CTO:</strong> <em>"Chúng tôi bán giải pháp mã hóa dòng (Streaming Encryption Pipeline). Dữ liệu của bạn ở lại trên hạ tầng của bạn. Chúng tôi tính phí trên số lượng người dùng, không phải trên gigabyte."</em> — Đây là lập luận chốt hạ với mọi Enterprise có phòng Compliance yêu cầu Data Residency.</li>
+<li>☁️ <strong>Pitch to CISO/CTO:</strong> <em>"Chúng tôi bán giải pháp mã hóa dòng (Streaming Encryption Pipeline). Dữ liệu của bạn ở lại trên hạ tầng của bạn. Chúng tôi tính phí theo năm, không phải trên gigabyte."</em> — Đây là lập luận chốt hạ với mọi Enterprise có phòng Compliance yêu cầu Data Residency.</li>
 </ul>
 <ul>
 <li>Desktop app mở trong &lt; 500ms không cần Internet.</li>
@@ -932,9 +932,9 @@ sudo bash /tmp/install.sh --token=[License_Key]</code></pre></div>
 <p><em>Tài liệu này chỉ chứa chiến lược kinh doanh, doanh thu, licensing và GTM. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PRD.md</code> cho product features & user flows. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">TechSpec.md</code> cho technical implementation.</em></p>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="7-chính-sách-thu-hồi-tài-nguyên-định-danh-deterministic-resource-reclamation-sla">7. Chính sách Thu hồi Tài nguyên Định danh (Deterministic Resource Reclamation SLA)</h2>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Vị trí:</strong> Hề thống Generational Handle &amp; Seqlock không chỉ là kỹ thuật bảo mật — chúng là căn cứ pháp lý để TeraChat cam kết Zero Bandwidth Cost trên Marketplace.</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Vị trí:</strong> Hệ thống Generational Handle &amp; Seqlock không chỉ là kỹ thuật bảo mật — chúng là căn cứ pháp lý để TeraChat cam kết Zero Bandwidth Cost trên Marketplace.</p>
 <ul>
-<li>☁️ <strong>Generational Handle SLA Binding:</strong> Một hợp đồng Perpetual License chỉ được ký sau khi Publisher cam kết tuân ủ chuẩn Generational Handle Valđatịn đối với mọi API call ra ngoài WASM Sandbox — trách nhiệm rò rỉ bộ nhớ chuyển sang Publisher.</li>
+<li>☁️ <strong>Generational Handle SLA Binding:</strong> Một hợp đồng Perpetual License chỉ được ký sau khi Publisher cam kết tuân thủ chuẩn Generational Handle Validation đối với mọi API call ra ngoài WASM Sandbox — trách nhiệm rò rỉ bộ nhớ chuyển sang Publisher.</li>
 <li>💻 <strong>Memory Quota Audit cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Marketplace:</strong> Tại Admin Console, CISO có thể tra cứu tâm Resident Memory hiện tại của từng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> đang chạy kèm số lần GC Cycle và Total Reclaimed Bytes; không cần công cụ thứ 3.</li>
 <li>🗄️ <strong>Zero Bandwidth Cost (Kiểm soát Vòng đời RAM):</strong> Chính sách <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">munmap()</code> chủ động kết hợp Generational Slot Reclaim loại bỏ hoàn toàn cấu trúc GC-dựa — CPU footprint cho Enterprise Tier ≤ 3% so với model WebSocket-over-Bridge truyền thống.</li>
 </ul>
@@ -948,15 +948,15 @@ sudo bash /tmp/install.sh --token=[License_Key]</code></pre></div>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Khách hàng mục tiêu:</strong> Quốc phòng, Tình báo, Hạ tầng Trọng yếu (CNTT) không thể tồn tại Online.</p>
 <ul>
 <li>🗄️ <strong>Cấu hình Vật lý HSM Sub-CA:</strong> Từ ngữ hoà nghiễm ngoặt cung cấp Hàng mục phần cứng HSM thiết lập tại vật lý hầm bảo mật của khách hàng; TeraChat không từng có cấu trúc Remote Access vào Namespace HSM.</li>
-<li>☁️ <strong>Air-Gapped License Token Model:</strong> License Token phát hành một lần qua USB mãt mã; không có online telemetry hay "phone home" callback — phù hợp cho môi trường SCIF/Viện NAN giãi phiết.</li>
+<li>☁️ <strong>Air-Gapped License Token Model:</strong> License Token phát hành một lần qua USB mãt mã; không có online telemetry hay "phone home" callback — phù hợp cho môi trường SCIF/Viện Nhanh Giải Pháp.</li>
 <li>🗄️ <strong>SLA Insurance cho Hạ tầng Trọng yếu:</strong> Tích hợp chính sách SLA 99.999% Uptime kèm bảo hiểm theo hợp đồng cho các Phấn tại khím đoạn — phân khúc giá trị cao nhất.</li>
 </ul>
 <h2 id="10-zero-trust-sla-cho-quân-sự-và-tình-báo">10. Zero-Trust SLA cho Quân sự và Tình báo</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Định vị sản phẩm:</strong> Kiến trúc E2EE Phân tán (Client-side Key, Zero-Centralized C2) + Byzantine Fault Tolerance (BFT) Client Quorum định vị TeraChat như một Survival Communication Platform cho Hạ tầng Quốc gia.</p>
 <ul>
 <li>🗄️ <strong>Kiến trúc E2EE Phân tán (Client-side Key):</strong> Không có điểm lưu trữ khóa trung tâm; mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> nằm trong Secure Enclave/StrongBox của từng thiết bị — đáp ứng định nghĩa "Zero Centralized C2" của Pentagon.</li>
-<li>☁️ <strong>Phát hiện phỪ biết thông tin tich hợp SLA:</strong> SLA cam kết cơ chế tự động chuyển sang Mesh Mode &lt; 2s khi phát hiện dắn các hiệu ứng phỮong toả (Eclipse Attack Indicators).</li>
-<li>💻 <strong>Byzantine Fault Tolerance (BFT) Client Quorum:</strong> Hệ thống vẫn hoạt động chính xác kể cả khi $f$ Client bị nâm giữa Quorum (Thức theo bất bình đẳng $N &gt; 3f$) — không có thực thể đơn lẻ nào giả mạo toàn bộ sự thực của mạng lưới.</li>
+<li>☁️ <strong>Phát hiện phân biệt thông tin tích hợp SLA:</strong> SLA cam kết cơ chế tự động chuyển sang Mesh Mode &lt; 2s khi phát hiện dắn các hiệu ứng phỮong toả (Eclipse Attack Indicators).</li>
+<li>💻 <strong>Byzantine Fault Tolerance (BFT) Client Quorum:</strong> Hệ thống vẫn hoạt động chính xác kể cả khi $f$ Client bị loại ra khỏi Quorum (Thực hiện theo bất bình đẳng $N &gt; 3f$) — không có thực thể đơn lẻ nào giả mạo toàn bộ sự thực của mạng lưới.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

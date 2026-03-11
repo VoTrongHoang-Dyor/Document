@@ -353,7 +353,7 @@
                         "☁️🗄️ Zero Storage Cost Model: File 10GB của doanh nghiệp được mã hóa từng chunk 2MB và đẩy thẳng lên AWS S3 / MinIO riêng của doanh nghiệp (BYOS — Bring Your Own Storage). TeraChat VPS chỉ relay metadata Stub (< 512 bytes) và Merkle Root Hash — không một byte nào của video 10GB chạm vào hạ tầng Terachat.",
                         "📱💻🖥️ Streaming Encryption = Chi phí Server ~0: Lõi Rust dùng Streaming AEAD (không Monolithic Encryption) — mã hóa và đẩy từng chunk 2MB. Không cần server buffer toàn bộ plaintext, không cần RAM server > 10GB. CPU overhead trên VPS là 0 cho tác vụ này.",
                         "📱💻🖥️ Wi-Fi Direct Local Bypass: Nếu 2 nhân viên cùng phòng, file 10GB đi P2P qua Wi-Fi Direct tốc độ ~1Gbps (~80 giây) — không qua Internet, không qua Cloud, băng thông WAN = 0 bytes consumed. Đây là điểm độc nhất vô nhị không một SaaS competitor nào có thể làm được.",
-                        "☁️ Pitch to CISO/CTO: \"Chúng tôi bán giải pháp mã hóa dòng (Streaming Encryption Pipeline). Dữ liệu của bạn ở lại trên hạ tầng của bạn. Chúng tôi tính phí trên số lượng người dùng, không phải trên gigabyte.\" — Đây là lập luận chốt hạ với mọi Enterprise có phòng Compliance yêu cầu Data Residency.",
+                        "☁️ Pitch to CISO/CTO: \"Chúng tôi bán giải pháp mã hóa dòng (Streaming Encryption Pipeline). Dữ liệu của bạn ở lại trên hạ tầng của bạn. Chúng tôi tính phí theo năm, không phải trên gigabyte.\" — Đây là lập luận chốt hạ với mọi Enterprise có phòng Compliance yêu cầu Data Residency.",
                         "Desktop app mở trong < 500ms không cần Internet.",
                         "Tìm kiếm millisecond (SQLite FTS5) — không gửi query lên Server.",
                         "File lớn qua LAN P2P (~200MB/s) — không tốn băng thông WAN.",
@@ -1139,13 +1139,13 @@
               "type": "blockquote",
               "alert_type": "note",
               "lines": [
-                "**Vị trí:** Hề thống Generational Handle &amp; Seqlock không chỉ là kỹ thuật bảo mật — chúng là căn cứ pháp lý để TeraChat cam kết Zero Bandwidth Cost trên Marketplace."
+                "**Vị trí:** Hệ thống Generational Handle &amp; Seqlock không chỉ là kỹ thuật bảo mật — chúng là căn cứ pháp lý để TeraChat cam kết Zero Bandwidth Cost trên Marketplace."
               ]
             },
             {
               "type": "list",
               "data": [
-                "☁️ Generational Handle SLA Binding: Một hợp đồng Perpetual License chỉ được ký sau khi Publisher cam kết tuân ủ chuẩn Generational Handle Valđatịn đối với mọi API call ra ngoài WASM Sandbox — trách nhiệm rò rỉ bộ nhớ chuyển sang Publisher.",
+                "☁️ Generational Handle SLA Binding: Một hợp đồng Perpetual License chỉ được ký sau khi Publisher cam kết tuân thủ chuẩn Generational Handle Validation đối với mọi API call ra ngoài WASM Sandbox — trách nhiệm rò rỉ bộ nhớ chuyển sang Publisher.",
                 "💻 Memory Quota Audit cho .tapp Marketplace: Tại Admin Console, CISO có thể tra cứu tâm Resident Memory hiện tại của từng .tapp đang chạy kèm số lần GC Cycle và Total Reclaimed Bytes; không cần công cụ thứ 3.",
                 "🗄️ Zero Bandwidth Cost (Kiểm soát Vòng đời RAM): Chính sách munmap() chủ động kết hợp Generational Slot Reclaim loại bỏ hoàn toàn cấu trúc GC-dựa — CPU footprint cho Enterprise Tier ≤ 3% so với model WebSocket-over-Bridge truyền thống."
               ]
@@ -1185,7 +1185,7 @@
               "type": "list",
               "data": [
                 "🗄️ Cấu hình Vật lý HSM Sub-CA: Từ ngữ hoà nghiễm ngoặt cung cấp Hàng mục phần cứng HSM thiết lập tại vật lý hầm bảo mật của khách hàng; TeraChat không từng có cấu trúc Remote Access vào Namespace HSM.",
-                "☁️ Air-Gapped License Token Model: License Token phát hành một lần qua USB mãt mã; không có online telemetry hay \"phone home\" callback — phù hợp cho môi trường SCIF/Viện NAN giãi phiết.",
+                "☁️ Air-Gapped License Token Model: License Token phát hành một lần qua USB mãt mã; không có online telemetry hay \"phone home\" callback — phù hợp cho môi trường SCIF/Viện Nhanh Giải Pháp.",
                 "🗄️ SLA Insurance cho Hạ tầng Trọng yếu: Tích hợp chính sách SLA 99.999% Uptime kèm bảo hiểm theo hợp đồng cho các Phấn tại khím đoạn — phân khúc giá trị cao nhất."
               ]
             }
@@ -1208,8 +1208,8 @@
               "type": "list",
               "data": [
                 "🗄️ Kiến trúc E2EE Phân tán (Client-side Key): Không có điểm lưu trữ khóa trung tâm; mọi Device_Key nằm trong Secure Enclave/StrongBox của từng thiết bị — đáp ứng định nghĩa \"Zero Centralized C2\" của Pentagon.",
-                "☁️ Phát hiện phỪ biết thông tin tich hợp SLA: SLA cam kết cơ chế tự động chuyển sang Mesh Mode < 2s khi phát hiện dắn các hiệu ứng phỮong toả (Eclipse Attack Indicators).",
-                "💻 Byzantine Fault Tolerance (BFT) Client Quorum: Hệ thống vẫn hoạt động chính xác kể cả khi $f$ Client bị nâm giữa Quorum (Thức theo bất bình đẳng $N > 3f$) — không có thực thể đơn lẻ nào giả mạo toàn bộ sự thực của mạng lưới."
+                "☁️ Phát hiện phân biệt thông tin tích hợp SLA: SLA cam kết cơ chế tự động chuyển sang Mesh Mode < 2s khi phát hiện dắn các hiệu ứng phỮong toả (Eclipse Attack Indicators).",
+                "💻 Byzantine Fault Tolerance (BFT) Client Quorum: Hệ thống vẫn hoạt động chính xác kể cả khi $f$ Client bị loại ra khỏi Quorum (Thực hiện theo bất bình đẳng $N > 3f$) — không có thực thể đơn lẻ nào giả mạo toàn bộ sự thực của mạng lưới."
               ]
             }
           ],
