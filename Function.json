@@ -43,39 +43,95 @@
               "type": "list",
               "data": [
                 "Quản lý Khóa và Định danh (KMS & Identity):",
-                "Thiết lập ban đầu với KMS Bootstrap, trong đó Admin phải quản lý Master Key (ví dụ: in ra giấy hoặc lưu file .terakey) để tránh thảm họa \"Zero-Access\".",
+                "Thiết lập ban đầu với KMS Bootstrap, trong đó Admin phải quản lý Master Key (in ra giấy / lưu file .terakey / YubiKey) để tránh thảm họa \"Zero-Access\".",
                 "Phát hành Invite Token (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt Epoch Rotation và Remote Wipe (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.",
                 "Nắm giữ Enterprise Escrow Key (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.",
                 "Thu hồi & Cấp lại Định danh (HR Recovery Delegation): Admin có thể ủy quyền cấp phát thiết bị mới cho bộ phận HR thông qua SCIM 2.0. HR được cấp role HR_Recovery_Officer.",
                 "Offline Recovery Flow: Nhân viên mất máy cầm thiết bị mới đến phòng HR hoặc liên hệ Admin trực tuyến. Admin xác thực Biometric trên thiết bị của chính mình và tạo Admin-approved QR Key Exchange (Recovery Ticket đã ký của Ed25519). Người dùng quét QR bằng thiết bị mới, Lõi Rust xác minh Ticket và giải mã cold_state.db tải về từ Cloud — không cần mạng Internet hay phần cứng ngoại vi. Nếu không tiếp cận được Admin, dùng Recovery Phrase (BIP-39 Mnemonic) làm fallback.",
                 "Quy trình Xử lý Khủng hoảng Thiết bị (Device Loss Scenarios):",
-                "💻 TH1 (Mất CẢ Laptop & Điện thoại) — Multi-Sig Executive Break-glass (ISO 27001 A.8.2):"
-              ]
-            },
-            {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Đã loại bỏ:** Cơ chế \"1 YubiKey mở mọi thứ\" (God Key / Single Point of Failure). Thay thế bằng Multi-Sig Shamir's Secret Sharing Quorum."
-              ]
-            },
-            {
-              "type": "list",
-              "data": [
+                "💻 ** TH1 (Mất CẢ Laptop & Điện thoại)",
+                "Multi-Sig Shamir's Secret Sharing Quorum:*",
                 "🗄️ HSM Quorum M-of-N (mặc định 3/5): Enterprise_Escrow_Key được chia thành 5 mảnh Shamir's SSS. Mỗi mảnh giao cho 1 C-Level khác nhau (CEO, CFO, CISO, COO, Legal). Cần đúng 3 mảnh hợp lệ mới tái tạo được Escrow_Key.",
                 "📱 BLE Physical Presence Verification: Khi CEO khởi tạo Break-glass, thiết bị CEO phát BreakglassRequest BLE beacon (Ed25519 signed). Ít nhất 2 thiết bị C-Level khác phải xác thực sinh trắc học (FaceID/TouchID) và phát BreakglassApproval beacon trong phạm vi < 2m — chứng minh sự hiện diện vật lý, không thể remote approve.",
                 "📱💻 Quorum Timer (10 phút): Tất cả approvals phải hoàn tất trong 10 phút từ khi request. Hết timeout → hủy session, yêu cầu restart từ đầu. Ngăn replay attack.",
                 "🗄️ HSM Lagrange Reconstruction (Secure Arena): Sau khi đủ 3 mảnh, Lõi Rust chạy Lagrange Interpolation trong mlock-protected arena (plaintext Escrow_Key tồn tại < 100ms) để tái tạo khóa gốc.",
                 "📱 Thiết bị mới phát Remote Wipe: Sau khi tái thiết lập định danh thành công, thiết bị mới phát lệnh {Remote_Wipe, Revoke} tới 2 thiết bị đã mất — ZeroizeOnDrop khi chúng chạm mạng.",
-                "📱💻 TH2 (Chỉ mất Điện thoại, Laptop vẫn còn an toàn): Sếp mở Laptop, vào Device Management -> Nhấn \"Revoke Phone\". Mua điện thoại mới, dùng tính năng Cross-Signature Pairing (Quét QR hoặc Bluetooth P2P) để Laptop mã hóa và bơm Company_Key sang Điện thoại mới. Tự xử lý cục bộ 100%, không cần Admin.",
-                "Thiết lập Chính sách Bảo mật (OPA Policy & DLP):",
-                "Định nghĩa các chính sách truy cập qua OPA Engine, bao gồm giới hạn tốc độ (Rate Limiting) theo phòng ban, thời gian lưu trữ tin nhắn (TTL), và quyền hiển thị ứng dụng.",
-                "Thiết lập cấu hình OPA Policy Enforcement nhằm giới hạn quyền hiển thị trên Launchpad (nút khởi chạy tự động vô hiệu hóa/mờ đi nếu phòng ban không được cấp quyền).",
+                "📱💻 TH2 (Chỉ mất Điện thoại, Laptop vẫn còn an toàn):",
+                "1. Kiến trúc Cấp phép:"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Quy trình này loại bỏ việc Laptop tự quyết, buộc mọi thao tác liên quan đến Company_Key phải có chữ ký điện tử (Ed25519) từ tài khoản cấp cao (HR)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Bước 1: Báo cáo & Khởi chạy Thu hồi (Revocation)"
+            },
+            {
+              "type": "paragraph",
+              "text": "💻 Laptop (Nhân viên): Nhân viên mở Laptop, vào Device Management và chọn \"Report Lost Phone\"."
+            },
+            {
+              "type": "paragraph",
+              "text": "Lõi Rust (Rust Core) ngay lập tức phát lệnh Crypto-Shredding qua giao thức Gossip. Device_Key của chiếc điện thoại cũ bị phế truất khỏi cây khóa E2EE (MLS Group) trên toàn mạng lưới."
+            },
+            {
+              "type": "paragraph",
+              "text": "Bước 2: Yêu cầu Ghép nối (CSR - Certificate Signing Request)"
+            },
+            {
+              "type": "paragraph",
+              "text": "📱 Mobile (Điện thoại mới): Nhân viên tải TeraChat, ứng dụng sinh ra một cặp khóa mới bên trong Secure Enclave/StrongBox. Thiết bị hiển thị mã QR chứa Device_Public_Key và Provisioning_Token."
+            },
+            {
+              "type": "paragraph",
+              "text": "💻 Laptop (Nhân viên): Nhân viên dùng Laptop quét QR này. Thay vì bơm Company_Key ngay, Lõi Rust trên Laptop đóng gói thông tin (Bao gồm UUID máy mới + Chữ ký Laptop) và đẩy một Yêu cầu Phê duyệt (Pending Approval) lên ☁️ VPS Cluster (Control Plane)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Bước 3: Xác thực Định danh (HR Authorization)"
+            },
+            {
+              "type": "paragraph",
+              "text": "💻 Laptop / 🖥️ Desktop (Bộ phận HR): HR nhận được cảnh báo thời gian thực. HR xác minh nhân viên (qua bộ đàm Voice nội bộ trên TeraChat Laptop, hoặc gọi video xác nhận khuôn mặt)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Khi HR nhấn \"Phê duyệt\" (Approve), Lõi Rust của HR sử dụng Admin_Key để ký điện tử vào Yêu cầu, tạo ra một Authorization Ticket (Vé cấp phép) và đẩy OPA Policy cập nhật xuống mạng lưới."
+            },
+            {
+              "type": "paragraph",
+              "text": "Bước 4: Bơm Khóa An toàn (Secure Key Injection)"
+            },
+            {
+              "type": "paragraph",
+              "text": "💻 Laptop (Nhân viên): Nhận được Authorization Ticket đã có chữ ký của HR. Lõi Rust trên Laptop lúc này mới \"mở khóa\" hàm xuất Company_Key."
+            },
+            {
+              "type": "paragraph",
+              "text": "📱💻 Mobile & Laptop: Kênh P2P (BLE 5.0 / Wi-Fi Direct) được kích hoạt. Laptop mã hóa Company_Key bằng Device_Public_Key của điện thoại mới và truyền sang. Quá trình kết thúc."
+            },
+            {
+              "type": "list",
+              "data": [
+                "1. Kỹ thuật: OPA Engine & DLP (Data Loss Prevention)",
+                "OPA là một engine mã nguồn mở cho phép Admin viết các luật (Rules) bằng ngôn ngữ khai báo Rego. Trong TeraChat, các luật này không nằm chết trên Server mà được mã hóa và đồng bộ thẳng xuống Lõi Rust của từng thiết bị.",
+                "☁️ VPS Cluster / Cloud (Control Plane): Nơi CISO/Admin định nghĩa các file chính sách Rego. Ví dụ: allow_launch if user.department == \"HR\". Sau đó, VPS đẩy chính sách này xuống mạng lưới qua kết nối mTLS.",
+                "💻 Laptop / 📱 Mobile (Policy Enforcement Point - Điểm thực thi): Lõi Rust (Rust Core) trên thiết bị đóng vai trò là \"Cảnh sát chốt chặn\" (Enforcer). Trước khi giao diện UI kịp làm bất cứ điều gì, nó phải xin phép Lõi Rust.",
+                "Giới hạn tốc độ (Rate Limiting): Áp dụng thuật toán Token Bucket ngay trên RAM của Client. Nếu một nhân viên sale cố tình cắm tool gửi 10.000 tin nhắn/phút để kéo dữ liệu khách hàng (Data Exfiltration), Lõi Rust sẽ tự động block socket Egress, ngắt mạng cục bộ của app và ghi cờ đỏ vào Immutable Audit Log.",
+                "Thời gian lưu trữ tin nhắn (TTL - Time-to-Live): Đây không phải là lệnh \"ẩn tin nhắn\" trên UI. Khi TTL hết hạn (ví dụ: 24h), Lõi Rust kích hoạt Crypto-Shredding. Nó ghi đè các byte ngẫu nhiên (Zeroing) lên đoạn khóa giải mã của tin nhắn đó trong SQLite WAL. Tin nhắn vĩnh viễn biến thành chuỗi rác vô nghĩa, không một thế lực nào khôi phục được.",
+                "2. Cấu hình Hiển thị Launchpad (UI/UX Glassmorphism)",
+                "Launchpad là màn hình chính chứa các .tapp (tiện ích mở rộng, ví dụ: Zalo Office, CRM, AI Agent). Việc ẩn/hiện các .tapp này được điều khiển trực tiếp bởi OPA Policy.",
+                "📱💻 Cơ chế Mapping Policy - UI: Khi người dùng mở Launchpad, Frontend (Tauri/React Native) gửi một truy vấn IPC xuống Lõi Rust: \"Tôi có danh sách 10 .tapp, hãy trả về quyền truy cập\". Lõi Rust chạy qua OPA Engine và trả về một ma trận Boolean (True/False).",
+                "Trải nghiệm Glassmorphism Enterprise:",
+                "Trạng thái Cấp quyền (Online Mode - Sáng): Các .tapp được phép dùng (ví dụ: HR dùng Zalo Office) sẽ hiển thị nổi khối (Neumorphism) với viền sáng rõ nét, sẵn sàng tương tác.",
+                "Trạng thái Vô hiệu hóa (Unauthorized State): Nếu nhân viên Marketing nhìn thấy .tapp của HR, biểu tượng ứng dụng sẽ bị ép sang màu đơn sắc (Grayscale). Xung quanh app phủ một lớp kính mờ Glassmorphism đục (backdrop-filter: blur(8px) brightness(0.5)). Nút bấm bị vô hiệu hóa hoàn toàn ở tầng OS. Khi di chuột vào, một tooltip viền Hổ phách (Amber) hiện lên với thông báo: \"🔒 OPA Policy: Phân quyền truy cập bị từ chối bởi CISO\"",
                 "Cấu hình chính sách cho mạng liên tổ chức (Federation), như thiết lập allowed_roles hoặc allow_reply để ngăn nhân viên cấp dưới nhắn tin làm phiền Tổng bộ.",
-                "Thiết lập App Whitelist cho phép nhúng các ứng dụng bên ngoài (như Zalo, Telegram) vào Sandbox, đồng thời bật các tính năng chống thất thoát dữ liệu (DLP) như chặn copy/paste, chặn kéo thả file.",
-                "Ràng buộc ứng dụng .tapp khởi chạy hoàn toàn trong môi trường cách ly WASM Sandbox tuyệt đối nhằm ngăn chặn mọi hành vi đọc trộm dữ liệu hội thoại từ cửa sổ ứng dụng.",
+                "Ràng buộc ứng dụng .tapp khởi chạy hoàn toàn trong môi trường cách ly WASM Sandbox tuyệt đối nhằm ngăn chặn mọi hành vi đọc trộm dữ liệu hội thoại từ cửa sổ ứng dụng, các tính năng chống thất thoát dữ liệu (DLP) như chặn copy/paste, chặn kéo thả file.",
                 "Quản trị Hệ sinh thái Tiện ích (.tapp) & AI:",
                 "Kiểm duyệt và cài đặt các gói tiện ích nội bộ (Private Sideloading) thông qua chữ ký Enterprise_CA.",
+                "Cấu hình ISDM (Interactive SLM Dual-Masking): Thiết lập các quy tắc \"gutting\" (hủy bỏ) dữ liệu nhạy cảm (PII) trên thiết bị người dùng. Admin định nghĩa danh sách Token (ví dụ: Số điện thoại, Email, Địa chỉ) mà SLM cục bộ phải che mặt trước khi gửi tới LLM.",
                 "Quản lý tập trung các API Key (ví dụ: OpenAI) trong E2EE Secret Vault mà không làm lộ Key trên máy chủ, sau đó cấp quyền (Cryptographic Binding) cho các AI Bot.",
                 "Định nghĩa cấu trúc dữ liệu đầu vào (JSON Schema) cho các công cụ nghiệp vụ như Smart Order Entry.",
                 "Nghi thức Kiểm toán & Liên kết Tổ chức:",
@@ -101,31 +157,27 @@
                 "Giao tiếp và Nhắn tin Cốt lõi:",
                 "Nhắn tin văn bản, gọi thoại/video HD (WebRTC) được mã hóa đầu cuối (E2EE) qua giao thức chuẩn MLS và Signal.",
                 "Tìm kiếm toàn văn bản (Full-text search) siêu tốc độ bằng SQLite FTS5 tại máy trạm mà không làm rò rỉ siêu dữ liệu (Zero-Knowledge Search).",
-                "Quản lý Tin nhắn và Tài liệu (Collaboration & Conflict Resolution):",
-                "💻📱 Quy trình Đề xuất Chỉnh sửa (Proposal Flow): Người dùng bôi đen đoạn văn bản E2EE của người khác và chọn \"Đề xuất sửa\". Người gửi gốc sẽ nhận được thông báo yêu cầu duyệt.",
+                "Tài liệu thông minh (Smart Document):",
+                "💻📱 Quy trình demo : Người sửa với quyền Editor điều chỉnh nội dung trong file của người gửi . Người gửi sẽ kiểm duyệt và đưa ra 3 lựa chọn : Chấp nhận , Từ chối , Gộp.",
                 "🗄️ Phân quyền Granular Role-Based Access Control (RBAC):",
-                "Viewer: Chỉ được xem, cấm bôi đen đề xuất.",
+                "Viewer: Chỉ được xem.",
                 "Commenter: Bôi đen để ghim chú thích (Không sửa data).",
                 "Editor: Được tạo \"Nhánh thay đổi\" (Shadow Branch) can thiệp trực tiếp vào chuỗi DAG.",
-                "💻📱 Quy trình Quản lý Nhánh (Author Workflow): Chỉ người tạo tài liệu/tin nhắn (Author) hoặc Admin trong Group mới nhìn thấy Checkbox quản lý hàng loạt trong Bulk Resolution Pop-up.",
-                "💻📱 Luồng hoạt động Offline (Offline Flow Constraint): Người dùng chỉ có thể thực hiện chỉnh sửa cá nhân (Local Edit) hoặc gửi tin nhắn mới khi offline. Mọi thao tác tạo nhánh (Branching) trên dữ liệu người khác bị vô hiệu hóa cho đến khi có mạng trở lại.",
+                "💻📱 Quy trình Quản lý Nhánh (Author Workflow): Chỉ người gửi tài liệu (Author) hoặc Admin trong Group mới nhìn thấy Checkbox quản lý hàng loạt commit trong Resolution Pop-up.",
+                "💻📱 Luồng hoạt động Offline không khả thi:",
                 "Làm việc Ngoại tuyến & Mạng Lưới (Mesh/Offline-First):",
-                "Chủ động kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct khi hệ thống mất Internet để tiếp tục nhắn tin khẩn cấp.",
-                "Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường hoàn toàn không có mạng LAN hay Wi-Fi Router.",
+                "Khi mất kết nối Internet gửi Pop-up hỏi người dùng có muốn kích hoạt mạng Mesh (Survival Link) qua BLE/Wi-Fi Direct để tiếp tục nhắn tin khẩn cấp.",
+                "Quét mã QR để thiết lập bắt tay bảo mật (Offline X3DH) và truyền file trực tiếp cho đồng nghiệp với tốc độ cao (50-100MB/s) trong môi trường không có mạng LAN hay Wi-Fi Router.",
                 "📱 iOS Alert — Quyền \"Local Network\": Khi kích hoạt Mesh lần đầu, hệ thống hiển thị hộp thoại hướng dẫn riêng cho iOS: \"Để tính năng Mạng Mesh hoạt động theo đúng chính sách quyền riêng tư của Apple, vui lòng cấp quyền 'Tìm kiếm thiết bị mạng cục bộ (Local Network)' trong Cài đặt → TeraChat.\" Nếu người dùng từ chối, Mesh Mode tự động thu hẹp xuống BLE-only (Gossip Text, không có Wi-Fi Direct file transfer).",
-                "Kích hoạt / Hủy Social Escrow (Phân mảnh khóa): Vào Settings → Security → Social Escrow để phân mảnh Device_Key bằng Shamir 3-of-5, chọn 3-5 đồng nghiệp tin cậy để giữ mảnh Key. Có thể thu hồi bất kỳ lúc nào.",
-                "Phê duyệt / Từ chối BLE SOS Recovery: Khi nhận Toast thông báo đồng nghiệp yêu cầu phục hồi khóa, xác nhận bằng Biometrics để gửi lại mảnh Key từ Secure Enclave. Hoặc từ chối với 1-tap.",
                 "Quản lý Không gian làm việc và File (TeraVault):",
                 "Sắp xếp, kéo thả file từ khung chat vào một cây thư mục ảo (Virtual File System) ngăn nắp mà không làm nhân bản dung lượng file.",
-                "Chủ động bật chế độ \"Make Available Offline\" (Tầng lưu trữ 3) để tải trước toàn bộ thư mục về máy khi chuẩn bị di chuyển vào vùng mất sóng.",
                 "Xem trước các file (PDF, CAD, Video) siêu nhanh nhờ cơ chế nạp \"vỏ bọc\" Zero-Byte Stub (~5KB).",
                 "📱 iOS: Khi tải file dung lượng lớn, TeraChat giao hẳn URL E2EE cho NSURLSession Background Transfer để hệ điều hành tự tải ở chế độ nền; sau khi xong, Core Rust giải mã thẳng từ file tạm qua mmap/pread và xoá sạch, không cần app phải mở màn hình liên tục.",
                 "📱 Xem video không độ trễ: Thay vì dựng Local HTTP Server 127.0.0.1, trình phát AVPlayer/ExoPlayer được nối trực tiếp với Lõi Rust qua Native-to-Rust Media DataSource Bridge (AVAssetResourceLoaderDelegate/MediaDataSource). Người dùng chỉ thấy video phát mượt mà, seek tức thì, kể cả khi app bị đưa ra Background theo đúng giới hạn của iOS/Android.",
                 "Sử dụng Tiện ích và Phê duyệt:",
-                "Tương tác với các AI Bot ảo trực tiếp trong nhóm chat (bằng cách @mention) để tóm tắt tài liệu mà không lo rò rỉ dữ liệu cá nhân (nhờ cơ chế Dual-Mask).",
+                "Tương tác với các AI Bot ảo trực tiếp trong nhóm chat (bằng cách @mention) thông qua giao thức ISDM (Interactive SLM Dual-Masking)/API.",
                 "Sử dụng các Mini-App nghiệp vụ (Smart Order, CRM) chạy siêu mượt với độ trễ < 50ms, hỗ trợ Undo/Redo (Time-Travel).",
-                "Ký số và phê duyệt tài liệu nhiều cấp thông qua Smart Approval (Fintech Bridge) có xác thực sinh trắc học.",
-                "Nhắn tin với đối tác qua các ứng dụng ngoài (Zalo, Telegram) ngay trong một cửa sổ duy nhất (Sandbox) mà không sợ bị dính mã độc chéo."
+                "Ký số và phê duyệt tài liệu nhiều cấp thông qua Smart Approval (Fintech Bridge) có xác thực sinh trắc học."
               ]
             }
           ],
@@ -184,9 +236,7 @@
                 "📱 Phase 1 — Integrity Scan: Chạy PRAGMA quick_check(1) trên nse_staging.db. Nếu OK → tiến hành re-decrypt và merge pending entries vào hot_dag.db. Nếu Err → kích hoạt Crypto-Shredding POSIX unlink() + zero-fill và cuộc phục hồi chuyển sang Phase 2.",
                 "📱☁️ Phase 2 — Gossip Re-hydration: Sau khi staging DB sạch, Lõi Rust phát GossipStateRequest siêu nhẹ để pull lại các tin nhắn bị mất trong khoảng Gap từ Super Node. User không mất tin nhắn, không cần thao tác thủ công.",
                 "📱 Transparency: DevOps/SecOps có thể theo dõi quá trình Auto-Healing qua Observability Pipeline entry log AUTO_HEAL_VMS_TRIGGERED kèm device_id, gap_size, và recovery_status.",
-                "Lưu trữ Tự chủ (BYOS - Bring Your Own Storage): Không ép buộc Doanh nghiệp dùng Cloud của TeraChat. Hệ thống tích hợp chuẩn S3-Compatible (MinIO), cho phép IT tự cắm thêm ổ cứng vật lý để mở rộng dung lượng và lưu trữ lịch sử vô hạn (Infinite Retention).",
-                "Cập nhật Không cần Mạng (Air-Gapped Patching): Cho phép triển khai các bản vá lỗi siêu nhỏ (Delta Patch - BSDiff) cục bộ cho các máy trạm nằm trong mạng nội bộ đóng kín hoàn toàn với Internet.",
-                "Trạm Giám sát (Observability Pipeline): Tích hợp sẵn chuẩn Prometheus (đo lường), Loki (lưu log JSON ẩn danh) và Tempo (theo dõi vết gói tin) để đảm bảo SLA hoạt động đạt mức 99.99%."
+                "Lưu trữ Tự chủ (BYOS - Bring Your Own Storage): Không ép buộc Doanh nghiệp dùng Cloud của TeraChat. Hệ thống tích hợp chuẩn S3-Compatible (MinIO), cho phép IT tự cắm thêm ổ cứng vật lý để mở rộng dung lượng và lưu trữ lịch sử vô hạn (Infinite Retention)."
               ]
             }
           ],
@@ -203,7 +253,8 @@
                 "Truyền tải Đa đường (TeraLink Multipath): Tự động nhân bản các gói tin nhỏ (như lệnh đồng bộ CRDT) và gửi song song qua cả 3 đường: 4G/5G, Wi-Fi LAN, và BLE Mesh. Giúp hệ thống đạt độ trễ 0ms khi người dùng di chuyển chuyển vùng mạng (Roaming).",
                 "Trạm Trung chuyển Dữ liệu AI (Predictive Data Mules): Khi hệ thống rớt mạng diện rộng, lõi Rust chạy mô hình học máy (Edge ML) để phân tích thói quen di chuyển của nhân viên. Dữ liệu sẽ ưu tiên gửi gắm vào máy của những người có tỷ lệ gặp người nhận cao nhất (ví dụ: gửi tài liệu sếp qua máy của trợ lý) thay vì gửi rác mù quáng.",
                 "Bẫy Hắc Ín chống DDoS (Infinite Tarpit): Bức tường lửa thông minh bảo vệ máy chủ. Nếu có kẻ tấn công gửi Request vượt hạn mức hoặc sai chữ ký TLS Fingerprint, hệ thống không từ chối ngay mà \"treo\" kết nối đó, cứ 10 giây mới nhả 1 Byte rác để làm cạn kiệt RAM của kẻ tấn công.",
-                "Puncturing Stream (Phục hồi luồng tệp đứt gãy): Khi truyền file lớn (ví dụ: 2GB) qua Wi-Fi Direct mà bị nhiễu sóng (như do lò vi sóng, thiết bị công nghiệp), hệ thống đánh dấu đoạn bị lỗi là \"Thủng\" (Punctured) và gửi tiếp phần còn lại, sau đó tự động vá lại đoạn hỏng ở cuối phiên thay vì phải gửi lại từ đầu."
+                "Puncturing Stream (Phục hồi luồng tệp đứt gãy): Khi truyền file lớn (ví dụ: 2GB) qua Wi-Fi Direct mà bị nhiễu sóng (như do lò vi sóng, thiết bị công nghiệp), hệ thống đánh dấu đoạn bị lỗi là \"Thủng\" (Punctured) và gửi tiếp phần còn lại, sau đó tự động vá lại đoạn hỏng ở cuối phiên thay vì phải gửi lại từ đầu.",
+                "💻 FFI Pointer Freezing & Authorization Gateway: Tự động giải mã Policy_Packet và kiểm tra chữ ký. Đối với Viewer, Lõi Rust lập tức đóng băng (lock) các con trỏ hàm FFI liên quan đến tạo Proposal, ngăn ngụy tạo lệnh từ UI. Đối với Commenter, chỉ mở khóa hàm ffi_propose_comment. Đối với Editor, cấp quyền ffi_propose_change cho phép chỉnh sửa cục bộ. Lập tức gọi ZeroizeOnDrop để dọn dẹp RAM khi phát hiện yêu cầu trái phép."
               ]
             }
           ],
@@ -266,7 +317,8 @@
               "data": [
                 "Có thể giới hạn chỉ những người có Role cụ thể (như Director, Manager, Branch_Admin) mới được chủ động khởi tạo tin nhắn sang HQ.",
                 "Nhân viên bình thường vẫn có thể trả lời (reply) nếu người từ HQ chủ động nhắn tin trước.",
-                "Hệ thống có thể giới hạn tần suất nhắn tin liên tổ chức (ví dụ: 20 tin nhắn/giờ)."
+                "Hệ thống có thể giới hạn tần suất nhắn tin liên tổ chức (ví dụ: 20 tin nhắn/giờ).",
+                "☁️ Token Bucket Group-Based Rate Limiting & Edge-Level Malicious Packet Dropping: VPS duy trì Token Bucket cho mỗi Document. VPS liên tục kiểm tra tần suất nhận PROPOSE_CHANGE. Nếu vượt ngưỡng (vd: 50 Đề xuất/phút), VPS thẳng tay rớt (drop) gói tin ngay tại trạm trung chuyển để bảo vệ thiết bị cuối khỏi tấn công DoS."
               ]
             }
           ],
@@ -648,6 +700,30 @@
                     "📱 BLE Approval Beacons (Tín hiệu chứng thực từ thiết bị di động lãnh đạo): Qua trìình kích hoạt HSM chỉ mở khi có Beacon BLE từ ít nhất 2 trong N thiết bị di động thuộc C-Level (CEO, CISO, CFO) trong phạm vi 5m; thiếu Beacon → HSM từ chối mọi thao tác ký.",
                     "📱 Hardware Biometric Validation (FaceID/TouchID): Mỗi lãnh đạo phê duyệt bằng Biometric tại thiết bị của chính mình; chữ ký sinh trắc học được bắt buộc trước khi chuyển BLE Approval Beacon — không thể giả mạo bằng replay.",
                     "🖥️ Multi-Sig Authorization Gate (Mở I/O USB khi đủ điều kiện 2-of-N): HSM chỉ mở kênh USB ghi chứng chỉ mới sau khi nhận đủ 2-of-N chữ ký BLE; nếu chỉ có 1 cá nhân thò tay vào — kênh USB khóa vĩnh viễn."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "17-quản-lý-sự-cố-và-khôi-phục-incident-response",
+              "level": 3,
+              "heading": "17. Quản lý Sự cố và Khôi phục (Incident Response)",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**\"Phản ứng tức thì khi phát hiện xâm nhập. Hệ thống tự động chuyển sang trạng thái phòng thủ, phong tỏa dữ liệu và làm sạch vết tích nhạy cảm trong khi duy trì kênh liên lạc cứu hộ.\"**"
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "🖥️ Incident Response Flow & Live Metadata Sanitization:",
+                    "🖥️ Mesh Mode Hard-lock UI (#0F172A Amber Glow): Khi phát hiện sự cố bảo mật nghiêm trọng hoặc lệnh từ Admin, thiết bị tự động kích hoạt Hard-lock UI. Màn hình chuyển sang màu xanh đậm (#0F172A) với hiệu ứng Amber Glow (Hổ phách), chặn mọi thao tác ngoại trừ kênh chat khẩn cấp và báo cáo sự cố.",
+                    "🖥️ Live Sanitization Stream (Regex PII Redacted): Luồng dữ liệu thoát (Egress) trong trạng thái Incident được lọc qua bộ lọc Regex thời gian thực để xóa bỏ các thông tin định danh cá nhân (PII), đảm bảo log gửi đi chỉ chứa thông tin kỹ thuật chẩn đoán.",
+                    "💻 Hardware Biometric Validation (TouchID/Windows Hello Audit Log): Mọi thao tác khôi phục hoặc truy cập kênh chuyên dụng trong chế độ Incident yêu cầu xác thực sinh trắc học phần cứng. Kết quả xác thực được ký và lưu vào Audit Log không thể chối bỏ."
                   ]
                 }
               ],

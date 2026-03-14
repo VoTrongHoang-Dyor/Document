@@ -25,7 +25,7 @@
           "lines": [
             "**Audience:** New Developer Onboarding · Technical Product Manager · System Architect",
             "**Read Time:** ~15 phút",
-            "**Last Updated:** 2026-03-11"
+            "**Last Updated:** 2026-03-11 (Updated ISDM & AI Governance)"
           ]
         }
       ],
@@ -59,9 +59,9 @@
                     "📱💻 Explicit Mesh Opt-in: Survival Mesh KHÔNG tự động kích hoạt. Khi hệ thống phát hiện mất kết nối với Control Plane (Server), Lõi Rust sẽ tạm dừng toàn bộ I/O network. Người dùng phải xác nhận thủ công qua thông báo: \"Khởi động mạng Mesh để duy trì liên lạc\" để hệ thống cấp điện cho module BLE 5.0 / Wi-Fi Direct / Apple Multipeer Connectivity.",
                     "📱💻🖥️ Dữ liệu cục bộ được mã hóa bằng Device_Key (Secure Enclave/StrongBox) và đồng bộ lên Cloud/Private Server dưới dạng Ciphertext thuần túy. Khôi phục thực hiện qua Biometric-backed Restore hoặc Recovery Phrase (BIP-39) — không phụ thuộc thiết bị phần cứng ngoại vi.",
                     "☁️ Operating System for Work: \"TeraChat không chỉ là một ứng dụng chat. Nó là một Hệ điều hành Công việc tích hợp cơ chế giải quyết xung đột dữ liệu phi tập trung (Git-like Conflict Resolution). Cho phép các nhóm làm việc cộng tác trên các tài liệu nhạy cảm với độ chính xác tuyệt đối mà không cần tin tưởng vào máy chủ trung tâm.\"",
-                    "☁️ Contextual Consistency (Tính Nhất quán Theo ngữ cảnh): Hệ thống áp dụng chiến lược Nhất quán thực dụng: Giao tiếp lõi (Chat/Voice) luôn khả dụng cả Online lẫn Offline. Tuy nhiên, các tính năng Cộng tác cấu trúc sâu (Git-like Document Collaboration) yêu cầu tính toàn vẹn cao sẽ được ủy quyền cho máy chủ trung tâm (VPS) và chỉ hoạt động ở Online Mode.",
-                    "☁️ Universal Agentic Bridge (BYOA — Bring Your Own Agent): TeraChat không bắt ép doanh nghiệp sử dụng bất kỳ LLM nội bộ nào. Thay vào đó, nền tảng cung cấp một chuẩn giao tiếp mở thông qua các .tapp (Tera App). 📱💻🖥️ Client-Side Agent Routing: Mọi tương tác với OpenClaw, ClawBot hay bất kỳ AI Agent nào đều được khởi tạo từ thiết bị đầu cuối sau khi dữ liệu đã được giải mã cục bộ. Máy chủ TeraChat (Control Plane) tuyệt đối mù (Blind Relay) và không tham gia vào quá trình gọi API ra bên ngoài, duy trì trạng thái Zero-Knowledge.",
-                    "☁️ Opt-In Trust Boundary (Ranh giới Tin cậy Chủ động — FCP): Đối với hệ sinh thái .tapp mở rộng, TeraChat cung cấp cơ chế Full-Context Passthrough (FCP). Khi Doanh nghiệp (Admin) chủ động ký Thỏa thuận Chấp nhận Rủi ro (Risk Acceptance — xác thực YubiKey + typed consent), Lõi Rust gỡ bỏ toàn bộ hàng rào kiểm duyệt cục bộ (Micro-NER, O-LLVM Obfuscation), cung cấp 100% ngữ cảnh thô (Plaintext Context) qua TLS trực tiếp cho AI Agent. Execution Integrity vẫn bất biến: Response từ AI đến vẫn bắt buộc đi qua SASB — AI có thể đọc tất cả nhưng không thể inject mã độc ngược lại."
+                    "☁️ Contextual Consistency (Tính Nhất quán Theo ngữ cảnh): Hệ thống áp dụng chiến lược Nhất quán : Giao tiếp lõi với Chat luôn khả dụng cả Online lẫn Offline. Tuy nhiên, các tính năng Cộng tác cấu trúc sâu (Git-like Document Collaboration) yêu cầu tính toàn vẹn cao sẽ được ủy quyền cho máy chủ trung tâm (VPS) và chỉ hoạt động ở Online Mode.",
+                    "☁️ ISDM (Interactive SLM Dual-Masking) — Trụ cột AI Governance: TeraChat định nghĩa lại AI Governance thông qua giao thức Dual-Masking. Không một LLM bên ngoài nào được chạm vào dữ liệu thô (Plaintext). Mọi tài liệu trước khi đi ra Internet đều bị \"rút ruột\" dữ liệu nhạy cảm (PII) bằng SLM (Small Language Model) cục bộ, bọc trong các Biến giả (Tokens), và chỉ hoàn trả dữ liệu thật tại thiết bị đầu cuối sau khi AI SLM nhận kết quả trả về --> đối chiếu với dữ liệu ban đầu --> đưa ra dữ liệu cuối cùng.",
+                    "💻☁️ Self-Governing Data Objects & Server-Side Gatekeeping: Ứng dụng mô hình bọc chính sách và mã hóa tại nguồn (Event-Sourced Cryptographic Binding), trong đó thiết bị nhận thực thi phân quyền (Memory Guardian) bằng ZeroizeOnDrop. Kết hợp kiểm soát tấn công DoS bằng Token Bucket Rate Limiting (50 req/min) tại Edge Network, trong khi VPS vẫn hoạt động hoàn toàn dưới dạng Blind Relay (Zero-Knowledge)."
                   ]
                 }
               ],
@@ -92,7 +92,7 @@
                     [
                       "**Tier 2 — Offline Near (Tactical Mesh, < 50m)**",
                       "Wi-Fi Direct (SoftAP), Apple AWDL, BLE 5.0 High-Speed",
-                      "Tin nhắn, Voice nén cao (AMR-NB/Opus low-bitrate), File nhẹ (< 10MB PDF/Word). Từ chối Video Stream & File nặng."
+                      "Tin nhắn, File nhẹ (< 10MB PDF/Word). Từ chối Video Stream & File nặng."
                     ],
                     [
                       "**Tier 3 — Offline Far (Survival Mesh, > 50m hoặc nghẽn)**",
@@ -112,7 +112,7 @@
                   "type": "list",
                   "data": [
                     "Online (Unlimited): Băng thông rộng, mở khóa toàn bộ TeraVault (truyền tệp 10GB).",
-                    "Offline Near (Tactical Mesh): Kết nối P2P cự ly gần bằng Wi-Fi Direct. Cho phép truyền đạt mệnh lệnh qua Voice và File tài liệu khẩn cấp (< 10MB).",
+                    "Offline Near (Tactical Mesh): Kết nối P2P cự ly gần bằng Wi-Fi Direct. Cho phép truyền đạt tin nhắn và File tài liệu khẩn cấp (< 10MB).",
                     "Offline Far (Survival Mesh): Khi khoảng cách quá xa, hệ thống rơi vào trạng thái sinh tồn. Lõi Rust tự động vô hiệu hóa luồng I/O đa phương tiện, dồn 100% năng lượng và băng thông hẹp của BLE Long-Range chỉ để truyền tải Tin nhắn Văn bản mã hóa (E2EE Text)."
                   ]
                 }
@@ -286,7 +286,7 @@
                     [
                       "**`Function.md`**",
                       "Product Owner, Devs",
-                      "Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ **Dual-Mask** và giao thức liên kết tổ chức (Federation)."
+                      "Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ **ISDM (Interactive SLM Dual-Masking)** và giao thức liên kết tổ chức (Federation)."
                     ],
                     [
                       "**`BusinessPlan.md`**",

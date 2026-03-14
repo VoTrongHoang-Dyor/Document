@@ -369,6 +369,7 @@
 <a href="#9-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity" class="nav-link" style="padding-left:0.8rem;">9. Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</a>
 <a href="#8-static-egress-schema-declaration-manifest-contract-tapp-publisher" class="nav-link" style="padding-left:0.8rem;">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</a>
 <a href="#81-egress-schema-trong-manifestjson" class="nav-link" style="padding-left:0.8rem;">8.1 Egress Schema trong `manifest.json`</a>
+<a href="#9-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag" class="nav-link" style="padding-left:0.8rem;">9. Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -389,6 +390,11 @@
 <th>Date</th>
 <th>Change Summary</th>
 </tr></thead><tbody>
+<tr>
+<td>v0.3.5</td>
+<td>2026-03-13</td>
+<td>(Section Deprecated: Decentralized SLA & Centralized Reports removed); §4.2 Heuristics Scanner</td>
+</tr>
 <tr>
 <td>v0.3.0</td>
 <td>2026-03-11</td>
@@ -485,7 +491,7 @@
 <ul>
 <li>☁️ <strong>OPA Egress Whitelist (Domain & Port):</strong> Lõi Rust nhúng bộ quy tắc OPA (Open Policy Agent) trực tiếp vào ranh giới mạng của Sandbox. Bất kỳ nỗ lực mở socket nào nằm ngoài danh sách Whitelist Domain & Port đã đăng ký từ trước đều bị chặt đứt ngay lập tức ở tầng OS.</li>
 <li>📱💻 <strong>Metadata Stripping Proxy:</strong> Trước khi payload HTTP/RPC rời khỏi thiết bị đến máy chủ của Tiện ích thứ 3, nó phải đi qua Proxy Kiểm duyệt cục bộ để gọt sạch mọi siêu dữ liệu nhạy cảm (User-Agent, IP, Thiết bị, Thời gian) — không chừa lại bất kỳ dấu vết định danh nào (Fingerprinting).</li>
-<li>🗄️ <strong>BPF Syscall Trapping (Socket/File I/O):</strong> Ép khâu giám sát vào cấp độ nhân hệ điều hành bằng Kernel Seccomp-BPF. Mọi lời gọi hệ thống (Syscalls) yêu cầu mở file I/O hay tạo Socket mới đều bị Trap và đối chiếu thời gian thực (Real-time).</li>
+<li>☁️ <strong>Seccomp Sandbox (Socket/File I/O):</strong> Ép khâu giám sát vào cấp độ Sandbox. Mọi lời gọi hệ thống (Syscalls) yêu cầu mở file I/O hay tạo Socket mới đều bị chặn và đối chiếu thời gian thực (Real-time).</li>
 </ul>
 <h2 id="3-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze">3. Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Các mô hình thuật toán chạy trong WASM có thể tiêu tốn 100% CPU (CPU-Bound), làm nghẽn Event Loop và đóng băng (Freeze) giao diện nhắn tin chính.</p>
@@ -501,9 +507,17 @@
 <li>💻 <strong>Manifest Whitelist Enforcement (Khóa cứng allowed_domains):</strong> Trước khi nhận bandt tải lên, Marketplace vác định dạng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> và so sánh danh sách <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> với Registry Domain Whitelist — phát hiện bất kỳ domain nẳm ngoài dải cho phép ngưng Upload ngượng cưa.</li>
 <li>🗄️ <strong>Ed25519 Signed Bundle (Chứng thực CA từ TeraChat HQ):</strong> Mọi bundle <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> phải mang chữ ký hợp lệ từ ít nhất 1 trong 3 Root CA offline của TeraChat HQ. Không có chữ ký → Lõi Rust từ chối nạp.</li>
 </ul>
+<h4 id="42-heuristics-scanner-engine-emip-immutable-distribution">4.2 Heuristics Scanner Engine & EMIP Immutable Distribution</h4>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Giải pháp:</strong> Chặn đứng mã độc tiêm nhiễm vào bundle <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> và rủi ro hạ tầng không tương thích.</p>
+<ul>
+<li>☁️ <strong>VPS Recommendation Engine (Heuristics Scanner):</strong> Tự động rà soát thông số phần cứng VPS (CPU, RAM, I/O) qua API để đưa ra khuyến nghị triển khai tối ưu, tránh tình trạng app crash do thiếu hụt tài nguyên.</li>
+<li>☁️ <strong>TeraPay Smart Escrow:</strong> Tiền bản quyền (tapp fee) chỉ được giải ngân cho Publisher sau khi Lõi Rust của Client xác nhận bundle đã được cài đặt và pass qua khâu kiểm tra chữ ký tại chỗ.</li>
+<li>💻 📱 <strong>BLAKE3 Segmented Merkle Tree:</strong> Sử dụng JSI/FFI để kiểm tra mã băm BLAKE3 theo từng phân đoạn (Segment) của bundle. Nếu bất kỳ byte nào bị thay đổi so với bản gốc trên Marketplace, quá trình nạp sẽ bị đình chỉ ngay lập tức.</li>
+</ul>
 <h2 id="5-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích">5. Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Lập trường Kiến trúc:</strong> Không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nào được phép yêu cầu "exception" khỏi Sandbox. Mọi Exception Policy đều phá vỡ Zero-Trust. Thay vào đó, mọi capability cần thiết đều được khai báo tường minh trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> và được OPA Policy kiểm soát.</p>
 <h3 id="nguyên-tắc-wx-write-xor-execute">Nguyên tắc W^X (Write XOR Execute)</h3>
+<h4 id="section-deprecated-bpf-syscall-trapping-removed">(Section Deprecated: BPF Syscall Trapping removed)</h4>
 <ul>
 <li>📱💻 <strong>WASM No-Syscall Isolation:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> chạy trong WasmEdge runtime với profile Seccomp-BPF khắt khe — toàn bộ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">execve</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fork</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ptrace</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">socket</code> bị drop ở tầng kernel. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không thể tạo process con hay mở raw socket.</li>
 <li>📱 <strong>iOS AOT W^X Compliance:</strong> Trên iOS, WASM phải được biên dịch AOT (Ahead-of-Time) sang machine code trước khi deploy. JIT interpreter bị cấm vì vi phạm W^X policy của iOS — vùng nhớ chỉ có thể Write OR Execute, không bao giờ cả hai.</li>
@@ -590,8 +604,8 @@
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Vấn đề:</strong> Triển khai mạng diện rộng VPS Enclave (SGX/Nitro/SEV) để load logic <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Heavyweight đòi hỏi chứng chỉ DevOps/SME rất lớn, tạo rào cản quá cao cho doanh nghiệp tự host (Self-hosted).</p>
 <ul>
 <li>💻 <strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> CLI (Zero-Touch Provisioning):</strong> Bọc toàn bộ các vòng lặp tay biên dịch hệ thống. IT Admin thuộc doanh nghiệp chỉ cần cung cấp Access Key (AWS/GCP), gõ 1 lệnh CLI, mọi tham chiếu Cloud sẽ tự động map 100%.</li>
-<li>☁️ <strong>Infrastructure as Code (Terraform):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> kích hoạt tự động các module ☁️ Terraform (đã pre-audited bởi TeraChat Core Team). Tự động spin-up EC2 Nitro Enclaves, set up VPC isolation, TLS Passthrough rule, và IAM roles với Least Privilege (Giới hạn quyền hẹp nhất có thể).</li>
-<li>🗄️ <strong>Enclave Image Format (EIF) Auto-Build:</strong> Tiến trình Build Pipeline dịch Lõi Server Rust thành 🗄️ Enclave Image Format (EIF) và băm tĩnh ra các mã PCR (Platform Configuration Register) hash. Các mã này sẽ auto-inject trực tiếp vào OPA Policy Trust Store — CISO có checklist để apply mà không cần hiểu tầng Base Assembly.</li>
+<li>☁️ <strong>Infrastructure as Code (Terraform):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> kích hoạt tự động các module ☁️ Terraform (đã pre-audited bởi TeraChat Core Team). Tự động spin-up Single-Binary Rust Daemons, set up VPC isolation, TLS Passthrough rule, và IAM roles với Least Privilege (Giới hạn quyền hẹp nhất có thể).</li>
+<li>🗄️ <strong>WASM Bundle Packaging (WBP) Auto-Build:</strong> Tiến trình Build Pipeline dịch Lõi Server Rust thành gói nhị phân tối ưu và băm tĩnh ra các mã BLAKE3 hash. Các mã này sẽ auto-inject trực tiếp vào OPA Policy Trust Store — CISO có checklist để apply mà không cần hiểu tầng Base Assembly.</li>
 </ul>
 <h2 id="8-static-egress-schema-declaration-manifest-contract-tapp-publisher">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Yêu cầu:</strong> Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> muốn publish lên TeraChat Marketplace <strong>bắt buộc</strong> khai báo tĩnh JSON Schema của tất cả payload dự định gửi qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Egress_Outbox</code>. Không khai báo = không được publish.</p>
@@ -622,7 +636,16 @@
 <li>📱💻🖥️ <strong>Runtime Schema Validation (Egress Daemon):</strong> Trước khi dispatch HTTP request, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera_egress_daemon</code> deserialize Outbox payload và validate chống JSON Schema đã khai báo trong Manifest (sử dụng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">jsonschema</code> Rust crate). Payload không khớp schema → drop + <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">EGRESS_SCHEMA_VIOLATION</code> alert + audit log.</li>
 <li>☁️ <strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">additionalProperties: false</code> Enforced:</strong> Egress Daemon thêm thêm rule <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">additionalProperties: false</code> vào mọi schema khi validate — kể cả Developer quên khai báo. Điều này ngăn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nhồi thêm key-value secret vào payload mà không khai báo.</li>
 <li>🗄️ <strong>Marketplace Pre-publish Schema Audit:</strong> Trước khi bundle được ký và publish, Marketplace Backend chạy static analysis: kiểm tra schema có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">maxLength</code> cho mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">string</code> field (ngăn dump toàn bộ conversation), kiểm tra không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">type: "any"</code>, không có schema <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{}</code> rỗng. Vi phạm → require manual security review.</li>
-<li>📱💻 <strong>BLAKE3 Hash Verification Chain:</strong> Payload bytes sau khi qua JSON Schema validation → Egress Daemon tính <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BLAKE3(validated_payload)</code> → đối chiếu với hash Lõi Rust cấp trước đó → mismatch = tampering detected → block + alert. Đây là lớp bảo vệ cuối cùng trước khi data ra Internet.</li>
+<li>📱💻 <strong>BLAKE3 Hash Verification Chain:</strong> Payload bytes sau khi qua JSON Schema validation → Egress Daemon tính <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BLAKE3(validated_payload)</code> → đối chiếu with hash Lõi Rust cấp trước đó → mismatch = tampering detected → block + alert. Đây là lớp bảo vệ cuối cùng trước khi data ra Internet.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="9-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag">9. Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</h2>
+<ul>
+<li>☁️ <strong>System-Level Tapp Privileges & Deterministic Memory Chunking:</strong></li>
+<li>☁️ <strong>OPA Policy Enforcement (AppID com.terachat.diag Egress Blocked):</strong> Các ứng dụng chẩn đoán với ID <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">com.terachat.diag</code> được áp đặt chính sách OPA nghiêm ngặt: Tuyệt đối chặn mọi kết nối Egress ra internet (Egress Blocked). Dữ liệu chỉ được phép luân chuyển trong mạng Mesh nội bộ.</li>
+<li>🗄️ <strong>128MB Resident Memory Cap:</strong> Cấp hạn mức RAM vật lý cố định 128MB cho TeraDiag để xử lý các tệp log lớn mà không gây ảnh hưởng đến Messaging Core.</li>
+<li>🗄️ <strong>Deterministic Memory Chunking (Multi-part Archive):</strong> Dữ liệu chẩn đoán được chia nhỏ và đóng gói thành Multi-part Archive phục vụ truyền tải qua mạng Mesh.</li>
+<li>⭐ <strong>Publisher Trust Tier 1 (TeraChat HQ Sign):</strong> Mọi ứng dụng TeraDiag phải mang chữ ký Root CA của TeraChat HQ để đảm bảo tính chính danh và quyền can thiệp hệ thống mức cao.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

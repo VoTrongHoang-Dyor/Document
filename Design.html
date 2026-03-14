@@ -381,6 +381,7 @@
 <a href="#desktoplaptop" class="nav-link" style="padding-left:0.8rem;">Desktop/Laptop</a>
 <a href="#mobile" class="nav-link" style="padding-left:0.8rem;">Mobile</a>
 <a href="#pinned-tapp" class="nav-link" style="padding-left:0.8rem;">Pinned .tapp</a>
+<a href="#37-adaptive-glassmorphism-state-machine-survival-hud" class="nav-link" style="padding-left:0.8rem;">37. Adaptive Glassmorphism State Machine & Survival HUD</a>
 <a href="#14-settings" class="nav-link" style="padding-left:0.8rem;">14. Settings</a>
 <a href="#15-admin-console-role-based-chỉ-admin-thấy" class="nav-link" style="padding-left:0.8rem;">15. Admin Console (Role-based — chỉ Admin thấy)</a>
 <a href="#tab-structure" class="nav-link" style="padding-left:0.8rem;">Tab Structure</a>
@@ -409,6 +410,11 @@
 <th>Date</th>
 <th>Change Summary</th>
 </tr></thead><tbody>
+<tr>
+<td>v0.3.5</td>
+<td>2026-03-13</td>
+<td>Add §37 Adaptive Glassmorphism State Machine & Survival HUD</td>
+</tr>
 <tr>
 <td>v0.3.0</td>
 <td>2026-03-11</td>
@@ -598,15 +604,16 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)</code></pre></div>
 <li><strong>Banner top:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">"Mesh Active – N nodes connected"</code> (cập nhật mỗi lần node join/leave, không animate liên tục)</li>
 <li>📱 <strong>State: "Missing Local Network Permission" (iOS 14+):</strong> Khi quyền Local Network bị từ chối, banner chuyển sang màu Amber Warning <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#F59E0B</code>: <em>"⚠️ Thiếu quyền Mạng Cục bộ — Mesh chỉ hoạt động qua BLE. Vào Cài đặt → TeraChat để cấp quyền đầy đủ."</em> Nút CTA "Mở Cài đặt" deep-link thẳng đến <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">UIApplication.openSettingsURLString</code>. Icon Radar chuyển sang pulse chậm (opacity: 0.2 → 0.5) thay vì full-active.</li>
 <li>📱💻 <strong>State: "Warming up Neural Engine...":</strong> Khi người dùng mở tính năng AI (Smart Summarize / DLP Scan) lần đầu sau khi khởi động app, hiển thị inline progress bar nhỏ bên dưới Input Box: <em>"⚙️ Đang khởi động Neural Engine..."</em> với spinner nhỏ 16px. Biến mất sau khi CoreML/NNAPI hoàn thành pre-warm. Không block UI, người dùng vẫn gõ được bình thường.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">📱</code> <strong>Mesh Mode Offline Constraint & DAG Fragmentation Prevention:</strong> Nếu thiết bị đang ở trong Mesh Mode không có tín hiệu mạng chạm tới VPS, giao diện tự động vô hiệu hóa các nút chỉnh sửa. Trạng thái UI lập tức chuyển sang "Read-Only (Offline)" để bảo đảm không xảy ra phân mảnh DAG diện rộng.</li>
 </ul>
 <p><strong>Transition:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fade 0.1s</code> (rút ngắn từ 0.3s để giảm GPU frame render khi chuyển sang Mesh Mode)</p>
 <h4 id="re-sync-adaptive-ui-degradation-skeleton-fallback-gián-đoạn-hiển-thị-trong-re-sync">Re-sync Adaptive UI Degradation & Skeleton Fallback — Gián đoạn Hiển thị trong Re-sync</h4>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Quá trình Deterministic State Reconciliation (kéo Delta-State Gap từ server) kéo dài 2-10 giây tùy kích thước gap. Nếu UI block chờ — trải nghiệm người dùng bị phá vỡ hoàn toàn.</p>
 <ul>
-<li>📱 <strong>Hardcoded Skeleton UI + Progress Bar (Online Mode):</strong> Trong toàn bộ thời gian Re-sync, UI render ngay <strong>Skeleton UI</strong> tĩnh (hardcoded placeholder, không cần fetch dữ liệu) kết hợp Progress Bar tuyến tính bên dưới header: <em>"🔄 Đang đồng bộ dữ liệu... X%"</em>. Skeleton dùng màu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#1E293B</code> (Slate-800), không có shimmer animation để tránh tốn GPU.</li>
-<li>📱 <strong>Event-driven SVG Radar Pulse (Mesh Mode):</strong> Nếu Re-sync xảy ra trong Mesh Mode (không có Internet), biểu tượng SVG Radar Pulse được kích hoạt theo model Event-driven: opacity thay đổi (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0.3 → 1.0</code>) mỗi khi Lõi Rust dispatch tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MESH_CHUNK_RECEIVED</code> — không dùng CSS animation loop, không tốn GPU frame liên tục.</li>
-<li>📱 <strong>Sub-300ms Cryptographic State Label:</strong> Phía dưới Progress Bar, một label nhỏ cập nhật liên tục dưới ngưỡng 300ms (debounced): <em>"⚙️ Verifying Cryptographic State... [Merkle Chunk N/M]"</em>. Label chỉ cập nhật text content (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">innerText</code>), không re-render DOM — tránh layout thrashing. Biến mất ngay khi commit transaction cuối cùng vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> thành công.</li>
-<li>📱 <strong>Skeleton Mode iOS — Background Thread Overflow Trigger:</strong> Bắt buộc kích hoạt Skeleton Mode (không phải optional) khi Lõi Rust phát tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">IPC_EVENT: BACKGROUND_THREAD_PAYLOAD_OVERFLOW</code> — tức là khi payload TreeKEM/Epoch vượt quá ngưỡng xử lý an toàn của Background Thread trên Mobile (giới hạn cứng: 4KB cho NSE, 48MB cho BGTask). UI không được block. Toàn bộ logic giải mã nặng bị delegate sang Main Thread queue ngay khi user mở app. Skeleton hiển thị trạng thái: <em>"🔐 Đang đồng bộ mã hóa ở nền... Tin nhắn sẽ hiện sau vài giây."</em></li>
+<li>📱 <strong>Micro-UI Bridge Integration (Online Mode):</strong> Trong toàn bộ thời gian Re-sync, UI bóc tách logic hiển thị trực tiếp từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> qua Micro-UI Bridge, đảm bảo trạng thái hiển thị luôn đồng nhất với logic nghiệp vụ mới nhất mà không cần các màn hình dự phòng tĩnh.</li>
+<li>📱 <strong>Event-driven SVG Radar Pulse (Mesh Mode):</strong> Nếu Re-sync xảy ra trong Mesh Mode (không có Internet), biểu tượng SVG Radar Pulse được kích hoạt theo model Event-driven: opacity thay đổi (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0.3 → 1.0</code>) mỗi khi Lõi Rust dispatch tín hiệu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MESH_CHUNK_RECEIVED</code>.</li>
+<li>📱 <strong>Sub-300ms Cryptographic State Label:</strong> Phía dưới thanh trạng thái, một label nhỏ cập nhật liên tục: <em>"⚙️ Verifying Cryptographic State... [Merkle Chunk N/M]"</em>. Label chỉ cập nhật text content (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">innerText</code>), không re-render DOM.</li>
+<li>📱 <strong>Dynamic Execution iOS — Background Thread Overflow Trigger:</strong> Tự động delegate các tác vụ nặng sang Main Thread queue ngay khi user mở app nếu phát hiện payload TreeKEM/Epoch vượt quá ngưỡng xử lý an toàn của Background Thread. UI duy trì tính phản hồi cao thông qua Micro-UI Bridge.</li>
 </ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="4-micro-animations-motion">4. Micro-Animations & Motion</h2>
@@ -916,6 +923,9 @@ Layer 4 → Floating Panels/Modals  (blur: 20px)</code></pre></div>
 ---
 
 ## 10. Chats
+
+### Giao diện Cấu hình Chính sách (Glassmorphism Policy Configurator)
+- `📱💻` **Glassmorphism UI Policy Configurator:** UI hiển thị một Modal mờ tuyệt đối (Background Blur) khi tác giả định nghĩa Policy_Packet. Cho phép thiết lập Access Control List (ACL) linh hoạt, kéo thả mượt mà để phân bổ quyền Editor, Commenter, Viewer.
 
 ### Layout Desktop/Laptop
 </code></pre></div>
@@ -1269,6 +1279,13 @@ Preview / Share / Generate Approval / AI Summary / Download / Move to Mesh
 <li>Animate slide-down vào Rail / Tab bar (dynamic zone).</li>
 <li>Badge alert nếu app có notification.</li>
 </ul>
+<h2 id="37-adaptive-glassmorphism-state-machine-survival-hud">37. Adaptive Glassmorphism State Machine & Survival HUD</h2>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Giải pháp:</strong> Cung cấp phản hồi thị giác ngay lập tức khi hệ thống thay đổi trạng thái triển khai hoặc gặp sự cố server.</p>
+<ul>
+<li>🖥️ 💻 <strong>Admin Setup Wizard (Light Mode Glassmorphism):</strong> Giao diện thiết lập ban đầu sử dụng phong cách Glassmorphism sáng màu, tập trung vào tính hướng dẫn cao để Admin dễ dàng vượt qua các bước cấu hình VPS.</li>
+<li>📱 💻 <strong>Mesh Mode UI Transition (Dark Navy 0.15s Cross-fade):</strong> Khi phát hiện gián đoạn mạng hoặc sập Server, UI ngay lập tức thực hiện hiệu ứng Cross-fade sang nền Dark Navy của Mesh Mode. Trạng thái này báo hiệu hệ thống đã chuyển sang cơ chế P2P Survival Mesh, với các thành phần UI được tải động từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> thay vì placeholder tĩnh.</li>
+<li>📱 <strong>HUD Radar Event-driven SVG:</strong> Hiển thị radar tìm kiếm thiết bị xung quanh sử dụng SVG hướng sự kiện (Event-driven). Radar chỉ nhấp nháy khi có sự kiện thực tế trong mạng Mesh, giúp người dùng nhận diện trạng thái kết nối mà không làm hao pin thiết bị.</li>
+</ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="14-settings">14. Settings</h2>
 <div class="comparison-table"><table>
@@ -1438,9 +1455,9 @@ TeraChat tuyệt đối không dùng xác thực mật khẩu cục bộ. Mọi 
 
 - **Biometric-Bound Initialization (Bắt buộc Sinh trắc học):** Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).
   &gt; *"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)"*
-  &gt; Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.
-- **Cryptographic PIN Fallback UI:** Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).
-  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của React Native.
+  &gt; Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Entry (Micro-UI).
+- **Cryptographic PIN Entry (Micro-UI):** Giao diện nhập PIN tối giản (Glassmorphism trơn, không có bóng viền) được cấp từ Lõi Rust qua JSI Bridge, hiển thị trạng thái giải mã `Policy_Packet` theo thời gian thực (Real-time Decryption Progress).
+  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của giao thức UI.
   - Phía dưới hiển thị dòng chữ cảnh báo mờ: `Attempt X/5`.
 - **Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct &amp; Memory Zeroization):** Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh `Remote Wipe`.
   - 📱💻 **Remote Wipe &amp; Secure Enclave Wipe:** Lệnh `Remote Wipe` thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.

@@ -36,6 +36,11 @@
               ],
               "rows": [
                 [
+                  "v0.3.5",
+                  "2026-03-13",
+                  "Add §37 Adaptive Glassmorphism State Machine & Survival HUD"
+                ],
+                [
                   "v0.3.0",
                   "2026-03-11",
                   "Add §30–36: Memory pressure feedback UI; Byzantine fault visual indicators; Crypto-Shred animation spec"
@@ -340,7 +345,8 @@
                     "Radar — Event-driven SVG (không dùng CSS loop): Biểu tượng radar là SVG tĩnh, chỉ thay đổi opacity (0.3 → 1.0 → 0.3) khi Loo iRust Core dispatch tín hiệu MESH_PACKET_RECEIVED. Không có setInterval hay animation: pulse infinite.",
                     "Banner top: \"Mesh Active – N nodes connected\" (cập nhật mỗi lần node join/leave, không animate liên tục)",
                     "📱 State: \"Missing Local Network Permission\" (iOS 14+): Khi quyền Local Network bị từ chối, banner chuyển sang màu Amber Warning #F59E0B: \"⚠️ Thiếu quyền Mạng Cục bộ — Mesh chỉ hoạt động qua BLE. Vào Cài đặt → TeraChat để cấp quyền đầy đủ.\" Nút CTA \"Mở Cài đặt\" deep-link thẳng đến UIApplication.openSettingsURLString. Icon Radar chuyển sang pulse chậm (opacity: 0.2 → 0.5) thay vì full-active.",
-                    "📱💻 State: \"Warming up Neural Engine...\": Khi người dùng mở tính năng AI (Smart Summarize / DLP Scan) lần đầu sau khi khởi động app, hiển thị inline progress bar nhỏ bên dưới Input Box: \"⚙️ Đang khởi động Neural Engine...\" với spinner nhỏ 16px. Biến mất sau khi CoreML/NNAPI hoàn thành pre-warm. Không block UI, người dùng vẫn gõ được bình thường."
+                    "📱💻 State: \"Warming up Neural Engine...\": Khi người dùng mở tính năng AI (Smart Summarize / DLP Scan) lần đầu sau khi khởi động app, hiển thị inline progress bar nhỏ bên dưới Input Box: \"⚙️ Đang khởi động Neural Engine...\" với spinner nhỏ 16px. Biến mất sau khi CoreML/NNAPI hoàn thành pre-warm. Không block UI, người dùng vẫn gõ được bình thường.",
+                    "📱 Mesh Mode Offline Constraint & DAG Fragmentation Prevention: Nếu thiết bị đang ở trong Mesh Mode không có tín hiệu mạng chạm tới VPS, giao diện tự động vô hiệu hóa các nút chỉnh sửa. Trạng thái UI lập tức chuyển sang \"Read-Only (Offline)\" để bảo đảm không xảy ra phân mảnh DAG diện rộng."
                   ]
                 },
                 {
@@ -364,10 +370,10 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱 Hardcoded Skeleton UI + Progress Bar (Online Mode): Trong toàn bộ thời gian Re-sync, UI render ngay Skeleton UI tĩnh (hardcoded placeholder, không cần fetch dữ liệu) kết hợp Progress Bar tuyến tính bên dưới header: \"🔄 Đang đồng bộ dữ liệu... X%\". Skeleton dùng màu #1E293B (Slate-800), không có shimmer animation để tránh tốn GPU.",
-                        "📱 Event-driven SVG Radar Pulse (Mesh Mode): Nếu Re-sync xảy ra trong Mesh Mode (không có Internet), biểu tượng SVG Radar Pulse được kích hoạt theo model Event-driven: opacity thay đổi (0.3 → 1.0) mỗi khi Lõi Rust dispatch tín hiệu MESH_CHUNK_RECEIVED — không dùng CSS animation loop, không tốn GPU frame liên tục.",
-                        "📱 Sub-300ms Cryptographic State Label: Phía dưới Progress Bar, một label nhỏ cập nhật liên tục dưới ngưỡng 300ms (debounced): \"⚙️ Verifying Cryptographic State... [Merkle Chunk N/M]\". Label chỉ cập nhật text content (innerText), không re-render DOM — tránh layout thrashing. Biến mất ngay khi commit transaction cuối cùng vào hot_dag.db thành công.",
-                        "📱 Skeleton Mode iOS — Background Thread Overflow Trigger: Bắt buộc kích hoạt Skeleton Mode (không phải optional) khi Lõi Rust phát tín hiệu IPC_EVENT: BACKGROUND_THREAD_PAYLOAD_OVERFLOW — tức là khi payload TreeKEM/Epoch vượt quá ngưỡng xử lý an toàn của Background Thread trên Mobile (giới hạn cứng: 4KB cho NSE, 48MB cho BGTask). UI không được block. Toàn bộ logic giải mã nặng bị delegate sang Main Thread queue ngay khi user mở app. Skeleton hiển thị trạng thái: \"🔐 Đang đồng bộ mã hóa ở nền... Tin nhắn sẽ hiện sau vài giây.\""
+                        "📱 Micro-UI Bridge Integration (Online Mode): Trong toàn bộ thời gian Re-sync, UI bóc tách logic hiển thị trực tiếp từ .tapp qua Micro-UI Bridge, đảm bảo trạng thái hiển thị luôn đồng nhất với logic nghiệp vụ mới nhất mà không cần các màn hình dự phòng tĩnh.",
+                        "📱 Event-driven SVG Radar Pulse (Mesh Mode): Nếu Re-sync xảy ra trong Mesh Mode (không có Internet), biểu tượng SVG Radar Pulse được kích hoạt theo model Event-driven: opacity thay đổi (0.3 → 1.0) mỗi khi Lõi Rust dispatch tín hiệu MESH_CHUNK_RECEIVED.",
+                        "📱 Sub-300ms Cryptographic State Label: Phía dưới thanh trạng thái, một label nhỏ cập nhật liên tục: \"⚙️ Verifying Cryptographic State... [Merkle Chunk N/M]\". Label chỉ cập nhật text content (innerText), không re-render DOM.",
+                        "📱 Dynamic Execution iOS — Background Thread Overflow Trigger: Tự động delegate các tác vụ nặng sang Main Thread queue ngay khi user mở app nếu phát hiện payload TreeKEM/Epoch vượt quá ngưỡng xử lý an toàn của Background Thread. UI duy trì tính phản hồi cao thông qua Micro-UI Bridge."
                       ]
                     }
                   ],
@@ -890,7 +896,7 @@
                 {
                   "type": "code",
                   "language": "",
-                  "code": "\n### Mesh Mode — Home\n\n- Background chuyển dark navy.\n- Radar icon ở header.\n- Banner: `\"Mesh Active – Local secure network connected\"`.\n\n### Layout Mobile\n\n- Single column.\n- Pinned Channels: horizontal scroll cards.\n- Activity Feed + Quick Tools bên dưới.\n- Empty state hero text 60px: *\"Secure Communication Infrastructure for Critical Operations.\"*\n\n---\n\n## 10. Chats\n\n### Layout Desktop/Laptop\n"
+                  "code": "\n### Mesh Mode — Home\n\n- Background chuyển dark navy.\n- Radar icon ở header.\n- Banner: `\"Mesh Active – Local secure network connected\"`.\n\n### Layout Mobile\n\n- Single column.\n- Pinned Channels: horizontal scroll cards.\n- Activity Feed + Quick Tools bên dưới.\n- Empty state hero text 60px: *\"Secure Communication Infrastructure for Critical Operations.\"*\n\n---\n\n## 10. Chats\n\n### Giao diện Cấu hình Chính sách (Glassmorphism Policy Configurator)\n- `📱💻` **Glassmorphism UI Policy Configurator:** UI hiển thị một Modal mờ tuyệt đối (Background Blur) khi tác giả định nghĩa Policy_Packet. Cho phép thiết lập Access Control List (ACL) linh hoạt, kéo thả mượt mà để phân bổ quyền Editor, Commenter, Viewer.\n\n### Layout Desktop/Laptop\n"
                 },
                 {
                   "type": "table",
@@ -1318,6 +1324,29 @@
           ]
         },
         {
+          "id": "37-adaptive-glassmorphism-state-machine-survival-hud",
+          "level": 2,
+          "heading": "37. Adaptive Glassmorphism State Machine & Survival HUD",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Giải pháp:** Cung cấp phản hồi thị giác ngay lập tức khi hệ thống thay đổi trạng thái triển khai hoặc gặp sự cố server."
+              ]
+            },
+            {
+              "type": "list",
+              "data": [
+                "🖥️ 💻 Admin Setup Wizard (Light Mode Glassmorphism): Giao diện thiết lập ban đầu sử dụng phong cách Glassmorphism sáng màu, tập trung vào tính hướng dẫn cao để Admin dễ dàng vượt qua các bước cấu hình VPS.",
+                "📱 💻 Mesh Mode UI Transition (Dark Navy 0.15s Cross-fade): Khi phát hiện gián đoạn mạng hoặc sập Server, UI ngay lập tức thực hiện hiệu ứng Cross-fade sang nền Dark Navy của Mesh Mode. Trạng thái này báo hiệu hệ thống đã chuyển sang cơ chế P2P Survival Mesh, với các thành phần UI được tải động từ .tapp thay vì placeholder tĩnh.",
+                "📱 HUD Radar Event-driven SVG: Hiển thị radar tìm kiếm thiết bị xung quanh sử dụng SVG hướng sự kiện (Event-driven). Radar chỉ nhấp nháy khi có sự kiện thực tế trong mạng Mesh, giúp người dùng nhận diện trạng thái kết nối mà không làm hao pin thiết bị."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
           "id": "14-settings",
           "level": 2,
           "heading": "14. Settings",
@@ -1592,7 +1621,7 @@
             {
               "type": "code",
               "language": "",
-              "code": "\n**UX & Motion Logic (Zero-Trust Core Initialization):**\n\n- **Biometric-Bound Initialization (Bắt buộc Sinh trắc học):** Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).\n  > *\"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)\"*\n  > Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Fallback.\n- **Cryptographic PIN Fallback UI:** Giao diện bàn phím số (Dialpad) 6 ô vuông cực kỳ tối giản (Glassmorphism trơn, không có bóng viền).\n  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của React Native.\n  - Phía dưới hiển thị dòng chữ cảnh báo mờ: `Attempt X/5`.\n- **Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization):** Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh `Remote Wipe`.\n  - 📱💻 **Remote Wipe & Secure Enclave Wipe:** Lệnh `Remote Wipe` thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.\n  - 📱💻🖥️ **Memory Zeroization:** Cơ chế `ZeroizeOnDrop` (RAII) lập tức thực hiện ghi đè `0x00` lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.\n  - 📱💻🖥️ **Crypto-Shredding:** Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.\n  - 📱 **Ruthless Visualization:** Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).\n- **Tiến trình Khởi tạo mượt mà:** Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu `#24A1DE`) chạy fade-in trong `< 3 giây` với dòng text *\"Đang thiết lập Lõi Mật Mã...\"*.\n- **Input Workspace ID:** Nền glass trắng mờ, outline chuyển `#24A1DE` cùng bóng đổ mờ khi focus/active.\n- **Button Style:** Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.\n\n---\n\n## 23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)\n\nLuồng kết nối HQ và Chi nhánh được định vị tại **Admin Console > Federation**. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm \"Click & Connect\" trực quan.\n\n### Ở phía Tổng công ty (HQ Admin)\n\n1. **CTA Button:** Nút `[ + Generate Federation Invite ]` nằm góc phải trên (Primary `#24A1DE`).\n2. **Setup Modal (Slide từ trung tâm):**\n   - Tên Chi nhánh: Khung Input field thường.\n   - Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: `👁️ Chỉ Reply`, `💬 Nhắn tin`).\n   - Thời hạn Token: Slider kéo thả linh hoạt `1h — 24h` dán nhãn màu.\n3. **Kết quả (Success State):** Sinh JWT Token khổng lồ để mời Chi nhánh.\n   - Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút `[ Copy Token ]` + icon clipboard.\n\n### Ở phía Chi nhánh (Branch Admin)\n\n1. Mở Admin Console > Federation. Click `[ Join Federation Network ]`.\n2. **Modal Nhập Token:** Khung Paste lớn chiếm 50% modal. Ngay khi paste, **Lõi Rust (WASM)** phân tích realtime (<50ms) và load ra thẻ Info Card xác nhận tin cậy:\n   > ⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*.\n3. **Animation `[ Confirm & Handshake ]`:** Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick `✅ Connected` sang mảng màu xanh Success tươi sáng.\n\n---\n\n## 24. Giao diện Ép/Thêm Member (Directory Sync & Invites)\n\nThiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại **Admin Console > User Management**.\n\n### Tab 1: Directory Sync (SCIM 2.0 Tự động)\n\n**Dashboard Control (Dải Ribbon trên cùng):**\n"
+              "code": "\n**UX & Motion Logic (Zero-Trust Core Initialization):**\n\n- **Biometric-Bound Initialization (Bắt buộc Sinh trắc học):** Ngay sau khi Identity Broker (SSO) trả về thành công, Lõi Rust tạm dừng tiến trình và bật Native Prompt của OS (FaceID/TouchID).\n  > *\"TeraChat cần FaceID để khởi tạo Khóa phần cứng (Device_Key)\"*\n  > Nếu thất bại 3 lần, chuyển sang luồng Cryptographic PIN Entry (Micro-UI).\n- **Cryptographic PIN Entry (Micro-UI):** Giao diện nhập PIN tối giản (Glassmorphism trơn, không có bóng viền) được cấp từ Lõi Rust qua JSI Bridge, hiển thị trạng thái giải mã `Policy_Packet` theo thời gian thực (Real-time Decryption Progress).\n  - PIN được truyền thẳng qua **FFI Pointer** xuống Lõi Rust mà không lưu lại trên State của giao thức UI.\n  - Phía dưới hiển thị dòng chữ cảnh báo mờ: `Attempt X/5`.\n- **Trải nghiệm Bảo mật Hủy dữ liệu (Ruthless Self-Destruct & Memory Zeroization):** Nếu nhập sai PIN lần thứ 5 hoặc nhận lệnh `Remote Wipe`.\n  - 📱💻 **Remote Wipe & Secure Enclave Wipe:** Lệnh `Remote Wipe` thực thi xóa trắng Private Key trong chip bảo mật (Secure Enclave/StrongBox) thông qua tín hiệu từ SCIM/OIDC Listener.\n  - 📱💻🖥️ **Memory Zeroization:** Cơ chế `ZeroizeOnDrop` (RAII) lập tức thực hiện ghi đè `0x00` lên toàn bộ vùng nhớ nhạy cảm trên RAM ngay khi lệnh hủy được kích hoạt.\n  - 📱💻🖥️ **Crypto-Shredding:** Đánh dấu các sector dữ liệu là rác ngay lập tức sau khi xóa KEK.\n  - 📱 **Ruthless Visualization:** Màn hình nháy đỏ rực (Red Flash blend mode: overlay, 0.2s). Hoạt cảnh Pixel Disintegration (Rã điểm ảnh) hoặc Glitch effect được đẩy trực tiếp xuống Native UI Thread để đảm bảo độ mượt 120fps trước khi app văng ra Loading Screen ban đầu (Trạng thái Factory Reset).\n- **Tiến trình Khởi tạo mượt mà:** Nếu xác thực thành công (Biometrics/PIN), hiển thị thanh Progress bar (chiều cao 4px, màu `#24A1DE`) chạy fade-in trong `< 3 giây` với dòng text *\"Đang thiết lập Lõi Mật Mã...\"*.\n- **Input Workspace ID:** Nền glass trắng mờ, outline chuyển `#24A1DE` cùng bóng đổ mờ khi focus/active.\n- **Button Style:** Background sử dụng màu thương hiệu của SSO (Azure Blue/Google Gray) nhưng bắt buộc blend theo Layer Glass nhẹ để không phá vỡ tính nguyên khối cấu trúc UI tổng thể.\n\n---\n\n## 23. Giao diện Thiết lập Chi nhánh (Cross-Cluster Federation Handshake)\n\nLuồng kết nối HQ và Chi nhánh được định vị tại **Admin Console > Federation**. Mục tiêu UX: Biến một luồng kết nối mật mã mTLS phức tạp thành trải nghiệm \"Click & Connect\" trực quan.\n\n### Ở phía Tổng công ty (HQ Admin)\n\n1. **CTA Button:** Nút `[ + Generate Federation Invite ]` nằm góc phải trên (Primary `#24A1DE`).\n2. **Setup Modal (Slide từ trung tâm):**\n   - Tên Chi nhánh: Khung Input field thường.\n   - Quyền hạn OPA: Dropdown menu bo góc, tích hợp icon trạng thái (Vd: `👁️ Chỉ Reply`, `💬 Nhắn tin`).\n   - Thời hạn Token: Slider kéo thả linh hoạt `1h — 24h` dán nhãn màu.\n3. **Kết quả (Success State):** Sinh JWT Token khổng lồ để mời Chi nhánh.\n   - Modal chia 2 cột: Cột trái hiện mã QR Scan độ tương phản cao (radius 16px). Cột phải đính hộp JWT Hash có thể scroll dọc kèm nút `[ Copy Token ]` + icon clipboard.\n\n### Ở phía Chi nhánh (Branch Admin)\n\n1. Mở Admin Console > Federation. Click `[ Join Federation Network ]`.\n2. **Modal Nhập Token:** Khung Paste lớn chiếm 50% modal. Ngay khi paste, **Lõi Rust (WASM)** phân tích realtime (<50ms) và load ra thẻ Info Card xác nhận tin cậy:\n   > ⚠️ **Bảo mật:** Bạn đang yêu cầu kết nối mTLS với máy chủ **[Tên HQ]**. Trạng thái chứng chỉ: *Hợp lệ*.\n3. **Animation `[ Confirm & Handshake ]`:** Giữ nguyên hiệu ứng Loading Spinner tại nút trong 1-2s. Sau khi Handshake xong, xuất hiện màn hình pháo hoa mini tinh tế hoặc tick `✅ Connected` sang mảng màu xanh Success tươi sáng.\n\n---\n\n## 24. Giao diện Ép/Thêm Member (Directory Sync & Invites)\n\nThiết kế giao diện cho luồng đồng bộ nhân sự lớn từ Azure AD/HR xuống, thay vì mời thủ công rủi ro. Thao tác tại **Admin Console > User Management**.\n\n### Tab 1: Directory Sync (SCIM 2.0 Tự động)\n\n**Dashboard Control (Dải Ribbon trên cùng):**\n"
             },
             {
               "type": "paragraph",

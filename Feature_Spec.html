@@ -426,6 +426,7 @@
 <a href="#911-truy-xuất-dữ-liệu-an-toàn-trong-wasm-sandbox-generational-handle-validation" class="nav-link" style="padding-left:0.8rem;">9.11 Truy xuất Dữ liệu An toàn trong WASM Sandbox (Generational Handle Validation)</a>
 <a href="#912-client-driven-merkle-dag-reconciliation-chống-rogue-server" class="nav-link" style="padding-left:0.8rem;">9.12 Client-Driven Merkle DAG Reconciliation (Chống Rogue Server)</a>
 <a href="#913-tấn-công-nhật-thực-eclipse-attack-cross-client-gossip-protocol" class="nav-link" style="padding-left:0.8rem;">9.13 Tấn công Nhật thực (Eclipse Attack) — Cross-Client Gossip Protocol</a>
+<a href="#914-air-gapped-diagnostic-isolation-teradiag" class="nav-link" style="padding-left:0.8rem;">9.14 Air-Gapped Diagnostic Isolation (TeraDiag)</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -1050,7 +1051,14 @@ Desktop thu gom "orphan chains" → O(N log N) merge → push snapshot về Mobi
 <ul>
 <li>📱💻 Shadow Node Hydration: Các lệnh PROPOSE_CHANGE được lưu trong hot_dag.db ở trạng thái Pending. UI Renderer chỉ hiển thị chúng dưới dạng lớp phủ (Overlay) mà không thay đổi trạng thái gốc của tin nhắn.</li>
 <li>📱💻 Local Crypto-Shredding cho Nhánh Từ chối: Ngay khi người dùng nhấn "Reject" một đề xuất, Lõi Rust gọi ZeroizeOnDrop để tiêu hủy khóa KEK của nhánh bị từ chối đó, đồng thời xóa node khỏi hot_dag.db trên Local Client để chống phình to dữ liệu (State Bloat).</li>
-<li>📱💻 Inline Policy Packet (RBAC): Lõi Rust khóa các hàm FFI tạo Proposal dựa trên Policy Packet đi kèm tin nhắn (Viewer: Drop request, Commenter: Chỉ cho phép PROPOSE_COMMENT, Editor: Cho phép PROPOSE_CHANGE).</li>
+<li><strong>[1] Đóng gói Chính sách tại Nguồn (Policy Packaging):</strong></li>
+<li>📱💻 <strong>Glassmorphism UI Policy Configurator:</strong> Giao diện hiển thị một Modal mờ (Background Blur) cho phép Tác giả định nghĩa Policy_Packet, thiết lập Access Control List (ACL) linh hoạt như Role Editor, Commenter, Viewer.</li>
+<li>📱 <strong>SharedArrayBuffer/JSI IPC Bridging & Hardware Enclave DeviceIdentityKey Signing:</strong> Lõi Rust nhận cấu hình từ UI qua cầu nối IPC (SharedArrayBuffer/JSI). Lõi khởi tạo Policy_Packet chứa ACL và ký bằng DeviceIdentityKey trích xuất từ Hardware Enclave để chống chối bỏ và chống giả mạo (Non-Repudiation).</li>
+<li>💻 <strong>BLAKE3 Segmented Merkle Tree & DEK Encryption:</strong> File được băm nhỏ thành các Chunk (BLAKE3 Segmented Merkle Tree). Policy_Packet được mã hóa cùng với Siêu dữ liệu (Metadata) bằng khóa DEK (Data Encryption Key) riêng biệt.</li>
+<li><strong>[3] Thực thi Phân quyền tại Thiết bị Nhận (Client-Side RBAC Enforcement):</strong></li>
+<li>💻 <strong>FFI Pointer Freezing & Authorization Gateway:</strong> Lõi Rust giải mã Policy_Packet và kiểm tra chữ ký. Lõi đóng vai trò "Cảnh sát Bộ nhớ" (Memory Guardian) cấp quyền FFI tương ứng. Đối với Viewer, lập tức đóng băng (lock) các con trỏ hàm FFI liên quan đến việc tạo Proposal. Lõi Rust chặn đứng yêu cầu độc hại từ UI giả mạo ngay tại ranh giới bộ nhớ, trả về ERR_UNAUTHORIZED. Đối với Commenter, chỉ mở khóa hàm ffi_propose_comment chấp nhận văn bản thuần túy, từ chối can thiệp nhị phân.</li>
+<li>📱 <strong>ZeroizeOnDrop Memory Sanitization:</strong> Lập tức gọi ZeroizeOnDrop để dọn dẹp payload độc hại khỏi RAM khi phát hiện yêu cầu trái phép.</li>
+<li>💻 <strong>Delta-State Shadow Node Cryptographic Hashing:</strong> Đối với Editor, mở khóa hàm ffi_propose_change cho phép chỉnh sửa cục bộ và tạo gói PROPOSE_CHANGE (Shadow Node). Lõi Rust băm phần dữ liệu thay đổi (Delta), ký bằng DeviceIdentityKey, và gửi lên VPS.</li>
 <li>📱💻 <strong>Lazy Hydration (Nạp lười biếng):</strong> Lõi Rust không tải toàn bộ Shadow Branch vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> cùng lúc. Thay vào đó, chỉ tải một "Summary Metadata" (ví dụ: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{"Index_ID": "A1", "Proposal_Count": 45}</code>) để giảm tải RAM và I/O.</li>
 <li>📱💻 <strong>On-Demand Decryption:</strong> Chỉ khi Author bấm vào xem danh sách đóng góp, Lõi Rust mới gọi API kéo (fetch) các node chi tiết về RAM, giải mã và hiển thị. Đóng Pop-up → Kích hoạt ZeroizeOnDrop xóa sạch RAM ngay lập tức.</li>
 </ul>
@@ -1628,9 +1636,9 @@ Desktop thu gom "orphan chains" → O(N log N) merge → push snapshot về Mobi
 <ul>
 <li>☁️ AI Bot có KeyPair Ed25519 riêng, join MLS Group như member bình thường. Chỉ active khi User <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">@mention</code> hoặc Admin Add Bot. <strong>Không bao giờ auto-scan ngầm.</strong></li>
 </ul>
-<h4 id="dual-mask-protocol-dynamic-tokenization">Dual-Mask Protocol (Dynamic Tokenization)</h4>
+<h4 id="isdm-interactive-slm-dual-masking-dynamic-pii-gutting">ISDM (Interactive SLM Dual-Masking) — Dynamic PII Gutting</h4>
 <ul>
-<li>📱💻🖥️ <strong>Tokenization Pass:</strong> Mỗi PII entity nhận alias riêng: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[REDACTED_PHONE_1]</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[REDACTED_PHONE_2]</code>. Session Vault tồn tại trong RAM duy nhất cho 1 request.</li>
+<li>📱💻🖥️ <strong>SLM PII Gutting (Interactive Pass):</strong> Trước khi gọi LLM ngoài, <strong>SLM (Small Language Model) cục bộ</strong> (biên dịch WASM hoặc AOT CoreML) thực hiện "rút ruột" toàn bộ dữ liệu nhạy cảm. Mỗi PII entity nhận alias riêng: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[REDACTED_PHONE_1]</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[REDACTED_PHONE_2]</code>. Session Vault tồn tại trong RAM duy nhất cho 1 request.</li>
 <li>📱💻🖥️ <strong>De-tokenization Pass:</strong> Sau khi nhận LLM response, thay alias trở lại giá trị thực trên Client.</li>
 <li>📱💻🖥️ <strong>Zero-Retention:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">SessionVault::drop()</code> overwrite toàn bộ giá trị gốc bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> ngay sau De-tokenize (dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">zeroize</code> crate).</li>
 <li>☁️ Header <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">X-Zero-Retention: true</code> trên mọi request → ép API Provider không lưu trữ, không dùng để train model.</li>
@@ -2114,6 +2122,15 @@ Desktop thu gom "orphan chains" → O(N log N) merge → push snapshot về Mobi
 <li>📱 <strong>BLE 5.0 Advertising Packets (Merkle Root Hash):</strong> Thiết bị phát quảng bá Merkle Root Hash của trạng thái DAG hiện tại qua BLE 5.0 Advertising Packet chính xác — Peer lân cận nhận ra ngay khi Root Hash lệch.</li>
 <li>💻 <strong>Apple Wireless Direct Link (AWDL) Out-of-Band Sync:</strong> Trên iOS/macOS, dùng AWDL để đối soát ngoài băng tần với các Client lận cận mà không cần qua kết nối Wi-Fi router thông thường.</li>
 <li>☁️ <strong>Phân tích độ lệch thực tại (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Latest_HLC_Timestamp</code>):</strong> So sánh HLC Timestamp giữa Peer và Server; lệch &gt; 3 Epoch → tự động cảnh báo Eclipse Attack và chuyển sang Pure Mesh Mode.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h3 id="914-air-gapped-diagnostic-isolation-teradiag">9.14 Air-Gapped Diagnostic Isolation (TeraDiag)</h3>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"Chẩn đoán lỗi mà không làm lộ dữ liệu. TeraDiag tạo ra một vùng cách ly tuyệt đối, nơi log hệ thống được xử lý, mã hóa và đồng bộ mà không cần chạm vào luồng dữ liệu chính của App."</strong></p>
+<ul>
+<li>💻 <strong>Air-Gapped Diagnostic Isolation & Zero-Knowledge Diagnostic Pipeline:</strong></li>
+<li>💻 <strong>WASM Sandbox (ReadOnly Partition):</strong> TeraDiag chạy trong một instance WASM Sandbox riêng biệt. Nó chỉ có quyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PROT_READ</code> đối với phân vùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">diag_logs</code> và không thể truy cập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> hay <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code>.</li>
+<li>💻 <strong>AEAD (XChaCha20-Poly1305 Pipeline):</strong> Toàn bộ log trước khi rời Sandbox được mã hóa qua pipeline XChaCha20-Poly1305 với khóa ephemeral sinh từ Hardware Enclave. Dữ liệu chẩn đoán là Zero-Knowledge đối với trạm trung chuyển.</li>
+<li>📱 <strong>Wi-Fi Direct (Log Sync over Mesh):</strong> Khi thiết bị không có internet, TeraDiag kích hoạt Wi-Fi Direct để đồng bộ Log chẩn đoán sang thiết bị của kỹ thuật viên (Diagnostic Node) trong cùng mạng Mesh mà không cần đi qua Cloud.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

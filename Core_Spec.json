@@ -35,6 +35,16 @@
               ],
               "rows": [
                 [
+                  "v0.3.6",
+                  "2026-03-13",
+                  "Deprecate eBPF/XDP, Hardware TEE (SGX/SEV), mlock() Pinning, and Envoy Sidecar to resolve deployment bottlenecks on shared VPS."
+                ],
+                [
+                  "v0.3.5",
+                  "2026-03-13",
+                  "Add §3.5 Lightweight Micro-Core Relay; §4.6 Soft-Enclave WASM Isolation; §3.4.2 SQLite OOM Prevention"
+                ],
+                [
                   "v0.3.0",
                   "2026-03-11",
                   "Remove ODES/Blind Shard → E2EE Cloud Backup (§9.1); Remove JCAS 3D-A* + Power Analysis NOPs; §5.9 simplified → Gossip Broadcast + iBeacon only"
@@ -127,7 +137,7 @@
                     [
                       "`Epoch_Key`",
                       "MLS Leaf Key",
-                      "In-memory only (`mlock`)",
+                      "RAM (Userspace)",
                       "Per MLS Epoch, zeroized on rotation",
                       "§4.2"
                     ],
@@ -141,7 +151,7 @@
                     [
                       "`Session_Key`",
                       "ECDH Curve25519 Derived",
-                      "RAM (ephemeral)",
+                      "RAM (Userspace)",
                       "Per session, zeroized after disconnect",
                       "§5.10.2"
                     ]
@@ -501,10 +511,6 @@
                     [
                       "**Crypto-Shredding**",
                       "Xóa KEK thay vì xóa dữ liệu vật lý. Ciphertext còn trên disk nhưng trở thành garbage."
-                    ],
-                    [
-                      "**TEE**",
-                      "Trusted Execution Environment (Intel SGX / AWS Nitro). AI Worker chạy isolated — Cloud provider không đọc được."
                     ]
                   ]
                 }
@@ -549,7 +555,8 @@
                     "☁️ Server là Blind Relay — chỉ thấy: destination_device_id, blob_size, timestamp.",
                     "☁️ Sealed Sender: Header người gửi mã hóa bằng public key người nhận — Server không biết who-to-whom.",
                     "☁️ Oblivious CAS Routing: Batch 4–10 Fake_CAS_Hashes khi gửi hash query (Chaffing). Tra qua Mixnet Proxy Endpoint, không đính User_ID.",
-                    "🗄️☁️ MinIO Blind Storage: Lưu file theo cas_hash path — không biết tên file thực."
+                    "🗄️☁️ MinIO Blind Storage: Lưu file theo cas_hash path — không biết tên file thực.",
+                    "☁️ VPS Blind Storage & Zero-Knowledge Binary Block Routing: Các Chunk mã hóa được đẩy lên VPS. VPS hoàn toàn mù (Zero-Knowledge) về nội dung file lẫn Policy_Packet, chỉ lưu trữ dưới dạng các block nhị phân vô nghĩa và phân phối chúng đến các thành viên trong nhóm."
                   ]
                 }
               ],
@@ -566,22 +573,6 @@
                     "📱💻 Khai thác Dynamic Library Loading (DLL/dylib) điều phối nạp/rút các phân hệ linh động theo từng ngữ cảnh giao tiếp.",
                     "📱💻 Khởi động cơ chế Just-In-Time (JIT) Micro-Core nhằm đè bẹp dung lượng RAM thường trực của lõi hệ thống xuống mức tối thiểu tuyệt đối.",
                     "📱💻🖥️ Áp dụng Engine mã hóa hậu lượng tử Kyber768 bảo đảm tương lai an toàn trước kỷ nguyên Shor Algorithm (Thuật toán Shor)."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "24-trạng-thái-ảo-hóa-cloud-edge-tee-backed-stateless-ephemeral-client",
-              "level": 3,
-              "heading": "2.4 Trạng thái Ảo hóa (Cloud-Edge TEE-Backed Stateless Ephemeral Client)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "☁️ Điều hướng luồng trạng thái dữ liệu ủy quyền sang vùng thực thi tin cậy TEE Enclave (Intel SGX / AWS Nitro) đặt tại Cloud-Edge.",
-                    "📱 Kiến nối kênh truyền E2EE Tunneling chọc thẳng từ thiết bị di động vào bộ nhớ RAM cấu trúc TEE mà không chạm đĩa cứng máy chủ.",
-                    "📱 Loại bỏ triệt để SSD I/O bottleneck nội bộ máy qua mô thức Zero-Local-Storage, biên dịch trọn vẹn trạng thái App vào luồng Virtual Memory."
                   ]
                 }
               ],
@@ -658,22 +649,6 @@
                         "📱💻🖥️ Sử dụng cờ Atomic (ATOMIC_SECURITY_LOCK) để khóa toàn bộ luồng IPC Data Plane ngay khi phát hiện phiên bản bị thu hồi (CVE Blacklist match).",
                         "📱💻🖥️ Kích hoạt giao diện Red Screen of Death (RSOD) thông qua luồng tín hiệu từ Lõi Rust lên UI (React Native/Tauri) — người dùng không thể đóng hộp thoại này.",
                         "📱💻🖥️ Thực thi giao thức Zeroize RAM tiêu hủy tức khắc khóa Root và tàn dư vùng nhớ nhạy cảm khi nhận lệnh khóa."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "tước-quyền-phân-phối-và-chứng-thực-tính-toàn-vẹn-cấp-hệ-điều-hành-os-level-remote-attestation",
-                  "level": 4,
-                  "heading": "Tước quyền Phân phối và Chứng thực Tính toàn vẹn Cấp Hệ điều hành (OS-Level Remote Attestation)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "📱 Mobile Hardware Attestation: Tích hợp Apple App Attest (iOS) hoặc Play Integrity API (Android). Lõi Rust chỉ cho phép khởi tạo Device_Key và ghi nhận Device ID vào mạng lưới sau khi nhận lại chữ ký mã hóa từ Secure Enclave / StrongBox chứng thực thiết bị không bị Jailbreak/Root.",
-                        "🖥️ Desktop Binary Measurement: Đo lường Hash của Binary tiến trình thông qua TPM 2.0 / Windows Credential Guard (hoặc Apple Secure Enclave trên macOS).",
-                        "🗄️ Reproducible Builds & Binary Transparency: Đảm bảo tính minh bạch bằng Reproducible Builds kết hợp đối chiếu với sổ cái Binary Transparency Log, chặn đứng nguy cơ Rogue Admin tự ý biên dịch và phân phối một bản build chứa mã độc."
                       ]
                     }
                   ],
@@ -810,8 +785,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱💻🖥️ Áp dụng cờ Compiler #[cfg(not(target_os = \"ios\"))] để kích hoạt hàm mlock() / VirtualLock() khóa vĩnh viễn vùng RAM chứa Private Engine Key vào bộ nhớ vật lý, kiên quyết từ chối hệ điều hành swap key xuống Paging File (Disk).",
-                        "📱 Yêu cầu bắt buộc iOS/Android (Mobile): Do mlock() trên iOS sẽ gọi kịch bản Jetsam OOM-Kill ngay lập tức khiến App giật lag và văng, thay thế hoàn toàn cờ mlock bằng RAII zeroize::ZeroizeOnDrop để tiêu hủy plaintext khỏi heap khi struct trượt khỏi scope.",
+                        "📱💻🖥️ Áp dụng cơ chế Software-defined Memory Isolation: Sử dụng RAII zeroize::ZeroizeOnDrop để tiêu hủy tuyệt đối plaintext khỏi heap/stack ngay khi struct trượt khỏi scope, ngăn chặn Memory Dump hiệu quả mà không cần mlock().",
                         "📱💻🖥️ Kích hoạt Rào chắn cấu trúc nhị phân (Executable & Memory Layout): Phân bổ vùng RAM tĩnh tuân thủ triệt để nguyên lý W^X (Write XOR Execute) của CPU C-Level: Vùng nhớ dành cho E2EE Decryption Buffer không bao giờ khả thi chạy code (PROT_READ | PROT_WRITE), và vùng chứa logic Rust Executable không bao giờ cho phép ghi chèn (PROT_READ | PROT_EXEC). Chống lại 100% các cuộc tấn công tiêm mã nhị phân cơ bản (Buffer Overflow / Return-Oriented Programming).",
                         "📱 Tách biệt Address Space Randomization (KASLR/ASLR): Bố trí Layout con trỏ JSI tách rời hoàn toàn khỏi Cây thư mục cấp phát động của WebKit/V8. App có bị xâm nhập RCE trên lớp JS thì pointer chọc xuống Rust Box vẫn sẽ chạm SEGFAULT (Segmentation Fault) và sụp đổ chủ động."
                       ]
@@ -915,7 +889,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱💻🖥️ Sinh cặp khóa PQ trên phân vùng RAM được bảo vệ bởi mlock() và MAP_CONCEAL để ngăn chặn rò rỉ vào file Swap.",
+                        "📱💻🖥️ Sinh cặp khóa PQ trên phân vùng RAM được bảo vệ bởi MAP_CONCEAL để ngăn chặn rò rỉ vào file Swap.",
                         "📱 Sử dụng cơ chế \"Lồng khóa\": Mã hóa Private Key của ML-KEM bằng khóa đối xứng Hardware_Wrap_Key được neo giữ trong chip vật lý (Secure Enclave/StrongBox).",
                         "📱💻🖥️ Áp dụng ZeroizeOnDrop (RAII) để ghi đè $0x00$ lên bản rõ của khóa trong RAM ngay sau khi thực hiện xong tính toán KEM."
                       ]
@@ -1068,7 +1042,39 @@
                 {
                   "type": "code",
                   "language": "text",
-                  "code": "[Global Edge / GeoDNS Routing]\n         │\n         ├──> [Zone 1A: Enterprise Private Cluster — Dell/HPE/IBM On-Prem]\n         │      ├─ K8s Control Plane (HA: 3 Master Nodes)\n         │      ├─ TEE Enclave (Intel SGX / AWS Nitro) — AI Worker\n         │      ├─ MinIO Storage (Erasure Coding: EC+4)\n         │      └─ PostgreSQL HA (pgRepmgr + PgPool)\n         ├──> [Zone 2: Federation Bridge]\n         │      ├─ mTLS Mutual Auth (không dùng CA công cộng)\n         │      ├─ Sealed Sender Protocol\n         │      └─ Cluster A ↔ Cluster B giao tiếp an toàn\n         └──> [Zone 1B: VPS Cluster — Vultr / DigitalOcean / Linode]\n                ├─ Standard Hardened Docker (CAP_IPC_LOCK enforced)\n                ├─ MinIO Storage (S3-Compatible)\n                └─ HA TURN Array (WebRTC Relay, Floating IP)"
+                  "code": "[Global Edge / GeoDNS Routing]\n         │\n         ├──> [Zone 1: Enterprise Relay Cluster — Dedicated VPS]\n         │      ├─ Double-O-Relay (Rust Control Plane)\n         │      ├─ SQLite WAL Storage (Local SSD)\n         │      └─ PostgreSQL (Metadata only)\n         ├──> [Zone 2: Federation Bridge]\n         │      ├─ mTLS Mutual Auth (không dùng CA công cộng)\n         │      ├─ Sealed Sender Protocol\n         │      └─ Cluster A ↔ Cluster B giao tiếp an toàn\n         └──> [Zone 1B: VPS Cluster — Vultr / DigitalOcean / Linode]\n                ├─ Single-Binary Rust Daemon (Relay)\n                ├─ Local SSD Storage\n                └─ HA TURN Array (WebRTC Relay, Floating IP)"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "35-lightweight-micro-core-relay",
+              "level": 3,
+              "heading": "3.5 Lightweight Micro-Core Relay",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "☁️ Single-Binary Rust Daemon: Binary được tối ưu hoá cực hạn (opt-level='z', panic='abort', Link-Time Optimization) để hoạt động ổn định trên Share-Hosting VPS chỉ từ 512MB RAM.",
+                    "☁️ Tokio Async Userspace Filter: Thay thế toàn bộ Kernel-level eBPF bằng bộ lọc lưu lượng tại Userspace sử dụng thuật toán Token Bucket, kiểm soát Rate-limit và chống tấn công DoS mà không cần đặc quyền CAP_SYS_ADMIN.",
+                    "📱💻☁️ Protocol Versioning: Sử dụng ALPN để đàm phán phiên bản giao thức linh hoạt (QUIC/gRPC/WS), đảm bảo khả năng tương thích ngược (Backward Compatibility) và nâng cấp nóng (Hot-reload) mà không gây gián đoạn kết nối."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "36-zero-access-diagnostics-teradiag",
+              "level": 3,
+              "heading": "3.6 Zero-Access Diagnostics (TeraDiag)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 WASM Sandbox (ReadOnly Partition): TeraDiag vận hành trong một instance WASM Sandbox biệt lập, được cấp quyền PROT_READ tối thiểu đối với phân vùng diag_logs để thu thập log trạng thái mà không thể truy xuất dữ liệu tin nhắn hay Database chính.",
+                    "📱 XChaCha20-Poly1305 Pipeline: Toàn bộ log chẩn đoán được mã hoá stream-based qua pipeline XChaCha20-Poly1305 trước khi đẩy vào kênh đồng bộ, đảm bảo tính toàn vẹn và bí mật tuyệt đối kể cả khi log bị thất lạc.",
+                    "📱 Wi-Fi Direct (Log Sync over Mesh): Tận dụng giao thức Wi-Fi Direct để thiết lập kết nối P2P tức thời, cho phép đồng bộ Log chẩn đoán giữa các thiết bị trong mạng Mesh khi mất kết nối Internet, hỗ trợ kỹ thuật viên ứng cứu sự cố tại chỗ."
+                  ]
                 },
                 {
                   "type": "table",
@@ -1080,12 +1086,12 @@
                   "rows": [
                     [
                       "10k Users",
-                      "Single K8s Cluster (3–5 Nodes)",
-                      "MinIO Local"
+                      "Single-Node Rust Relay (Small VPS)",
+                      "Local SSD"
                     ],
                     [
                       "100k Users",
-                      "Geo-Federated Clusters",
+                      "Geo-Federated Clusters (Dedicated VPS)",
                       "PostgreSQL Geo-Partitioning + HA TURN Array"
                     ],
                     [
@@ -1248,109 +1254,54 @@
                     }
                   ],
                   "subsections": []
+                },
+                {
+                  "id": "342-xử-lý-oom-kill-do-sqlite-wal-hydration-vps-resource-constraints",
+                  "level": 4,
+                  "heading": "3.4.2 Xử lý OOM-Kill do SQLite WAL Hydration (VPS Resource Constraints)",
+                  "content_blocks": [
+                    {
+                      "type": "blockquote",
+                      "alert_type": "note",
+                      "lines": [
+                        "**Bài toán:** Trên các VPS giới hạn tài nguyên, việc nạp (Hydration) dữ liệu từ SQLite WAL có thể gây ra hiện tượng tràn bộ nhớ (OOM-Kill)."
+                      ]
+                    },
+                    {
+                      "type": "list",
+                      "data": [
+                        "☁️ Micro-batching DB Lock Yielding: Chia nhỏ quá trình ghi (Commit) WAL thành các batch cực nhỏ. Lõi Rust tự động nhường (Yield) khóa Database sau mỗi 1000 hàng để tránh treo hệ thống I/O.",
+                        "☁️ Zero-Copy Atomic Rename: Sử dụng hàm renameat2() của Linux với cờ RENAME_WHITEOUT (hoặc tương đương POSIX) để tráo đổi tệp vfs-journal mà không cần sao chép dữ liệu qua User-space, giảm 90% áp lực RAM khi xoay vòng WAL.",
+                        "☁️ SQLite WAL Autocheckpoint: Cưỡng chế wal_autocheckpoint=1000 để giữ kích thước file WAL luôn ở ngưỡng kiểm soát được."
+                      ]
+                    }
+                  ],
+                  "subsections": []
                 }
               ]
             },
             {
-              "id": "33-cơ-sở-hạ-tầng-triển-khai-devops-infrastructure-devops-deployments",
+              "id": "35-lightweight-micro-core-relay",
               "level": 3,
-              "heading": "3.3 Cơ sở Hạ tầng & Triển khai DevOps (Infrastructure & DevOps Deployments)",
-              "content_blocks": [],
+              "heading": "3.5 Lightweight Micro-Core Relay",
+              "content_blocks": [
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Giải pháp:** Sử dụng relay siêu nhẹ chạy trực tiếp trên VPS phổ thông, loại bỏ các thành phần phức tạp không cần thiết."
+                  ]
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "☁️ Single-Binary Rust Daemon: Đóng gói toàn bộ Control Plane của relay vào một tệp nhị phân Rust duy nhất (tối ưu opt-level='z' và O-LLVM).",
+                    "☁️ Tokio Async Userspace Filter: Sử dụng bộ lọc mạng chạy hoàn toàn tại không gian người dùng (Userspace) dựa trên Tokio Async. Áp dụng thuật toán Token Bucket để kiểm soát tốc độ (Rate Limiting) theo từng phòng ban.",
+                    "📱 💻 ☁️ Protocol Versioning: Đàm phán giao thức linh hoạt (Graceful ALPN) giữa QUIC, gRPC và WebSocket, cho phép các thiết bị cũ và mới giao tiếp xuyên suốt qua relay."
+                  ]
+                }
+              ],
               "subsections": [
-                {
-                  "id": "triển-khai-vpsserver-vật-lý-1-chạm-enterprise-b2b",
-                  "level": 4,
-                  "heading": "Triển khai VPS/Server Vật lý 1 Chạm (Enterprise B2B)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Immutability & Docker Compose: Đóng gói nguyên cụm Server (Blind Relay Server, PostgreSQL quản lý metadata, NATS Pub/Sub) vào duy nhất một tệp docker-compose.yml.",
-                        "☁️🗄️ 1-Touch Scripting: Khách hàng doanh nghiệp hoặc MSP chỉ cần chạy lệnh curl -sSL https://terachat.io/install.sh | bash trên Ubuntu. Tiến trình tự tải cấu hình, xin Let's Encrypt SSL/TLS, và dựng trọn vẹn cụm hạ tầng an toàn trong 45 giây."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "thiết-quân-luật-hệ-điều-hành-os-hardening",
-                  "level": 4,
-                  "heading": "Thiết quân luật Hệ điều hành (OS Hardening)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Tắt hoàn toàn phân vùng Swap trên cấp độ OS nhằm triệt tiêu độ trễ, đảm bảo tiến trình Kubelet vận hành ổn định không gián đoạn.",
-                        "☁️🗄️ Nạp bắt buộc các cấu trúc Kernel Modules (br_netfilter, overlay) và kích hoạt bridge-nf-call-iptables = 1 mở đường cho năng lực lọc luồng mạng nội bộ K8s.",
-                        "☁️🗄️ Đẩy giới hạn fs.inotify.max_user_instances lên trần áp suất (512+) tránh rủi ro tràn bộ nhớ đệm khi Longhorn và MinIO quản trị hàng triệu mảnh tệp tin li ti.",
-                        "🖥️ Lập trình lá chắn kernel.kptr_restrict=2 và kernel.panic_on_oops ngăn chặn hành vi Memory Dump và che giấu địa chỉ con trỏ lõi (Kernel Pointers) khỏi User Space.",
-                        "🖥️ Củng cố hệ thống khởi tạo (tera-init) rà soát chuỗi Entropy ngẫu nhiên tinh khiết từ /dev/urandom và đối chiếu tập lệnh phần cứng AES-NI rễ trước vạch xuất phát."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "truyền-thông-nội-bộ-vps-secure-overlay",
-                  "level": 4,
-                  "heading": "Truyền thông nội bộ VPS (Secure Overlay)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Cấu hình mạng riêng ảo WireGuard theo dải Full-Mesh đục thông các đường hầm P2P trực tiếp rẽ nhánh giữa mọi VPS trong cụm.",
-                        "☁️🗄️ Chấp pháp chính sách Default Deny thông qua Network Policy (Calico/Cilium) khóa chặt mọi đường truyền Container-to-Container, chỉ thông hành các kết nối được whitelist tường minh."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "phân-tán-hóa-cụm-điều-khiển-orchestration",
-                  "level": 4,
-                  "heading": "Phân tán hóa Cụm điều khiển (Orchestration)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Triển khai phi phân quyền lõi Kubernetes qua nền tảng RKE2 (Rancher Next Generation) áp đặt quy chuẩn bảo mật cao nhất hiện nay.",
-                        "☁️🗄️ Khắc phục kịch bản sập phân nửa số trạm bằng cách lên lịch snapshot dữ liệu etcd tự động sao lưu lên vũng lưu trữ dị địa (S3/NAS) mỗi 1 giờ.",
-                        "☁️🗄️ Loại trừ bề mặt tấn công Attack Surface của Docker bằng việc thắt chặt hệ sinh thái Runtime Security thông qua giao thức CRI-O/Containerd."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "lưu-trữ-phân-tán-persistence",
-                  "level": 4,
-                  "heading": "Lưu trữ phân tán (Persistence)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Căng dãn Longhorn Block Storage kích hoạt Synchronous Replication (Replicas=3) bảo vệ tính toàn vẹn đa luồng của Database (SQLite/PostgreSQL).",
-                        "☁️🗄️ Trải chuỗi MinIO Object Storage qua cơ chế Erasure Coding (EC) bảo toàn dữ liệu E2EE Blobs ngay cả khi thất thoát 1-2 ổ cứng vật lý."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "công-khai-dịch-vụ-tls-ingress",
-                  "level": 4,
-                  "heading": "Công khai Dịch vụ & TLS (Ingress)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Áp đặt hạ tầng khóa công khai Enterprise PKI thông qua step-ca bảo chứng định danh nội bộ khép kín.",
-                        "☁️🗄️ Phong tỏa lưới Microservices bằng giao thức Mutual TLS (mTLS) yêu cầu xác nhận chứng chỉ chéo hai chiều (vd: Blind Relay ↔ MinIO) chặn đứng nguy cơ leo thang đặc quyền."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
                 {
                   "id": "khởi-tạo-zero-knowledge-bootstrap",
                   "level": 4,
@@ -1368,19 +1319,10 @@
                   "subsections": []
                 },
                 {
-                  "id": "hardware-attested-mtls-tunneling-đường-hầm-mtls-bootstrap",
+                  "id": "section-deprecated-hardware-attested-mtls-remote-attestation-dcap-and-ebpf-kernel-filters-removed-to-ensure-vps-compatibility",
                   "level": 4,
-                  "heading": "Hardware-Attested mTLS Tunneling (Đường hầm mTLS Bootstrap)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "📱💻☁️ Thiết lập đường hầm mTLS hai chiều sử dụng Root CA doanh nghiệp đã ghim (pinned) trong Secure Enclave/TPM thiết bị Admin.",
-                        "📱💻☁️ Tích hợp cơ chế Remote Attestation (qua Apple App Attest / Android Play Integrity) để đảm bảo chỉ những thiết bị nguyên bản (không root/jailbreak) mới được quyền thiết lập kênh truyền tin với VPS.",
-                        "📱 Sử dụng mã QR chỉ để truyền tải cấu hình định tuyến (IP/Port). Tuyệt đối không chứa dữ liệu nhạy cảm hay Token bên trong QR code để khóa chặt rủi ro giả mạo OOB."
-                      ]
-                    }
-                  ],
+                  "heading": "(Section Deprecated: Hardware-Attested mTLS, Remote Attestation (DCAP), and eBPF Kernel Filters removed to ensure VPS compatibility)",
+                  "content_blocks": [],
                   "subsections": []
                 },
                 {
@@ -1396,71 +1338,12 @@
                         "📱💻 Định danh chéo thiết bị thông qua Hardware-ID Binding để ràng buộc Master Key chỉ có hiệu lực duy nhất trên phần cứng thiết bị Admin chỉ định.",
                         "📱💻🖥️ Kích hoạt lính canh Zeroize RAM tiêu hủy tức khắc khóa Root trên vùng nhớ động vừa nạp ngay khoảnh khắc chuyển giao vĩnh viễn vào Secure Enclave/TPM 2.0.",
                         "☁️🗄️ Khởi tạo môi trường MinIO Provisioning đính kèm cơ chế Server-Side Encryption (SSE-KMS) sử dụng vỏ bọc bao ngoài xẻ từ Company_Key.",
-                        "☁️🗄️ Quản lý Server ở trạng thái giữ \"chìa khóa đã bị khóa\", ép buộc thao tác mở khóa dịch vụ phải nhận tín hiệu chứng thực E2EE trực tiếp từ thiết bị cầm tay."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "phòng-thủ-control-plane-giám-sát-hạt-nhân-k8s-kubernetes-security",
-                  "level": 4,
-                  "heading": "Phòng thủ Control Plane & Giám sát Hạt nhân K8s (Kubernetes Security)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️ Ngăn chặn tuyệt đối giả mạo Container Image tại Master Node bằng kiến trúc Supply Chain Integrity kết hợp Sigstore/Cosign ký số tệp nhị phân ngay tại CI/CD Pipeline biệt lập.",
-                        "☁️ Yêu cầu Kubelet xác thực Digital Signature đối xứng công khai phân phối sẵn trước khi kéo Image nhằm vô hiệu hóa nỗ lực tiêm mã độc vào nguồn gốc."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "container-signature-pinning-via-sigstorecosign-supply-chain-mitm",
-                  "level": 4,
-                  "heading": "Container Signature Pinning via Sigstore/Cosign (Supply Chain MITM)",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Kích hoạt Sigstore/Cosign Admission Controller trên cụm K8s nội bộ xác minh Image Signature tại thời điểm khởi tạo Pod.",
-                        "☁️🗄️ Đối soát mã băm SHA256 tĩnh của Container Image — cấm dùng tag latest để chống Supply Chain Attack kiểu \"chết cá\" im lặng.",
-                        "☁️🗄️ Cơ chế chặn khởi tạo Pod (ImagePullBackOff) nếu chữ ký không khớp với TeraChat HQ Public Key, kết hợp cảnh báo tập trung qua Falco + OPA.",
-                        "☁️ Dựng chốt chặn Zero-Trust API Admission Gatekeeping sử dụng Validating Admission Webhook kết hợp Kyverno/OPA Gatekeeper sàng lọc toàn bộ các tệp định tuyến kubectl apply.",
-                        "☁️🗄️ Thiết lập Security Context Constraints khắt khe, áp đặt cờ readOnlyRootFilesystem: true và Immutable Root Filesystem khóa cứng khả năng ghi đè hệ điều hành lõi.",
-                        "☁️ Cưỡng ép quy chuẩn Pod Security Standards (PSS) vào chế độ restricted với allowPrivilegeEscalation: false tước bỏ 100% đặc quyền Root của Container.",
-                        "☁️🗄️ Đẩy lùi nguy cơ trích xuất dữ liệu nhạy cảm từ etcd bằng cơ chế Hardware-Backed Envelope Encryption qua KMS Plugin nối trực tiếp với chip bảo mật.",
-                        "☁️🗄️ Giam cầm Key Encryption Key (KEK) vào TPM 2.0 hoặc Secure Enclave vật lý, khiến kho báu etcd hoàn toàn vô nghĩa đối với bất kỳ ai nắm giữ ổ cứng nhưng thiếu hụt chip giải mã.",
-                        "☁️ Chống can thiệp tầng Kernel và Binary bằng lá chắn eBPF-Based Runtime Surveillance sử dụng Falco giám sát Syscall cực đoan theo thời gian thực.",
-                        "☁️ Nhận diện tức thì mọi hành vi ghi tệp trái phép vào thung lũng /etc/kubernetes qua màng lọc Extended Berkeley Packet Filter.",
-                        "📱💻🖥️☁️ Thiết đặt tín hiệu Self-Destruct Signal cắt đứt toàn diện kết nối mTLS và ra lệnh OPA/Kyverno thiêu rụi dữ liệu (Sandbox Escape Self-Destruct) ngay tại khoảnh khắc eBPF đánh tín hiệu xâm nhập."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "điện-toán-bảo-mật-phần-cứng-confidential-computing-ai-privacy-pipeline",
-                  "level": 4,
-                  "heading": "Điện toán Bảo mật Phần cứng (Confidential Computing) & AI Privacy Pipeline",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️🗄️ Mã hóa 100% dung lượng bộ nhớ động qua tính năng Hardware-level RAM Encryption (AMD SEV-SNP) biến mọi dữ liệu RAM vật lý thành Ciphertext vô nghĩa đối với bất kì Hypervisor nào.",
-                        "☁️ Tách biệt luồng Memory Isolation và giao phó khóa giải mã nội bộ duy nhất cho vi xử lý AMD Secure Processor quản lý.",
-                        "☁️ Thiết lập cổng gác Remote Attestation Protocol xác nhận tính vẹn toàn qua chữ ký Quote từ chip phần cứng trước khi chắp nối đường hầm lưới mTLS 📱💻🖥️☁️.",
-                        "📱💻🖥️ Tích hợp Engine Hardware Signature Verification tại Lõi Rust để thẩm định chữ ký gốc cung cấp bởi nhà xuất xưởng phần cứng silicon (AMD/Intel).",
-                        "☁️🗄️ Vận hành dịch vụ trọng yếu (Blind Relay, Vault Store) khép kín vào luồng Confidential Containers (CoCo) bọc quanh bởi khu cách ly Intel TDX hoặc SGX Enclaves.",
-                        "☁️ Ngăn chặn tuyệt đối can thiệp đọc/ghi trộm từ Cloud Provider láng giềng nhắm tới CPU Register/Cache theo chuẩn TEE-Based Processing.",
-                        "☁️ Triển khai phi tập trung cấu trúc Specialized Confidential VM độc lập chạy trên dải máy chủ CPU AMD EPYC gen 3+ kết hợp TPM 2.0/Secure Enclave.",
-                        "📱💻🖥️ Rust Local Micro-NER & Dynamic Vaulting (Bảo mật Dữ liệu AI Khách): Triển khai bộ máy Regex kết hợp thuật toán Micro-NER tĩnh (<1MB) tại Lõi Rust để bóc tách dữ liệu định danh (PII/PCI/PHI) trước khi rời thiết bị. Khởi tạo Bảng ánh xạ tạm thời trên RAM bảo vệ bằng cờ mlock() để quản lý phiên xử lý cục bộ; áp dụng Tokenization Động thay thế Plaintext thành các Token ngữ nghĩa (vd: [TOKEN_ACCOUNT_01]) nhằm bảo toàn cấu trúc câu cho AI.",
-                        "☁️🗄️ Blind Execution trong TEE Sandbox (Chống Rò rỉ Weights/KV Cache): Cô lập tiến trình xử lý Masked Prompt bên trong TEE (Intel SGX/AWS Nitro). Ép buộc SLM/LLM xử lý suy luận mù (Blind Inference) hoàn toàn trên Token đại diện, ngăn chặn tuyệt đối việc nạp dữ liệu doanh nghiệp vào Weights hoặc KV Cache.",
-                        "📱💻🖥️ Prompt Rehydration & RAII Zeroization (Phục hồi ngữ cảnh an toàn): Thực thi De-tokenization đối chiếu kết quả trả về từ TEE với Hash Map cục bộ để lấp Plaintext vào đúng vị trí Token. Kích hoạt vòng đời Drop() của Rust kết hợp ZeroizeOnDrop ghi đè toàn bộ vùng nhớ chứa Session Vault và Bảng ánh xạ bằng các byte 0x00 để triệt tiêu vĩnh viễn dấu vết Plaintext trên RAM ngay khi trả kết quả về UI Native.",
-                        "🖥️ Thiết lập gông cùm TPM 2.0 Monotonic Counter Sealing áp góc TPM2_Seal/TPM2_Unseal logic, tự động đối chiếu PCR State Validation và vô hiệu phiên (Session Invalidation) chặn đứng mọi mưu đồ Snapshot/Cloning ảo hóa vật lý.",
-                        "🖥️ Trực chiến lính gác Micro-architectural Drift Watchdog nạp luồng Rust RT-priority theo dõi độ trễ rdtsc Sampling, giáng đòn mlock()/ZeroizeOnDrop quét sạch nội hàm RAM nếu vi kiến trúc bộc lộ dấu hiệu Hypervisor Pause.",
+                        "☁️🗄️ Quản lý Server ở trạng thái giữ \"chìa khóa đã bị khóa\", ép buộc thao tác mở khóa dịch vụ phải nhận tín hiệu chứng thực E2EE trực tiếp từ thiết bị cầm tay.",
+                        "📱💻🖥️ Rust Local Micro-NER & Dynamic Vaulting (Bảo mật Dữ liệu AI Khách): Triển khai bộ máy Regex kết hợp thuật toán Micro-NER tĩnh (<1MB) tại Lõi Rust để bóc tách dữ liệu định danh (PII/PCI/PHI) trước khi rời thiết bị. Khởi tạo Bảng ánh xạ tạm thời trên RAM bảo vệ bằng ZeroizeOnDrop để quản lý phiên xử lý cục bộ; áp dụng Tokenization Động thay thế Plaintext thành các Token ngữ nghĩa (vd: [TOKEN_ACCOUNT_01]) nhằm bảo toàn cấu trúc câu cho AI.",
+                        "☁️🗄️ Software-Based Isolation Sandbox (Chống Rò rỉ Weights/KV Cache): Cô lập tiến trình xử lý Masked Prompt bên trong Rust-Wasm Sandbox. Ép buộc SLM/LLM xử lý suy luận mù (Blind Inference) hoàn toàn trên Token đại diện, ngăn chặn tuyệt đối việc nạp dữ liệu doanh nghiệp vào Weights hoặc KV Cache.",
+                        "📱💻🖥️ Prompt Rehydration & RAII Zeroization (Phục hồi ngữ cảnh an toàn): Thực thi De-tokenization đối chiếu kết quả trả về từ Sandbox với Hash Map cục bộ để lấp Plaintext vào đúng vị trí Token. Kích hoạt vòng đời Drop() của Rust kết hợp ZeroizeOnDrop ghi đè toàn bộ vùng nhớ chứa Session Vault và Bảng ánh xạ bằng các byte 0x00 để triệt tiêu vĩnh viễn dấu vết Plaintext trên RAM ngay khi trả kết quả về UI Native.",
+                        "🖥️ Thiết lập gông cùm Atomic Security State Validation tự động đối chiếu PCR State (nếu có) và vô hiệu phiên (Session Invalidation) chặn đứng mọi mưu đồ Snapshot/Cloning ảo hóa vật lý.",
+                        "🖥️ Trực chiến lính gác Micro-architectural Drift Watchdog nạp luồng Rust RT-priority theo dõi độ trễ rdtsc Sampling, giáng đòn ZeroizeOnDrop quét sạch nội hàm RAM nếu vi kiến trúc bộc lộ dấu hiệu Hypervisor Pause.",
                         "🖥️ Nhồi nhịp đập mã hóa Remote Attestation Heartbeat gộp chữ ký AIK (Attestation Identity Key) và Hardware Quote độc bản.",
                         "📱💻🖥️ Liên đới giao thức \"Poison Pill\" Mesh Revocation trên mạng lưới Survival Mesh gạch bỏ vĩnh viễn danh tính bất đồng bộ, đập tan âm mưu Offline Brute-force/VPS Cloning.",
                         "🖥️ Thiết lập vành đai Anti-Snapshot Deployment Hardening trói cứng luồng xử lý qua CPU Hard-pinning (Core isolation) và áp đặt vòng đời KMS Key_TTL tự xoay mỗi 10 phút.",
@@ -1527,7 +1410,7 @@
                 {
                   "type": "code",
                   "language": "text",
-                  "code": "[Master Key]  — HSM / TPM / Secure Enclave (không rời chip)\n      └──> [KEK]  — giải mã trong RAM, mlock'd / ZeroizeOnDrop\n                └──> [DEK]  — mã hóa nội dung thực tế\n                          └──> [DB / File / Channel / API Key]"
+                  "code": "[Master Key]  — HSM / TPM / Secure Enclave (không rời chip)\n      └──> [KEK]  — giải mã trong RAM, ZeroizeOnDrop protected\n                └──> [DEK]  — mã hóa nội dung thực tế\n                          └──> [DB / File / Channel / API Key]"
                 },
                 {
                   "type": "table",
@@ -1652,38 +1535,34 @@
                       "data": [
                         "🗄️ Shamir's Secret Sharing (M-of-N Shard Orchestration): Enterprise_Escrow_Key được sinh một lần trong KMS Bootstrap, chia thành N mảnh (Shard) bằng GF(2^256) polynomial. Mỗi Shard được mã hóa với public key riêng của từng Shard Holder (C-Level, Legal, HR). Default: M=3, N=5. Không Quorum → không phục hồi.",
                         "📱💻 NFC/FIDO2 Shard Authentication (YubiKey / Secure Enclave): Shard Holder prove possession bằng FIDO2 challenge-response (YubiKey hoặc Secure Enclave). Shard chỉ được decrypt tạm thời trong RAM — không bao giờ persisted sang disk.",
-                        "🗄️ Rust Lagrange Interpolator (Secure Arena): Khi đủ M Shard được submit, Lõi Rust chạy nội suy Lagrange trực tiếp trong vùng nhớ mlock-protected. Phép tính nội suy diễn ra hoàn toàn trong Secure Arena — plaintext Escrow_Key chỉ tồn tại trong RAM < 100ms.",
-                        "💻🖥️ mlock() Memory Arena (Desktop/Server): Toàn bộ arena nội suy Lagrange phải bị khóa cứng bằng mlock() — OS không được phép swap bất kỳ page nào liên quan đến Escrow_Key xuống Paging File. Sau khi giải mã xong target messages, Rust ZeroizeOnDrop toàn bộ arena.",
+                        "🗄️ Rust Lagrange Interpolator (Secure Arena): Khi đủ M Shard được submit, Lõi Rust chạy nội suy Lagrange trực tiếp trong vùng nhớ Userspace. Phép tính nội suy diễn ra hoàn toàn trong Secure Arena — plaintext Escrow_Key chỉ tồn tại trong RAM < 100ms.",
                         "📱💻 Ed25519 Signed Recovery Audit Trail: Mỗi Recovery Event được ký Ed25519(Device_Key, {event_id, shard_holder_ids, timestamp, target_message_hashes}) và ghi vào append-only CRDT log. Court Order reference number bắt buộc được ghi vào field legal_basis. Không thể xóa.",
-                        "☁️ Distributed Shard Storage (No Single Point): Shards không được lưu tập trung trên 1 server. Mỗi Shard holder tự giữ Shard của mình trong Secure Enclave / YubiKey cá nhân — TeraChat server chỉ lưu encrypted Shards thứ cấp với TTL, xóa sau 90 ngày không được đọc."
+                        "☁️ Distributed Shard Storage (No Single Point): Shards không được lưu tập trung trên 1 server. Mỗi Shard holder tự giữ Shard của mình trong Secure Enclave / YubiKey cá nhân — TeraChat server chỉ lưu encrypted Shards thứ cấp với TTL, xóa sau 90 ngày không được đọc.",
+                        "🗄️ CPU Registers Ephemeral Key Storage: Các chìa khóa tạm thời (Ephemeral Key) chỉ được phép nạp trực tiếp vào các thanh ghi CPU (Register-level) mà không cấp phát xuống RAM, miễn nhiễm hoàn toàn với các cuộc tấn công khai thác DMA (Direct Memory Access) hay nhổ RAM vật lý.",
+                        "💻📱 Inline RAM Scrambling (ChaCha8 Keystream XOR): Chống lại Trích xuất RAM lạnh (Cold Boot Attack) bằng thiết kế Software-defined RAM Scrambling. Bất kỳ Plaintext nào tồn tại quá 1ms trong mảng nhớ cấp phát sẽ bị mã hóa tức thời (XORed) bằng một dòng chảy ngẫu nhiên (Keystream) ChaCha8. Điều này làm cho kẻ tấn công dù có đóng băng RAM và can thiệp bằng Nitơ lỏng cũng chỉ thu thập được đống dữ liệu rác vô nghĩa."
                       ]
                     }
                   ],
                   "subsections": []
                 },
                 {
-                  "id": "memory-dump-prevention-os-level-pinning-crypto-shredding",
+                  "id": "46-soft-enclave-wasm-isolation-ram-scrambling-cold-boot-defense",
                   "level": 4,
-                  "heading": "Memory Dump Prevention — OS-level Pinning & Crypto-Shredding",
+                  "heading": "4.6 Soft-Enclave WASM Isolation & RAM Scrambling (Cold Boot Defense)",
                   "content_blocks": [
                     {
                       "type": "blockquote",
                       "alert_type": "note",
                       "lines": [
-                        "**Nguy cơ:** RAM Dump bởi cold boot attack, hypervisor exploit, hoặc malicious insider với physical server access."
+                        "**Giải pháp:** Bảo vệ RAM và dữ liệu nhạy cảm khi không có phần cứng TEE (SGX/SEV) chuyên dụng."
                       ]
                     },
                     {
                       "type": "list",
                       "data": [
-                        "💻🖥️ mlock() / VirtualLock() (Desktop/Server): Mọi struct chứa plaintext key (Session_Key, Epoch_Key, Escrow_Key, EgressContextBuffer) phải bị mlock() vào RAM vật lý ngay khi cấp phát. OS không được phép page struct này ra Swap File hay Paging File trong bất kỳ điều kiện nào — kể cả khi hệ thống cạn RAM.",
-                        "📱 ZeroizeOnDrop Rust Trait (iOS / Android): Thay thế hoàn toàn mlock() trên Mobile. Mọi struct nhạy cảm bắt buộc #[derive(ZeroizeOnDrop)]. Khi struct ra khỏi scope, Rust destructor ghi đè 0x00 lên toàn bộ bytes trước khi deallocate — không có window nào giữa scope-end và zero-out.",
-                        "📱💻🖥️ Zero-Copy IPC (SharedArrayBuffer / JSI): Dữ liệu nhạy cảm di chuyển giữa các process (Core ↔ UI) qua Shared Memory Buffer — không serialize/copy qua message queue. Giảm số bản copy plaintext trong RAM từ N xuống 1. Buffer được ZeroizeOnDrop ngay sau khi consumer đọc xong.",
-                        "💻🖥️ BitLocker/FileVault Enforcement: Rust Core kiểm tra trạng thái Disk Encryption khi khởi động. Nếu BitLocker == OFF (Windows) hoặc FileVault == OFF (macOS) → từ chối khởi động và hiển thị SECURITY_POLICY_VIOLATION. Không có exception.",
-                        "🗄️ Server RAM Isolation (NUMA-aware + Memory Guard Page): Vùng nhớ chứa Master Key được cấp phát trên NUMA node riêng biệt với Guard Page trên 2 đầu. Bất kỳ truy cập ngoài biên → SIGSEGV ngay lập tức → process crash + Core Dump encrypted → alert CISO.",
-                        "🗄️ Secure Enclave / TPM 2.0 Device_Key Binding: Khóa gốc Device_Key tuyệt đối không bao giờ được thiết kế để xuất ra khỏi phần cứng. Khóa này bị ép kỹ thuật phần cứng (Bound) để tồn tại độc nhất trong Hardware Security Module. Quá trình tính toán mật mã luôn bị ép phải thực hiện phía trong vùng an toàn (TEE Bindings).",
-                        "🗄️ CPU Registers Ephemeral Key Storage: Các chìa khóa tạm thời (Ephemeral Key) chỉ được phép nạp trực tiếp vào các thanh ghi CPU (Register-level) mà không cấp phát xuống RAM, miễn nhiễm hoàn toàn với các cuộc tấn công khai thác DMA (Direct Memory Access) hay nhổ RAM vật lý.",
-                        "💻📱 Inline RAM Scrambling (ChaCha8 Keystream XOR): Chống lại Trích xuất RAM lạnh (Cold Boot Attack) bằng thiết kế Software-defined RAM Scrambling. Bất kỳ Plaintext nào tồn tại quá 1ms trong mảng nhớ cấp phát sẽ bị mã hóa tức thời (XORed) bằng một dòng chảy ngẫu nhiên (Keystream) ChaCha8. Điều này làm cho kẻ tấn công dù có đóng băng RAM và can thiệp bằng Nitơ lỏng cũng chỉ thu thập được đống dữ liệu rác vô nghĩa."
+                        "☁️ Wasmtime Cranelift JIT Isolation: Tạo ra một \"Soft-Enclave\" bằng cách cô lập toàn bộ logic xử lý khóa bên trong Sandbox WASM (sử dụng Cranelift JIT). Dữ liệu leak ra ngoài sandbox sẽ lập tức bị chặn bởi ranh giới Linear Memory.",
+                        "☁️ ChaCha8 Ephemeral Key Scrambling: Sử dụng dòng dữ liệu ngẫu nhiên CSPRNG (ChaCha8) để XOR liên tục vùng RAM chứa khóa. Khóa thực (Plaintext) chỉ xuất hiện trong thanh ghi CPU (Registers) trong micro-giây khi thực hiện phép tính, sau đó biến mất.",
+                        "☁️ RAII ZeroizeOnDrop: Cưỡng ép tiêu hủy dữ liệu ngay khi biến trượt khỏi tầm vực (Scope) bằng trait ZeroizeOnDrop, đảm bảo vùng nhớ RAM được ghi đè 0x00 tức thì. (Thay thế hoàn toàn cho mlock() và TEE hardware locking)."
                       ]
                     }
                   ],
@@ -1848,28 +1727,10 @@
                   "subsections": []
                 },
                 {
-                  "id": "quic-http3-over-udp-zero-rtt-control-plane",
+                  "id": "latency-target-30ms-end-to-end-cho-online-mode-quic-0-rtt-co-located-vps-đạt-sla-99999-với-anti-entropy-merkle-sync-fallback",
                   "level": 4,
-                  "heading": "QUIC (HTTP/3) over UDP — Zero-RTT Control Plane",
-                  "content_blocks": [
-                    {
-                      "type": "blockquote",
-                      "alert_type": "note",
-                      "lines": [
-                        "**Thay thế hoàn toàn TCP/TLS thuần túy cho Online Mode.** QUIC cung cấp 0-RTT reconnection, đặc biệt hiệu quả trong môi trường 4G/5G chập chờn."
-                      ]
-                    },
-                    {
-                      "type": "list",
-                      "data": [
-                        "☁️ Control Plane QUIC (HTTP/3 over UDP): Toàn bộ Client–Server Control Plane (signaling, Delta-State sync, Key Distribution) chuyển sang QUIC. Thay vì TCP 3-way handshake + TLS 1.3 (1-RTT hoặc 2-RTT), QUIC cho phép 0-RTT khi Client đã có Session Ticket từ kết nối trước — Handshake cost = 0ms khi tái kết nối.",
-                        "☁️ Multiplexed Streams (Stream-level Congestion Control): QUIC tách riêng từng Data Stream — một Stream bị packet loss không block các Stream khác (Head-of-Line Blocking bị loại bỏ hoàn toàn). TeraChat sử dụng 3 Stream riêng biệt: control-stream, message-stream, key-update-stream.",
-                        "☁️ eBPF/XDP Anti-DDoS (UDP Amplification Protection): Vì QUIC dùng UDP, mở rộng cổng UDP trên Cloud cần được bảo vệ bởi eBPF/XDP program chạy tại tầng Kernel Linux. eBPF/XDP drop gói UDP bất hợp lệ (không có QUIC header hợp lệ) trước khi chúng đến userspace — throughput filtering ~10Gbps trên single core. Tuân thủ ISO 27001.",
-                        "📱💻 0-RTT Session Resumption (Mobile): Khi app chuyển từ 4G → Wi-Fi (network change), QUIC Connection Migration tự động chuyển luồng sang địa chỉ IP mới mà không cần reconnect. session_ticket được lưu trong Secure Enclave — không bao giờ persist plaintext.",
-                        "🗄️☁️ Latency Target: < 30ms end-to-end cho Online Mode (QUIC 0-RTT + co-located VPS). Đạt SLA 99.999% với Anti-Entropy Merkle Sync fallback."
-                      ]
-                    }
-                  ],
+                  "heading": "Latency Target: < 30ms end-to-end cho Online Mode (QUIC 0-RTT + co-located VPS). Đạt SLA 99.999% với Anti-Entropy Merkle Sync fallback",
+                  "content_blocks": [],
                   "subsections": []
                 },
                 {
@@ -1960,8 +1821,8 @@
                     {
                       "type": "list",
                       "data": [
-                        "💻🖥️ Desktop/Server: VirtualLock() / mlock(). Kiểm tra BitLocker/FileVault khi khởi động — từ chối nếu không bật.",
-                        "📱 Mobile: ZeroizeOnDrop (RAII) — không dùng mlock(). Plaintext RAM \\<50ms, ghi đè 0x00 ngay sau scope."
+                        "💻🖥️ Desktop/Server: Kích hoạt ZeroizeOnDrop và Inline RAM Scrambling. Kiểm tra BitLocker/FileVault khi khởi động — từ chối nếu không bật.",
+                        "📱 Mobile: ZeroizeOnDrop (RAII). Plaintext RAM <50ms, ghi đè 0x00 ngay sau scope."
                       ]
                     }
                   ],
@@ -1982,8 +1843,8 @@
                     {
                       "type": "list",
                       "data": [
-                        "💻 macOS / Windows / Linux: Biến chứa Context Plaintext (EgressContextBuffer) phải được khóa cứng bằng mlock() ngay sau khi cấp phát. Toàn bộ struct phải implement trait Drop { fn drop(&mut self) { self.zeroize(); } } — đảm bảo không có window nào giữa scope end và ghi đè 0x00.",
-                        "📱 iOS / Android: Cấm tuyệt đối dùng mlock() cho tác vụ này — sẽ trigger Jetsam OOM-Kill ngay lập tức. Chỉ dùng ZeroizeOnDrop trên Heap. EgressContextBuffer phải được giải phóng trong vòng < 500ms kể từ khi được cấp phát. Mọi thao tác Masking qua FFI/JSI phải hoàn thành trong window đó — không được hold biến qua async boundary.",
+                        "💻 macOS / Windows / Linux: Biến chứa Context Plaintext (EgressContextBuffer) phải được bảo vệ bằng ZeroizeOnDrop. Toàn bộ struct phải implement trait Drop { fn drop(&mut self) { self.zeroize(); } } — đảm bảo không có window nào giữa scope end và ghi đè 0x00.",
+                        "📱 iOS / Android: Sử dụng ZeroizeOnDrop trên Heap. EgressContextBuffer phải được giải phóng trong vòng < 500ms kể từ khi được cấp phát. Mọi thao tác Masking qua FFI/JSI phải hoàn thành trong window đó — không được hold biến qua async boundary.",
                         "📱💻🖥️ SessionVault (Bảng ánh xạ MASK→Real): Tồn tại tối đa ≤ 1 HTTP Request lifecycle. Bị ZeroizeOnDrop ngay sau De-tokenize — trước khi StateChanged IPC event được emit lên UI. Không persist, không log, không core dump.",
                         "📱💻🖥️ Byte-Quota Guard (Circuit Breaker): Rust Core kiểm tra payload_size ≤ 4096 bytes tại thời điểm serialize Protobuf — trước khi mở bất kỳ TCP connection nào. Vượt ngưỡng → ZeroizeOnDrop EgressContextBuffer ngay lập tức, trả lỗi EgressError::QuotaExceeded."
                       ]
@@ -2006,7 +1867,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱💻🖥️ FFI Endpoint chuẩn: UI chỉ được gọi invoke_ai_context(message_ids: Vec<String>). Lõi Rust tự trỏ vào SQLite, lấy Ciphertext, dùng Session_Key (đang mlock'd trên Desktop / ZeroizeOnDrop trên Mobile) để giải mã trong RAM, che PII, và chỉ emit Masked_String lên UI qua StateChanged.",
+                        "📱💻🖥️ FFI Endpoint chuẩn: UI chỉ được gọi invoke_ai_context(message_ids: Vec<String>). Lõi Rust tự trỏ vào SQLite, lấy Ciphertext, dùng Session_Key (bảo vệ bởi ZeroizeOnDrop) để giải mã trong RAM, che PII, và chỉ emit Masked_String lên UI qua StateChanged.",
                         "📱💻🖥️ Cấm tuyệt đối: Bất kỳ FFI/JSI endpoint nào có signature dạng fn get_session_key() -> Vec<u8> hay fn get_plaintext_context() -> String phải bị xóa khỏi ABI. Code review cần kiểm tra luật này bằng CI lint rule.",
                         "📱💻🖥️ ZeroizeOnDrop bắt buộc: Mọi struct xử lý Context AI (EgressContextBuffer, SessionVault, PlaintextArena) bắt buộc #[derive(ZeroizeOnDrop)]. Ngay khi block kết thúc (out of scope), RAM vùng đó bị ghi đè 0x00 trước khi OS Garbage Collector can thiệp."
                       ]
@@ -2025,7 +1886,7 @@
                         "📱 Jetsam Risk: Nhồi 50–100 tin nhắn vào RAM để chạy ONNX Local trên iOS/Android chắc chắn trigger Jetsam OOM-Kill. Tuyệt đối cấm load toàn bộ context buffer cùng lúc.",
                         "📱 Sliding Window Tokenizer: Lõi Rust đọc từng dòng từ hot_dag.db (SQLite WAL) — không load toàn bộ. Hard Limit Buffer = 4096 Bytes (~4KB). Khi chuỗi vượt ngưỡng, Circuit Breaker ngắt luồng đọc, giữ lại 4KB gần nhất.",
                         "📱 MaybeUninit Allocation: Biến phục vụ ONNX Local Model phải khai báo bằng std::mem::MaybeUninit<T> — OS không cấp phát bộ nhớ phụ cho uninitialized data, giảm peak RAM.",
-                        "💻🖥️ Desktop: Sliding Window áp dụng tương tự nhưng Window có thể lớn hơn (configurable per Admin Policy, default 16KB). mlock() bắt buộc cho buffer."
+                        "💻🖥️ Desktop: Sliding Window áp dụng tương tự nhưng Window có thể lớn hơn (configurable per Admin Policy, default 16KB). Bảo vệ RAM bằng ZeroizeOnDrop cho buffer."
                       ]
                     }
                   ],
@@ -2065,7 +1926,7 @@
                       "data": [
                         "📱💻 Áp dụng ZeroizeOnDrop (RAII) để ghi đè $0x00$ lên vùng nhớ Decrypted Secure Arena ngay khi giao dịch bị hủy.",
                         "📱 Tích hợp iOS Background Delegate (BGTask.setTaskCompleted) và Android WorkManager retry để đưa tác vụ JIT Indexing vào hàng đợi thực thi lại khi thiết bị mở khóa.",
-                        "📱 Giải phóng triệt để vùng nhớ mlock() để lách qua và tránh JetSam OOM-Kill trong trạng thái nền."
+                        "📱 Giải phóng triệt để vùng nhớ ZeroizeOnDrop để lách qua và tránh JetSam OOM-Kill trong trạng thái nền."
                       ]
                     }
                   ],
@@ -2810,7 +2671,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱💻🖥️ Cryptographic Proof-of-Origin (RAM-only Verification): Lõi Rust xác thực chữ ký số Ed25519 của DeviceIdentityKey gốc (người gửi ban đầu) ngay trên vùng nhớ RAM mlock'd đối với từng Delta-State độc lập. Không một intermediary Super Node nào có thể tái ký payload với identity của người gửi gốc — mọi Delta-State bị nhào nặn sẽ fail signature verification và bị ZeroizeOnDrop tức thời.",
+                        "📱💻🖥️ Cryptographic Proof-of-Origin (RAM-only Verification): Lõi Rust xác thực chữ ký số Ed25519 của DeviceIdentityKey gốc (người gửi ban đầu) ngay trên vùng nhớ RAM được bảo vệ đối với từng Delta-State độc lập. Không một intermediary Super Node nào có thể tái ký payload với identity của người gửi gốc — mọi Delta-State bị nhào nặn sẽ fail signature verification và bị ZeroizeOnDrop tức thời.",
                         "💻☁️ Merkle Proof Verification (Leaf-to-Root Path): Trước khi hợp nhất bất kỳ Delta-State nào vào hot_dag.db, Lõi Rust đối soát độc lập toàn bộ Hash Path từ Leaf Node lên Root Hash của Segmented Merkle Tree do server cung cấp. Bất kỳ sai lệch hash nào ở bất kỳ tầng nào → kích hoạt ZeroizeOnDrop tiêu hủy payload tức thời trước khi chạm vào database.",
                         "📱🖥️ BFT Quarantine Threshold (Byzantine Fault Tolerance Cục bộ): Lõi Rust duy trì bảng tín nhiệm {Super_Node_ID: malice_score}. Mỗi lần Super Node gửi Delta-State không qua được Merkle Proof hoặc Signature Verification → malice_score++. Khi malice_score ≥ f (ngưỡng BFT tolerance, mặc định f = 3): tự động Blacklist MAC Address / IP, ngắt socket, và phát GossipStateRequest sang Super Node thay thế."
                       ]
@@ -2880,7 +2741,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "📱 Hardware-bound Non-repudiation (Secure Enclave/StrongBox): Mỗi sự kiện vi phạm (malformed packet, signature mismatch, ACL violation) được node phát hiện ký ngay bằng Device_Key đang mlock()'d trong Secure Enclave — tạo ra bằng chứng gắn chặt với phần cứng, không thể bị giả mạo bởi bên thứ ba.",
+                        "📱 Hardware-bound Non-repudiation (Secure Enclave/StrongBox): Mỗi sự kiện vi phạm (malformed packet, signature mismatch, ACL violation) được node phát hiện ký ngay bằng Device_Key đang được bảo vệ trong Secure Enclave — tạo ra bằng chứng gắn chặt với phần cứng, không thể bị giả mạo bởi bên thứ ba.",
                         "💻📱 Ed25519 Digital Signature Bundling: Toàn bộ chuỗi bằng chứng được đóng gói thành Proof_Bundle gồm: raw packet bytes + timestamp HLC + Node_ID của bên vi phạm + chữ ký Ed25519 của node phát hiện. Bundle này không thể bị tái sử dụng cho node khác vì Node_ID được embed trực tiếp.",
                         "💻📱 Immutable Evidence Encapsulation: Proof_Bundle được lưu vào SQLite WAL với cờ READ_ONLY ngay lập tức sau khi ghi — không thể sửa đổi hay xóa. Lõi Rust từ chối bất kỳ request nào cố truncate hoặc overwrite bảng Evidence.",
                         "💻📱 Multi-party Cryptographic Attribution: Trước khi kích hoạt Byzantine Shun, hệ thống yêu cầu tối thiểu 2 Proof_Bundle độc lập từ 2 node khác nhau cùng cáo buộc một Node_ID. Tránh False-Flag Attack chỉ từ một node tấn công đơn lẻ."
@@ -3005,7 +2866,7 @@
                     {
                       "type": "list",
                       "data": [
-                        "☁️🗄️ Strict DCAP Attestation & Ephemeral Kyber-Hybrid KEM: Xác minh tính vẹn toàn VPS Hardware qua 🗄️ Intel SGX DCAP (CPUSVN Verification). Sau khi verify thành công Quote qua Intel PCS / AWS Nitro, kênh truyền được khóa bằng ☁️ Hybrid PQ-KEM (X25519 + Kyber768), thiết lập liên kết TLS chống lại mối đe dọa từ máy tính lượng tử trong tương lai.",
+                        "☁️🗄️ Software-based Attestation & Ephemeral Kyber-Hybrid KEM: Xác minh tính vẹn toàn VPS thông qua quy trình đối soát Certificate và App Attestation. Sau khi verify thành công, kênh truyền được khóa bằng ☁️ Hybrid PQ-KEM (X25519 + Kyber768), thiết lập liên kết TLS chống lại mối đe dọa từ máy tính lượng tử trong tương lai.",
                         "📱💻 PFS (12h TTL Key Rotation): Keys sinh ra từ Kyber-Hybrid có vòng đời cực ngắn: 📱💻 PFS với 12h TTL Key Rotation. Hết hạn 12h, Client phải drop connection và force Remote Attestation từ đầu để tái lập Session KEM ngẫu nhiên.",
                         "☁️ Client-to-Enclave Session Key: Khóa derivation hoàn toàn độc lập với Company_Key. Enclave không nhận được root key mà chỉ nhận cipher data đã Masked PII. Thất bại attestation → alert ENCLAVE_ATTESTATION_FAILED.",
                         "☁️ ZeroizeOnDrop trong Enclave: Sau khi Enclave hoàn thành computation, tất cả plaintext data trong protected memory được gọi hàm ZeroizeOnDrop — Enclave không duy trì bất cứ artifacts nào trên memory.",
@@ -3256,19 +3117,19 @@
               ],
               "subsections": [
                 {
-                  "id": "asymmetric-mlock-cross-platform-memory-pinning",
+                  "id": "44-zero-knowledge-memory-protection-raii-zeroizeondrop",
                   "level": 4,
-                  "heading": "Asymmetric mlock (Cross-Platform Memory Pinning)",
+                  "heading": "§4.4 Zero-Knowledge Memory Protection (RAII ZeroizeOnDrop)",
                   "content_blocks": [
                     {
                       "type": "list",
                       "data": [
-                        "🖥️💻 Desktop/Server — mlock() / VirtualLock(): Lõi Rust ghim cứng toàn bộ vùng nhớ Company_Key, Session_Key, Epoch_Key vào RAM vật lý — chống Paging, chống Memory Dump, chống Cold DMA Attack. mlock() giới hạn: ulimit -l được set 512MB trên daemon.",
-                        "📱 Mobile — ZeroizeOnDrop (RAII) thuần túy: Tuyệt đối không gọi mlock() trên iOS/Android — iOS NSE giới hạn 24MB RAM, gọi mlock() → Jetsam OOM-Kill ngay lập tức. Thay thế: zeroize::ZeroizeOnDrop RAII tự động overwrite 0x00 ngay khi biến ra khỏi scope. Kết hợp kCFAllocatorMallocZone (iOS) để che giấu allocation khỏi Crash Dump. Window rò rỉ RAM < 5ms.",
+                        "📱💻🖥️☁️ Memory Zeroization purely via RAII: Sử dụng zeroize::ZeroizeOnDrop để tiêu hủy tuyệt đối plaintext khỏi heap/stack ngay khi struct trượt khỏi scope. Chấm dứt việc cưỡng ép khóa tệp hoán đổi (Disable Swap) và loại bỏ yêu cầu cờ CAP_IPC_LOCK (mlock) nhằm đảm bảo khả năng triển khai trên mọi môi trường VPS/Server phổ thông.",
+                        "📱 Mobile & Cloud Optimization: Kết hợp kCFAllocatorMallocZone (iOS) để che giấu allocation khỏi Crash Dump. Window rò rỉ RAM < 5ms.",
                         "📱💻🖥️ ZeroizeOnDrop (Bắt buộc cho mọi platform): Trait ZeroizeOnDrop là hard requirement. Mọi struct chứa key material phải implement trait này. Nếu không: CI/CD pipeline fail build.",
                         "💻 📱 🖥️ sqlite3_vfs Custom Wrapper (Ephemeral VFS RAM-Drive & Memory Locking): Triển khai sqlite3_vfs tùy chỉnh định hướng toàn bộ I/O vào RAM-Drive (Volatile Memory) kết hợp Memory Locking — loại bỏ hoàn toàn rủi ro Forensic Extraction khai thác qua NAND Wear-Leveling (ISO 27001 A.8.3.2).",
                         "💻 📱 🖥️ mmap() MAP_ANONYMOUS | MAP_PRIVATE Volatile Memory: Dữ liệu SQLite được neo thẳng vào RAM qua mapping ẩn danh Private. Đảm bảo DB sống 100% trên bộ nhớ khả biến mà không dây dưa tới physical disk blocks.",
-                        "💻 🖥️ mlock() Anti-Swap/Page-out: Khóa chặt phân vùng RAM chứa VFS này bằng mlock() ngay lập tức để OS tuyệt đối không Swap/Page-out DB xuống Disk (trên Mobile sẽ fallback về ZeroizeOnDrop để tránh Jetsam).",
+                        "💻 🖥️ ZeroizeOnDrop Anti-Swap/Page-out: Khóa chặt phân vùng RAM chứa VFS này bằng ZeroizeOnDrop ngay lập tức để OS tuyệt đối không Swap/Page-out DB xuống Disk.",
                         "💻 Linux / Android memfd RAM-Drive: Tạo vùng nhớ vô danh memfd_create() qua libc — DB session không bao giờ chạm đến NAND và biến mất khi tiến trình kết thúc.",
                         "💻 📱 macOS / iOS MAP_ANON | MAP_SHARED: Lật ngược giới hạn Sandbox bằng mmap anonymous ẩn giấu DB trong RAM Volatile, chặn đứng đường tấn công Forensic qua iTunes Backup.",
                         "🗄️ ZeroizeOnDrop Hardware Memory Purge: Kết hợp ZeroizeOnDrop RAII với tín hiệu phá hủy phần cứng (Secure Enclave Wipe) thực hiện purge tầng vật lý, triệt phá mọi dấu vết plaintext trên DRAM ngay cả khi bị cold-boot."
@@ -3301,7 +3162,7 @@
                         "📱💻🖥️ Egress_Outbox (Shared Memory Ring Buffer — 2MB max): .tapp ghi kết quả vào Egress_Outbox — một vùng ring buffer chia sẻ 1 chiều (Write-only từ phía .tapp, Read-only từ phía Egress Daemon). Giới hạn cứng 2MB để ngăn buffer overflow attack từ .tapp. Vượt 2MB → Outbox sealed, .tapp instance terminate.",
                         "📱 Mobile Egress — OS Background Service: URLSession (iOS) / Cronet (Android) chạy như OS-level background service độc lập với Lõi Rust process. Service đọc Outbox, verify BLAKE3 hash đối chiếu bản gốc Lõi Rust cấp, quét OPA DLP Policy, rồi dispatch HTTP request. Nếu hash sai lệch → EXFILTRATION_ATTEMPT_DETECTED → drop + audit log Ed25519 signed.",
                         "💻🖥️ Desktop Egress — tera_egress_daemon (Least Privilege): Micro-process tera_egress_daemon chạy ở user space với privilege nobody (Linux) / Restricted SID (Windows). Không share memory heap với Lõi Rust. Lõi Rust → Egress_Outbox qua named pipe. Daemon đọc, OPA check, gọi reqwest với TLS HPKP.",
-                        "☁️ Cloud/Server Egress — Envoy gRPC Sidecar: .tapp trên Server gửi request mTLS cục bộ localhost:9200 sang Envoy Sidecar. Envoy check ext_authz (OPA policy server), route ra Internet. Lõi Rust không trong luồng này.",
+                        "☁️ Cloud/Server Egress — Multi-process Isolation: .tapp trên Server gửi request mTLS cục bộ qua Named Pipe sang Egress Daemon biệt lập. Daemon check OPA policy và route ra Internet. Loại bỏ Envoy Sidecar để giảm footprint tài nguyên.",
                         "🗄️ BLAKE3 DLP Hash Chain: Trước khi Lõi Rust đẩy dữ liệu vào Outbox, tính BLAKE3(masked_payload) và lưu trong protected registry. Egress Daemon tính lại hash của Outbox content trước khi send — mismatch → block + alert. Ngăn .tapp nhồi thêm Company_Key vào payload."
                       ]
                     }
@@ -3325,7 +3186,7 @@
                       "data": [
                         "📱 iOS — wasm3 Interpreter + CoreML AOT: .tapp logic chạy qua wasm3 (interpreter thuần túy, không JIT — pass Apple App Store review). AI Model nặng (embedding, NLP) được pre-compile thành .dylib với CoreML Compiler — biên dịch sẵn, không runtime JIT. Overhead: +15-20ms latency cho .tapp execution — chấp nhận để đổi lấy 100% compliance.",
                         "📱 Android — wasmtime JIT (Cranelift backend): Android cho phép JIT với W^X protection. wasmtime::Config::new().cranelift_opt_level(OptLevel::Speed) — JIT nhưng có sandbox CFI.",
-                        "💻🖥️ Desktop (Tauri) — wasmtime JIT + Seccomp-BPF: JIT với seccomp-bpf filter chặn mmap(PROT_EXEC) trực tiếp từ .tapp. Chỉ wasmtime host được phép tạo executable pages."
+                        "💻🖥️ Desktop (Tauri) — wasmtime JIT: JIT thực thi trong sandbox người dùng, chặn đứng các nỗ lực RCE thông qua Application-level CFI. Loại bỏ Seccomp-BPF filters để tối ưu khả năng tương thích kernel."
                       ]
                     }
                   ],
@@ -3345,8 +3206,8 @@
                     "📱💻 Cryptographic Non-Repudiation (Chống chối bỏ): Mọi hành động \"Accept\" hay \"Reject\" trên một Shadow Node bắt buộc phải được ký bằng DeviceIdentityKey (nằm trong Hardware Enclave). Không một ai có thể giả mạo quyết định gộp dữ liệu.",
                     "☁️ Tamper-Proof Audit Trail: Trạng thái gộp cuối cùng kèm chữ ký số được đẩy vào Append-Only Log trên máy chủ để phục vụ thanh tra tuân thủ (Admin/CISO có thể truy vết người phê duyệt).",
                     "☁️🗄️ Server-Side Proposal Aggregation (SSPA): Gánh nặng lưu trữ các Shadow Node (PROPOSE_CHANGE) được đẩy hoàn toàn cho VPS. VPS đóng vai trò là \"Bộ đệm xung đột\" (Conflict Buffer), tách biệt hoàn toàn khỏi Local Client DB.",
-                    "☁️ Group-Based Rate Limiting: Triển khai thuật toán Token Bucket trên VPS. Giới hạn cứng: Mỗi Group/Tài liệu chỉ nhận tối đa 50 Proposals/phút. Mọi request vượt ngưỡng bị rớt (Drop) với mã HTTP 429 Too Many Requests để chống lạm dụng/bot.",
-                    "☁️ Mesh/Offline Exclusion: Giao thức Shadow DAG bị loại bỏ hoàn toàn khỏi bộ định tuyến P2P Mesh. Các gói tin PROPOSE_CHANGE sẽ không được broadcast qua BLE/Wi-Fi Direct."
+                    "☁️ Token Bucket Group-Based Rate Limiting & Edge-Level Malicious Packet Dropping: VPS duy trì Token Bucket cho mỗi Index_ID. Khi nhận gói PROPOSE_CHANGE, VPS kiểm tra tần suất. Nếu vượt ngưỡng (vd: 50 Đề xuất/phút), VPS rớt (drop) gói tin ngay tại biên mạng (Edge), bảo vệ thiết bị khác khỏi tấn công DoS bằng Shadow DAG.",
+                    "📱 Mesh Mode Offline Constraint & DAG Fragmentation Prevention: Nếu thiết bị đang ở trong Mesh Mode không có tín hiệu mạng chạm tới VPS, Lõi Rust tự động vô hiệu hóa quyền Editor và Commenter. Trạng thái UI chuyển sang \"Read-Only (Offline)\" để đảm bảo không xảy ra phân mảnh DAG diện rộng mà Server không thể tổng hợp."
                   ]
                 }
               ],
@@ -3459,7 +3320,7 @@
                   "data": [
                     "📱💻🖥️ Local Micro-NER Masking: Trước khi Lõi Rust đẩy bất kỳ payload nào ra External AI, một thư viện NER (Named Entity Recognition) nhẹ chạy hoàn toàn tại biên thiết bị (không cần Internet) tự động phát hiện và mặt nạ hóa (mask) các thực thể nhạy cảm theo mô hình phân loại cục bộ.",
                     "📱💻🖥️ [REDACTED] Tokenization: Các thực thể được thay thế bằng token định danh chuẩn hóa ([REDACTED_CC], [REDACTED_ID], [REDACTED_EMAIL]). Token này đủ ngữ nghĩa để AI Agent trả lời đúng context nhưng không thể suy ngược ra giá trị gốc.",
-                    "📱💻🖥️ ZeroizeOnDrop (RAII): Plaintext gốc (trước khi mask) được giữ trong RAM mlock-protected. Sau khi tạo ra masked copy, RAM gốc bị ghi đè 0x00 ngay lập tức qua RAII destructor — không có window nào cho Memory Dump Attack."
+                    "📱💻🖥️ ZeroizeOnDrop (RAII): Plaintext gốc (trước khi mask) được giữ trong vùng nhớ RAM được bảo vệ bởi RAM Scrambling & ZeroizeOnDrop. Sau khi tạo ra masked copy, RAM gốc bị ghi đè 0x00 ngay lập tức qua RAII destructor — không có window nào cho Memory Dump Attack."
                   ]
                 }
               ],
@@ -3572,7 +3433,7 @@
                 {
                   "type": "list",
                   "data": [
-                    "📱💻 mlock() Protected RAM: Toàn bộ vector index được cấp phát trong một arena mlock-protected — OS không được phép swap page này ra disk. Trên iOS/Android, dùng VM_FLAGS_PERMANENT / madvise(MADV_DONTDUMP) để ngăn core dump.",
+                    "📱💻 Protected RAM Arena: Toàn bộ vector index được cấp phát trong một arena được bảo vệ bởi ZeroizeOnDrop — OS không được phép swap page này ra disk. Trên iOS/Android, dùng madvise(MADV_DONTDUMP) để ngăn core dump.",
                     "📱💻 ZeroizeOnDrop (RAII) cho Vector Arena: Khi phiên chat kết thúc hoặc người dùng đóng .tapp, RAII destructor xóa toàn bộ arena bằng zeroize(). Không có vector embedding nào tồn tại sau khi session ends.",
                     "📱💻 In-memory HNSW/Flat Index: Sử dụng hnswlib-rs (port Rust của hnswlib) hoặc Flat Cosine Similarity search cho corpus nhỏ (< 10,000 vectors). Entire index sống hoàn toàn trong RAM — không persist xuống disk (hot_dag.db) trừ khi người dùng bấm \"Save Semantic Index\"."
                   ]
@@ -3689,7 +3550,7 @@
                   "data": [
                     "📱💻 Aho-Corasick Regex Engine (Rust): Lõi Rust triển khai aho-corasick crate — multi-pattern search đạt O(n) thay vì O(n×m). Toàn bộ Banned Lexicon, PII pattern (số thẻ ngân hàng, CMND regex), và Known-Bad Entity list được compile thành Aho-Corasick automaton tại boot-time. Scan throughput: ~500MB/s trên một core duy nhất.",
                     "📱💻 Local NER Whitelist/Blacklist: Lõi Rust maintain hai lookup table: ENTITY_WHITELIST (các entity được phép egress nguyên bản) và ENTITY_BLACKLIST (entity bị block hoàn toàn). Admin cập nhật list qua OPA Policy — không cần app update.",
-                    "📱💻 Zero-copy Memory Scanning: Aho-Corasick engine operate trực tiếp trên mlock-protected plaintext buffer — không tạo copy. Kết quả trả về là danh sách (byte_offset, entity_id, scan_hit) — EDES không decode hay extract giá trị thực của entity, giảm attack surface trong chính engine scanner."
+                    "📱💻 Zero-copy Memory Scanning: Aho-Corasick engine operate trực tiếp trên plaintext buffer được bảo vệ bởi ZeroizeOnDrop — không tạo copy. Kết quả trả về là danh sách (byte_offset, entity_id, scan_hit) — EDES không decode hay extract giá trị thực của entity, giảm attack surface trong chính engine scanner."
                   ]
                 }
               ],
@@ -3756,7 +3617,7 @@
                 {
                   "type": "list",
                   "data": [
-                    "📱💻 Sliding Context Window (mlock): Lõi Rust maintain một Sliding Context Buffer (SCB) — circular buffer mlock-protected lưu trữ N tin nhắn gần nhất (default N=20, configurable). SCB được cập nhật incremental sau mỗi tin nhắn. Không persist xuống disk.",
+                    "📱💻 Sliding Context Window (Protected Memory): Lõi Rust maintain một Sliding Context Buffer (SCB) — circular buffer được bảo vệ bởi ZeroizeOnDrop lưu trữ N tin nhắn gần nhất (default N=20, configurable). SCB được cập nhật incremental sau mỗi tin nhắn. Không persist xuống disk.",
                     "📱💻 Lazy Triggered ONNX Inference: Việc chạy ONNX DeBERTa trên toàn bộ SCB sau mỗi tin nhắn sẽ quá tốn tài nguyên. Thay vào đó, Lõi Rust áp dụng Lazy Trigger: chạy ONNX scan toàn bộ SCB chỉ khi EDES flagged ≥ 2 \"borderline entities\" trong cửa sổ 5 tin nhắn liên tiếp — tức là khi pattern điệu có dấu hiệu escalation.",
                     "📱💻 Retroactive Taint Propagation: Nếu ONNX inference trên SCB phát hiện semantic pattern nguy hiểm (điểm Intent_Score[SOCIAL_ENGINEERING] > 0.75), Lõi Rust thực hiện retroactive taint: đánh dấu TAINTED không chỉ tin nhắn hiện tại mà còn N-3 tin nhắn trước đó trong SCB. Toàn bộ conversation thread bị seal (Conversation Sealing — xem Function.md §12). UI kích hoạt Magnetic Collapse animation (xem Design.md §25)."
                   ]
@@ -3779,7 +3640,7 @@
                 {
                   "type": "list",
                   "data": [
-                    "💻🖥️ Bypass Local Scrubbing: Khi FCP_Enabled = true, Lõi Rust rẽ nhánh Data Pipeline tại FCP Gate. Thay vì đưa Context vào EDES / O-LLVM / Micro-NER queue, Lõi Rust đẩy nguyên khối Plaintext (mlock arena) thẳng vào TlsStream trỏ tới AI endpoint. TTFB giảm từ ~300ms xuống < 10ms (chỉ TLS handshake overhead). AI nhận 100% raw context, không bị \"thiến\".",
+                    "💻🖥️ Bypass Local Scrubbing: Khi FCP_Enabled = true, Lõi Rust rẽ nhánh Data Pipeline tại FCP Gate. Thay vì đưa Context vào EDES / O-LLVM / Micro-NER queue, Lõi Rust đẩy nguyên khối Plaintext (được bảo vệ bởi ZeroizeOnDrop) thẳng vào TlsStream trỏ tới AI endpoint. TTFB giảm từ ~300ms xuống < 10ms (chỉ TLS handshake overhead). AI nhận 100% raw context, không bị \"thiến\".",
                     "📱💻 Strict Execution Boundary (Ingress vẫn bất khả xâm phạm): Dù Egress là 100% raw, Ingress từ OpenClaw bắt buộc đi qua SASB (§5.31). OpenClaw có toàn quyền đọc nhưng tuyệt đối 0% khả năng inject XSS/HTML/Code về lại giao diện TeraChat. Execution Integrity của Lõi Rust = bất biến.",
                     "📱💻🖥️ Zero-Knowledge Non-Repudiation Log (FCP): Mỗi lần unrestricted_stream hoặc FCP egress được trigger, Lõi Rust ghi vào SQLite WAL: [FCP_TRIGGERED | UTC_Timestamp | Payload_Hash(BLAKE3) | Agent_Endpoint_Hash | Device_Ed25519_Signature]. Không lưu nội dung Prompt. Đây là bằng chứng Non-Repudiation: TeraChat miễn nhiễm pháp lý vì có chữ ký số của chính Admin kích hoạt FCP.",
                     "📱💻 FCP Scope Isolation: FCP chỉ áp dụng cho .tapp cụ thể được Admin duyệt — không phải toàn bộ hệ thống. Các .tapp khác trong cùng tenant vẫn chạy với full EDES/NER protection. Admin có thể revoke FCP bất kỳ lúc nào; revocation được broadcast qua CRDT Mesh đến tất cả thiết bị."
@@ -3803,7 +3664,7 @@
                       "type": "list",
                       "data": [
                         "📱💻🖥️ Hard Chunk Size = 2MB: Lõi Rust KHÔNG BAO GIỜ đọc toàn bộ file vào RAM. Engine Streaming chia file thành các Chunk_2MB qua syscall pread(fd, buf, 2MB, offset). RAM tiêu thụ cực đại tại mọi thời điểm: ~10MB (Double Buffer: 1 chunk đang mã hóa + 1 chunk đang đẩy lên S3). OOM-Kill bị triệt tiêu hoàn toàn.",
-                        "📱💻🖥️ mmap + ZeroizeOnDrop Pipeline: Mỗi Chunk_2MB được mmap vào vùng RAM được khóa bởi mlock(). Sau khi mã hóa AEAD và đẩy lên S3 Multipart, Lõi Rust chạy ZeroizeOnDrop ghi đè 0x00 lên toàn bộ vùng đó trước khi giải phóng. Plaintext video không bao giờ tồn tại trong RAM lâu hơn thời gian xử lý 1 chunk (~50ms trên NVMe).",
+                        "📱💻🖥️ mmap + ZeroizeOnDrop Pipeline: Mỗi Chunk_2MB được mmap vào vùng RAM được bảo vệ bởi ZeroizeOnDrop. Sau khi mã hóa AEAD và đẩy lên S3 Multipart, Lõi Rust chạy ZeroizeOnDrop ghi đè 0x00 lên toàn bộ vùng đó trước khi giải phóng. Plaintext video không bao giờ tồn tại trong RAM lâu hơn thời gian xử lý 1 chunk (~50ms trên NVMe).",
                         "📱💻🖥️ Chunk-Level Deterministic Key Derivation: Mỗi chunk nhận Chunk_Key = HKDF(Session_Key, File_ID || Chunk_Index || Byte_Offset). Key mỗi chunk là duy nhất, đảm bảo mã hóa cô lập — tấn công replay một chunk không ảnh hưởng các chunk khác."
                       ]
                     }
@@ -3876,25 +3737,10 @@
                 {
                   "type": "list",
                   "data": [
-                    "🗄️ Kernel Isolation (Seccomp-BPF): Bọc tiến trình WasmEdge bằng Seccomp-BPF profile khắt khe ở mức độ OS. Chủ động drop (giết tiến trình) ngay khi phát hiện các lệnh nguy hiểm như execve, fork, ptrace.",
+                    "🗄️ Rust-native Syscall Filtering: Sử dụng thư viện lọc syscall tại tầng ứng dụng để hạn chế bề mặt tấn công.",
+                    "☁️ Userspace I/O Egress Proxy: Lõi Rust đóng vai trò Forward Proxy duy nhất để kiểm soát luồng TLS, loại bỏ hoàn toàn việc sử dụng BPF/Seccomp tại tầng kernel.",
                     "☁️ Application Guardrail (OPA): Kích hoạt OPA Guardrail kiểm duyệt RPC Whitelist ở tầng Application. Bất kỳ RPC payload nào ra khỏi Sandbox đều bị OPA chặn nếu không có chữ ký uỷ quyền hợp lệ.",
                     "💻 Buffer Overflow Mitigation: Áp dụng Memory Isolation tuyến tính đối với không gian địa chỉ WASM, kết hợp ZeroizeOnDrop (RAII) nhằm tước bỏ hoàn toàn năng lực tràn bộ đệm vượt biên giới Sandbox."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "542-kiểm-soát-attack-surface-của-wasm-sandbox-tapp",
-              "level": 3,
-              "heading": "5.42 Kiểm soát Attack Surface của WASM Sandbox (.tapp)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "🗄️ BPF SCMP_ACT_ALLOW: Chỉ whitelist bề mặt Syscall tối giản nhất để hoạt động: mmap, futex, madvise.",
-                    "🗄️ BPF SCMP_ACT_KILL: Triệt tiêu mọi nỗ lực RCE bằng cách kill ngay tiến trình với execve, fork, ptrace.",
-                    "☁️ BPF SCMP_ACT_TRAP: Bắt (trap) các lệnh I/O nhạy cảm như socket, connect để Rust Core đánh giá lại ngữ cảnh trước khi thả cho đi (Egress Proxy)."
                   ]
                 }
               ],
@@ -3910,7 +3756,7 @@
                   "data": [
                     "📱💻🖥️ ISO 27001 A.14.1.2 Secure Engineering: Thiết lập các quy tắc kỹ thuật bảo mật khắt khe đúc kết vòng đời an toàn, ngăn chặn các tấn công hạ cấp giao thức (Protocol Downgrade Attack) ngay ở tầng ứng dụng bằng cách ghim chặt phiên bản tối thiểu.",
                     "☁️ AEAD Payload Decoupling: Tách rời (Decouple) tải trọng mạng và mã hoá xác thực AEAD để giải quyết dứt điểm tắc nghẽn ở đầu hàng đợi (Head-of-Line Blocking), cho phép các gói tin không phụ thuộc nhau được xử lý song song.",
-                    "🗄️ Adaptive Protocol State Machine: Máy trạng thái giao thức thích ứng tự động kiểm soát băng thông (Rate-Limiting) và phát hiện các nỗ lực đàm phán độc hại bằng các hình phạt leo thang (Time-Based Penalty)."
+                    "🗄️ Adaptive Protocol State Machine: Máy trạng thái giao thức thích ứng tự động kiểm soát băng thông (Rate-Limiting) và phát hiện các nỗ lực đàm phán độc hại bằng các hình phạt leo thang mã nguồn ứng dụng (App-level), loại bỏ BPF filters."
                   ]
                 }
               ],
@@ -4040,7 +3886,7 @@
                       "type": "list",
                       "data": [
                         "📱💻🖥️ Ruthless Memory Self-Destruct: Cấu trúc ZeroizeOnDrop (RAII) lập tức ghi đè liên tục 0x00 xóa sạch vùng Shared Memory ngay giây khắc bộ máy AI Sandbox tiêu thụ xong luồng Vector Embeddings.",
-                        "💻🖥️ Hardware Anti-Swapping: Khởi động UNIX API mlock() trên Desktop ngăn chặn hệ điều hành cày xới và đẩy Swap phân mảng dữ liệu AI siêu nhạy cảm xuống phân vùng đĩa cứng vật lý hở.",
+                        "💻🖥️ Memory Protection via ZeroizeOnDrop: Đảm bảo vùng nhớ nhạy cảm chứa dữ liệu AI được ghi đè 0x00 ngay sau khi sử dụng, ngăn chặn rò rỉ qua swap mà không cần cờ CAP_IPC_LOCK.",
                         "📱💻🖥️ Luồng Xử lý Cách ly Kép: Độc lập tiến trình giải mật (CPU Bound) ngăn vách cực đoan khỏi mọi kết cấu hệ thống truyền dẫn chéo I/O mạng lưới.",
                         "📱 Kích hoạt luồng ZeroizeOnDrop (RAII) để ghi đè 0x00 lên không gian bộ nhớ ngay khi thoát khỏi scope, khống chế vòng đời của plaintext key <2ms.",
                         "📱💻🖥️ Đẩy luồng ký/giải mã KEK nội bộ xuống Hardware Root of Trust (Secure Enclave/TPM 2.0/StrongBox) tuyệt đối không nạp Private Key vào RAM.",
@@ -4165,7 +4011,7 @@
                     "📱💻🖥️ Lõi Rust (Open-Core): Loại bỏ hoàn toàn giải pháp làm rối O-LLVM và Bogus Control Flow gây lãng phí tài nguyên. Tập trung bảo vệ bằng Compiler-Level Guards.",
                     "📱💻🖥️ Zeroize Safe Pipeline: Tách biệt hoàn toàn luồng mã hóa (Synchronous/CPU Bound) và luồng mạng (Async/I/O Bound). Plaintext Key (Zeroizing<Vec<u8>>) chỉ tồn tại trong Synchronous Scope. RAII Drop ghi đè 0x00 trước khi spawn tokio::task.",
                     "📱💻🖥️ Compiler-Level Guard: Plaintext Key Struct cố tình không implement trait Send và Sync. Trình biên dịch Rust báo Compile Error nếu developer vô tình truyền Key qua thread boundary hoặc giữ qua điểm .await — Attack Surface = 0 tại compile time.",
-                    "💻🖥️☁️🗄️ mlock() Hardening: Desktop/Server dùng mmap + cờ MAP_LOCKED | MAP_CONCEAL. Bảo vệ RAM khỏi Swap file trong khoảng 2ms tồn tại của Key."
+                    "💻🖥️☁️🗄️ Zero-Knowledge Memory Safety: Sử dụng mmap anonymous và memory tracking để bảo vệ RAM khỏi việc rò rỉ dữ liệu trong khoảng thời gian tồn tại ngắn của Key. Phế bỏ mlock() cưỡng bách."
                   ]
                 }
               ],
@@ -4254,16 +4100,16 @@
                   "subsections": []
                 },
                 {
-                  "id": "encrypted-blind-search-qua-tee-kết-hợp-hybrid-sse",
+                  "id": "encrypted-blind-search-qua-soft-enclave-wasm-isolation",
                   "level": 4,
-                  "heading": "Encrypted Blind Search qua TEE kết hợp Hybrid SSE",
+                  "heading": "Encrypted Blind Search qua Soft-Enclave WASM Isolation",
                   "content_blocks": [
                     {
                       "type": "list",
                       "data": [
                         "📱☁️ Token hóa luồng từ khóa thông qua thuật toán băm $HMAC-SHA256(Company\\_Search\\_Key, keyword)$.",
                         "📱☁️ Phân mảnh cấu trúc chỉ mục theo định danh Epoch ID phục vụ quá trình xoay vòng khóa (Epoch Rotation).",
-                        "☁️🗄️ Cấu hình truy vấn $O(1)$ Token-to-Index trực diện trên vùng nhớ đã mã hóa của hạt nhân TEE."
+                        "☁️🗄️ Cấu hình truy vấn $O(1)$ Token-to-Index trực diện trên vùng nhớ đã mã hóa bên trong WASM Soft-Enclave, loại bỏ phụ thuộc phần cứng TEE."
                       ]
                     }
                   ],
@@ -4463,14 +4309,14 @@
           "content_blocks": [],
           "subsections": [
             {
-              "id": "81-tee-enclave-isolation-ai-worker-security",
+              "id": "81-soft-enclave-isolation-ai-worker-security",
               "level": 3,
-              "heading": "8.1 TEE Enclave Isolation — AI Worker Security",
+              "heading": "8.1 Soft-Enclave Isolation — AI Worker Security",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "☁️🗄️ Hardware TEE Enclaves (Intel SGX / AWS Nitro): Cô lập vùng nhớ AI Worker ở cấp độ phần cứng; ngăn chặn Root Admin và Cloud Provider trích xuất bộ nhớ hoặc can thiệp vào dữ liệu đang xử lý.",
+                    "☁️🗄️ Software-based Isolation (Wasmtime): Cô lập vùng nhớ AI Worker bằng WASM Sandbox cấp độ phần mềm; ngăn chặn trích xuất bộ nhớ trái phép mà không yêu cầu phần cứng Intel SGX / AWS Nitro chuyên dụng.",
                     "☁️ Thread-Pool Isolation (Bounded MPSC Channel): Phân tách core-messaging-runtime (ưu tiên cao) và ai-heavy-io-runtime (trọng tải AI) qua Bounded MPSC Channel để bảo vệ hiệu năng hệ thống messaging khỏi quá tải AI.",
                     "☁️ Circuit Breaker (AI Latency p99 > 1500ms): Tự động chuyển trạng thái OPEN và fail-fast về UI nếu AI Latency p99 > 1500ms hoặc Packet Loss > 5% trong 10s — bảo vệ throughput messaging core."
                   ]
@@ -4487,7 +4333,7 @@
                   "type": "list",
                   "data": [
                     "📱💻🖥️☁️ Shamir's Secret Sharing (SSS): Băm nát Private Key thành $N$ mảnh phân tán, loại bỏ điểm yếu Master Key đơn điểm; mặc định 3-of-5 hoặc cấu hình M-of-N theo chính sách doanh nghiệp.",
-                    "💻🖥️ Lagrange Interpolation tái tạo Escrow_Private_Key: Thực hiện nội suy Lagrange trực tiếp trong vùng nhớ mlock() để ngăn chặn swap xuống đĩa; plaintext Key chỉ tồn tại trong RAM < 100ms.",
+                    "💻🖥️ Lagrange Interpolation tái tạo Escrow_Private_Key: Thực hiện nội suy Lagrange trực tiếp trong vùng nhớ RAM được bảo vệ bởi ZeroizeOnDrop; plaintext Key chỉ tồn tại trong RAM < 100ms.",
                     "☁️ Escrow Ciphertext Blob: Lưu trữ khóa phiên (Session Key) được mã hóa bằng cơ chế KEM tại Server — Server chỉ thấy ciphertext, không thể tự giải mã mà không có đủ mảnh khóa."
                   ]
                 }

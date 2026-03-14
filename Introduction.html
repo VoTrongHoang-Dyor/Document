@@ -366,7 +366,7 @@
 <p>TeraChat không phải công cụ nhắn tin. Đây là tuyên ngôn về <strong>chủ quyền số</strong> dành cho những tổ chức từ chối đặt bí mật kinh doanh lên server của người khác. Được xây dựng từ lõi Rust thuần túy, mã hóa End-to-End từ thiết bị đầu cuối, hoạt động kể cả khi Internet cắt hoàn toàn — TeraChat là lựa chọn cho chính phủ, quốc phòng, tài chính, và tập đoàn không thể chấp nhận rủi ro.</p>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> New Developer Onboarding · Technical Product Manager · System Architect</p>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Read Time:</strong> ~15 phút</p>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Last Updated:</strong> 2026-03-11</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Last Updated:</strong> 2026-03-11 (Updated ISDM & AI Governance)</p>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="1-system-overview">1. System Overview</h2>
 <p>TeraChat là Hệ điều hành Công việc (Operating System for Work) dành cho Enterprise và Chính phủ, được xây dựng trên nền tảng kiến trúc Zero-Trust. Lõi hệ thống được phát triển hoàn toàn bằng ngôn ngữ Rust, đóng vai trò "độc tài" xử lý 100% nghiệp vụ mã hóa E2EE, đồng bộ dữ liệu và định tuyến mạng, đảm bảo an toàn tuyệt đối và khả năng hoạt động độc lập ngay cả khi hệ thống Internet toàn cầu gặp sự cố.</p>
@@ -382,9 +382,9 @@
 <li>📱💻 <strong>Explicit Mesh Opt-in:</strong> Survival Mesh KHÔNG tự động kích hoạt. Khi hệ thống phát hiện mất kết nối với Control Plane (Server), Lõi Rust sẽ tạm dừng toàn bộ I/O network. Người dùng phải xác nhận thủ công qua thông báo: "Khởi động mạng Mesh để duy trì liên lạc" để hệ thống cấp điện cho module BLE 5.0 / Wi-Fi Direct / Apple Multipeer Connectivity.</li>
 <li>📱💻🖥️ Dữ liệu cục bộ được mã hóa bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Device_Key</code> (Secure Enclave/StrongBox) và đồng bộ lên Cloud/Private Server dưới dạng Ciphertext thuần túy. Khôi phục thực hiện qua Biometric-backed Restore hoặc Recovery Phrase (BIP-39) — không phụ thuộc thiết bị phần cứng ngoại vi.</li>
 <li>☁️ <strong>Operating System for Work:</strong> "TeraChat không chỉ là một ứng dụng chat. Nó là một Hệ điều hành Công việc tích hợp cơ chế giải quyết xung đột dữ liệu phi tập trung (Git-like Conflict Resolution). Cho phép các nhóm làm việc cộng tác trên các tài liệu nhạy cảm với độ chính xác tuyệt đối mà không cần tin tưởng vào máy chủ trung tâm."</li>
-<li>☁️ <strong>Contextual Consistency (Tính Nhất quán Theo ngữ cảnh):</strong> Hệ thống áp dụng chiến lược Nhất quán thực dụng: Giao tiếp lõi (Chat/Voice) luôn khả dụng cả Online lẫn Offline. Tuy nhiên, các tính năng Cộng tác cấu trúc sâu (Git-like Document Collaboration) yêu cầu tính toàn vẹn cao sẽ được ủy quyền cho máy chủ trung tâm (VPS) và chỉ hoạt động ở Online Mode.</li>
-<li>☁️ <strong>Universal Agentic Bridge (BYOA — Bring Your Own Agent):</strong> TeraChat không bắt ép doanh nghiệp sử dụng bất kỳ LLM nội bộ nào. Thay vào đó, nền tảng cung cấp một chuẩn giao tiếp mở thông qua các <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> (Tera App). 📱💻🖥️ <strong>Client-Side Agent Routing:</strong> Mọi tương tác với OpenClaw, ClawBot hay bất kỳ AI Agent nào đều được khởi tạo từ thiết bị đầu cuối sau khi dữ liệu đã được giải mã cục bộ. Máy chủ TeraChat (Control Plane) tuyệt đối mù (Blind Relay) và không tham gia vào quá trình gọi API ra bên ngoài, duy trì trạng thái Zero-Knowledge.</li>
-<li>☁️ <strong>Opt-In Trust Boundary (Ranh giới Tin cậy Chủ động — FCP):</strong> Đối với hệ sinh thái <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> mở rộng, TeraChat cung cấp cơ chế <strong>Full-Context Passthrough (FCP)</strong>. Khi Doanh nghiệp (Admin) chủ động ký Thỏa thuận Chấp nhận Rủi ro (Risk Acceptance — xác thực YubiKey + typed consent), Lõi Rust gỡ bỏ toàn bộ hàng rào kiểm duyệt cục bộ (Micro-NER, O-LLVM Obfuscation), cung cấp 100% ngữ cảnh thô (Plaintext Context) qua TLS trực tiếp cho AI Agent. <strong>Execution Integrity vẫn bất biến:</strong> Response từ AI đến vẫn bắt buộc đi qua SASB — AI có thể đọc tất cả nhưng không thể inject mã độc ngược lại.</li>
+<li>☁️ <strong>Contextual Consistency (Tính Nhất quán Theo ngữ cảnh):</strong> Hệ thống áp dụng chiến lược Nhất quán : Giao tiếp lõi với Chat luôn khả dụng cả Online lẫn Offline. Tuy nhiên, các tính năng Cộng tác cấu trúc sâu (Git-like Document Collaboration) yêu cầu tính toàn vẹn cao sẽ được ủy quyền cho máy chủ trung tâm (VPS) và chỉ hoạt động ở Online Mode.</li>
+<li>☁️ <strong>ISDM (Interactive SLM Dual-Masking) — Trụ cột AI Governance:</strong> TeraChat định nghĩa lại AI Governance thông qua giao thức Dual-Masking. Không một LLM bên ngoài nào được chạm vào dữ liệu thô (Plaintext). Mọi tài liệu trước khi đi ra Internet đều bị "rút ruột" dữ liệu nhạy cảm (PII) bằng <strong>SLM (Small Language Model) cục bộ</strong>, bọc trong các Biến giả (Tokens), và chỉ hoàn trả dữ liệu thật tại thiết bị đầu cuối sau khi AI SLM nhận kết quả trả về --&gt; đối chiếu với dữ liệu ban đầu --&gt; đưa ra dữ liệu cuối cùng.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">💻☁️</code> <strong>Self-Governing Data Objects & Server-Side Gatekeeping:</strong> Ứng dụng mô hình bọc chính sách và mã hóa tại nguồn (Event-Sourced Cryptographic Binding), trong đó thiết bị nhận thực thi phân quyền (Memory Guardian) bằng ZeroizeOnDrop. Kết hợp kiểm soát tấn công DoS bằng Token Bucket Rate Limiting (50 req/min) tại Edge Network, trong khi VPS vẫn hoạt động hoàn toàn dưới dạng Blind Relay (Zero-Knowledge).</li>
 </ul>
 <h3 id="12-triết-lý-mạng-lưới-thích-ứng-adaptive-spatial-network">1.2 Triết lý Mạng lưới Thích ứng (Adaptive Spatial Network)</h3>
 <p>Thay vì một chế độ Mesh chung chung, TeraChat định nghĩa <strong>3 cấp độ tồn tại (3-Tier Spatial Connectivity)</strong> để bảo vệ mạch máu thông tin của doanh nghiệp. Lõi Rust tích hợp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Network_State_Machine</code> tự động đo lường RSSI, RTT và Protocol để phân loại kết nối tức thì:</p>
@@ -402,7 +402,7 @@
 <tr>
 <td><strong>Tier 2 — Offline Near (Tactical Mesh, &lt; 50m)</strong></td>
 <td>Wi-Fi Direct (SoftAP), Apple AWDL, BLE 5.0 High-Speed</td>
-<td>Tin nhắn, Voice nén cao (AMR-NB/Opus low-bitrate), File nhẹ (&lt; 10MB PDF/Word). Từ chối Video Stream & File nặng.</td>
+<td>Tin nhắn, File nhẹ (&lt; 10MB PDF/Word). Từ chối Video Stream & File nặng.</td>
 </tr>
 <tr>
 <td><strong>Tier 3 — Offline Far (Survival Mesh, &gt; 50m hoặc nghẽn)</strong></td>
@@ -413,7 +413,7 @@
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Nguyên tắc cốt lõi:</strong> <em>Khả năng vật lý quyết định Đặc quyền dữ liệu.</em> Lõi Rust (Dictator Core) là người gác cổng duy nhất, không cho phép UI hay người dùng bypass giới hạn vật lý của kênh truyền.</p>
 <ul>
 <li><strong>Online (Unlimited):</strong> Băng thông rộng, mở khóa toàn bộ TeraVault (truyền tệp 10GB).</li>
-<li><strong>Offline Near (Tactical Mesh):</strong> Kết nối P2P cự ly gần bằng Wi-Fi Direct. Cho phép truyền đạt mệnh lệnh qua Voice và File tài liệu khẩn cấp (&lt; 10MB).</li>
+<li><strong>Offline Near (Tactical Mesh):</strong> Kết nối P2P cự ly gần bằng Wi-Fi Direct. Cho phép truyền đạt tin nhắn và File tài liệu khẩn cấp (&lt; 10MB).</li>
 <li><strong>Offline Far (Survival Mesh):</strong> Khi khoảng cách quá xa, hệ thống rơi vào trạng thái sinh tồn. Lõi Rust tự động vô hiệu hóa luồng I/O đa phương tiện, dồn 100% năng lượng và băng thông hẹp của BLE Long-Range chỉ để truyền tải Tin nhắn Văn bản mã hóa (E2EE Text).</li>
 </ul>
 <h3 id="13-feature-scope-out-of-scope">1.3 Feature Scope & Out-of-Scope</h3>
@@ -528,7 +528,7 @@
 <tr>
 <td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code></strong></td>
 <td>Product Owner, Devs</td>
-<td>Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ <strong>Dual-Mask</strong> và giao thức liên kết tổ chức (Federation).</td>
+<td>Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ <strong>ISDM (Interactive SLM Dual-Masking)</strong> và giao thức liên kết tổ chức (Federation).</td>
 </tr>
 <tr>
 <td><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BusinessPlan.md</code></strong></td>
