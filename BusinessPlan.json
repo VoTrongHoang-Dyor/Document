@@ -1,577 +1,171 @@
 {
-  "title": "TeraChat — Business Plan & GTM Strategy",
-  "generated_at": "2026-02-23",
+  "title": "TeraChat — Bản Tóm Tắt Đầu Tư 2026",
+  "meta": {
+    "version": "Q1 2026",
+    "status": "Confidential",
+    "audience": "Investors",
+    "type": "Seed Funding Round Brief"
+  },
+  "hero": {
+    "title": "TeraChat",
+    "subtitle": "Nền tảng Nhắn Tin Chủ Quyền Doanh Nghiệp & Trung Tâm Cộng Tác Kỹ Thuật Số. Bảo mật tuyệt đối. Hoạt động ngay cả khi Internet sụp đổ.",
+    "quote": {
+      "text": "Chúng tôi không bán phần mềm chat. Chúng tôi bán chủ quyền số — quyền kiểm soát tuyệt đối thông tin của chính doanh nghiệp bạn, ngay cả khi Internet sụp đổ.",
+      "author": "CEO, TeraChat"
+    },
+    "key_metrics": [
+      { "label": "Biên Lợi Nhuận Gộp", "value": ">90%" },
+      { "label": "Chi Phí Hạ Tầng/KH", "value": "$0" },
+      { "label": "ARR Upsell Elite", "value": "3×" },
+      { "label": "Runway Dự Kiến", "value": "18mo" }
+    ]
+  },
   "sections": [
     {
-      "id": "terachat-làm-chủ-dữ-liệu-của-bạn-trong-thời-đại-số",
-      "level": 1,
-      "heading": "TeraChat — Làm Chủ Dữ Liệu Của Bạn Trong Thời Đại Số",
-      "content_blocks": [
+      "id": "s1",
+      "number": "01/09",
+      "title": "Vấn Đề: Ngành Công Nghiệp $200 Tỷ Được Xây Trên Nền Tảng Mất Tin Cậy",
+      "description": "Doanh nghiệp hiện đại vận hành bằng các công cụ cộng tác nhưng không tương thích với chủ quyền dữ liệu do phụ thuộc vào máy chủ bên thứ ba (AWS/Azure/Google Cloud).",
+      "structural_failures": [
         {
-          "type": "blockquote",
-          "alert_type": "note",
-          "lines": [
-            "*TeraChat không chỉ xây dựng một phần mềm chat thông thường. Chúng tôi kiến tạo Hệ điều hành Bảo mật (Work OS) — giúp doanh nghiệp làm chủ hoàn toàn tài sản số, đảm bảo an toàn thông tin và khả năng kết nối nội bộ kể cả trong kịch bản cô lập mạng.*",
-            "\"CEO, TeraChat\""
-          ]
+          "point": "Chủ Quyền Dữ Liệu",
+          "current_reality": "Dữ liệu lưu trên đám mây bên thứ ba (AWS/Azure)",
+          "consequence": "Vi phạm GDPR, Luật An ninh mạng VN, tiêu chuẩn ISO 27001"
+        },
+        {
+          "point": "Khả Năng Phục Hồi Hoạt Động",
+          "current_reality": "Phụ thuộc 100% vào kết nối Internet",
+          "consequence": "Điểm lỗi duy nhất — mất mạng = mất liên lạc hoàn toàn"
+        },
+        {
+          "point": "Bảo Mật Zero-Knowledge Thực Sự",
+          "current_reality": "Nhà cung cấp có khả năng truy cập metadata và nội dung",
+          "consequence": "Gián điệp công nghiệp, rò rỉ nội bộ, chặn thu cấp nhà nước"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "number": "02/09",
+      "title": "Giải Pháp: TeraChat — Chủ Quyền Ngay Từ Kiến Trúc",
+      "pillars": [
+        {
+          "name": "Lõi Mật Mã Rust",
+          "description": "Mã hóa đầu cuối ngay tại thiết bị. Server chỉ thấy các byte được mã hóa. Mã nguồn mở để kiểm tra độc lập."
+        },
+        {
+          "name": "Giao Diện Doanh Nghiệp",
+          "description": "UI Glassmorphism với hai chế độ: Online và Mesh. Nhất quán trên đa nền tảng (iOS, Android, macOS, Windows, Linux)."
+        },
+        {
+          "name": "Hạ Tầng Phân Tán",
+          "description": "Cụm riêng tư do khách hàng sở hữu. Kiến trúc đa điểm liên kết. Mạng Mesh Sinh tồn qua BLE 5.0/Wi-Fi Direct."
         }
       ],
-      "subsections": [
-        {
-          "id": "terachat-là-gì",
-          "level": 2,
-          "heading": "TeraChat Là Gì?",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Hãy tưởng tượng bạn đang dùng Zalo hoặc Slack để làm việc nhóm. Mỗi tin nhắn, mỗi tài liệu, mỗi cuộc gọi nội bộ của công ty bạn đang nằm trên máy chủ của người khác. Ở một đất nước khác. Dưới một bộ luật khác."
-            },
-            {
-              "type": "paragraph",
-              "text": "TeraChat ra đời để thay đổi điều đó."
-            },
-            {
-              "type": "paragraph",
-              "text": "Chúng tôi xây dựng một nền tảng cộng tác nội bộ — nhắn tin, gọi video, chia sẻ tài liệu, tích hợp AI — nơi toàn bộ dữ liệu của bạn nằm trên máy chủ do bạn sở hữu, không qua trung gian, không \"cửa hậu\"."
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "tại-sao-terachat-ra-đời",
-          "level": 2,
-          "heading": "Tại Sao TeraChat Ra Đời?",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Thế giới đang thay đổi nhanh hơn bao giờ hết:"
-            },
-            {
-              "type": "list",
-              "data": [
-                "Gián điệp công nghiệp ngày càng tinh vi — một tin nhắn nội bộ bị rò rỉ có thể gây thiệt hại hàng triệu đô.",
-                "Luật bảo mật dữ liệu (GDPR, ISO 27001, Thông tư 13 của Ngân hàng Nhà nước) siết chặt hơn — dùng công cụ nước ngoài lưu dữ liệu ở ngoài lãnh thổ là vi phạm.",
-                "AI ngày càng thông minh — nhưng nếu bạn gửi tài liệu mật lên ChatGPT hay Copilot, dữ liệu đó đi đâu? Bạn có biết không?"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Slack, Microsoft Teams, Zalo đều là những sản phẩm tốt — nhưng chúng được thiết kế để phục vụ đại chúng, không phải để bảo vệ bí mật doanh nghiệp của bạn."
-            },
-            {
-              "type": "paragraph",
-              "text": "TeraChat được thiết kế từ đầu để làm điều mà các nền tảng kia không thể: trả lại toàn quyền kiểm soát cho bạn."
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "3-điều-terachat-làm-khác-biệt",
-          "level": 2,
-          "heading": "3 Điều TeraChat Làm Khác Biệt",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "1-dữ-liệu-ở-nhà-bạn-không-ở-nhà-chúng-tôi",
-              "level": 3,
-              "heading": "1. Dữ Liệu Ở Nhà Bạn, Không Ở Nhà Chúng Tôi",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Khi bạn dùng TeraChat, tin nhắn và tài liệu của bạn được lưu trên máy chủ do bạn thuê và sở hữu — không phải trên Cloud của chúng tôi. Chúng tôi bán phần mềm, không bán dịch vụ lưu trữ."
-                },
-                {
-                  "type": "table",
-                  "headers": [
-                    "Nền tảng",
-                    "Dữ liệu nằm ở đâu?"
-                  ],
-                  "rows": [
-                    [
-                      "Slack",
-                      "AWS Cloud (Mỹ)"
-                    ],
-                    [
-                      "Microsoft Teams",
-                      "Azure (toàn cầu)"
-                    ],
-                    [
-                      "Zalo",
-                      "Máy chủ VNG (Việt Nam)"
-                    ],
-                    [
-                      "**TeraChat**",
-                      "**Máy chủ của chính doanh nghiệp bạn**"
-                    ]
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "Điều này đặc biệt quan trọng với các ngân hàng, cơ quan nhà nước, công ty luật, bệnh viện — những tổ chức mà dữ liệu là tài sản và trách nhiệm pháp lý."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "2-vẫn-hoạt-động-khi-mất-internet",
-              "level": 3,
-              "heading": "2. Vẫn Hoạt Động Khi Mất Internet",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Hầu hết các ứng dụng chat đều \"chết\" khi mất mạng. TeraChat không vậy."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Nhờ công nghệ kết nối trực tiếp giữa các thiết bị (Wi-Fi Direct, Bluetooth), nhân viên trong cùng văn phòng hoặc khu vực vẫn có thể nhắn tin, gửi tài liệu và phối hợp công việc — kể cả khi đường truyền Internet bị cô lập hoàn toàn."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Đây là tính năng sống còn cho nhà máy sản xuất, đơn vị quân sự, hoặc bất kỳ tổ chức nào cần đảm bảo liên lạc trong mọi tình huống."
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "3-cơ-chế-khử-định-danh-mã-hóa-của-ai",
-              "level": 3,
-              "heading": "3. Cơ chế Khử định danh & Mã hóa của AI",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "TeraChat tích hợp AI SLM / LLM (Local) để hỗ trợ công việc: tóm tắt tài liệu dài, tự động nhập liệu từ hóa đơn, phân tích báo cáo, dịch thuật, ... Chúng tôi làm điều đó bằng cách :"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Thông tin nhạy cảm (tên khách hàng, số tài khoản, dữ liệu nội bộ) được AI SLM Local phân loại và ẩn đi trước khi gửi đi — Các bên thứ 3 không thấy được dữ liệu thật.Khi nhận được dữ liệu phản hồi lập tức đối chiếu với dữ liệu gốc và dịch ngược dữ liệu giả thành dữ liệu thật.",
-                    "Toàn bộ hoạt động đều được ghi log, minh bạch, có thể kiểm tra bất cứ lúc nào.",
-                    "Admin có toàn quyền kiểm soát luồng dữ liệu.Thông qua hệ thống phân quyền và kiểm soát truy cập trên Admin console."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "terachat-phù-hợp-với-ai",
-          "level": 2,
-          "heading": "TeraChat Phù Hợp Với Ai?",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Ngân hàng & Tài chính: Tuân thủ Thông tư 13, GDPR. Không dữ liệu khách hàng nào rời khỏi hệ thống nội bộ."
-            },
-            {
-              "type": "paragraph",
-              "text": "Cơ quan Nhà nước: Dữ liệu lưu trên máy chủ trong lãnh thổ. Hỗ trợ ký số, phê duyệt văn bản điện tử."
-            },
-            {
-              "type": "paragraph",
-              "text": "Chuỗi nhà hàng & bán lẻ: Chụp ảnh hóa đơn → AI tự động nhập kho. Quản lý đa chi nhánh từ một màn hình."
-            },
-            {
-              "type": "paragraph",
-              "text": "Tập đoàn & Doanh nghiệp lớn: Kết nối bảo mật giữa tổng công ty và các chi nhánh toàn quốc, toàn cầu."
-            },
-            {
-              "type": "paragraph",
-              "text": "Công ty sản xuất & Khu công nghiệp: Vẫn liên lạc được khi mất Internet. Không để một sự cố đường truyền làm dừng cả dây chuyền."
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "bảng-giá",
-          "level": 2,
-          "heading": "Bảng Giá",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Gói",
-                "Theo tháng",
-                "Theo năm (tiết kiệm 30%)"
-              ],
-              "rows": [
-                [
-                  "**Cơ Bản**",
-                  "$49 / tháng",
-                  "$399 / năm"
-                ],
-                [
-                  "**Cao Cấp**",
-                  "$149 / tháng",
-                  "$1.190 / năm"
-                ]
-              ]
-            }
-          ],
-          "subsections": [
-            {
-              "id": "gói-cơ-bản",
-              "level": 3,
-              "heading": "Gói Cơ Bản",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Nhắn tin & gọi video mã hóa đầu cuối",
-                    "Nhắn tin nội bộ gửi file ( < 10 mét ) ngay cả khi mất Internet",
-                    "Đồng bộ nhân viên trên các nền tảng Azure AD/Google Workspace/...",
-                    "3 Tiện ích được tích hợp sẵn: Lịch, Ghi chú, Công việc",
-                    "Khôi phục khẩn cấp yêu cầu xác nhận từ 2 quản lí cấp cao"
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "gói-cao-cấp",
-              "level": 3,
-              "heading": "Gói Cao Cấp",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Tất cả tính năng của Gói Cơ Bản",
-                    "AI SLM thông minh có kiểm soát bảo mật (ẩn thông tin nhạy cảm trước khi gửi AI)",
-                    "Kết nối an toàn giữa tổng công ty và các chi nhánh",
-                    "Tự động thu hồi quyền truy cập nhân viên nghỉ việc trong vòng 30 giây (Đồng bộ với Azure AD/Google Workspace/...)",
-                    "Cung cấp API (API : Đồng bộ Định danh Nhân sự/Bot Builder SDK/Compliance Export/Gửi thông báo)"
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "so-sánh-chi-phí-thực-tế-500-nhân-viên-12-tháng",
-              "level": 3,
-              "heading": "So Sánh Chi Phí Thực Tế (500 nhân viên / 12 tháng)",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "",
-                    "Slack Pro",
-                    "TeraChat Cơ Bản",
-                    "TeraChat Cao Cấp"
-                  ],
-                  "rows": [
-                    [
-                      "Phí bản quyền",
-                      "~$43.500",
-                      "~$4.990",
-                      "~$11.900"
-                    ],
-                    [
-                      "Chi phí máy chủ",
-                      "Đã bao gồm",
-                      "~$240",
-                      "~$2.400"
-                    ],
-                    [
-                      "Lưu trữ",
-                      "Giới hạn",
-                      "~$600",
-                      "~$600"
-                    ],
-                    [
-                      "**Tổng cộng**",
-                      "**~$43.500**",
-                      "**~$5.830**",
-                      "**~$14.900**"
-                    ]
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "Với TeraChat, doanh nghiệp 500 người tiết kiệm tới **$37.000 mỗi năm** so với Slack — đồng thời có toàn quyền kiểm soát dữ liệu."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "vì-sao-gửi-file-lớn-không-làm-chúng-tôi-sập-tiệm",
-          "level": 2,
-          "heading": "Vì Sao Gửi File Lớn Không Làm Chúng Tôi \"Sập Tiệm\"?",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Slack giới hạn dung lượng file vì Slack phải trả tiền lưu trữ cho mỗi gigabyte bạn gửi."
-            },
-            {
-              "type": "paragraph",
-              "text": "TeraChat không giới hạn — vì chúng tôi không lưu file của bạn. File của bạn được mã hóa và đẩy thẳng lên kho lưu trữ của chính bạn (AWS S3 hoặc MinIO riêng). Máy chủ TeraChat chỉ chuyển tiếp thông tin định tuyến, không chạm vào nội dung."
-            },
-            {
-              "type": "paragraph",
-              "text": "Hơn nữa, nếu hai nhân viên cùng văn phòng chia sẻ file với nhau, file đó đi trực tiếp từ máy này sang máy kia qua Wi-Fi nội bộ — không cần qua Internet, tốc độ lên đến 1Gbps."
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "triển-khai-dễ-như-thế-nào",
-          "level": 2,
-          "heading": "Triển Khai Dễ Như Thế Nào?",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Chúng tôi hiểu rằng không phải doanh nghiệp nào cũng có đội IT lớn. TeraChat được thiết kế để cài đặt nhanh nhất có thể:"
-            },
-            {
-              "type": "paragraph",
-              "text": "Tự cài đặt trên máy chủ riêng: Chạy một lệnh duy nhất — máy chủ của bạn biến thành TeraChat Node trong vài phút."
-            },
-            {
-              "type": "paragraph",
-              "text": "Cài qua Cloud Hybrid: Bạn cung cấp thông tin đăng nhập VPS trong Admin Console ( Dành riêng cho Admin ), TeraChat tự động kết nối và cài đặt, sau đó bàn giao toàn quyền cho bạn."
-            },
-            {
-              "type": "paragraph",
-              "text": "Qua đối tác MSP: Nếu bạn không muốn tự làm gì, các công ty IT đối tác của TeraChat sẽ cài đặt, bảo trì và hỗ trợ cho bạn."
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "mô-hình-kinh-doanh",
-          "level": 2,
-          "heading": "Mô Hình Kinh Doanh",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "chúng-tôi-kiếm-tiền-như-thế-nào",
-              "level": 3,
-              "heading": "Chúng Tôi Kiếm Tiền Như Thế Nào?",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "TeraChat hoạt động theo nguyên tắc đơn giản: bạn tự trả tiền cho hạ tầng của bạn — chúng tôi chỉ bán bản quyền phần mềm."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Điều này có nghĩa là chi phí máy chủ của chúng tôi không tăng theo số lượng khách hàng. Mỗi khách hàng mới mang lại doanh thu thuần, không kèm chi phí vận hành thêm. Đây là lý do chúng tôi có thể tái đầu tư mạnh vào phát triển sản phẩm thay vì đốt tiền vào hạ tầng Cloud."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Các nguồn doanh thu:"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Phí bản quyền License là nguồn thu chính. Tạo dòng tiền ổn định ngay từ ngày đầu."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Dịch vụ triển khai & hỗ trợ"
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Hoa hồng từ các tiện ích tích hợp Cộng đồng pháp triển khai các tiện ích mở rộng cho TeraChat hưởng 90% doanh thu.Từ việc họ định giá tiện ích và bán được trên TeraChat Marketplace."
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Mạng lưới đối tác MSP — chúng tôi cấp phép cho các công ty IT để họ bán và triển khai TeraChat cho chuỗi nhà hàng, bán lẻ, chia sẻ doanh thu."
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "lộ-trình-phát-triển",
-          "level": 2,
-          "heading": "Lộ Trình Phát Triển",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "phase-1-vertical-focus-định-vị-thị-trường-ngách-fb-và-chính-phủ",
-              "level": 3,
-              "heading": "Phase 1: Vertical Focus (Định vị Thị trường Ngách – F&B và Chính phủ)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Trọng tâm ban đầu là cung cấp giải pháp khép kín cho 2 phân khúc có yêu cầu gắt gao nhất về quy trình và tính bảo mật."
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 Mobile / 💻 Laptop: Dành cho Cơ quan hành chính và Chính phủ — Tập trung vào tính năng Smart Approval và tích hợp chữ ký số (Ed25519) an toàn tuyệt đối.",
-                    "🖥️ Desktop / 📱 iPad: Dành cho các chuỗi F&B — Thiết lập chế độ Kiosk Mode và Magic Logger với hiệu ứng WOW qua việc chụp ảnh hóa đơn và AI tự động nhập kho.",
-                    "Thiết kế UI/UX (Online Mode): Áp dụng phong cách Sáng (Light Theme) với nền trắng #FFFFFF, hiệu ứng kính mờ (blur) 16px và màu nhấn #24A1DE. Các tính năng vượt quyền hạn OPA Policy sẽ bị ép màu đơn sắc (Grayscale) và làm đục, hạn chế tương tác.",
-                    "Hỗ trợ Hạ tầng: Kịch bản triển khai 1-chạm (1-Touch Scripting) sẽ tích hợp sẵn cấu hình tường lửa (Firewall Rules), đóng vai trò bộ lọc gợi ý nhằm chặn đứng các luồng truy cập qua kẽ hở mạng."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "phase-2-enterprise-expansion-mở-rộng-tập-đoàn-cơ-sở-hạ-tầng-trọng-yếu",
-              "level": 3,
-              "heading": "Phase 2: Enterprise Expansion (Mở rộng Tập đoàn & Cơ sở hạ tầng trọng yếu)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Bước đi tiếp theo nhằm bao phủ các ngành công nghiệp nhạy cảm, đưa định nghĩa Zero-Trust vào cốt lõi hạ tầng doanh nghiệp."
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "🗄️ Bare-metal Server / ☁️ VPS Cluster: Xây dựng Fintech Bridge cho mảng Ngân hàng (Smart Approval, Blind Payout). Thiết lập Federated Private Clusters (Liên kết cụm máy chủ) đối với các Tập đoàn Đa quốc gia nhằm bảo toàn Data Sovereignty (Chủ quyền Dữ liệu) theo từng lãnh thổ địa lý.",
-                    "📱 Mobile / 💻 MacOS: Triển khai giao thức Survival Mesh (BLE 5.0 / Wi-Fi Direct) phục vụ cho Môi trường Sản xuất (Manufacturing), giúp nhà máy vận hành bình thường ngay cả khi đứt cáp viễn thông. Để tối ưu năng lượng, hệ thống lưới này sẽ chỉ ưu tiên nhắn tin khẩn cấp dạng Text (Delta CRDT), đồng thời chặn đứt các luồng truyền tải tệp lớn hoặc video.",
-                    "Thiết kế UI/UX (Mesh Mode): Kích hoạt trạng thái Tối (Dark Navy #0F172A). Hệ thống tự động triệt tiêu các lớp CSS nền mờ (Glassmorphism Degradation) để giảm tải GPU. Radar xung tín hiệu sẽ là định dạng SVG điều khiển bằng sự kiện (Event-driven) để chống hiện tượng ngốn pin."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "phase-3-ecosystem-marketplace-hệ-sinh-thái-tiện-ích-tapp",
-              "level": 3,
-              "heading": "Phase 3: Ecosystem & Marketplace (Hệ sinh thái Tiện ích .tapp)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Chuyển dịch TeraChat từ một \"Sovereign Messenger\" thành một \"Work OS\" có khả năng phân phối công cụ nội bộ."
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "☁️ VPS Cluster / 💻 Laptop: Mở cửa hệ sinh thái Marketplace (Web Marketplace) cho phép nhà phát triển ISV xây dựng .tapp Mini-Apps. Tích hợp cổng thanh toán TeraPay và áp dụng mô hình chia sẻ doanh thu (Revenue Share) linh hoạt.",
-                    "📱 iOS / 📱 Android / 🖥️ Desktop: Bắt buộc cô lập toàn bộ ứng dụng .tapp bên trong môi trường WASM Sandbox."
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Đánh giá High-Level Architecture (Đặc thù Phase 3):"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Latency: Giao tiếp Control Plane qua FFI/JSI < 5ms; Luồng khởi tạo mạng < 30ms.",
-                    "Throughput: Đạt 400-500MB/s nhờ cấu trúc IPC Zero-Copy (SharedArrayBuffer) để xử lý lượng file dữ liệu lớn.",
-                    "Attack Surface: Triệt tiêu hoàn toàn mã độc từ bên thứ ba nhờ tước quyền Network Socket của WASM, khóa bộ nhớ RAM vĩnh viễn (mlock), và thực thi tự hủy (ZeroizeOnDrop)."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "chiến-lược-open-core",
-          "level": 2,
-          "heading": "Chiến Lược Open-Core",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "TeraChat áp dụng mô hình Open-Core: phần lõi mã hóa và giao thức kết nối được công khai mã nguồn để bất kỳ chuyên gia bảo mật nào cũng có thể kiểm chứng không có \"cửa hậu\"."
-            },
-            {
-              "type": "paragraph",
-              "text": "Điều này giải quyết nỗi lo lớn nhất của các tổ chức bảo mật cao: \"Làm sao tôi biết phần mềm này không âm thầm gửi dữ liệu đi?\" — Câu trả lời: bạn có thể tự kiểm tra mã nguồn."
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "cam-kết-tuân-thủ-pháp-lý",
-          "level": 2,
-          "heading": "Cam Kết Tuân Thủ Pháp Lý",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "TeraChat được xây dựng để đáp ứng các tiêu chuẩn khắt khe nhất:"
-            },
-            {
-              "type": "list",
-              "data": [
-                "ISO 27001 — tiêu chuẩn quản lý bảo mật thông tin quốc tế",
-                "SOC 2 Type II — kiểm toán độc lập về bảo mật dữ liệu",
-                "GDPR — quy định bảo vệ dữ liệu cá nhân của EU",
-                "Thông tư 13 — quy định an ninh mạng dành cho tổ chức tín dụng Việt Nam",
-                "Nhật ký bất biến — mọi hành động đều được ghi lại, không ai có thể xóa hay sửa, phục vụ yêu cầu pháp lý và điều tra"
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "phân-bổ-vốn-đầu-tư",
-          "level": 2,
-          "heading": "Phân Bổ Vốn Đầu Tư",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Nếu nhận được đầu tư, chúng tôi sẽ sử dụng theo nguyên tắc: không đốt tiền vào máy chủ Cloud hay quảng cáo đại trà."
-            },
-            {
-              "type": "table",
-              "headers": [
-                "Hạng mục",
-                "Tỷ lệ",
-                "Mục tiêu"
-              ],
-              "rows": [
-                [
-                  "Kiểm toán & Chứng chỉ Bảo mật",
-                  "20%",
-                  "Lấy ISO 27001, SOC 2 — điều kiện bắt buộc để ký được hợp đồng với ngân hàng, chính phủ"
-                ],
-                [
-                  "Mở rộng R&D",
-                  "40%",
-                  "Tuyển kỹ sư cốt lõi, nâng cao chất lượng trên mọi nền tảng (Windows, macOS, iOS, Android)"
-                ],
-                [
-                  "Mạng lưới Đối tác",
-                  "25%",
-                  "Đào tạo và chứng nhận các công ty IT đối tác trên toàn quốc"
-                ],
-                [
-                  "Quỹ Dự phòng",
-                  "15%",
-                  "Đảm bảo hoạt động ổn định 18–24 tháng trong mọi điều kiện thị trường"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "lời-nhắn-từ-ceo",
-          "level": 2,
-          "heading": "Lời Nhắn Từ CEO",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Khi chúng tôi nhìn vào thị trường phần mềm cộng tác doanh nghiệp hiện nay, chúng tôi thấy một nghịch lý: các tổ chức càng cần bảo mật cao (ngân hàng, chính phủ, y tế) lại càng bị bỏ lại phía sau bởi những sản phẩm được xây dựng cho thị trường đại chúng."
-            },
-            {
-              "type": "paragraph",
-              "text": "TeraChat không cố gắng thay thế Slack hay Zalo cho mọi người. Chúng tôi tập trung vào những tổ chức mà dữ liệu là sự sống còn — và những người đó xứng đáng có một công cụ được thiết kế cho họ."
-            },
-            {
-              "type": "paragraph",
-              "text": "Chúng tôi tin rằng quyền riêng tư và khả năng cộng tác hiệu quả không phải là hai điều phải đánh đổi nhau. TeraChat là bằng chứng cho điều đó."
-            },
-            {
-              "type": "paragraph",
-              "text": "Để tìm hiểu thêm, demo sản phẩm, hoặc thảo luận về hợp tác — hãy liên hệ đội ngũ TeraChat."
-            }
-          ],
-          "subsections": []
-        }
+      "technical_differentiators": [
+        "Kiến trúc Server Zero-Knowledge (Sealed Sender protocol)",
+        "Mạng Mesh Sinh Tồn (BLE 5.0 / Wi-Fi Direct)",
+        "Kết Nối Lại QUIC 0-RTT",
+        "Mã Hóa Luồng (AEAD) gửi file theo khối 2MB",
+        "Giao Thức Minh Bạch (ALPN Fallback)",
+        "Sandbox WASM (.tapp mini-apps)"
+      ]
+    },
+    {
+      "id": "s3",
+      "number": "03/09",
+      "title": "Cơ Hội Thị Trường",
+      "tam": "$48 tỷ (2024), vượt $85 tỷ (2030)",
+      "segments": [
+        { "sector": "Dịch Vụ Tài Chính / Ngân Hàng", "tam": "$18 tỷ", "compliance": "GDPR, PCI-DSS, Basel III" },
+        { "sector": "Chính Phủ & Quốc Phòng", "tam": "$12 tỷ", "compliance": "ISO 27001, SCIF, Luật An Ninh Mạng" },
+        { "sector": "Y Tế", "tam": "$8 tỷ", "compliance": "HIPAA, GDPR Article 9" },
+        { "sector": "Doanh Nghiệp / Sản Xuất", "tam": "$22 tỷ", "compliance": "NIS2, ISO 27001" },
+        { "sector": "Pháp Lý & Dịch Vụ Chuyên Nghiệp", "tam": "$6 tỷ", "compliance": "Attorney-client privilege" }
+      ],
+      "regional_opportunity": "Luật nội địa hóa dữ liệu tại Đông Nam Á (Thông tư 13 VN, GR 71 ID, PDPA TH) cấm Slack/Teams cho các đơn vị nhạy cảm."
+    },
+    {
+      "id": "s4",
+      "number": "04/09",
+      "title": "Mô Hình Kinh Doanh: Chi Phí Băng Thông Bằng 0, Biên Lợi Nhuận Gộp >90%",
+      "structural_advantage": "Mô hình cấp phép phần mềm thuần túy (License). Khách hàng trả chi phí hạ tầng. Lợi nhuận gộp cao (>90%).",
+      "revenue_streams": [
+        { "source": "Đăng Ký Doanh Nghiệp", "pricing": "$500–$8.000/tháng" },
+        { "source": "Dịch Vụ Chuyên Nghiệp", "pricing": "$50K–$200K (one-time)" },
+        { "source": "SLA & Bảo Trì", "pricing": "15–20% ACV/năm" },
+        { "source": "Elite Compute Tier", "pricing": "$3.000/tháng" },
+        { "source": "Enterprise Survival Kit", "pricing": "$500–$1.000/bộ" },
+        { "source": "AI & .tapp Marketplace", "pricing": "30% revenue share" }
+      ],
+      "deployment_tiers": [
+        { "tier": "Managed SaaS", "target": "SME / F&B", "price": "$500" },
+        { "tier": "On-Premise Standard", "target": "Large Enterprise", "price": "$1.000" },
+        { "tier": "Elite (TEE Enclave)", "target": "Finance / Corp+", "price": "$3.000" },
+        { "tier": "Enterprise Gov", "target": "Gov / Defense", "price": "$8.000" }
+      ]
+    },
+    {
+      "id": "s5",
+      "number": "05/09",
+      "title": "Lợi Thế Cạnh Tranh: Hào Lũy Được Xây Bằng Rust",
+      "competitive_moats": [
+        "Hào Lũy Kiến Trúc: Zero-Knowledge native",
+        "Hào Lũy Pháp Lý: Đáp ứng luật nội địa hóa dữ liệu APAC",
+        "Hào Lũy Kỹ Thuật: Rust Core, CRDT, Mesh, QUIC 0-RTT",
+        "Hào Lũy Tin Cậy: Open-Core (AGPLv3)",
+        "Hào Lũy Khóa Dữ Liệu: Dữ liệu hoạt động nằm tại cụm riêng của KH"
+      ],
+      "elite_tier": "Tính Toán Bảo Mật Chủ Quyền (TEE-backed: Intel SGX, AMD SEV, AWS Nitro)."
+    },
+    {
+      "id": "s6",
+      "number": "06/09",
+      "title": "Chiến Lược Tăng Trưởng",
+      "phases": [
+        { "id": "01", "name": "Tập Trung Lĩnh Vực Dọc", "period": "0-18 months", "focus": "F&B/Bán Lẻ, Hành Chính Công" },
+        { "id": "02", "name": "Mở Rộng Doanh Nghiệp", "period": "12-36 months", "focus": "Ngân hàng (Zone 2), Sản xuất (Survival Mesh), Đa quốc gia" },
+        { "id": "03", "name": "Hệ Sinh Thái & Marketplace", "period": "24-48 months", "focus": ".tapp Marketplace, Quốc Phòng & Tình Báo" }
+      ],
+      "growth_tactics": "Zone 2 (giao tiếp đối ngoại) là đòn bẩy chuyển đổi chính cho khối Enterprise."
+    },
+    {
+      "id": "s7",
+      "number": "07/09",
+      "title": "Dự Báo Tài Chính & Tiềm Năng Đầu Tư",
+      "arr_scenarios": [
+        { "scenario": "Thận Trọng (Năm 1)", "revenue": "$480.000" },
+        { "scenario": "Cơ Sở (Năm 2)", "revenue": "$2.160.000" },
+        { "scenario": "Tích Cực (Năm 3)", "revenue": "$9.000.000" },
+        { "scenario": "Gov/Defense Contract", "revenue": "Lên đến $480.000/deal" }
+      ],
+      "funding_allocation": {
+        "Security Audit & Certificates": "20%",
+        "Core R&D": "40%",
+        "GTM & Reseller Network": "25%",
+        "Contingency Fund": "15%"
+      }
+    },
+    {
+      "id": "s8",
+      "number": "08/09",
+      "title": "Tầm Nhìn & Tác Động Dài Hạn",
+      "vision_goals": [
+        "Giao Diện Tác Nhân Thống Nhất cho AI/Automation",
+        "Mạng Liên Kết Xuyên Biên Giới",
+        "Tiêu Chuẩn Liên Lạc Chiến Thuật (Survival Mesh)",
+        "Hệ Sinh Thái Mở .tapp Marketplace"
+      ]
+    },
+    {
+      "id": "s9",
+      "number": "09/09",
+      "title": "Chiến Lược Cấp Phép & Sở Hữu Trí Tuệ",
+      "license_strategy": "Open-Core (AGPLv3 for security core, Proprietary for Admin/AI/Billing).",
+      "ip_components": [
+        { "component": "Lõi Mật Mã Rust", "license": "AGPLv3" },
+        { "component": "Admin Console Doanh Nghiệp", "license": "Proprietary" },
+        { "component": "Module AI (Magic Logger)", "license": "Proprietary" }
       ]
     }
   ]

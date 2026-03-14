@@ -1,664 +1,1329 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeraChat — Business Plan & GTM Strategy</title>
-    <style>
-    
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-sidebar: #020617;
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-purple: #818cf8;
-            --accent-pink: #f472b6;
-            --success: #4ade80;
-            --warning: #fbbf24;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --border: #334155;
-            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeraChat — Bản Tóm Tắt Đầu Tư 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0a1628;
+  --navy2: #0f2040;
+  --blue: #1a3a6b;
+  --accent: #0066cc;
+  --accent2: #0088ff;
+  --gold: #c9a84c;
+  --gold2: #e8c96a;
+  --light: #e8f0fa;
+  --mid: #a8c4e8;
+  --white: #ffffff;
+  --gray: #f5f7fa;
+  --text: #0d1117;
+  --muted: #5a6a7e;
+  --border: #c5d5e8;
+  --glass: rgba(255,255,255,0.07);
+  --glass-border: rgba(255,255,255,0.15);
+}
 
-        * { box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: var(--font-main);
-            margin: 0;
-            line-height: 1.6;
-            overflow-x: hidden;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 280px minmax(0, 1fr);
-            min-height: 100vh;
-        }
+html { scroll-behavior: smooth; }
 
-        .sidebar {
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
-            height: 100vh;
-            padding: 2rem 1rem;
-            position: sticky;
-            top: 0;
-            overflow-y: auto;
-            z-index: 100;
-        }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  overflow-x: hidden;
+}
 
-        .brand {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 2rem;
-            display: block;
-            letter-spacing: -0.5px;
-            text-decoration: none;
-        }
-        .brand span { color: var(--accent-purple); }
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .4;
+}
 
-        .nav-header {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            font-weight: 700;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-            padding-left: 0.8rem;
-        }
+/* ── SIDEBAR NAV ── */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 68px;
+  background: rgba(10,22,40,0.95);
+  border-right: 1px solid var(--glass-border);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 0; gap: 6px; z-index: 100;
+  backdrop-filter: blur(20px);
+}
 
-        .nav-link {
-            display: block;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 0.6rem 0.8rem;
-            border-radius: 6px;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            border-left: 2px solid transparent;
-        }
+.sidebar-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px; font-weight: 900;
+  color: var(--gold); letter-spacing: 2px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin-bottom: 24px;
+  transform: rotate(180deg);
+}
 
-        .nav-link:hover, .nav-link.active {
-            color: var(--accent-blue);
-            background: rgba(56, 189, 248, 0.05);
-            border-left-color: var(--accent-blue);
-        }
+.nav-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  cursor: pointer; transition: all 0.3s;
+  position: relative;
+}
+.nav-dot:hover, .nav-dot.active {
+  background: var(--gold); border-color: var(--gold);
+  transform: scale(1.4);
+}
+.nav-dot::after {
+  content: attr(data-label);
+  position: absolute; left: 20px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--navy2); border: 1px solid var(--glass-border);
+  color: var(--white); font-size: 11px; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap; padding: 4px 10px; border-radius: 4px;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.nav-dot:hover::after { opacity: 1; }
 
-        .main {
-            padding: 4rem 4rem;
-            max-width: 100%;
-            width: 100%;
-            margin: 0 auto;
-        }
+.sidebar-line {
+  width: 1px; flex: 1;
+  background: linear-gradient(to bottom, transparent, var(--glass-border), transparent);
+  margin: 8px 0;
+}
 
-        h1 { font-size: 2.5rem; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem; color: #fff; }
-        h2 { font-size: 1.8rem; color: var(--accent-purple); margin-top: 3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-        h3 { font-size: 1.25rem; color: var(--text-primary); margin-top: 2rem; border-left: 4px solid var(--accent-blue); padding-left: 1rem; }
+/* ── MAIN LAYOUT ── */
+.main {
+  margin-left: 68px;
+  min-height: 100vh;
+}
 
-        p, ul { color: var(--text-secondary); margin-bottom: 1rem; }
-        li { margin-bottom: 0.5rem; }
+/* ── HERO / COVER ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 80px 80px 80px 80px;
+  position: relative; overflow: hidden;
+}
 
-        .scenario-card {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            position: relative;
-            overflow: hidden;
-            max-width: 100%;
-        }
+.hero-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 80% at 70% 50%, rgba(0,102,204,0.12) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 60% at 20% 80%, rgba(201,168,76,0.06) 0%, transparent 50%);
+}
 
-        .scenario-card::before {
-            content: "USER EXPERIENCE";
-            position: absolute;
-            top: 0; right: 0;
-            background: var(--border);
-            color: var(--text-secondary);
-            font-size: 0.65rem;
-            font-weight: bold;
-            padding: 0.25rem 0.75rem;
-            border-bottom-left-radius: 8px;
-        }
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
 
-        .scenario-step {
-            display: grid;
-            grid-template-columns: 120px 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1rem;
-            align-items: baseline;
-        }
+.confidential-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 100px; padding: 6px 16px;
+  font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  color: var(--gold); text-transform: uppercase;
+  margin-bottom: 40px;
+  animation: fadeInUp 0.8s ease both;
+}
+.confidential-badge::before {
+  content: ''; width: 6px; height: 6px;
+  background: var(--gold); border-radius: 50%;
+  animation: pulse 2s infinite;
+}
 
-        @media (max-width: 768px) {
-            .scenario-step { grid-template-columns: 1fr; gap: 0.5rem; }
-        }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
 
-        .step-label {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-            text-transform: uppercase;
-            text-align: right;
-        }
+.hero-eyebrow {
+  font-size: 12px; font-weight: 500; letter-spacing: 4px;
+  color: var(--accent2); text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.9s 0.1s ease both;
+}
 
-        .tech-box {
-            background: #0f1219;
-            border: 1px solid #2d3748;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-top: 1rem;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            max-width: 100%;
-            overflow-x: auto;
-        }
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(52px, 7vw, 96px);
+  font-weight: 900; line-height: 1;
+  color: var(--white);
+  margin-bottom: 16px;
+  animation: fadeInUp 1s 0.2s ease both;
+}
 
-        .tech-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: var(--accent-pink);
-            font-weight: bold;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+.hero-title span {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 50%, var(--accent2) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-        .comparison-table {
-            width: 100%;
-            overflow-x: auto;
-            margin: 1rem 0;
-            display: block;
-            -webkit-overflow-scrolling: touch;
-        }
-        .comparison-table table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-            min-width: 600px;
-        }
+.hero-subtitle {
+  font-size: 18px; font-weight: 300; color: var(--mid);
+  max-width: 560px; line-height: 1.6;
+  margin-bottom: 48px;
+  animation: fadeInUp 1s 0.3s ease both;
+}
 
-        .comparison-table th { text-align: left; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding: 0.5rem; }
-        .comparison-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .old-way { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
-        .new-way { color: var(--success); font-weight: 500; }
+.hero-quote {
+  border-left: 3px solid var(--gold);
+  padding: 20px 28px;
+  background: rgba(201,168,76,0.06);
+  border-radius: 0 12px 12px 0;
+  max-width: 620px;
+  margin-bottom: 56px;
+  animation: fadeInUp 1s 0.4s ease both;
+}
+.hero-quote p {
+  font-size: 16px; font-style: italic; color: rgba(255,255,255,0.8); line-height: 1.7;
+}
+.hero-quote cite {
+  display: block; margin-top: 10px;
+  font-size: 12px; font-style: normal; color: var(--gold); font-weight: 600; letter-spacing: 1px;
+}
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-left: 0.5rem;
-            background: rgba(255,255,255,0.1);
-        }
+.hero-metrics {
+  display: flex; gap: 2px;
+  animation: fadeInUp 1s 0.5s ease both;
+}
 
-        .badge-success { color: var(--success); background: rgba(74, 222, 128, 0.1); }
-        .badge-danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
-        .badge-warning { color: var(--warning); background: rgba(251, 191, 36, 0.1); }
-        .badge-info { color: var(--info); background: rgba(59, 130, 246, 0.1); }
+.metric-box {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  padding: 20px 28px;
+  flex: 1; max-width: 180px;
+}
+.metric-box:first-child { border-radius: 12px 0 0 12px; }
+.metric-box:last-child { border-radius: 0 12px 12px 0; }
 
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow-x: auto;
-            max-width: 100%;
-        }
+.metric-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px; font-weight: 700; color: var(--white);
+  line-height: 1;
+}
+.metric-value span { color: var(--gold); }
+.metric-label { font-size: 11px; color: var(--mid); margin-top: 6px; letter-spacing: 0.5px; }
 
-        code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.3rem; border-radius: 4px; }
+.hero-scroll {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+  animation: fadeInUp 1.2s 0.8s ease both;
+}
+.scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+  animation: scrollLine 2s infinite;
+}
+@keyframes scrollLine {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  51% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
 
-        @media (max-width: 900px) {
-            body {
-                grid-template-columns: 1fr;
-            }
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                padding: 1rem;
-            }
-            .main {
-                padding: 2rem 1.5rem;
-                width: 100%;
-            }
-            h1 { font-size: 1.8rem; }
-            h2 { font-size: 1.5rem; margin-top: 2rem; }
-        }
-        
-    
-        /* Search Box */
-        .search-container {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        .search-input {
-            width: 100%;
-            padding: 0.6rem 0.8rem 0.6rem 2.2rem;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 0.85rem;
-            font-family: var(--font-main, system-ui);
-            outline: none;
-            transition: all 0.2s;
-        }
-        .search-input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-        .search-input:focus {
-            border-color: var(--accent-blue);
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
-        }
-        .search-icon {
-            position: absolute;
-            left: 0.7rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            pointer-events: none;
-        }
-        .search-shortcut {
-            position: absolute;
-            right: 0.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255,255,255,0.08);
-            color: var(--text-secondary);
-            font-size: 0.65rem;
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            pointer-events: none;
-        }
-        .nav-link.search-hidden {
-            display: none !important;
-        }
-        .search-no-results {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            padding: 0.5rem 0.8rem;
-            opacity: 0.6;
-            display: none;
-        }
+/* ── SECTIONS ── */
+.section {
+  padding: 100px 80px;
+  position: relative;
+}
 
-        /* Tech Properties */
-        .tech-prop { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; }
-        .tech-prop .prop-label { font-weight: 600; color: var(--text-secondary); width: 130px; }
-        
-        .badge-prop {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.15rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .badge-prop.core { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
-        .badge-prop.recommended { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
-        .badge-prop.optional { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156,163,175,0.3); }
-        .badge-prop.yes { background: rgba(74, 222, 128, 0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
-        .badge-prop.no { background: rgba(244, 114, 182, 0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+.section:nth-child(even) {
+  background: rgba(255,255,255,0.018);
+}
 
-        /* Platform Chips */
-        .platform-list {
-            margin: 0.8rem 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-            color: var(--text-secondary);
-        }
-        .platform-chip {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-    
-    </style>
+.section-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 600; letter-spacing: 3px;
+  color: var(--accent2); opacity: 0.6;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700; color: var(--white);
+  line-height: 1.15; margin-bottom: 8px;
+}
+
+.section-divider {
+  width: 60px; height: 3px;
+  background: linear-gradient(to right, var(--gold), var(--accent2));
+  margin-bottom: 40px; border-radius: 2px;
+}
+
+.section-intro {
+  font-size: 17px; color: rgba(255,255,255,0.72);
+  line-height: 1.8; max-width: 760px;
+  margin-bottom: 48px;
+}
+
+/* ── SUB-HEADING ── */
+.sub-heading {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 600;
+  color: var(--gold); letter-spacing: 0.5px;
+  margin: 40px 0 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sub-heading::before {
+  content: ''; width: 20px; height: 2px;
+  background: var(--gold); border-radius: 1px;
+}
+
+/* ── TABLES ── */
+.data-table {
+  width: 100%; border-collapse: collapse;
+  margin: 24px 0; font-size: 14px;
+}
+
+.data-table thead tr {
+  background: linear-gradient(135deg, var(--blue), var(--navy2));
+}
+
+.data-table thead th {
+  padding: 14px 18px; text-align: left;
+  font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+  color: var(--mid); text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.2s;
+}
+.data-table tbody tr:hover { background: rgba(0,102,204,0.08); }
+
+.data-table tbody td {
+  padding: 13px 18px; color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.05);
+  line-height: 1.5;
+}
+
+.data-table tbody td:first-child {
+  font-weight: 600; color: var(--white);
+}
+
+.td-accent { color: var(--accent2) !important; font-weight: 700 !important; }
+.td-gold { color: var(--gold) !important; font-weight: 700 !important; }
+.td-check { color: #4ade80 !important; font-size: 16px; }
+.td-cross { color: #f87171 !important; font-size: 16px; }
+.td-warn { color: #fbbf24 !important; font-size: 16px; }
+.td-center { text-align: center; }
+.tr-highlight td { background: rgba(201,168,76,0.06) !important; }
+.tr-highlight td:first-child { color: var(--gold) !important; }
+
+/* ── CALLOUT BOX ── */
+.callout {
+  border-left: 4px solid var(--gold);
+  background: rgba(201,168,76,0.07);
+  border-radius: 0 12px 12px 0;
+  padding: 24px 28px; margin: 32px 0;
+}
+.callout p {
+  font-size: 16px; font-style: italic;
+  color: rgba(255,255,255,0.85); line-height: 1.7;
+}
+
+.callout-blue {
+  border-left-color: var(--accent2);
+  background: rgba(0,136,255,0.07);
+}
+.callout-blue p { color: rgba(255,255,255,0.82); }
+
+/* ── GRID CARDS ── */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; }
+
+.card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 28px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s, border-color 0.3s;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, var(--accent2), var(--gold));
+  opacity: 0; transition: opacity 0.3s;
+}
+.card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.25); }
+.card:hover::before { opacity: 1; }
+
+.card-icon { font-size: 28px; margin-bottom: 16px; }
+.card-title { font-size: 15px; font-weight: 600; color: var(--white); margin-bottom: 10px; }
+.card-text { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+.card-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--accent2); font-weight: 600;
+  letter-spacing: 2px; margin-bottom: 12px;
+}
+
+/* ── METRIC CARDS ── */
+.metric-row { display: flex; gap: 16px; margin: 24px 0; }
+
+.metric-card {
+  flex: 1;
+  background: linear-gradient(135deg, var(--navy2), rgba(26,58,107,0.6));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 28px 24px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.metric-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(to right, var(--accent2), var(--gold));
+}
+
+.metric-card .value {
+  font-family: 'Playfair Display', serif;
+  font-size: 38px; font-weight: 700; color: var(--white); line-height: 1;
+}
+.metric-card .value em { color: var(--gold); font-style: normal; }
+.metric-card .label { font-size: 12px; color: var(--mid); margin-top: 8px; }
+.metric-card .sublabel { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 4px; font-style: italic; }
+
+/* ── BULLET LIST ── */
+.bullet-list { list-style: none; margin: 16px 0; }
+.bullet-list li {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 15px; color: rgba(255,255,255,0.78); line-height: 1.6;
+}
+.bullet-list li::before {
+  content: '▸';
+  color: var(--accent2); font-size: 12px; margin-top: 4px; flex-shrink: 0;
+}
+
+/* ── PHASE TIMELINE ── */
+.phases { display: flex; gap: 0; margin: 32px 0; }
+.phase {
+  flex: 1; padding: 28px 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  background: rgba(255,255,255,0.02);
+}
+.phase:first-child { border-radius: 16px 0 0 16px; }
+.phase:last-child { border-radius: 0 16px 16px 0; }
+.phase + .phase { border-left: none; }
+.phase-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--accent2); letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.phase-title { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+.phase-period { font-size: 11px; color: var(--gold); margin-bottom: 14px; font-weight: 600; }
+.phase-items { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.7; }
+
+/* ── MOAT CARDS ── */
+.moat-item {
+  display: flex; gap: 20px; align-items: flex-start;
+  padding: 24px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; transition: all 0.3s;
+}
+.moat-item:hover { background: rgba(0,102,204,0.07); border-color: rgba(0,136,255,0.25); }
+.moat-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px; font-weight: 900; color: rgba(201,168,76,0.2);
+  line-height: 1; flex-shrink: 0; width: 48px;
+}
+.moat-content {}
+.moat-title { font-size: 15px; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+.moat-text { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.7; }
+
+/* ── CLOSING BANNER ── */
+.closing-banner {
+  background: linear-gradient(135deg, var(--navy2), var(--blue));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 60px 80px;
+  text-align: center; margin: 32px 0;
+  position: relative; overflow: hidden;
+}
+.closing-banner::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0,136,255,0.1), transparent);
+}
+.closing-banner h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 700;
+  color: var(--white); margin-bottom: 16px;
+}
+.closing-banner p {
+  font-size: 16px; color: var(--mid); max-width: 620px;
+  margin: 0 auto 20px; line-height: 1.7; font-style: italic;
+}
+.closing-banner cite {
+  font-size: 13px; color: var(--gold); font-weight: 600; font-style: normal; letter-spacing: 1px;
+}
+
+/* ── LICENSE TABLE ── */
+.open-closed {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;
+}
+.oc-card {
+  border-radius: 16px; padding: 28px;
+}
+.oc-open {
+  background: rgba(74,222,128,0.06);
+  border: 1px solid rgba(74,222,128,0.25);
+}
+.oc-closed {
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.25);
+}
+.oc-header {
+  font-size: 12px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.oc-open .oc-header { color: #4ade80; }
+.oc-closed .oc-header { color: var(--gold); }
+.oc-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5;
+}
+.oc-item::before { content: '→'; flex-shrink: 0; margin-top: 1px; }
+.oc-open .oc-item::before { color: #4ade80; }
+.oc-closed .oc-item::before { color: var(--gold); }
+
+/* ── FOOTER ── */
+.doc-footer {
+  padding: 48px 80px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.footer-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 900;
+  background: linear-gradient(135deg, var(--gold), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.footer-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .hero, .section { padding: 60px 28px; }
+  .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .metric-row { flex-direction: column; }
+  .phases { flex-direction: column; }
+  .phase:first-child, .phase:last-child { border-radius: 0; }
+  .phase + .phase { border-left: 1px solid rgba(255,255,255,0.08); border-top: none; }
+  .open-closed { grid-template-columns: 1fr; }
+  .doc-footer { flex-direction: column; gap: 20px; text-align: center; }
+}
+</style>
 </head>
 <body>
 
+<!-- SIDEBAR NAV -->
 <nav class="sidebar">
-    <a href="#" class="brand">TeraChat <span>Business Plan & GTM Strategy</span></a>
-
-    <div class="search-container">
-        <span class="search-icon">🔍</span>
-        <input type="text" class="search-input" id="tocSearch" placeholder="Tra cứu mục lục..." autocomplete="off">
-        <span class="search-shortcut">Ctrl+K</span>
-    </div>
-
-    <div class="nav-header">Table of Contents</div><a href="#terachat-làm-chủ-dữ-liệu-của-bạn-trong-thời-đại-số" class="nav-link" style="">TeraChat — Làm Chủ Dữ Liệu Của Bạn Trong Thời Đại Số</a>
-<a href="#terachat-là-gì" class="nav-link" style="padding-left:0.8rem;">TeraChat Là Gì?</a>
-<a href="#tại-sao-terachat-ra-đời" class="nav-link" style="padding-left:0.8rem;">Tại Sao TeraChat Ra Đời?</a>
-<a href="#3-điều-terachat-làm-khác-biệt" class="nav-link" style="padding-left:0.8rem;">3 Điều TeraChat Làm Khác Biệt</a>
-<a href="#1-dữ-liệu-ở-nhà-bạn-không-ở-nhà-chúng-tôi" class="nav-link" style="padding-left:0.8rem;">1. Dữ Liệu Ở Nhà Bạn, Không Ở Nhà Chúng Tôi</a>
-<a href="#2-vẫn-hoạt-động-khi-mất-internet" class="nav-link" style="padding-left:0.8rem;">2. Vẫn Hoạt Động Khi Mất Internet</a>
-<a href="#3-cơ-chế-khử-định-danh-mã-hóa-của-ai" class="nav-link" style="padding-left:0.8rem;">3. Cơ chế Khử định danh & Mã hóa của AI</a>
-<a href="#terachat-phù-hợp-với-ai" class="nav-link" style="padding-left:0.8rem;">TeraChat Phù Hợp Với Ai?</a>
-<a href="#bảng-giá" class="nav-link" style="padding-left:0.8rem;">Bảng Giá</a>
-<a href="#gói-cơ-bản" class="nav-link" style="padding-left:0.8rem;">Gói Cơ Bản</a>
-<a href="#gói-cao-cấp" class="nav-link" style="padding-left:0.8rem;">Gói Cao Cấp</a>
-<a href="#so-sánh-chi-phí-thực-tế-500-nhân-viên-12-tháng" class="nav-link" style="padding-left:0.8rem;">So Sánh Chi Phí Thực Tế (500 nhân viên / 12 tháng)</a>
-<a href="#vì-sao-gửi-file-lớn-không-làm-chúng-tôi-sập-tiệm" class="nav-link" style="padding-left:0.8rem;">Vì Sao Gửi File Lớn Không Làm Chúng Tôi "Sập Tiệm"?</a>
-<a href="#triển-khai-dễ-như-thế-nào" class="nav-link" style="padding-left:0.8rem;">Triển Khai Dễ Như Thế Nào?</a>
-<a href="#mô-hình-kinh-doanh" class="nav-link" style="padding-left:0.8rem;">Mô Hình Kinh Doanh</a>
-<a href="#chúng-tôi-kiếm-tiền-như-thế-nào" class="nav-link" style="padding-left:0.8rem;">Chúng Tôi Kiếm Tiền Như Thế Nào?</a>
-<a href="#lộ-trình-phát-triển" class="nav-link" style="padding-left:0.8rem;">Lộ Trình Phát Triển</a>
-<a href="#phase-1-vertical-focus-định-vị-thị-trường-ngách-fb-và-chính-phủ" class="nav-link" style="padding-left:0.8rem;">Phase 1: Vertical Focus (Định vị Thị trường Ngách – F&B và Chính phủ)</a>
-<a href="#phase-2-enterprise-expansion-mở-rộng-tập-đoàn-cơ-sở-hạ-tầng-trọng-yếu" class="nav-link" style="padding-left:0.8rem;">Phase 2: Enterprise Expansion (Mở rộng Tập đoàn & Cơ sở hạ tầng trọng yếu)</a>
-<a href="#phase-3-ecosystem-marketplace-hệ-sinh-thái-tiện-ích-tapp" class="nav-link" style="padding-left:0.8rem;">Phase 3: Ecosystem & Marketplace (Hệ sinh thái Tiện ích .tapp)</a>
-<a href="#chiến-lược-open-core" class="nav-link" style="padding-left:0.8rem;">Chiến Lược Open-Core</a>
-<a href="#cam-kết-tuân-thủ-pháp-lý" class="nav-link" style="padding-left:0.8rem;">Cam Kết Tuân Thủ Pháp Lý</a>
-<a href="#phân-bổ-vốn-đầu-tư" class="nav-link" style="padding-left:0.8rem;">Phân Bổ Vốn Đầu Tư</a>
-<a href="#lời-nhắn-từ-ceo" class="nav-link" style="padding-left:0.8rem;">Lời Nhắn Từ CEO</a>
-
-    <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
+  <div class="sidebar-logo">TERACHAT</div>
+  <div class="sidebar-line"></div>
+  <div class="nav-dot active" data-label="Tổng Quan" onclick="scrollTo('hero')"></div>
+  <div class="nav-dot" data-label="Vấn Đề" onclick="scrollTo('s1')"></div>
+  <div class="nav-dot" data-label="Giải Pháp" onclick="scrollTo('s2')"></div>
+  <div class="nav-dot" data-label="Thị Trường" onclick="scrollTo('s3')"></div>
+  <div class="nav-dot" data-label="Mô Hình KD" onclick="scrollTo('s4')"></div>
+  <div class="nav-dot" data-label="Lợi Thế" onclick="scrollTo('s5')"></div>
+  <div class="nav-dot" data-label="Tăng Trưởng" onclick="scrollTo('s6')"></div>
+  <div class="nav-dot" data-label="Tài Chính" onclick="scrollTo('s7')"></div>
+  <div class="nav-dot" data-label="Tầm Nhìn" onclick="scrollTo('s8')"></div>
+  <div class="nav-dot" data-label="Bản Quyền" onclick="scrollTo('s9')"></div>
+  <div class="sidebar-line"></div>
 </nav>
 
 <div class="main">
-    <h1 id="terachat-làm-chủ-dữ-liệu-của-bạn-trong-thời-đại-số">TeraChat — Làm Chủ Dữ Liệu Của Bạn Trong Thời Đại Số</h1>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><em>TeraChat không chỉ xây dựng một phần mềm chat thông thường. Chúng tôi kiến tạo Hệ điều hành Bảo mật (Work OS) — giúp doanh nghiệp làm chủ hoàn toàn tài sản số, đảm bảo an toàn thông tin và khả năng kết nối nội bộ kể cả trong kịch bản cô lập mạng.</em></p>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">"CEO, TeraChat"</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="terachat-là-gì">TeraChat Là Gì?</h2>
-<p>Hãy tưởng tượng bạn đang dùng Zalo hoặc Slack để làm việc nhóm. Mỗi tin nhắn, mỗi tài liệu, mỗi cuộc gọi nội bộ của công ty bạn đang nằm trên máy chủ của người khác. Ở một đất nước khác. Dưới một bộ luật khác.</p>
-<p><strong>TeraChat ra đời để thay đổi điều đó.</strong></p>
-<p>Chúng tôi xây dựng một nền tảng cộng tác nội bộ — nhắn tin, gọi video, chia sẻ tài liệu, tích hợp AI — nơi <strong>toàn bộ dữ liệu của bạn nằm trên máy chủ do bạn sở hữu</strong>, không qua trung gian, không "cửa hậu".</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="tại-sao-terachat-ra-đời">Tại Sao TeraChat Ra Đời?</h2>
-<p>Thế giới đang thay đổi nhanh hơn bao giờ hết:</p>
-<ul>
-<li><strong>Gián điệp công nghiệp</strong> ngày càng tinh vi — một tin nhắn nội bộ bị rò rỉ có thể gây thiệt hại hàng triệu đô.</li>
-<li><strong>Luật bảo mật dữ liệu</strong> (GDPR, ISO 27001, Thông tư 13 của Ngân hàng Nhà nước) siết chặt hơn — dùng công cụ nước ngoài lưu dữ liệu ở ngoài lãnh thổ là vi phạm.</li>
-<li><strong>AI ngày càng thông minh</strong> — nhưng nếu bạn gửi tài liệu mật lên ChatGPT hay Copilot, dữ liệu đó đi đâu? Bạn có biết không?</li>
-</ul>
-<p>Slack, Microsoft Teams, Zalo đều là những sản phẩm tốt — nhưng chúng được thiết kế để phục vụ đại chúng, không phải để bảo vệ bí mật doanh nghiệp của bạn.</p>
-<p><strong>TeraChat được thiết kế từ đầu để làm điều mà các nền tảng kia không thể: trả lại toàn quyền kiểm soát cho bạn.</strong></p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="3-điều-terachat-làm-khác-biệt">3 Điều TeraChat Làm Khác Biệt</h2>
-<h3 id="1-dữ-liệu-ở-nhà-bạn-không-ở-nhà-chúng-tôi">1. Dữ Liệu Ở Nhà Bạn, Không Ở Nhà Chúng Tôi</h3>
-<p>Khi bạn dùng TeraChat, tin nhắn và tài liệu của bạn được lưu trên máy chủ <strong>do bạn thuê và sở hữu</strong> — không phải trên Cloud của chúng tôi. Chúng tôi bán phần mềm, không bán dịch vụ lưu trữ.</p>
-<div class="comparison-table"><table>
-<thead><tr>
-<th>Nền tảng</th>
-<th>Dữ liệu nằm ở đâu?</th>
-</tr></thead><tbody>
-<tr>
-<td>Slack</td>
-<td>AWS Cloud (Mỹ)</td>
-</tr>
-<tr>
-<td>Microsoft Teams</td>
-<td>Azure (toàn cầu)</td>
-</tr>
-<tr>
-<td>Zalo</td>
-<td>Máy chủ VNG (Việt Nam)</td>
-</tr>
-<tr>
-<td><strong>TeraChat</strong></td>
-<td><strong>Máy chủ của chính doanh nghiệp bạn</strong></td>
-</tr>
-</tbody></table></div>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Điều này đặc biệt quan trọng với các ngân hàng, cơ quan nhà nước, công ty luật, bệnh viện — những tổ chức mà dữ liệu là tài sản và trách nhiệm pháp lý.</p>
-<h3 id="2-vẫn-hoạt-động-khi-mất-internet">2. Vẫn Hoạt Động Khi Mất Internet</h3>
-<p>Hầu hết các ứng dụng chat đều "chết" khi mất mạng. TeraChat không vậy.</p>
-<p>Nhờ công nghệ kết nối trực tiếp giữa các thiết bị (Wi-Fi Direct, Bluetooth), nhân viên trong cùng văn phòng hoặc khu vực vẫn có thể nhắn tin, gửi tài liệu và phối hợp công việc — <strong>kể cả khi đường truyền Internet bị cô lập hoàn toàn</strong>.</p>
-<p>Đây là tính năng sống còn cho nhà máy sản xuất, đơn vị quân sự, hoặc bất kỳ tổ chức nào cần đảm bảo liên lạc trong mọi tình huống.</p>
-<h3 id="3-cơ-chế-khử-định-danh-mã-hóa-của-ai">3. Cơ chế Khử định danh & Mã hóa của AI</h3>
-<p>TeraChat tích hợp AI SLM / LLM (Local) để hỗ trợ công việc: tóm tắt tài liệu dài, tự động nhập liệu từ hóa đơn, phân tích báo cáo, dịch thuật, ... Chúng tôi làm điều đó bằng cách :</p>
-<ul>
-<li>Thông tin nhạy cảm (tên khách hàng, số tài khoản, dữ liệu nội bộ) được AI SLM Local phân loại và <strong>ẩn đi trước khi gửi đi</strong> — Các bên thứ 3 không thấy được dữ liệu thật.Khi nhận được dữ liệu phản hồi lập tức đối chiếu với dữ liệu gốc và dịch ngược dữ liệu giả thành dữ liệu thật.</li>
-<li>Toàn bộ hoạt động đều được ghi log, minh bạch, có thể kiểm tra bất cứ lúc nào.</li>
-<li>Admin có toàn quyền kiểm soát luồng dữ liệu.Thông qua hệ thống phân quyền và kiểm soát truy cập trên Admin console.</li>
-</ul>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="terachat-phù-hợp-với-ai">TeraChat Phù Hợp Với Ai?</h2>
-<p><strong>Ngân hàng & Tài chính:</strong> Tuân thủ Thông tư 13, GDPR. Không dữ liệu khách hàng nào rời khỏi hệ thống nội bộ.</p>
-<p><strong>Cơ quan Nhà nước:</strong> Dữ liệu lưu trên máy chủ trong lãnh thổ. Hỗ trợ ký số, phê duyệt văn bản điện tử.</p>
-<p><strong>Chuỗi nhà hàng & bán lẻ:</strong> Chụp ảnh hóa đơn → AI tự động nhập kho. Quản lý đa chi nhánh từ một màn hình.</p>
-<p><strong>Tập đoàn & Doanh nghiệp lớn:</strong> Kết nối bảo mật giữa tổng công ty và các chi nhánh toàn quốc, toàn cầu.</p>
-<p><strong>Công ty sản xuất & Khu công nghiệp:</strong> Vẫn liên lạc được khi mất Internet. Không để một sự cố đường truyền làm dừng cả dây chuyền.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="bảng-giá">Bảng Giá</h2>
-<div class="comparison-table"><table>
-<thead><tr>
-<th>Gói</th>
-<th>Theo tháng</th>
-<th>Theo năm (tiết kiệm 30%)</th>
-</tr></thead><tbody>
-<tr>
-<td><strong>Cơ Bản</strong></td>
-<td>$49 / tháng</td>
-<td>$399 / năm</td>
-</tr>
-<tr>
-<td><strong>Cao Cấp</strong></td>
-<td>$149 / tháng</td>
-<td>$1.190 / năm</td>
-</tr>
-</tbody></table></div>
-<h3 id="gói-cơ-bản">Gói Cơ Bản</h3>
-<ul>
-<li>Nhắn tin & gọi video mã hóa đầu cuối</li>
-<li>Nhắn tin nội bộ gửi file ( &lt; 10 mét ) ngay cả khi mất Internet</li>
-<li>Đồng bộ nhân viên trên các nền tảng Azure AD/Google Workspace/...</li>
-<li>3 Tiện ích được tích hợp sẵn: Lịch, Ghi chú, Công việc</li>
-<li>Khôi phục khẩn cấp yêu cầu xác nhận từ 2 quản lí cấp cao  </li>
-</ul>
-<h3 id="gói-cao-cấp">Gói Cao Cấp</h3>
-<ul>
-<li>Tất cả tính năng của Gói Cơ Bản</li>
-<li>AI SLM thông minh có kiểm soát bảo mật (ẩn thông tin nhạy cảm trước khi gửi AI)</li>
-<li>Kết nối an toàn giữa tổng công ty và các chi nhánh</li>
-<li>Tự động thu hồi quyền truy cập nhân viên nghỉ việc trong vòng 30 giây (Đồng bộ với Azure AD/Google Workspace/...)</li>
-<li>Cung cấp API (API : Đồng bộ Định danh Nhân sự/Bot Builder SDK/Compliance Export/Gửi thông báo)</li>
-</ul>
-<h3 id="so-sánh-chi-phí-thực-tế-500-nhân-viên-12-tháng">So Sánh Chi Phí Thực Tế (500 nhân viên / 12 tháng)</h3>
-<div class="comparison-table"><table>
-<thead><tr>
-<th></th>
-<th>Slack Pro</th>
-<th>TeraChat Cơ Bản</th>
-<th>TeraChat Cao Cấp</th>
-</tr></thead><tbody>
-<tr>
-<td>Phí bản quyền</td>
-<td>~$43.500</td>
-<td>~$4.990</td>
-<td>~$11.900</td>
-</tr>
-<tr>
-<td>Chi phí máy chủ</td>
-<td>Đã bao gồm</td>
-<td>~$240</td>
-<td>~$2.400</td>
-</tr>
-<tr>
-<td>Lưu trữ</td>
-<td>Giới hạn</td>
-<td>~$600</td>
-<td>~$600</td>
-</tr>
-<tr>
-<td><strong>Tổng cộng</strong></td>
-<td><strong>~$43.500</strong></td>
-<td><strong>~$5.830</strong></td>
-<td><strong>~$14.900</strong></td>
-</tr>
-</tbody></table></div>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);">Với TeraChat, doanh nghiệp 500 người tiết kiệm tới <strong>$37.000 mỗi năm</strong> so với Slack — đồng thời có toàn quyền kiểm soát dữ liệu.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="vì-sao-gửi-file-lớn-không-làm-chúng-tôi-sập-tiệm">Vì Sao Gửi File Lớn Không Làm Chúng Tôi "Sập Tiệm"?</h2>
-<p>Slack giới hạn dung lượng file vì Slack phải trả tiền lưu trữ cho mỗi gigabyte bạn gửi.</p>
-<p>TeraChat không giới hạn — vì <strong>chúng tôi không lưu file của bạn</strong>. File của bạn được mã hóa và đẩy thẳng lên kho lưu trữ của chính bạn (AWS S3 hoặc MinIO riêng). Máy chủ TeraChat chỉ chuyển tiếp thông tin định tuyến, không chạm vào nội dung.</p>
-<p>Hơn nữa, nếu hai nhân viên cùng văn phòng chia sẻ file với nhau, file đó đi trực tiếp từ máy này sang máy kia qua Wi-Fi nội bộ — <strong>không cần qua Internet, tốc độ lên đến 1Gbps</strong>.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="triển-khai-dễ-như-thế-nào">Triển Khai Dễ Như Thế Nào?</h2>
-<p>Chúng tôi hiểu rằng không phải doanh nghiệp nào cũng có đội IT lớn. TeraChat được thiết kế để cài đặt nhanh nhất có thể:</p>
-<p><strong>Tự cài đặt trên máy chủ riêng:</strong> Chạy một lệnh duy nhất — máy chủ của bạn biến thành TeraChat Node trong vài phút.</p>
-<p><strong>Cài qua Cloud Hybrid:</strong> Bạn cung cấp thông tin đăng nhập VPS trong Admin Console ( Dành riêng cho Admin ), TeraChat tự động kết nối và cài đặt, sau đó bàn giao toàn quyền cho bạn.</p>
-<p><strong>Qua đối tác MSP:</strong> Nếu bạn không muốn tự làm gì, các công ty IT đối tác của TeraChat sẽ cài đặt, bảo trì và hỗ trợ cho bạn.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="mô-hình-kinh-doanh">Mô Hình Kinh Doanh</h2>
-<h3 id="chúng-tôi-kiếm-tiền-như-thế-nào">Chúng Tôi Kiếm Tiền Như Thế Nào?</h3>
-<p>TeraChat hoạt động theo nguyên tắc đơn giản: <strong>bạn tự trả tiền cho hạ tầng của bạn — chúng tôi chỉ bán bản quyền phần mềm.</strong></p>
-<p>Điều này có nghĩa là chi phí máy chủ của chúng tôi không tăng theo số lượng khách hàng. Mỗi khách hàng mới mang lại doanh thu thuần, không kèm chi phí vận hành thêm. Đây là lý do chúng tôi có thể tái đầu tư mạnh vào phát triển sản phẩm thay vì đốt tiền vào hạ tầng Cloud.</p>
-<p><strong>Các nguồn doanh thu:</strong></p>
-<p><strong>Phí bản quyền License</strong> là nguồn thu chính. Tạo dòng tiền ổn định ngay từ ngày đầu.</p>
-<p><strong>Dịch vụ triển khai & hỗ trợ</strong></p>
-<p><strong>Hoa hồng từ các tiện ích tích hợp</strong> Cộng đồng pháp triển khai các tiện ích mở rộng cho TeraChat hưởng 90% doanh thu.Từ việc họ định giá tiện ích và bán được trên TeraChat Marketplace.</p>
-<p><strong>Mạng lưới đối tác MSP</strong> — chúng tôi cấp phép cho các công ty IT để họ bán và triển khai TeraChat cho chuỗi nhà hàng, bán lẻ, chia sẻ doanh thu.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="lộ-trình-phát-triển">Lộ Trình Phát Triển</h2>
-<h3 id="phase-1-vertical-focus-định-vị-thị-trường-ngách-fb-và-chính-phủ">Phase 1: Vertical Focus (Định vị Thị trường Ngách – F&B và Chính phủ)</h3>
-<p>Trọng tâm ban đầu là cung cấp giải pháp khép kín cho 2 phân khúc có yêu cầu gắt gao nhất về quy trình và tính bảo mật.</p>
-<ul>
-<li>📱 <strong>Mobile / 💻 Laptop:</strong> Dành cho Cơ quan hành chính và Chính phủ — Tập trung vào tính năng Smart Approval và tích hợp chữ ký số (Ed25519) an toàn tuyệt đối.</li>
-<li>🖥️ <strong>Desktop / 📱 iPad:</strong> Dành cho các chuỗi F&B — Thiết lập chế độ Kiosk Mode và Magic Logger với hiệu ứng WOW qua việc chụp ảnh hóa đơn và AI tự động nhập kho.</li>
-<li><strong>Thiết kế UI/UX (Online Mode):</strong> Áp dụng phong cách Sáng (Light Theme) với nền trắng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#FFFFFF</code>, hiệu ứng kính mờ (blur) 16px và màu nhấn <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#24A1DE</code>. Các tính năng vượt quyền hạn OPA Policy sẽ bị ép màu đơn sắc (Grayscale) và làm đục, hạn chế tương tác.</li>
-<li><strong>Hỗ trợ Hạ tầng:</strong> Kịch bản triển khai 1-chạm (1-Touch Scripting) sẽ tích hợp sẵn cấu hình tường lửa (Firewall Rules), đóng vai trò bộ lọc gợi ý nhằm chặn đứng các luồng truy cập qua kẽ hở mạng.</li>
-</ul>
-<h3 id="phase-2-enterprise-expansion-mở-rộng-tập-đoàn-cơ-sở-hạ-tầng-trọng-yếu">Phase 2: Enterprise Expansion (Mở rộng Tập đoàn & Cơ sở hạ tầng trọng yếu)</h3>
-<p>Bước đi tiếp theo nhằm bao phủ các ngành công nghiệp nhạy cảm, đưa định nghĩa Zero-Trust vào cốt lõi hạ tầng doanh nghiệp.</p>
-<ul>
-<li>🗄️ <strong>Bare-metal Server / ☁️ VPS Cluster:</strong> Xây dựng Fintech Bridge cho mảng Ngân hàng (Smart Approval, Blind Payout). Thiết lập Federated Private Clusters (Liên kết cụm máy chủ) đối với các Tập đoàn Đa quốc gia nhằm bảo toàn Data Sovereignty (Chủ quyền Dữ liệu) theo từng lãnh thổ địa lý.</li>
-<li>📱 <strong>Mobile / 💻 MacOS:</strong> Triển khai giao thức <strong>Survival Mesh (BLE 5.0 / Wi-Fi Direct)</strong> phục vụ cho Môi trường Sản xuất (Manufacturing), giúp nhà máy vận hành bình thường ngay cả khi đứt cáp viễn thông. Để tối ưu năng lượng, hệ thống lưới này sẽ <strong>chỉ ưu tiên nhắn tin khẩn cấp dạng Text</strong> (Delta CRDT), đồng thời chặn đứt các luồng truyền tải tệp lớn hoặc video.</li>
-<li><strong>Thiết kế UI/UX (Mesh Mode):</strong> Kích hoạt trạng thái Tối (Dark Navy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">#0F172A</code>). Hệ thống tự động triệt tiêu các lớp CSS nền mờ (Glassmorphism Degradation) để giảm tải GPU. Radar xung tín hiệu sẽ là định dạng SVG điều khiển bằng sự kiện (Event-driven) để chống hiện tượng ngốn pin.</li>
-</ul>
-<h3 id="phase-3-ecosystem-marketplace-hệ-sinh-thái-tiện-ích-tapp">Phase 3: Ecosystem & Marketplace (Hệ sinh thái Tiện ích .tapp)</h3>
-<p>Chuyển dịch TeraChat từ một "Sovereign Messenger" thành một "Work OS" có khả năng phân phối công cụ nội bộ.</p>
-<ul>
-<li>☁️ <strong>VPS Cluster / 💻 Laptop:</strong> Mở cửa hệ sinh thái Marketplace (Web Marketplace) cho phép nhà phát triển ISV xây dựng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Mini-Apps. Tích hợp cổng thanh toán TeraPay và áp dụng mô hình chia sẻ doanh thu (Revenue Share) linh hoạt.</li>
-<li>📱 <strong>iOS / 📱 Android / 🖥️ Desktop:</strong> Bắt buộc <strong>cô lập toàn bộ ứng dụng .tapp bên trong môi trường WASM Sandbox</strong>.</li>
-</ul>
-<p><strong>Đánh giá High-Level Architecture (Đặc thù Phase 3):</strong></p>
-<ul>
-<li><strong>Latency:</strong> Giao tiếp Control Plane qua FFI/JSI &lt; 5ms; Luồng khởi tạo mạng &lt; 30ms.</li>
-<li><strong>Throughput:</strong> Đạt 400-500MB/s nhờ cấu trúc IPC Zero-Copy (SharedArrayBuffer) để xử lý lượng file dữ liệu lớn.</li>
-<li><strong>Attack Surface:</strong> Triệt tiêu hoàn toàn mã độc từ bên thứ ba nhờ tước quyền Network Socket của WASM, khóa bộ nhớ RAM vĩnh viễn (mlock), và thực thi tự hủy (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code>).</li>
-</ul>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="chiến-lược-open-core">Chiến Lược Open-Core</h2>
-<p>TeraChat áp dụng mô hình <strong>Open-Core</strong>: phần lõi mã hóa và giao thức kết nối được <strong>công khai mã nguồn</strong> để bất kỳ chuyên gia bảo mật nào cũng có thể kiểm chứng không có "cửa hậu".</p>
-<p>Điều này giải quyết nỗi lo lớn nhất của các tổ chức bảo mật cao: <em>"Làm sao tôi biết phần mềm này không âm thầm gửi dữ liệu đi?"</em> — Câu trả lời: bạn có thể tự kiểm tra mã nguồn.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="cam-kết-tuân-thủ-pháp-lý">Cam Kết Tuân Thủ Pháp Lý</h2>
-<p>TeraChat được xây dựng để đáp ứng các tiêu chuẩn khắt khe nhất:</p>
-<ul>
-<li><strong>ISO 27001</strong> — tiêu chuẩn quản lý bảo mật thông tin quốc tế</li>
-<li><strong>SOC 2 Type II</strong> — kiểm toán độc lập về bảo mật dữ liệu</li>
-<li><strong>GDPR</strong> — quy định bảo vệ dữ liệu cá nhân của EU</li>
-<li><strong>Thông tư 13</strong> — quy định an ninh mạng dành cho tổ chức tín dụng Việt Nam</li>
-<li><strong>Nhật ký bất biến</strong> — mọi hành động đều được ghi lại, không ai có thể xóa hay sửa, phục vụ yêu cầu pháp lý và điều tra</li>
-</ul>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="phân-bổ-vốn-đầu-tư">Phân Bổ Vốn Đầu Tư</h2>
-<p>Nếu nhận được đầu tư, chúng tôi sẽ sử dụng theo nguyên tắc: <strong>không đốt tiền vào máy chủ Cloud hay quảng cáo đại trà</strong>.</p>
-<div class="comparison-table"><table>
-<thead><tr>
-<th>Hạng mục</th>
-<th>Tỷ lệ</th>
-<th>Mục tiêu</th>
-</tr></thead><tbody>
-<tr>
-<td>Kiểm toán & Chứng chỉ Bảo mật</td>
-<td>20%</td>
-<td>Lấy ISO 27001, SOC 2 — điều kiện bắt buộc để ký được hợp đồng với ngân hàng, chính phủ</td>
-</tr>
-<tr>
-<td>Mở rộng R&D</td>
-<td>40%</td>
-<td>Tuyển kỹ sư cốt lõi, nâng cao chất lượng trên mọi nền tảng (Windows, macOS, iOS, Android)</td>
-</tr>
-<tr>
-<td>Mạng lưới Đối tác</td>
-<td>25%</td>
-<td>Đào tạo và chứng nhận các công ty IT đối tác trên toàn quốc</td>
-</tr>
-<tr>
-<td>Quỹ Dự phòng</td>
-<td>15%</td>
-<td>Đảm bảo hoạt động ổn định 18–24 tháng trong mọi điều kiện thị trường</td>
-</tr>
-</tbody></table></div>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="lời-nhắn-từ-ceo">Lời Nhắn Từ CEO</h2>
-<p>Khi chúng tôi nhìn vào thị trường phần mềm cộng tác doanh nghiệp hiện nay, chúng tôi thấy một nghịch lý: các tổ chức càng cần bảo mật cao (ngân hàng, chính phủ, y tế) lại càng bị bỏ lại phía sau bởi những sản phẩm được xây dựng cho thị trường đại chúng.</p>
-<p>TeraChat không cố gắng thay thế Slack hay Zalo cho mọi người. Chúng tôi tập trung vào những tổ chức mà <strong>dữ liệu là sự sống còn</strong> — và những người đó xứng đáng có một công cụ được thiết kế cho họ.</p>
-<p>Chúng tôi tin rằng quyền riêng tư và khả năng cộng tác hiệu quả không phải là hai điều phải đánh đổi nhau. TeraChat là bằng chứng cho điều đó.</p>
-<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<p><em>Để tìm hiểu thêm, demo sản phẩm, hoặc thảo luận về hợp tác — hãy liên hệ đội ngũ TeraChat.</em></p>
 
-    <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
-                color:var(--text-secondary);font-size:0.9rem;text-align:center;">
-        <p>TeraChat Enterprise OS &copy; 2026</p>
+<!-- ══════════════════ HERO ══════════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div style="position:relative; z-index:1;">
+    <div class="confidential-badge">Tài liệu kinh doanh</div>
+
+    <h1 class="hero-title">Tera<span>Chat</span></h1>
+
+    <p class="hero-subtitle">
+      Nền tảng Nhắn Tin Chủ Quyền Dành Cho Doanh Nghiệp & Trung Tâm Cộng Tác Kỹ Thuật Số.
+      Bảo mật dữ liệu cấp cao. Hoạt động ngay cả khi Internet bị cô lập hoàn toàn.
+    </p>
+
+    <div class="hero-quote">
+      <p>TeraChat không chỉ xây dựng một phần mềm chat thông thường. Chúng tôi kiến tạo Hệ điều hành Bảo mật (Work OS) — giúp doanh nghiệp làm chủ hoàn toàn tài sản số, đảm bảo an toàn thông tin và khả năng kết nối nội bộ kể cả trong kịch bản cô lập mạng.</p>
+      <cite>— CEO, TeraChat</cite>
     </div>
-</div>
+
+    <div class="hero-metrics">
+      <div class="metric-box">
+        <div class="metric-value">&gt;<span>90%</span></div>
+        <div class="metric-label">Biên Lợi Nhuận Gộp</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value"><span>$0</span></div>
+        <div class="metric-label">Chi Phí Hạ Tầng/KH</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value"><span>3×</span></div>
+        <div class="metric-label">ARR Upsell Elite</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-value"><span>18</span>mo</div>
+        <div class="metric-label">Runway Dự Kiến</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    CUỘN XUỐNG
+  </div>
+</section>
+
+<!-- ══════════════════ S1 — VẤN ĐỀ ══════════════════ -->
+<section class="section reveal" id="s1">
+  <div class="section-number">01 / 09</div>
+  <h2 class="section-title">Vấn Đề: Ngành Công Nghiệp $200 Tỷ Được Xây Trên Nền Tảng Mất Tin Cậy</h2>
+  <div class="section-divider"></div>
+
+  <p class="section-intro">
+    Doanh nghiệp hiện đại vận hành bằng các công cụ cộng tác — nhưng mỗi cuộc trò chuyện chiến lược, mỗi hợp đồng bảo mật, mỗi quyết định cấp hội đồng quản trị đều chảy qua máy chủ của người khác. Slack xử lý dữ liệu của bạn trên AWS. Microsoft Teams lưu trữ trên Azure. Zoom xử lý trên Google Cloud. Các công cụ phục vụ những tổ chức nhạy cảm nhất thế giới về cơ bản lại không tương thích với chủ quyền dữ liệu.
+  </p>
+
+  <div class="sub-heading">Ba Thất Bại Cấu Trúc của Hiện Trạng</div>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Điểm Thất Bại</th>
+        <th>Thực Tế Hiện Nay (Slack / Teams)</th>
+        <th>Hậu Quả</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Chủ Quyền Dữ Liệu</td>
+        <td>Dữ liệu lưu trên đám mây bên thứ ba (AWS/Azure)</td>
+        <td>Vi phạm GDPR, Luật An ninh mạng VN, tiêu chuẩn ISO 27001</td>
+      </tr>
+      <tr>
+        <td>Khả Năng Phục Hồi Hoạt Động</td>
+        <td>Phụ thuộc 100% vào kết nối Internet</td>
+        <td>Điểm lỗi duy nhất — mất mạng = mất liên lạc hoàn toàn</td>
+      </tr>
+      <tr>
+        <td>Bảo Mật Zero-Knowledge Thực Sự</td>
+        <td>Nhà cung cấp có khả năng truy cập metadata và nội dung</td>
+        <td>Gián điệp công nghiệp, rò rỉ nội bộ, chặn thu cấp nhà nước</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="section-intro" style="margin-top:32px;">
+    Đây không phải là những lo ngại ngoại lệ. Đây là những rủi ro tuân thủ mang tính sinh tử đối với ngân hàng, chính phủ, công ty luật, hệ thống y tế, và nhà thầu quốc phòng — những tổ chức đại diện cho thị trường có thể tiếp cận hàng nghìn tỷ đô la mà hiện chưa có giải pháp bảo mật khả thi nào.
+  </p>
+
+  <div class="callout">
+    <p>Thị trường không thiếu công cụ cộng tác. Thị trường thiếu một công cụ cộng tác đủ tin cậy để xử lý các hoạt động nhạy cảm nhất của doanh nghiệp.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ S2 — GIẢI PHÁP ══════════════════ -->
+<section class="section reveal" id="s2">
+  <div class="section-number">02 / 09</div>
+  <h2 class="section-title">Giải Pháp: TeraChat — Chủ Quyền Ngay Từ Kiến Trúc</h2>
+  <div class="section-divider"></div>
+
+  <p class="section-intro">
+    TeraChat không phải là một lớp bảo mật được thêm vào nền tảng có sẵn. Nó được xây dựng từ những nguyên tắc đầu tiên xung quanh một ràng buộc không thể thỏa hiệp: nhà cung cấp không có khả năng đọc dữ liệu của khách hàng. Cam kết kiến trúc này chi phối mọi quyết định kỹ thuật và thương mại.
+  </p>
+
+  <div class="sub-heading">Ba Trụ Cột Kiến Trúc</div>
+
+  <div class="grid-3 reveal">
+    <div class="card">
+      <div class="card-number">TRỤ CỘT 01</div>
+      <div class="card-icon">🔐</div>
+      <div class="card-title">Lõi Mật Mã Rust</div>
+      <div class="card-text">Mã hóa đầu cuối ngay tại thiết bị. Server chỉ thấy các byte được mã hóa. Mã nguồn mở để kiểm tra độc lập bởi đội ngũ bảo mật Gov/Banking.</div>
+    </div>
+    <div class="card">
+      <div class="card-number">TRỤ CỘT 02</div>
+      <div class="card-icon">🎨</div>
+      <div class="card-title">Giao Diện Doanh Nghiệp</div>
+      <div class="card-text">UI Glassmorphism với hai chế độ: Online (Toàn năng) và Mesh (Sinh tồn Offline). Nhất quán trên iOS, Android, macOS, Windows, Linux.</div>
+    </div>
+    <div class="card">
+      <div class="card-number">TRỤ CỘT 03</div>
+      <div class="card-icon">🌐</div>
+      <div class="card-title">Hạ Tầng Phân Tán</div>
+      <div class="card-text">Cụm riêng tư do khách hàng sở hữu. Kiến trúc đa điểm liên kết. Mạng Mesh Sinh tồn qua BLE 5.0/Wi-Fi Direct khi Internet bị cắt đứt.</div>
+    </div>
+  </div>
+
+  <div class="sub-heading">Điểm Khác Biệt Kỹ Thuật Cốt Lõi</div>
+
+  <ul class="bullet-list reveal">
+    <li><strong>Kiến trúc Server Zero-Knowledge:</strong> Giao thức Sealed Sender bảo vệ metadata; server chỉ xử lý các payload được mã hóa hoàn toàn.</li>
+    <li><strong>Mạng Mesh Sinh Tồn:</strong> BLE 5.0 và Wi-Fi Direct cho phép liên lạc khi mọi cơ sở hạ tầng Internet bị tê liệt — quan trọng cho quốc phòng, hàng hải, và công nghiệp.</li>
+    <li><strong>Kết Nối Lại QUIC 0-RTT:</strong> Phục hồi trong 0ms sau khi chuyển mạng, so với 5–30 giây của Slack/Teams. Lợi thế quyết định trong môi trường chiến thuật và thực địa.</li>
+    <li><strong>Mã Hóa Luồng (AEAD):</strong> Truyền file mã hóa theo từng khối 2MB — không cần buffer ở server. Cho phép truyền file 10GB với chi phí hạ tầng TeraChat bằng $0.</li>
+    <li><strong>Giao Thức Minh Bạch (ALPN Fallback):</strong> Đàm phán QUIC → gRPC → WebSocket trong &lt;50ms. Mọi gói tin TeraChat đi qua TCP 443 chuẩn — không cần ngoại lệ tường lửa nào.</li>
+    <li><strong>Sandbox WASM (.tapp mini-apps):</strong> Logic nghiệp vụ của bên thứ ba chạy trong môi trường WebAssembly cô lập, không có quyền truy cập mạng, hệ thống file, hay giao diện người dùng.</li>
+  </ul>
+
+  <div class="callout callout-blue">
+    <p>TeraChat là nền tảng nhắn tin doanh nghiệp duy nhất mà CISO của một ngân hàng có thể phê duyệt mà không cần yêu cầu một ngoại lệ tường lửa hay ghi đè chính sách tuân thủ nào.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ S3 — THỊ TRƯỜNG ══════════════════ -->
+<section class="section reveal" id="s3">
+  <div class="section-number">03 / 09</div>
+  <h2 class="section-title">Cơ Hội Thị Trường</h2>
+  <div class="section-divider"></div>
+
+  <p class="section-intro">
+    Thị trường phần mềm cộng tác doanh nghiệp đạt $48 tỷ vào năm 2024 và dự kiến vượt $85 tỷ vào năm 2030 (CAGR ~10%). Trong đó, phân khúc truyền thông doanh nghiệp bảo mật — phục vụ dịch vụ tài chính, chính phủ, quốc phòng, y tế, và cơ sở hạ tầng trọng yếu — vẫn chưa được phục vụ đúng mức. Không có nhà lãnh đạo thị trường hiện tại nào được xây dựng có chủ đích cho chủ quyền dữ liệu.
+  </p>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Lĩnh Vực</th>
+        <th>TAM Toàn Cầu</th>
+        <th>Yêu Cầu Pháp Lý</th>
+        <th>Phù Hợp TeraChat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Dịch Vụ Tài Chính / Ngân Hàng</td>
+        <td class="td-accent">$18 tỷ</td>
+        <td>GDPR, PCI-DSS, Basel III</td>
+        <td>Zero-trust, Legal Hold, Audit Log</td>
+      </tr>
+      <tr>
+        <td>Chính Phủ & Quốc Phòng</td>
+        <td class="td-accent">$12 tỷ</td>
+        <td>ISO 27001, SCIF, Luật An Ninh Mạng</td>
+        <td>Air-gapped, HSM, BFT Quorum</td>
+      </tr>
+      <tr>
+        <td>Y Tế</td>
+        <td class="td-accent">$8 tỷ</td>
+        <td>HIPAA, GDPR Điều 9</td>
+        <td>PII Masking, Sovereign LLM</td>
+      </tr>
+      <tr>
+        <td>Doanh Nghiệp / Sản Xuất</td>
+        <td class="td-accent">$22 tỷ</td>
+        <td>NIS2, ISO 27001</td>
+        <td>Survival Mesh, On-Premise</td>
+      </tr>
+      <tr>
+        <td>Pháp Lý & Dịch Vụ Chuyên Nghiệp</td>
+        <td class="td-accent">$6 tỷ</td>
+        <td>Đặc quyền luật sư-khách hàng</td>
+        <td>Zero-Knowledge, Full-Context AI</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-heading">Đông Nam Á: Cơ Hội Người Tiên Phong</div>
+
+  <div class="callout">
+    <p>Việt Nam, Indonesia và Thái Lan đang triển khai các luật nội địa hóa dữ liệu nghiêm ngặt (Thông tư 13 Việt Nam, GR 71 Indonesia, PDPA Thái Lan) trực tiếp cấm sử dụng Slack và Microsoft Teams cho các hoạt động nhạy cảm của chính phủ và tài chính. TeraChat được định vị là giải pháp tuân thủ thay thế duy nhất được xây dựng có chủ đích trong khu vực — thị trường có thể tiếp cận $2 tỷ+ không có người chơi nội địa nào chiếm ưu thế.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ S4 — MÔ HÌNH KINH DOANH ══════════════════ -->
+<section class="section reveal" id="s4">
+  <div class="section-number">04 / 09</div>
+  <h2 class="section-title">Mô Hình Kinh Doanh: Chi Phí Băng Thông Bằng 0, Biên Lợi Nhuận Gộp &gt;90%</h2>
+  <div class="section-divider"></div>
+
+  <div class="callout callout-blue">
+    <p>"Chúng tôi không bán dung lượng. Chúng tôi không bán băng thông. Chúng tôi bán giấy phép chủ quyền — và khách hàng tự trả cho hạ tầng của họ."</p>
+  </div>
+
+  <div class="sub-heading">Lợi Thế Cấu Trúc</div>
+  <p class="section-intro">
+    Khác với Slack hay Teams — vốn phải chịu chi phí máy chủ và lưu trữ cho mỗi khách hàng — TeraChat hoạt động theo mô hình cấp phép phần mềm thuần túy. Khách hàng triển khai TeraChat trên cụm riêng tư của họ. TeraChat thu về doanh thu giấy phép định kỳ trong khi chi phí hạ tầng mỗi khách hàng bằng $0. Mỗi khách hàng mới thêm doanh thu mà không tăng chi phí.
+  </p>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Chiều Cạnh Mô Hình</th>
+        <th>SaaS Truyền Thống (Slack/Teams)</th>
+        <th>TeraChat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Chi phí máy chủ</td>
+        <td>Nhà cung cấp trả (tăng theo số user)</td>
+        <td class="td-accent">Khách hàng trả ($0 cho TeraChat)</td>
+      </tr>
+      <tr>
+        <td>Biên lợi nhuận gộp</td>
+        <td>60–75%</td>
+        <td class="td-gold">&gt;90%</td>
+      </tr>
+      <tr>
+        <td>Chi phí mỗi KH mới</td>
+        <td>Tăng (cần thêm server)</td>
+        <td class="td-accent">Gần bằng 0</td>
+      </tr>
+      <tr>
+        <td>Trách nhiệm dữ liệu</td>
+        <td>Nhà cung cấp nắm giữ dữ liệu</td>
+        <td class="td-accent">Khách hàng kiểm soát dữ liệu</td>
+      </tr>
+      <tr>
+        <td>Rủi ro tuân thủ</td>
+        <td>Nhà cung cấp gánh chịu rủi ro</td>
+        <td class="td-accent">Khách hàng kiểm soát rủi ro</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-heading">Các Luồng Doanh Thu</div>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Luồng</th>
+        <th>Mô Tả</th>
+        <th>Định Giá</th>
+        <th>Phân Khúc Mục Tiêu</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Đăng Ký Doanh Nghiệp</td>
+        <td>Giấy phép SaaS hàng năm, tự động tính theo số lượng tài khoản LDAP/Azure AD</td>
+        <td class="td-accent">$500–$8.000/tháng</td>
+        <td>Tất cả phân khúc</td>
+      </tr>
+      <tr>
+        <td>Dịch Vụ Chuyên Nghiệp</td>
+        <td>Triển khai on-premise, tích hợp, thiết lập air-gapped</td>
+        <td class="td-accent">$50K–$200K một lần</td>
+        <td>Gov / Banking</td>
+      </tr>
+      <tr>
+        <td>SLA & Bảo Trì</td>
+        <td>SLA vá lỗi bảo mật, hỗ trợ kỹ thuật Tier 2/3</td>
+        <td class="td-accent">15–20% ACV/năm</td>
+        <td>Enterprise+</td>
+      </tr>
+      <tr>
+        <td>Elite Compute Tier</td>
+        <td>Tính toán bảo mật TEE-backed (Intel SGX / AMD SEV)</td>
+        <td class="td-gold">$3.000/tháng</td>
+        <td>Tài chính / Tình báo</td>
+      </tr>
+      <tr>
+        <td>Enterprise Survival Kit</td>
+        <td>Gói phần cứng YubiKey FIDO2 + NFC Smart Ring bọc Titan</td>
+        <td class="td-accent">$500–$1.000/bộ</td>
+        <td>Upsell C-Level</td>
+      </tr>
+      <tr>
+        <td>AI & .tapp Marketplace</td>
+        <td>Chia sẻ doanh thu từ mini-apps bên thứ ba; module AI chủ quyền</td>
+        <td class="td-accent">30% doanh thu</td>
+        <td>Tất cả phân khúc</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-heading">Các Cấp Độ Triển Khai</div>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Cấp Độ</th>
+        <th>Đối Tượng</th>
+        <th>Hạ Tầng</th>
+        <th>Giá/Tháng</th>
+        <th>Biên LN Gộp</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Managed SaaS</td>
+        <td>SME / Chuỗi F&B</td>
+        <td>TeraChat Cloud</td>
+        <td class="td-accent">$500</td>
+        <td>~85%</td>
+      </tr>
+      <tr>
+        <td>On-Premise Standard</td>
+        <td>Doanh nghiệp lớn</td>
+        <td>VPS/VM của KH</td>
+        <td class="td-accent">$1.000</td>
+        <td>&gt;92%</td>
+      </tr>
+      <tr>
+        <td>Elite (TEE Enclave)</td>
+        <td>Tài chính / Corp+</td>
+        <td>SGX/SEV VPS của KH</td>
+        <td class="td-gold">$3.000</td>
+        <td>&gt;95%</td>
+      </tr>
+      <tr class="tr-highlight">
+        <td>Enterprise Gov</td>
+        <td>Chính Phủ / Quốc Phòng</td>
+        <td>Bare-metal + HSM của KH</td>
+        <td class="td-gold">$8.000</td>
+        <td>&gt;95%</td>
+      </tr>
+      <tr>
+        <td>Reseller (MSP)</td>
+        <td>Đối Tác IT Service</td>
+        <td>Hạ tầng KH cuối</td>
+        <td class="td-accent">Bulk license</td>
+        <td>&gt;88%</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════ S5 — LỢI THẾ ══════════════════ -->
+<section class="section reveal" id="s5">
+  <div class="section-number">05 / 09</div>
+  <h2 class="section-title">Lợi Thế Cạnh Tranh: Hào Lũy Được Xây Bằng Rust</h2>
+  <div class="section-divider"></div>
+
+  <div class="sub-heading">So Sánh Cạnh Tranh</div>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Nền Tảng</th>
+        <th class="td-center">Chủ Quyền DL</th>
+        <th class="td-center">Offline Mesh</th>
+        <th class="td-center">Zero-Knowledge</th>
+        <th class="td-center">On-Premise</th>
+        <th class="td-center">Open Core</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Slack / Teams</td>
+        <td class="td-cross td-center">❌ AWS/Azure</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-cross td-center">❌</td>
+      </tr>
+      <tr>
+        <td>Zalo (VN)</td>
+        <td class="td-warn td-center">⚠️ Máy chủ VNG</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-cross td-center">❌</td>
+      </tr>
+      <tr>
+        <td>Signal</td>
+        <td class="td-warn td-center">⚠️ Máy chủ Signal</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-check td-center">✅</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-check td-center">✅</td>
+      </tr>
+      <tr>
+        <td>Matrix / Element</td>
+        <td class="td-warn td-center">⚠️ Phức tạp</td>
+        <td class="td-cross td-center">❌</td>
+        <td class="td-warn td-center">⚠️ Một phần</td>
+        <td class="td-warn td-center">⚠️ Phức tạp</td>
+        <td class="td-check td-center">✅</td>
+      </tr>
+      <tr class="tr-highlight">
+        <td><strong>TeraChat</strong></td>
+        <td class="td-check td-center">✅ Của KH</td>
+        <td class="td-check td-center">✅ BLE/P2P</td>
+        <td class="td-check td-center">✅ Sealed Sender</td>
+        <td class="td-check td-center">✅ 1 lệnh CLI</td>
+        <td class="td-check td-center">✅ AGPLv3</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-heading">Năm Hào Lũy Bền Vững</div>
+
+  <div class="reveal">
+    <div class="moat-item">
+      <div class="moat-number">01</div>
+      <div class="moat-content">
+        <div class="moat-title">Hào Lũy Kiến Trúc</div>
+        <div class="moat-text">Thiết kế Zero-Knowledge không thể được tích hợp thêm vào sau. Slack và Teams được xây dựng cho SaaS cloud-first. Để thêm chủ quyền dữ liệu thực sự đòi hỏi phải xây dựng lại toàn bộ backend — một nỗ lực kỹ thuật kéo dài 3–5 năm sẽ phá vỡ các cam kết với khách hàng hiện tại.</div>
+      </div>
+    </div>
+    <div class="moat-item">
+      <div class="moat-number">02</div>
+      <div class="moat-content">
+        <div class="moat-title">Hào Lũy Pháp Lý</div>
+        <div class="moat-text">TeraChat là nền tảng duy nhất được xây dựng có chủ đích để đáp ứng luật nội địa hóa dữ liệu châu Á-Thái Bình Dương (Thông tư 13, PDPA, GDPR). Khi các quy định này thắt chặt hơn, các đối thủ đối mặt với rủi ro tuân thủ hiện hữu — điều này thực ra đẩy nhanh chu kỳ bán hàng của TeraChat.</div>
+      </div>
+    </div>
+    <div class="moat-item">
+      <div class="moat-number">03</div>
+      <div class="moat-content">
+        <div class="moat-title">Hào Lũy Kỹ Thuật</div>
+        <div class="moat-text">Lõi Mật mã Rust, engine đồng bộ CRDT, mạng Mesh Sinh Tồn, và hệ thống phục hồi QUIC 0-RTT đại diện cho 2–3 năm kỹ thuật chuyên biệt. Adaptive Payload Gating (xử lý RSSI/RTT real-time ở tầng kernel) không thể sao chép trên kiến trúc SaaS cloud-native.</div>
+      </div>
+    </div>
+    <div class="moat-item">
+      <div class="moat-number">04</div>
+      <div class="moat-content">
+        <div class="moat-title">Hào Lũy Tin Cậy</div>
+        <div class="moat-text">Kiến trúc Open-Core (AGPLv3 cho lõi mật mã) cho phép đội ngũ bảo mật chính phủ và ngân hàng xác minh độc lập sự vắng mặt của backdoor. Đây là yêu cầu mua sắm bắt buộc cho môi trường bí mật — và không đối thủ nào có thể cung cấp điều này.</div>
+      </div>
+    </div>
+    <div class="moat-item">
+      <div class="moat-number">05</div>
+      <div class="moat-content">
+        <div class="moat-title">Hào Lũy Khóa Dữ Liệu</div>
+        <div class="moat-text">Khi một doanh nghiệp triển khai TeraChat, 3+ năm lịch sử chat, nhật ký kiểm toán tuân thủ, trạng thái CRDT, và quy trình .tapp tùy chỉnh được lưu trong cụm riêng tư của họ. Chi phí chuyển đổi là ngăn cản — không phải vì chúng tôi giữ dữ liệu làm con tin, mà vì dữ liệu có giá trị hoạt động thực sự không thể chuyển sang đối thủ.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-heading">Elite Tier: Tính Toán Bảo Mật Chủ Quyền</div>
+  <div class="callout">
+    <p>"Gói Elite biến VPS của bạn thành một cỗ máy tính toán bảo mật mà chính bạn (CTO) cũng không thể đọc được nội dung — nhưng nhân viên của bạn thì có. Đây là định nghĩa đúng của Chủ Quyền Dữ Liệu."</p>
+  </div>
+  <p class="section-intro" style="margin-top:16px;">
+    TeraChat Elite giới thiệu Tính Toán Bảo Mật TEE-backed sử dụng Intel SGX, AMD SEV và AWS Nitro Enclaves. Khối lượng công việc AI/ML nặng được offload sang VPS của khách hàng, nơi việc tính toán diễn ra trong bộ nhớ được bảo vệ ở cấp CPU. Hệ điều hành — kể cả IT Admin của chính khách hàng — không thể chặn plaintext. Chỉ người dùng cuối được ủy quyền mới có thể giải mã kết quả trên thiết bị của họ.
+  </p>
+</section>
+
+<!-- ══════════════════ S6 — TĂNG TRƯỞNG ══════════════════ -->
+<section class="section reveal" id="s6">
+  <div class="section-number">06 / 09</div>
+  <h2 class="section-title">Chiến Lược Tăng Trưởng: Thống Trị Dọc, Sau Đó Mở Rộng Nền Tảng</h2>
+  <div class="section-divider"></div>
+
+  <div class="phases reveal">
+    <div class="phase">
+      <div class="phase-num">GIAI ĐOẠN 01</div>
+      <div class="phase-title">Tập Trung Lĩnh Vực Dọc</div>
+      <div class="phase-period">Tháng 0–18</div>
+      <div class="phase-items">
+        Chiếm lĩnh 2 lĩnh vực: <strong>F&B/Bán Lẻ</strong> (Magic Logger AI, Kiosk Mode) và <strong>Hành Chính Công</strong> (Smart Approval, ký số điện tử). Chu kỳ bán hàng ngắn, áp lực tuân thủ rõ ràng.
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">GIAI ĐOẠN 02</div>
+      <div class="phase-title">Mở Rộng Doanh Nghiệp</div>
+      <div class="phase-period">Tháng 12–36</div>
+      <div class="phase-items">
+        <strong>Ngân hàng:</strong> Zone 2, Legal Hold, AI Full-Context. <strong>Sản xuất:</strong> Survival Mesh cho nhà máy, mỏ, tàu biển. <strong>Đa quốc gia:</strong> Cụm liên kết đa quốc gia với dữ liệu cư trú tại mỗi quốc gia.
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-num">GIAI ĐOẠN 03</div>
+      <div class="phase-title">Hệ Sinh Thái & Marketplace</div>
+      <div class="phase-period">Tháng 24–48</div>
+      <div class="phase-items">
+        Mở <strong>.tapp Marketplace</strong> cho ISV xây dựng mini-apps chuyên ngành (30% doanh thu). <strong>OAP Standard</strong> tạo khóa chặn hệ sinh thái. Thị trường <strong>Quốc Phòng & Tình Báo</strong> với HSM air-gapped.
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-heading">Chiến Thuật Bán Hàng: Đòn Bẩy Enterprise Zone 2</div>
+  <div class="callout callout-blue">
+    <p>"Khi nhân viên bán hàng rời đi và dùng Zalo, họ mang theo quan hệ khách hàng. Với TeraChat Zone 2, mọi cuộc hội thoại với khách hàng thuộc về công ty — vĩnh viễn, có thể kiểm toán, và không thể thu hồi."</p>
+  </div>
+
+  <p class="section-intro" style="margin-top:24px;">
+    Zone 2 (giao tiếp đối ngoại) là đòn bẩy chuyển đổi doanh nghiệp chính của chúng tôi. Chúng tôi thể hiện: (1) rủi ro mất dữ liệu hiện tại từ các ứng dụng nhắn tin tiêu dùng, (2) trách nhiệm pháp lý, và (3) giải quyết tuân thủ ngay lập tức thông qua triển khai Zone 2 on-premise của TeraChat. Use case đơn lẻ này đóng các giao dịch doanh nghiệp vừa mà không cần kiểm tra bảo mật đầy đủ.
+  </p>
+</section>
+
+<!-- ══════════════════ S7 — TÀI CHÍNH ══════════════════ -->
+<section class="section reveal" id="s7">
+  <div class="section-number">07 / 09</div>
+  <h2 class="section-title">Dự Báo Tài Chính & Tiềm Năng Đầu Tư</h2>
+  <div class="section-divider"></div>
+
+  <div class="metric-row reveal">
+    <div class="metric-card">
+      <div class="value">&gt;<em>90%</em></div>
+      <div class="label">Biên Lợi Nhuận Gộp</div>
+      <div class="sublabel">So với trung bình ngành 60–75%</div>
+    </div>
+    <div class="metric-card">
+      <div class="value"><em>$0</em></div>
+      <div class="label">Chi Phí Hạ Tầng/KH</div>
+      <div class="sublabel">Mô hình Zero Bandwidth Cost</div>
+    </div>
+    <div class="metric-card">
+      <div class="value"><em>3×</em></div>
+      <div class="label">ARR mỗi Upsell Elite</div>
+      <div class="sublabel">$1K → $3K mỗi tài khoản</div>
+    </div>
+    <div class="metric-card">
+      <div class="value"><em>18</em>mo</div>
+      <div class="label">Runway Vòng Seed</div>
+      <div class="sublabel">Dòng tiền dương từ Ngày 1</div>
+    </div>
+  </div>
+
+  <div class="sub-heading">Kịch Bản ARR</div>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Kịch Bản</th>
+        <th>Số Khách Hàng</th>
+        <th>ACV Trung Bình</th>
+        <th>ARR Hàng Năm</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Thận Trọng (Năm 1)</td>
+        <td>20 Enterprise</td>
+        <td>$24.000</td>
+        <td class="td-accent">$480.000</td>
+      </tr>
+      <tr>
+        <td>Cơ Sở (Năm 2)</td>
+        <td>60 Enterprise + 20 Elite</td>
+        <td>$36.000 hỗn hợp</td>
+        <td class="td-accent">$2.160.000</td>
+      </tr>
+      <tr>
+        <td>Tích Cực (Năm 3)</td>
+        <td>150 Enterprise + 50 Elite + Gov</td>
+        <td>$60.000 hỗn hợp</td>
+        <td class="td-gold">$9.000.000</td>
+      </tr>
+      <tr class="tr-highlight">
+        <td>Hợp Đồng Gov/Quốc Phòng Đơn Lẻ</td>
+        <td>1 Bộ / 1 Ngân hàng lớn</td>
+        <td>$96.000–$480.000</td>
+        <td class="td-gold">Đến $480.000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-heading">Phân Bổ Vòng Seed</div>
+
+  <div class="grid-2 reveal">
+    <div class="card">
+      <div class="card-number">PHÂN BỔ 01 — 20%</div>
+      <div class="card-title">🔍 Kiểm Tra & Chứng Chỉ Bảo Mật</div>
+      <div class="card-text">Cure53 / NCC Group Pen-test, ISO 27001, SOC 2 Type II, GDPR. Điều kiện tiên quyết không thể thương lượng để chốt hợp đồng Gov/Banking.</div>
+    </div>
+    <div class="card">
+      <div class="card-number">PHÂN BỔ 02 — 40%</div>
+      <div class="card-title">⚙️ R&D Lõi</div>
+      <div class="card-text">Mật mã Rust, engine CRDT, ứng dụng native đa nền tảng. Đào sâu hào lũy cạnh tranh — khoản đầu tư quan trọng nhất.</div>
+    </div>
+    <div class="card">
+      <div class="card-number">PHÂN BỔ 03 — 25%</div>
+      <div class="card-title">🤝 GTM & Mạng Lưới Reseller</div>
+      <div class="card-text">Đào tạo và chứng nhận đối tác MSP, sự kiện B2B, case study thực tế. Phân phối không cần lực lượng bán hàng trực tiếp.</div>
+    </div>
+    <div class="card">
+      <div class="card-number">PHÂN BỔ 04 — 15%</div>
+      <div class="card-title">🛡️ Quỹ Dự Phòng</div>
+      <div class="card-text">Đảm bảo runway tối thiểu 18–24 tháng trong điều kiện kinh tế xấu nhất. Đệm tự tin cho nhà đầu tư.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p>Chúng tôi không phân bổ vốn cho chi phí máy chủ đám mây hay quảng cáo trả phí. Mỗi đồng đầu tư đi vào các hoạt động xây dựng hào lũy: chứng chỉ bảo mật, xuất sắc kỹ thuật, và phân phối qua đối tác.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ S8 — TẦM NHÌN ══════════════════ -->
+<section class="section reveal" id="s8">
+  <div class="section-number">08 / 09</div>
+  <h2 class="section-title">Tầm Nhìn & Tác Động Dài Hạn</h2>
+  <div class="section-divider"></div>
+
+  <p class="section-intro">
+    Tầm nhìn dài hạn của TeraChat vượt ra ngoài nhắn tin doanh nghiệp. Chúng tôi đang xây dựng tầng cơ sở hạ tầng cho các hoạt động kỹ thuật số chủ quyền — một nền tảng nơi bất kỳ tổ chức nào, ở bất kỳ đâu trên thế giới, có thể cộng tác, tính toán, và giao tiếp với sự tự tin tuyệt đối rằng dữ liệu của họ thuộc về họ và không ai khác.
+  </p>
+
+  <div class="sub-heading">Đích Đến Cuối Cùng: Hệ Điều Hành Doanh Nghiệp Chủ Quyền</div>
+
+  <ul class="bullet-list reveal">
+    <li><strong>Giao Diện Tác Nhân Thống Nhất:</strong> TeraChat trở thành giao diện duy nhất mà qua đó doanh nghiệp triển khai, quản lý, và kiểm toán mọi tác nhân AI và quy trình tự động hóa — thay thế các điểm giải pháp phân mảnh bằng nền tảng tuân thủ và quản trị.</li>
+    <li><strong>Mạng Liên Kết Xuyên Biên Giới:</strong> Doanh nghiệp đa quốc gia và chính phủ đồng minh vận hành các cụm liên kết được mã hóa trải dài nhiều quốc gia trong khi duy trì tuân thủ nơi cư trú dữ liệu ở mỗi quốc gia.</li>
+    <li><strong>Tiêu Chuẩn Liên Lạc Chiến Thuật:</strong> Kiến trúc Mesh Sinh Tồn của TeraChat trở thành tiêu chuẩn liên lạc de-facto cho cơ sở hạ tầng quốc gia quan trọng, hoạt động quốc phòng, và ứng phó thảm họa.</li>
+    <li><strong>Hệ Sinh Thái Mở:</strong> Marketplace .tapp trở thành hệ sinh thái nhà phát triển sôi nổi, có thể so sánh với Salesforce AppExchange, nơi các chuyên gia lĩnh vực kiếm tiền từ logic nghiệp vụ chủ quyền mà không ảnh hưởng đến bảo mật dữ liệu.</li>
+  </ul>
+
+  <div class="sub-heading">Tại Sao Đội Ngũ Này. Tại Sao Bây Giờ.</div>
+
+  <p class="section-intro">
+    Làn gió thuận pháp lý là không thể đảo ngược. Các luật nội địa hóa dữ liệu đang tăng tốc trên toàn cầu. Mỗi tháng trôi qua mà không có giải pháp thay thế chủ quyền khả thi lại làm tăng sự cấp bách — và quy mô giao dịch — cho các khách hàng tiềm năng doanh nghiệp. Chúng tôi không xây dựng một cách suy đoán. Chúng tôi đang xây dựng để đáp ứng các quy định tuân thủ vốn đã là luật.
+  </p>
+
+  <div class="closing-banner reveal">
+    <h2>Chúng tôi không xây dựng thêm một ứng dụng chat.</h2>
+    <p>Chúng tôi đang xây dựng cơ sở hạ tầng mà các doanh nghiệp sẽ tin cậy khi mọi nền tảng giao tiếp khác đã thất bại với họ.</p>
+    <cite>— CEO, TeraChat · 2026</cite>
+  </div>
+</section>
+
+<!-- ══════════════════ S9 — BẢN QUYỀN ══════════════════ -->
+<section class="section reveal" id="s9">
+  <div class="section-number">09 / 09</div>
+  <h2 class="section-title">Chiến Lược Cấp Phép & Sở Hữu Trí Tuệ</h2>
+  <div class="section-divider"></div>
+
+  <p class="section-intro">
+    TeraChat sử dụng mô hình Open-Core được hiệu chỉnh cẩn thận: chúng tôi mở những gì xây dựng lòng tin, và bảo vệ những gì tạo ra doanh thu. Đội ngũ bảo mật của chính phủ và ngân hàng có thể độc lập biên dịch và kiểm tra lõi mật mã — loại bỏ rào cản lớn nhất trong mua sắm doanh nghiệp ở các ngành được quản lý.
+  </p>
+
+  <div class="open-closed reveal">
+    <div class="oc-card oc-open">
+      <div class="oc-header">🔓 Mã Nguồn Mở — "Phòng Khách"</div>
+      <div class="oc-item">Lõi Mật Mã Rust — Chứng minh không có backdoor. Gov/Banking tự biên dịch kiểm chứng.</div>
+      <div class="oc-item">Ứng Dụng Client (Desktop) — Chứng minh không thu thập telemetry ngầm.</div>
+      <div class="oc-item">Giao Thức Liên Kết (P2P) — Chứng minh dữ liệu không đi qua server không được phép.</div>
+    </div>
+    <div class="oc-card oc-closed">
+      <div class="oc-header">🔒 Nguồn Đóng — "Két Sắt"</div>
+      <div class="oc-item">Admin Console Doanh Nghiệp — Công cụ kiếm tiền cốt lõi: OPA Policy, Zone 2, LDAP/Azure AD.</div>
+      <div class="oc-item">License Manager & Billing — Bảo vệ chống crack bằng obfuscation chuyên sâu.</div>
+      <div class="oc-item">Module AI (Magic Logger / RAG) — Bảo vệ thuật toán AI độc quyền.</div>
+    </div>
+  </div>
+
+  <div class="sub-heading">Phiên Bản Giao Thức như Động Cơ Doanh Thu</div>
+
+  <p class="section-intro">
+    Không tương thích giữa các phiên bản chính tạo ra chu kỳ nâng cấp có hệ thống: các doanh nghiệp phải duy trì tính tương đồng phiên bản trên tất cả các chi nhánh để duy trì federation. Ràng buộc kiến trúc này thúc đẩy gia hạn License bắt buộc mà không cần cưỡng bức hợp đồng — sự phân mảnh phiên bản được giải quyết bởi các yêu cầu tuân thủ IT của chính khách hàng.
+  </p>
+
+  <table class="data-table reveal">
+    <thead>
+      <tr>
+        <th>Thành Phần</th>
+        <th>Giấy Phép</th>
+        <th>Mục Đích Chiến Lược</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Lõi Mật Mã Rust</td>
+        <td class="td-check">AGPLv3 (Mã Nguồn Mở)</td>
+        <td>Chứng minh zero backdoor. Ép đối thủ mở nguồn nếu fork.</td>
+      </tr>
+      <tr>
+        <td>Ứng Dụng Client Desktop</td>
+        <td class="td-check">AGPLv3 (Mã Nguồn Mở)</td>
+        <td>Chứng minh zero thu thập telemetry.</td>
+      </tr>
+      <tr>
+        <td>Giao Thức Liên Kết P2P</td>
+        <td class="td-check">AGPLv3 (Mã Nguồn Mở)</td>
+        <td>Chứng minh tính toàn vẹn định tuyến dữ liệu.</td>
+      </tr>
+      <tr>
+        <td>Admin Console Doanh Nghiệp</td>
+        <td class="td-gold">Độc Quyền (Đóng)</td>
+        <td>Engine kiếm tiền cốt lõi — OPA, LDAP, Azure AD.</td>
+      </tr>
+      <tr>
+        <td>License Manager & Billing</td>
+        <td class="td-gold">Độc Quyền + Obfuscated</td>
+        <td>Bảo vệ chống crack cho thực thi đăng ký.</td>
+      </tr>
+      <tr>
+        <td>Module AI (Magic Logger)</td>
+        <td class="td-gold">Độc Quyền (Đóng)</td>
+        <td>Bảo vệ thuật toán AI độc quyền và lợi thế thị trường.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════ FOOTER ══════════════════ -->
+<footer class="doc-footer">
+  <div>
+    <div class="footer-brand">TeraChat</div>
+    <div class="footer-text" style="margin-top:8px;">Chủ Quyền Ngay Từ Kiến Trúc</div>
+  </div>
+  <div class="footer-text" style="text-align:right;">
+    Bản Tóm Tắt Đầu Tư · Q1 2026<br>
+    Tài liệu Bảo Mật — Chỉ Dành Cho Nhà Đầu Tư<br>
+    Mọi thông tin trong tài liệu này là bảo mật và độc quyền.
+  </div>
+</footer>
+
+</div><!-- .main -->
 
 <script>
-(function() {
-    const searchInput = document.getElementById('tocSearch');
-    const noResults = document.getElementById('searchNoResults');
-    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+// ── NAV SCROLL ──
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+}
 
-    // Filter TOC on input
-    searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        let visibleCount = 0;
+// ── INTERSECTION OBSERVER FOR REVEAL ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.08 });
 
-        navLinks.forEach(function(link) {
-            if (!query) {
-                link.classList.remove('search-hidden');
-                visibleCount++;
-            } else {
-                const text = link.textContent.toLowerCase();
-                if (text.includes(query)) {
-                    link.classList.remove('search-hidden');
-                    visibleCount++;
-                } else {
-                    link.classList.add('search-hidden');
-                }
-            }
-        });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        noResults.style.display = (query && visibleCount === 0) ? 'block' : 'none';
-    });
+// ── ACTIVE NAV DOTS ──
+const sections = ['hero','s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+const dots = document.querySelectorAll('.nav-dot');
 
-    // Ctrl+K shortcut
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            searchInput.focus();
-            searchInput.select();
-        }
-        if (e.key === 'Escape' && document.activeElement === searchInput) {
-            searchInput.value = '';
-            searchInput.dispatchEvent(new Event('input'));
-            searchInput.blur();
-        }
-    });
-})();
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const idx = sections.indexOf(e.target.id);
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }
+  });
+}, { threshold: 0.3 });
+
+sections.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) sectionObserver.observe(el);
+});
 </script>
-
 </body>
 </html>
