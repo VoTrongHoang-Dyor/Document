@@ -375,6 +375,11 @@
 <a href="#15-hệ-thống-chính-sách-phân-phối-tệp-opa-driven-format-whitelisting" class="nav-link" style="padding-left:0.8rem;">15. Hệ thống Chính sách Phân phối Tệp (OPA-driven Format Whitelisting)</a>
 <a href="#16-chống-nội-gián-trong-nghi-thức-khôi-phục-anti-insider-key-ceremony" class="nav-link" style="padding-left:0.8rem;">16. Chống Nội gián trong Nghi thức Khôi phục (Anti-Insider Key Ceremony)</a>
 <a href="#17-quản-lý-sự-cố-và-khôi-phục-incident-response" class="nav-link" style="padding-left:0.8rem;">17. Quản lý Sự cố và Khôi phục (Incident Response)</a>
+<a href="#mục-mới-wasm-network-function-specifications" class="nav-link" style="padding-left:0.8rem;">Mục Mới: WASM & Network Function Specifications</a>
+<a href="#func-01-terachat-proxy-request-guest-host-external" class="nav-link" style="padding-left:0.8rem;">FUNC-01: terachat_proxy_request (Guest → Host → External)</a>
+<a href="#func-02-message-ttl-lifecycle-bitchat-store-and-forward" class="nav-link" style="padding-left:0.8rem;">FUNC-02: Message TTL Lifecycle (Bitchat Store-and-Forward)</a>
+<a href="#func-03-sync-logic-khi-device-reconnect" class="nav-link" style="padding-left:0.8rem;">FUNC-03: Sync Logic khi Device Reconnect</a>
+<a href="#func-04-webrtc-fallback-ice-pool-management" class="nav-link" style="padding-left:0.8rem;">FUNC-04: WebRTC Fallback & ICE Pool Management</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -738,6 +743,84 @@
 <li>🖥️ <strong>Live Sanitization Stream (Regex PII Redacted):</strong> Luồng dữ liệu thoát (Egress) trong trạng thái Incident được lọc qua bộ lọc Regex thời gian thực để xóa bỏ các thông tin định danh cá nhân (PII), đảm bảo log gửi đi chỉ chứa thông tin kỹ thuật chẩn đoán.</li>
 <li>💻 <strong>Hardware Biometric Validation (TouchID/Windows Hello Audit Log):</strong> Mọi thao tác khôi phục hoặc truy cập kênh chuyên dụng trong chế độ Incident yêu cầu xác thực sinh trắc học phần cứng. Kết quả xác thực được ký và lưu vào Audit Log không thể chối bỏ.</li>
 </ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-wasm-network-function-specifications">Mục Mới: WASM & Network Function Specifications</h2>
+<h3 id="func-01-terachat-proxy-request-guest-host-external">FUNC-01: terachat_proxy_request (Guest → Host → External)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Đầu vào: payload (Protobuf) từ .tapp trong WASM Sandbox
+Luồng:
+  1. Guest serialize payload Protobuf → ghi vào Shared Memory vùng riêng
+  2. Host (Rust) polling/Async Interrupt đọc từ Shared Memory
+  3. Validate:
+     a. DID Signature của .tapp (Trusted Chain check)
+     b. URL đích có trong Whitelist đã khai báo (Manifest) không?
+     c. AI SLM Payload Inspection (ZKP nếu E2EE, Regex nếu plaintext)
+  4. Rate Limit check (Token Bucket 50 req/s)
+  5. Nếu Pass → tokio/reqwest thực thi Native I/O
+  6. Nhận Response → Sanitize headers/body → serialize Protobuf
+  7. Đẩy response lại Shared Memory cho Guest
+Lỗi:
+  - NETWORK_MESH_RESTRICTED (Survival Mesh mode)
+  - PAYLOAD_TOO_LARGE (&gt;5MB)
+  - ERR_DID_UNAUTHORIZED (DID không hợp lệ)
+  - ERR_RATE_LIMIT (Token Bucket cạn)
+  - ERR_DOMAIN_NOT_WHITELISTED (URL ngoài Manifest)</code></pre></div>
+<h3 id="func-02-message-ttl-lifecycle-bitchat-store-and-forward">FUNC-02: Message TTL Lifecycle (Bitchat Store-and-Forward)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Quy tắc lưu trữ tạm tin nhắn mã hóa:
+  - Desktop/Laptop (Relay/Heavy Node):
+    TTL: 48-72 giờ
+    Quota: 500MB - 1GB
+    Behavior: Luôn nhận và giữ hộ gói tin Gossip
+  - Mobile (Light Node):
+    TTL: 24 giờ
+    Quota: 50MB
+    Behavior: CHỈ nhận tin nhắn của chính mình, không làm Relay
+              (Ngoại lệ: Làm Temporary Super Node nếu không có Desktop)
+
+Garbage Collection:
+  - Scan định kỳ Database
+  - TTL expired → Drop packet, giải phóng ổ cứng
+  - Tombstone processed → Crypto-shred keys → Vacuum Database
+
+False Positive DID (Bloom Filter):
+  - Suspend .tapp thay vì Kill ngay
+  - Gửi Merkle Proof verification đến nodes lân cận
+  - Chỉ Kill sau khi 100% xác nhận</code></pre></div>
+<h3 id="func-03-sync-logic-khi-device-reconnect">FUNC-03: Sync Logic khi Device Reconnect</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Khi thiết bị B online trở lại:
+  1. State 1 (VPS) reconnect: Rust Core ping VPS → nhận delta messages từ Cloud
+  2. Ưu tiên nguồn gần nhất:
+     a. LAN Sync trước (mDNS discovery → kéo từ Desktop Relay gần nhất)
+     b. Fallback: VPN Chi nhánh
+     c. Cuối cùng: Cloud VPS
+  3. Hỏi mạng lưới: "Có ai giữ tin nhắn của tôi không?" (Gossip query by DID)
+  4. Skip-Key Recovery:
+     - Nếu Ratchet gap nhỏ: Dynamic Skip Keys khôi phục tin nhắn
+     - Nếu Ratchet gap lớn (&gt;7 ngày): Epoch Ratchet ZKP approach
+  5. Automated Session Healing:
+     - Rust phát hiện MAC mismatch → Signal Control Plane
+     - Người gửi re-encrypt bằng Pre-Key mới của máy nhận
+  6. UI: Thanh trạng thái "Đang xác thực Zero-Trust..." không block đọc file cũ
+
+Xử lý Out-of-Order Messages:
+  - Dynamic Skip Keys: Mobile 2,000 / Laptop 10,000
+  - Garbage Collection: Keys bỏ qua &gt;48h → Drop tự động
+  - Shimmer animation khi tin nhắn muộn được giải mã và re-ordered</code></pre></div>
+<h3 id="func-04-webrtc-fallback-ice-pool-management">FUNC-04: WebRTC Fallback & ICE Pool Management</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Luồng khởi tạo Video Call:
+  1. .tapp gọi terachat.rtc.request_call() (KHÔNG phép tự tạo UDP socket)
+  2. Host Rust ICE Gathering từ Pre-warmed ICE Pool (cập nhật 5 phút/lần hoặc khi đổi mạng)
+  3. SDP gửi mDNS candidate (terachat-node-xxxx.local) thay vì IP thực
+  4. Timeout 200ms không có ICE response → Restricted NAT detected
+  5. Fallback tự động → Internal TURN Server (DMZ của doanh nghiệp)
+  6. DTLS-SRTP mã hóa E2EE. TURN Server Zero-Knowledge (chỉ forward packets)
+  7. .tapp chỉ nhận Video Frame bytes từ Sandbox boundary
+
+Network Shield Status:
+  - "P2P (Direct)" → xanh lá
+  - "Relayed (E2EE)" → trắng bạc (tinh thể)
+  - "Mesh (BLE only)" → xám (WebRTC disabled)
+
+Kiêm kỳ: Khi Network Mobile thay đổi (4G → Wi-Fi), Rust nhận System Network Callback → cập nhật ICE Pool ngay (tiết kiệm pin, không polling liên tục).</code></pre></div>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

@@ -465,6 +465,32 @@
 <a href="#98-tấn-công-freeze-and-restore-tpm2-quote-liveness-challenge" class="nav-link" style="padding-left:0.8rem;">9.8 Tấn công Freeze-and-Restore (TPM2_Quote Liveness Challenge)</a>
 <a href="#99-blind-relay-isolation-bảo-vệ-toàn-vẹn-dữ-liệu-tại-biên" class="nav-link" style="padding-left:0.8rem;">9.9 Blind Relay Isolation (Bảo vệ Toàn vẹn Dữ liệu tại Biên)</a>
 <a href="#910-giao-thức-bằng-chứng-ém-nhẹm-proof-of-withholding" class="nav-link" style="padding-left:0.8rem;">9.10 Giao thức Bằng chứng Ém nhẹm (Proof of Withholding)</a>
+<a href="#10-wasm-sandbox-runtime-secure-host-proxy" class="nav-link" style="padding-left:0.8rem;">10. WASM Sandbox Runtime & Secure Host Proxy</a>
+<a href="#101-kiến-trúc-wasm-sandbox-controldata-plane" class="nav-link" style="padding-left:0.8rem;">10.1 Kiến trúc WASM Sandbox (Control/Data Plane)</a>
+<a href="#102-rủi-ro-wasm-biện-pháp-kỹ-thuật" class="nav-link" style="padding-left:0.8rem;">10.2 Rủi ro WASM & Biện pháp Kỹ thuật</a>
+<a href="#103-secure-host-proxy-zero-trust-egress-filtering" class="nav-link" style="padding-left:0.8rem;">10.3 Secure Host Proxy – Zero Trust Egress Filtering</a>
+<a href="#104-inter-tapp-zero-trust-data-escrow-ring-buffer" class="nav-link" style="padding-left:0.8rem;">10.4 Inter-tapp Zero-Trust Data Escrow & Ring Buffer</a>
+<a href="#105-ai-slm-isolation-kv-cache-architecture" class="nav-link" style="padding-left:0.8rem;">10.5 AI SLM Isolation & KV-Cache Architecture</a>
+<a href="#106-zero-day-kill-switch-decentralized-threat-intel" class="nav-link" style="padding-left:0.8rem;">10.6 Zero-day Kill-Switch & Decentralized Threat Intel</a>
+<a href="#107-m-of-n-threshold-kill-switch-dkg-proactive-refresh" class="nav-link" style="padding-left:0.8rem;">10.7 M-of-N Threshold Kill-Switch & DKG Proactive Refresh</a>
+<a href="#108-nonce-enforcement-simd-cryptography" class="nav-link" style="padding-left:0.8rem;">10.8 Nonce Enforcement & SIMD Cryptography</a>
+<a href="#109-cryptographic-erasure-tombstone-directive" class="nav-link" style="padding-left:0.8rem;">10.9 Cryptographic Erasure & TOMBSTONE Directive</a>
+<a href="#1010-tee-remote-attestation-sqlite-sealed-access" class="nav-link" style="padding-left:0.8rem;">10.10 TEE Remote Attestation & SQLite Sealed Access</a>
+<a href="#1011-dual-state-network-cross-platform-architecture" class="nav-link" style="padding-left:0.8rem;">10.11 Dual-State Network & Cross-Platform Architecture</a>
+<a href="#1012-zero-knowledge-epoch-ratchet-session-state-recovery" class="nav-link" style="padding-left:0.8rem;">10.12 Zero-Knowledge Epoch Ratchet & Session State Recovery</a>
+<a href="#10-wasm-sandbox-runtime-secure-host-proxy" class="nav-link" style="padding-left:0.8rem;">10. WASM Sandbox Runtime & Secure Host Proxy</a>
+<a href="#101-kiến-trúc-wasm-sandbox-controldata-plane" class="nav-link" style="padding-left:0.8rem;">10.1 Kiến trúc WASM Sandbox (Control/Data Plane)</a>
+<a href="#102-rủi-ro-wasm-biện-pháp-kỹ-thuật" class="nav-link" style="padding-left:0.8rem;">10.2 Rủi ro WASM & Biện pháp Kỹ thuật</a>
+<a href="#103-secure-host-proxy-zero-trust-egress-filtering" class="nav-link" style="padding-left:0.8rem;">10.3 Secure Host Proxy – Zero Trust Egress Filtering</a>
+<a href="#104-inter-tapp-zero-trust-data-escrow-ring-buffer" class="nav-link" style="padding-left:0.8rem;">10.4 Inter-tapp Zero-Trust Data Escrow & Ring Buffer</a>
+<a href="#105-ai-slm-kv-cache-isolation-air-gapped-worker" class="nav-link" style="padding-left:0.8rem;">10.5 AI SLM – KV-Cache Isolation & Air-Gapped Worker</a>
+<a href="#106-zero-day-kill-switch-decentralized-threat-intel" class="nav-link" style="padding-left:0.8rem;">10.6 Zero-day Kill-Switch & Decentralized Threat Intel</a>
+<a href="#107-dkg-proactive-refresh-bft-two-phase-commit" class="nav-link" style="padding-left:0.8rem;">10.7 DKG Proactive Refresh & BFT Two-Phase Commit</a>
+<a href="#108-nonce-enforcement-simdhardware-cryptography" class="nav-link" style="padding-left:0.8rem;">10.8 Nonce Enforcement & SIMD/Hardware Cryptography</a>
+<a href="#109-cryptographic-erasure-tombstone-directive" class="nav-link" style="padding-left:0.8rem;">10.9 Cryptographic Erasure & TOMBSTONE Directive</a>
+<a href="#1010-tee-remote-attestation-sealed-database-access" class="nav-link" style="padding-left:0.8rem;">10.10 TEE Remote Attestation & Sealed Database Access</a>
+<a href="#1011-dual-state-network-uniffi-cross-platform" class="nav-link" style="padding-left:0.8rem;">10.11 Dual-State Network & UniFFI Cross-Platform</a>
+<a href="#1012-zero-knowledge-epoch-ratchet-session-healing" class="nav-link" style="padding-left:0.8rem;">10.12 Zero-Knowledge Epoch Ratchet & Session Healing</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -2405,6 +2431,195 @@ Step 3 │ WebSocket Secure (wss:// over TCP:443)
 <p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho App-layer. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho App-layer. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="10-wasm-sandbox-runtime-secure-host-proxy">10. WASM Sandbox Runtime & Secure Host Proxy</h2>
+<h3 id="101-kiến-trúc-wasm-sandbox-controldata-plane">10.1 Kiến trúc WASM Sandbox (Control/Data Plane)</h3>
+<ul>
+<li>💻🖥️☁️🗄️ <strong>Control Plane (Host - Rust Core):</strong> Quản lý tài nguyên hệ thống, duy trì kết nối mạng phân tán, mã hóa E2EE, quản lý DID phi tập trung và tích hợp AI SLM. Nắm quyền "sinh sát" đối với mọi tiến trình Sandbox.</li>
+<li>💻📱🖥️ <strong>Data Plane (WASM Sandbox):</strong> Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> biên dịch thành module <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.wasm</code>, chạy trong VM cô lập hoàn toàn (Wasmtime/Wasmi). <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không có quyền truy cập trực tiếp vào Network, File System hay Memory của Host.</li>
+<li>💻📱🖥️ <strong>IPC Bridge:</strong> Sử dụng Message Passing (Async RPC qua Shared Memory có kiểm soát) theo chuẩn Protobuf. Control Plane kiểm tra quyền DID trước khi trả dữ liệu.</li>
+<li>💻🖥️ <strong>WASM Engine:</strong> Wasmtime (JIT) cho Desktop/Server; Wasmi Interpreter hoặc AOT compilation cho iOS (tuân thủ W^X policy của Apple).</li>
+<li>📱 <strong>Mesh Survival Kill-switch:</strong> Khi chuyển sang BLE/Wi-Fi Direct mesh mode, TOÀN BỘ WASM Sandbox bị Terminate ngay lập tức. Control Plane thu hồi 100% RAM/CPU cho Emergency Mesh routing.</li>
+</ul>
+<h3 id="102-rủi-ro-wasm-biện-pháp-kỹ-thuật">10.2 Rủi ro WASM & Biện pháp Kỹ thuật</h3>
+<ul>
+<li>💻🖥️ <strong>Side-channel Attack (Spectre/Meltdown):</strong> Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> chạy trong Virtual Memory riêng. Guard Pages 4-8GB bao quanh mỗi WASM instance. API thời gian <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.time.now()</code> bị giảm độ phân giải (làm tròn tới 20ms) + thêm jitter ngẫu nhiên.</li>
+<li>📱💻 <strong>Cold Start Latency:</strong> AOT Compilation pre-warming các <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> thường dùng khi khởi động app. Memory Snapshot AES-256-GCM encrypted → mmap trực tiếp vào RAM, cold start &lt; 50ms.</li>
+<li>💻📱 <strong>WASM Binary Size:</strong> Build flag <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">opt-level = 'z'</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">lto = true</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">strip = 'debuginfo'</code>. Custom Host API Bridge cực mỏng thay vì nhúng toàn bộ WASI.</li>
+<li>💻🖥️ <strong>Buffer Overflow từ Protobuf:</strong> 3-layer protection: Size Byte Prefix limit → Hard Limit 5MB → Chunking stream (không phân bổ bộ nhớ động).</li>
+<li>📱 <strong>Memory Heap cho Mobile:</strong> Max 50MB mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Pre-warming bị tắt trên Mobile.</li>
+</ul>
+<h3 id="103-secure-host-proxy-zero-trust-egress-filtering">10.3 Secure Host Proxy – Zero Trust Egress Filtering</h3>
+<ul>
+<li>💻📱🖥️ <strong>Luồng Proxy (terachat_proxy_request):</strong> Guest (.tapp) đóng gói request Protobuf → đẩy vào Shared Memory → Host (Rust) polling/interrupt đọc → Validate DID + Whitelist URL + AI SLM Payload Inspection → Native I/O (tokio/reqwest) → Sanitize response → trả về Sandbox.</li>
+<li>💻📱 <strong>Giao thức được phép:</strong> HTTP/2, HTTPS, Secure WebSockets only. Tuyệt đối chặn Raw TCP/UDP Socket.</li>
+<li>📱 <strong>Rate Limiting (Token Bucket):</strong> 50 token/giây mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Cạn kiệt liên tục 5 giây → Host SUSPEND <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>.</li>
+<li>📱 <strong>Mesh Kill-switch:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NETWORK_MESH_RESTRICTED</code> trả về ngay lập tức mọi API Call từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> trong Survival Mesh mode.</li>
+<li>💻��️ <strong>Desktop Multiplexing:</strong> Thread-pool đa luồng, SLM chạy trên GPU/NPU để Deep Packet Inspection (DPI) real-time.</li>
+<li>📱💻 <strong>Mobile/Laptop Batching:</strong> Gom API calls vào Queue khi mạng chập chờn, thực thi Batch khi có tín hiệu mạng mạnh.</li>
+</ul>
+<h3 id="104-inter-tapp-zero-trust-data-escrow-ring-buffer">10.4 Inter-tapp Zero-Trust Data Escrow & Ring Buffer</h3>
+<ul>
+<li>💻📱🖥️ <strong>Intent-based IPC:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> A không kết nối trực tiếp với <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> B. Phải phát Intent qua Host (Honest Broker). Host kiểm tra Mutual DID, tạo Capability Token giới hạn quyền đọc cho <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> B.</li>
+<li>💻📱 <strong>Ring Buffer (Zero-copy Async):</strong> Vùng Shared Memory cố định 1MB hoạt động theo vòng tròn. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Atomic Wakers</code> thay cho CPU polling. Host gửi tín hiệu TCP Backpressure (Layer 7) nếu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> xử lý chậm.</li>
+<li>📱 <strong>Mobile Flat Memory Profile:</strong> Ring Buffer triệt tiêu Dynamic Allocation, giữ RAM ở đường thẳng ngang.</li>
+<li>💻📱 <strong>Circuit Breaker:</strong> Ngưỡng 80% → Emergency Waker; Ngưỡng 100% → Drop Frame hoặc gửi TCP RST/WebSocket 1008.</li>
+</ul>
+<h3 id="105-ai-slm-isolation-kv-cache-architecture">10.5 AI SLM Isolation & KV-Cache Architecture</h3>
+<ul>
+<li>💻📱🖥️ <strong>KV-Cache per DID:</strong> Engine SLM (llama.cpp/ONNX Runtime) tạo Virtual KV-Cache Slot riêng biệt gắn DID từng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Weights được share trên RAM duy nhất.</li>
+<li>📱💻 <strong>Context Switch:</strong> Khi luồng chuyển từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> A sang B, Host đóng băng và lưu KV-Cache A xuống ổ (Lz4 nén 3-4x trên Mobile), nạp KV-Cache B vào RAM Hot.</li>
+<li>💻📱 <strong>Token Time-slicing:</strong> Priority Queue; SLM sinh 10 token cho A → Context Switch → 10 token cho B (Real-time stream qua Ring Buffer).</li>
+<li>💻📱🖥️ <strong>Semantic Firewall:</strong> Hidden System Prompt mã hóa cứng mỗi phiên. Input/Output đều bị Regex/Heuristic quét trước IPC Bridge.</li>
+<li>📱 <strong>Mesh Survival:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED</code> trả về ngay. SLM bị Unload khỏi RAM. CPU 100% cho ECC/BLE mesh.</li>
+</ul>
+<h3 id="106-zero-day-kill-switch-decentralized-threat-intel">10.6 Zero-day Kill-Switch & Decentralized Threat Intel</h3>
+<ul>
+<li>💻📱🖥️ <strong>KILL_DIRECTIVE:</strong> TeraChat Foundation ký bản tin <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">KILL_DIRECTIVE</code> nhắm DID <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> độc hại bằng Root Master Key phân mảnh (M-of-N Threshold ECDSA). Lan truyền qua Gossip Protocol (kể cả khi offline qua BLE mesh).</li>
+<li>💻📱🖥️ <strong>Thực thi:</strong> Terminate WASM process → Xóa KV-Cache, Snapshot, DB → Hủy mọi Delegation Token.</li>
+<li>💻📱 <strong>Bloom Filter Sync (Mesh):</strong> CRL băm thành Bloom Filter (~10MB cho 10,000 DIDs). Gossip trao đổi Merkle Tree Hash Root, chỉ sync khi Hash khác nhau. False Positive → Suspend + Merkle Proof verification trước khi Kill.</li>
+</ul>
+<h3 id="107-m-of-n-threshold-kill-switch-dkg-proactive-refresh">10.7 M-of-N Threshold Kill-Switch & DKG Proactive Refresh</h3>
+<ul>
+<li>🗄️ <strong>Shamir's Secret Sharing (7 shards, ngưỡng 5/7):</strong> Private Key không tồn tại nguyên vẹn. Lưu trong HSM/YubiKey tại 7 vị trí địa lý khác nhau. Public Key hard-code vào mọi Client.</li>
+<li>🗄️ <strong>DKG Proactive Refresh (PSS):</strong> Hàng năm hoặc khi 1 node mất tín hiệu &gt;30 ngày, 4 node online chạy SMPC sinh bộ đa thức mới, tạo 7 shard mới. Private Key gốc KHÔNG bao giờ được tái tạo trong RAM. Public Key Client không thay đổi.</li>
+<li>🗄️ <strong>BFT Emergency Eviction:</strong> Đồng hồ đếm ngược 72h. Node liên tục nộp chữ ký sai bị Evict toán học. Ngưỡng hạ từ 5/7 xuống 4/6. Force Commit phát hành shard mới.</li>
+</ul>
+<h3 id="108-nonce-enforcement-simd-cryptography">10.8 Nonce Enforcement & SIMD Cryptography</h3>
+<ul>
+<li>💻📱 <strong>Hardware-Accelerated AEAD:</strong> AES-NI (Intel/AMD) + ARMv8 Crypto Extensions (Apple Silicon/Snapdragon). Giảm 95% tải CPU.</li>
+<li>💻📱 <strong>Atomic Nonce Counter:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">std::sync::atomic::AtomicU64</code> trực tiếp trên thanh ghi phần cứng. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fetch_add</code> nguyên tử trước mỗi frame → Nonce độc bản tuyệt đối. Overflow → Force WebRTC Key Re-keying trong 100ms.</li>
+<li>📱💻 <strong>ChaCha20-Poly1305 Fallback:</strong> Hardware Sanity Check (FIPS 140-2 Monobit/Poker test) khi First Boot. Phát hiện entropy thấp/Nonce lặp → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HW_CRYPTO_UNSAFE</code> flag → tắt AES-NI, dùng ChaCha20 software.</li>
+<li>💻📱 <strong>SIMD ChaCha20:</strong> AVX2/AVX-512 (Intel/AMD) và ARM NEON (Apple/Snapdragon). Băng thông mã hóa từ ~800MB/s (Scalar) lên ~3000MB/s (SIMD).</li>
+</ul>
+<h3 id="109-cryptographic-erasure-tombstone-directive">10.9 Cryptographic Erasure & TOMBSTONE Directive</h3>
+<ul>
+<li>💻📱🖥️ <strong>TOMBSTONE_SHRED(DID_A):</strong> Bản tin phát tán qua Gossip Protocol (Internet + BLE Mesh). Không cần online đồng thời.</li>
+<li>💻📱🖥️ <strong>Thực thi tại Host:</strong> Xóa vĩnh viễn Root Key + Chain Keys khỏi Secure Enclave/Hardware Keystore. Ciphertext cũ trở thành Cryptographic Noise. Garbage Collection sweep Database.</li>
+<li>📱 <strong>Mesh Silent Erasure:</strong> Lõi Rust thực hiện âm thầm. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> query lịch sử → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_CRYPTOGRAPHIC_SHRED_ENFORCED</code>.</li>
+<li>💻📱🖥️ <strong>Gossip Storm Suppression (Vector Clocks + Hash History):</strong> Mỗi thiết bị gán Vector Clock. TOMBSTONE mang serial A:n. Sau khi thực thi, Hash SHA-256 lệnh → lưu LRU Cache. Duplicate → Drop ngay tại Network Interface.</li>
+</ul>
+<h3 id="1010-tee-remote-attestation-sqlite-sealed-access">10.10 TEE Remote Attestation & SQLite Sealed Access</h3>
+<ul>
+<li>📱💻 <strong>Code Attestation:</strong> Khi khởi động, Lõi Rust gửi Hash Binary của chính nó vào TEE (Apple Secure Enclave / ARM TrustZone). Chỉ khi Binary CHƯA BỊ SỬA ĐỔI mới nhận Master Key giải mã Database.</li>
+<li>📱 <strong>Mobile Attestation:</strong> Tích hợp FaceID/Fingerprint/DeviceCheck API.</li>
+<li>🗄️ <strong>MDM Alert:</strong> Thiết bị vi phạm Attestation → Cảnh báo Đỏ MDM (Tampered Device).</li>
+</ul>
+<h3 id="1011-dual-state-network-cross-platform-architecture">10.11 Dual-State Network & Cross-Platform Architecture</h3>
+<ul>
+<li>💻📱🖥️ <strong>State 1 (Online):</strong> TCP/IP qua VPS Doanh nghiệp. Module P2P Rust "ngủ". Push Notification qua APNs/FCM.</li>
+<li>📱💻🖥️ <strong>State 2 (Emergency Mesh):</strong> Trigger khi Heartbeat timeout &gt;30s hoặc mất Wi-Fi/4G. mDNS (LAN) + BLE Scan. UI animation đóng băng.</li>
+<li>💻📱🖥️ <strong>UniFFI Bridge:</strong> Bắt buộc dùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">uniffi-rs</code> để sinh Swift/Kotlin bindings từ Rust. Loại bỏ rò rỉ bộ nhớ qua ranh giới ngôn ngữ.</li>
+<li>💻📱🖥️ <strong>Protobuf IPC:</strong> Mọi message structure Rust ↔ Frontend và Client ↔ Client định nghĩa bằng Protobuf.</li>
+<li>💻 <strong>Cross-compilation:</strong> Rust cross-compile thành <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.so</code> (Android), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.a</code>/<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.xcframework</code> (iOS), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.dll</code> (Windows). Loại bỏ toàn bộ module Onion Routing/Tor khỏi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cargo.toml</code>.</li>
+</ul>
+<h3 id="1012-zero-knowledge-epoch-ratchet-session-state-recovery">10.12 Zero-Knowledge Epoch Ratchet & Session State Recovery</h3>
+<ul>
+<li>💻📱🖥️ <strong>Epoch-based Ratchet:</strong> Chuỗi khóa E2EE trượt theo Epoch (24h). Dữ liệu mã hóa bằng Merkle Tree. Khi vỡ phiên, thiết bị tạo ZKP chứng minh ownership DID → nhận Root Key Epoch bị thiếu.</li>
+<li>💻📱 <strong>Dynamic Skip Keys:</strong> Mobile 2,000 / Laptop 10,000 skip keys. Garbage Collection tự động hủy keys bỏ qua &gt;48h.</li>
+<li>💻📱🖥️ <strong>Forward Secrecy Ephemeral Lease (TTL 7 ngày):</strong> Chain Keys gắn TTL 7 ngày. Sau TTL, Host BẮT BUỘC đàm phán lại DH với thiết bị gốc (Lease Renewal). Tombstone ngăn chặn mọi Lease Renewal mới.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho App-layer. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="10-wasm-sandbox-runtime-secure-host-proxy">10. WASM Sandbox Runtime & Secure Host Proxy</h2>
+<h3 id="101-kiến-trúc-wasm-sandbox-controldata-plane">10.1 Kiến trúc WASM Sandbox (Control/Data Plane)</h3>
+<ul>
+<li>💻🖥️☁️🗄️ <strong>Control Plane (Host - Rust Core):</strong> Quản lý tài nguyên hệ thống, duy trì kết nối mạng phân tán, mã hóa E2EE, quản lý DID phi tập trung và tích hợp AI SLM. Nắm quyền "sinh sát" đối với mọi tiến trình Sandbox.</li>
+<li>💻📱🖥️ <strong>Data Plane (WASM Sandbox):</strong> Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> biên dịch thành module <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.wasm</code>, chạy trong VM cô lập hoàn toàn (Wasmtime/Wasmi). <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không có quyền truy cập trực tiếp vào Network, File System hay Memory của Host.</li>
+<li>💻📱🖥️ <strong>IPC Bridge:</strong> Message Passing (Async RPC qua Shared Memory có kiểm soát) theo chuẩn Protobuf. Control Plane kiểm tra quyền DID trước khi trả dữ liệu.</li>
+<li>💻🖥️ <strong>WASM Engine Desktop:</strong> Wasmtime (JIT) cho Desktop/Server. WASM Interpreter hoặc AOT compilation cho iOS (tuân thủ W^X policy của Apple).</li>
+<li>📱 <strong>Mobile Memory Limit:</strong> Max 50MB mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Pre-warming tắt trên Mobile để tiết kiệm pin.</li>
+<li>📱 <strong>Mesh Survival Kill-switch:</strong> Khi chuyển sang BLE/Wi-Fi Direct, TOÀN BỘ WASM Sandbox bị Terminate tức thì. Control Plane thu 100% RAM/CPU cho Emergency Mesh routing.</li>
+</ul>
+<h3 id="102-rủi-ro-wasm-biện-pháp-kỹ-thuật">10.2 Rủi ro WASM & Biện pháp Kỹ thuật</h3>
+<ul>
+<li>💻🖥️ <strong>Side-channel Attack (Spectre/Meltdown):</strong> Guard Pages 4-8GB bao quanh mỗi WASM instance. API <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.time.now()</code> bị giảm độ phân giải 20ms + jitter ngẫu nhiên.</li>
+<li>📱💻 <strong>Cold Start Latency:</strong> AOT Compilation pre-warming. Memory Snapshot AES-256-GCM encrypted → mmap vào RAM → cold start &lt; 50ms.</li>
+<li>💻📱 <strong>WASM Binary Size:</strong> Build flag <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">opt-level = 'z'</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">lto = true</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">strip = 'debuginfo'</code>. Custom Host API Bridge tối giản.</li>
+<li>💻📱 <strong>Buffer Overflow (Protobuf):</strong> 3-layer: Size Byte Prefix check → Hard Limit 5MB → Chunking stream (không phân bổ bộ nhớ động).</li>
+<li>💻📱 <strong>WASM Lifecycle Timeout (terachat_wakeup):</strong> Wasmtime Epoch Interruption. Cấp "nhiên liệu" tương đương 500ms CPU. Dùng hết mà chưa READY → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Trap::OutOfFuel</code> → Purge snapshot → Cold Start lại.</li>
+</ul>
+<h3 id="103-secure-host-proxy-zero-trust-egress-filtering">10.3 Secure Host Proxy – Zero Trust Egress Filtering</h3>
+<ul>
+<li>💻📱🖥️ <strong>Luồng terachat_proxy_request:</strong> Guest (.tapp) đóng gói request Protobuf → Shared Memory → Host polling → Validate DID + Whitelist URL + AI SLM inspection → Native I/O (tokio/reqwest) → Sanitize → trả về Sandbox.</li>
+<li>💻📱 <strong>Giao thức cho phép:</strong> HTTP/2, HTTPS, Secure WebSockets. Tuyệt đối chặn Raw TCP/UDP.</li>
+<li>📱 <strong>Rate Limiting (Token Bucket):</strong> 50 token/giây mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Cạn liên tục 5s → SUSPEND.</li>
+<li>📱 <strong>Mesh Kill-switch:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NETWORK_MESH_RESTRICTED</code> cho mọi API call trong Survival Mesh mode.</li>
+<li>💻🖥️ <strong>Desktop DPI:</strong> Thread-pool đa luồng. SLM chạy GPU/NPU real-time Deep Packet Inspection.</li>
+<li>📱💻 <strong>Mobile Batching:</strong> Gom API calls vào Queue khi mạng không ổn định; Batch khi có mạng mạnh.</li>
+</ul>
+<h3 id="104-inter-tapp-zero-trust-data-escrow-ring-buffer">10.4 Inter-tapp Zero-Trust Data Escrow & Ring Buffer</h3>
+<ul>
+<li>💻📱🖥️ <strong>Intent-based IPC:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> A không kết nối trực tiếp <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> B. Gửi Intent + payload mã hóa → Host kiểm tra Mutual DID → tạo Capability Token. Chuẩn: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.ipc.share(target_did, payload)</code>.</li>
+<li>💻📱 <strong>Ring Buffer (Zero-copy Async):</strong> Shared Memory cố định 1MB theo vòng tròn. Atomic Wakers thay Polling. Host gửi TCP Backpressure (Layer 7) nếu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> xử lý chậm.</li>
+<li>📱 <strong>Flat Memory Profile:</strong> Ring Buffer triệt tiêu Dynamic Allocation trên Mobile.</li>
+<li>💻📱 <strong>Circuit Breaker:</strong> 80% → Emergency Waker. 100% → Drop Frame hoặc TCP RST / WebSocket 1008.</li>
+</ul>
+<h3 id="105-ai-slm-kv-cache-isolation-air-gapped-worker">10.5 AI SLM – KV-Cache Isolation & Air-Gapped Worker</h3>
+<ul>
+<li>💻📱🖥️ <strong>Virtual KV-Cache per DID:</strong> Engine SLM tạo slot riêng biệt gắn DID từng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Weights shared RAM một lần.</li>
+<li>📱💻 <strong>Context Switch:</strong> Đóng băng KV-Cache A (Lz4 nén 3-4x sang Cold RAM), nạp KV-Cache B vào Hot RAM.</li>
+<li>📱💻 <strong>Bounded Context:</strong> Mobile max 1024 tokens. Desktop 8k-32k tokens (Hot RAM).</li>
+<li>💻📱🖥️ <strong>Token Time-slicing:</strong> Priority Queue; SLM sinh 10 token A → Context Switch → 10 token B (Real-time stream qua Ring Buffer).</li>
+<li>💻📱🖥️ <strong>Semantic Firewall:</strong> Hidden System Prompt hóa cứng mỗi phiên. Input/Output bị Regex/Heuristic quét trước IPC Bridge.</li>
+<li>💻📱🖥️ <strong>AI Quota (Cryptographic):</strong> Tokenizer nội bộ (tiktoken-rs) đếm trước. Quota 10,000 tokens/giờ mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> lưu SQLite mã hóa. Vượt → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_AI_QUOTA_EXCEEDED</code>.</li>
+<li>💻🖥️📱 <strong>Air-Gapped AI Worker:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-main</code> và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-ai-worker</code> chạy 2 OS Process riêng biệt. Giao tiếp qua Anonymous Pipes/UDS. Watchdog: Rust main Supervisor, nếu worker Crash → spawn lại ngay. E2EE Keys vẫn an toàn 100%.</li>
+<li>🖥️💻 <strong>Process-level Isolation Desktop:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">std::process::Command</code> + AppArmor/Sandbox OS.</li>
+<li>📱 <strong>iOS/Android:</strong> XPC Service (iOS) / Isolated Bound Service (Android).</li>
+<li>📱 <strong>Mesh Survival:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED</code>. SLM Unload khỏi RAM.</li>
+</ul>
+<h3 id="106-zero-day-kill-switch-decentralized-threat-intel">10.6 Zero-day Kill-Switch & Decentralized Threat Intel</h3>
+<ul>
+<li>💻📱🖥️ <strong>KILL_DIRECTIVE (M-of-N):</strong> Root Master Key phân mảnh Shamir's Secret Sharing (7 shards, ngưỡng 5/7, lưu HSM/YubiKey). Public Key hard-code mọi Client.</li>
+<li>💻📱🖥️ <strong>Lan truyền Kill-Switch:</strong> KILL_DIRECTIVE qua Gossip Protocol (Internet + BLE Mesh). Offline sync khi gặp thiết bị có Internet.</li>
+<li>💻📱🖥️ <strong>Thực thi tại Host:</strong> Terminate WASM → Xóa KV-Cache/Snapshot/DB → Hủy mọi Delegation Token.</li>
+<li>📱💻 <strong>Bloom Filter CRL Sync (Mesh):</strong> ~10MB cho 10,000 DIDs. Gossip trao đổi Merkle Hash Root. False Positive → Suspend + Merkle Proof verify trước khi Kill.</li>
+</ul>
+<h3 id="107-dkg-proactive-refresh-bft-two-phase-commit">10.7 DKG Proactive Refresh & BFT Two-Phase Commit</h3>
+<ul>
+<li>🗄️ <strong>Proactive Secret Sharing (PSS):</strong> Hàng năm hoặc khi node mất &gt;30 ngày, 4 node online chạy SMPC sinh đa thức mới, tạo 7 shard mới. Private Key gốc KHÔNG bao giờ tái tạo trong RAM. Public Key không đổi.</li>
+<li>🗄️ <strong>BFT Two-Phase Commit:</strong> Giai đoạn 1: Tính SMPC → lưu Temp Cache. Giai đoạn 2: Collect 100% chữ ký nhóm → COMMIT đồng loạt. Bất kỳ node Timeout/sai chữ ký → Abort → Rollback về state trước. Zero Split-brain.</li>
+<li>🗄️ <strong>BFT Emergency Eviction:</strong> Đồng hồ 72h. Node phá hoại liên tục → Evict toán học (Cryptographic Proof of Misbehavior). Ngưỡng hạ tạm thời → Force Commit phát shard mới.</li>
+</ul>
+<h3 id="108-nonce-enforcement-simdhardware-cryptography">10.8 Nonce Enforcement & SIMD/Hardware Cryptography</h3>
+<ul>
+<li>💻📱 <strong>Hardware-Accelerated AEAD:</strong> AES-NI (Intel/AMD) và ARMv8 Crypto Extensions (Apple Silicon/Snapdragon). Giảm 95% tải CPU.</li>
+<li>💻📱 <strong>Atomic Nonce Counter:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">std::sync::atomic::AtomicU64</code> trên thanh ghi phần cứng. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">fetch_add</code> nguyên tử mỗi frame → Nonce độc bản. Overflow → Force Key Re-keying 100ms.</li>
+<li>📱 <strong>Hardware Sanity Check:</strong> First Boot: FIPS 140-2 Monobit/Poker test bộ tạo ngẫu nhiên. Entropy thấp/Nonce lặp → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">HW_CRYPTO_UNSAFE</code> → tắt AES-NI → ChaCha20 software.</li>
+<li>💻📱 <strong>SIMD ChaCha20:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">core::arch</code> AVX2/AVX-512 (Intel/AMD) và ARM NEON (Apple/Snapdragon). Băng thông từ ~800MB/s lên ~3000MB/s.</li>
+</ul>
+<h3 id="109-cryptographic-erasure-tombstone-directive">10.9 Cryptographic Erasure & TOMBSTONE Directive</h3>
+<ul>
+<li>💻📱🖥️ <strong>TOMBSTONE_SHRED(DID_A):</strong> Gossip Protocol (Internet + BLE Mesh). Không cần online đồng thời.</li>
+<li>💻📱🖥️ <strong>Thực thi:</strong> Xóa vĩnh viễn Root Key + Chain Keys khỏi Secure Enclave. Ciphertext cũ = Cryptographic Noise. Garbage Collection sweep Database.</li>
+<li>📱 <strong>Mesh Silent Erasure:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> query lịch sử → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_CRYPTOGRAPHIC_SHRED_ENFORCED</code>.</li>
+<li>💻📱🖥️ <strong>Gossip Storm Suppression (Vector Clocks + LRU Hash History):</strong> Mỗi thiết bị gán Vector Clock. Sau khi thực thi TOMBSTONE, Hash SHA-256 lệnh → lưu LRU Cache. Duplicate gói tin → Drop tại Network Interface.</li>
+<li>📱💻 <strong>Forward Secrecy Ephemeral Lease (TTL 7 ngày):</strong> Chain Keys gắn TTL 7 ngày. Sau TTL, Host đàm phán lại DH (Lease Renewal). Tombstone ngăn chặn mọi Renewal mới → Rolling Key Eviction.</li>
+</ul>
+<h3 id="1010-tee-remote-attestation-sealed-database-access">10.10 TEE Remote Attestation & Sealed Database Access</h3>
+<ul>
+<li>📱💻 <strong>Code Attestation:</strong> Khởi động → Rust gửi Hash Binary vào TEE (Apple Secure Enclave/ARM TrustZone). Binary bị sửa đổi → Hash đổi → TEE từ chối nhả Master Key → App Brick.</li>
+<li>📱 <strong>Mobile:</strong> Tích hợp FaceID/Fingerprint/DeviceCheck API.</li>
+<li>🗄️ <strong>MDM Alert:</strong> Thiết bị vi phạm Attestation → Cảnh báo Đỏ MDM.</li>
+</ul>
+<h3 id="1011-dual-state-network-uniffi-cross-platform">10.11 Dual-State Network & UniFFI Cross-Platform</h3>
+<ul>
+<li>💻📱🖥️ <strong>State 1 (Online - Default):</strong> TCP/IP qua VPS Doanh nghiệp. WebSocket/gRPC. Push Notification APNs/FCM. P2P module "ngủ".</li>
+<li>📱💻🖥️ <strong>State 2 (Emergency Mesh):</strong> Trigger: Heartbeat timeout &gt;30s hoặc mất mạng. mDNS (LAN) + BLE Scan. Animation đóng băng. Tất cả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Terminate.</li>
+<li>💻📱🖥️ <strong>UniFFI Binding:</strong> Bắt buộc <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">uniffi-rs</code> để sinh Swift/Kotlin bindings an toàn từ Rust. Loại bỏ C-binding tay viết.</li>
+<li>💻📱🖥️ <strong>Protobuf IPC:</strong> Định nghĩa mọi structure truyền tải Rust ↔ Frontend và Client ↔ Client.</li>
+<li>💻 <strong>Cross-compilation:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.so</code> (Android), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.a</code>/<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.xcframework</code> (iOS), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.dll</code> (Windows). Xóa module Onion Routing/Tor khỏi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Cargo.toml</code>.</li>
+</ul>
+<h3 id="1012-zero-knowledge-epoch-ratchet-session-healing">10.12 Zero-Knowledge Epoch Ratchet & Session Healing</h3>
+<ul>
+<li>💻📱🖥️ <strong>Epoch Ratchet (24h/epoch):</strong> Dữ liệu Epoch mã hóa Merkle Tree. Vỡ phiên → tạo ZKP chứng minh DID ownership → nhận Root Key Epoch bị thiếu. Không bao giờ "vỡ" tin nhắn đơn lẻ.</li>
+<li>💻📱 <strong>Dynamic Skip Keys:</strong> Mobile 2,000; Laptop 10,000. Garbage Collection hủy keys bỏ qua &gt;48h.</li>
+<li>💻📱🖥️ <strong>Asymmetric TTL Message Queue:</strong> VIP/C-level accounts TTL 90 ngày thay vì 7 ngày default.</li>
+<li>💻📱 <strong>Automated Session Healing:</strong> Rust phát hiện MAC mismatch → tín hiệu Control Plane → người gửi re-encrypt tin nhắn bị rớt bằng Pre-Key mới của máy nhận.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho Client App-layer. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

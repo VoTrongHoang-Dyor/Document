@@ -370,6 +370,11 @@
 <a href="#8-static-egress-schema-declaration-manifest-contract-tapp-publisher" class="nav-link" style="padding-left:0.8rem;">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</a>
 <a href="#81-egress-schema-trong-manifestjson" class="nav-link" style="padding-left:0.8rem;">8.1 Egress Schema trong `manifest.json`</a>
 <a href="#9-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag" class="nav-link" style="padding-left:0.8rem;">9. Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</a>
+<a href="#mục-mới-tapp-lifecycle-wasm-security-standards" class="nav-link" style="padding-left:0.8rem;">Mục Mới: .tapp Lifecycle & WASM Security Standards</a>
+<a href="#marketplace-01-tapp-vòng-đời-lifecycle" class="nav-link" style="padding-left:0.8rem;">MARKETPLACE-01: .tapp Vòng đời (Lifecycle)</a>
+<a href="#marketplace-02-wasm-security-scanning" class="nav-link" style="padding-left:0.8rem;">MARKETPLACE-02: WASM Security Scanning</a>
+<a href="#marketplace-03-tapp-did-verification-flow" class="nav-link" style="padding-left:0.8rem;">MARKETPLACE-03: .tapp DID Verification Flow</a>
+<a href="#marketplace-04-ai-token-economy" class="nav-link" style="padding-left:0.8rem;">MARKETPLACE-04: AI Token Economy</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -646,6 +651,42 @@
 <li>🗄️ <strong>128MB Resident Memory Cap:</strong> Cấp hạn mức RAM vật lý cố định 128MB cho TeraDiag để xử lý các tệp log lớn mà không gây ảnh hưởng đến Messaging Core.</li>
 <li>🗄️ <strong>Deterministic Memory Chunking (Multi-part Archive):</strong> Dữ liệu chẩn đoán được chia nhỏ và đóng gói thành Multi-part Archive phục vụ truyền tải qua mạng Mesh.</li>
 <li>⭐ <strong>Publisher Trust Tier 1 (TeraChat HQ Sign):</strong> Mọi ứng dụng TeraDiag phải mang chữ ký Root CA của TeraChat HQ để đảm bảo tính chính danh và quyền can thiệp hệ thống mức cao.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-tapp-lifecycle-wasm-security-standards">Mục Mới: .tapp Lifecycle & WASM Security Standards</h2>
+<h3 id="marketplace-01-tapp-vòng-đời-lifecycle">MARKETPLACE-01: .tapp Vòng đời (Lifecycle)</h3>
+<p>Mọi tiện ích <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> trên TeraChat Marketplace phải tuân thủ vòng đời sau:</p>
+<ol>
+<li><strong>Install:</strong> Tải về, quét mã WASM tự động (lỗ hổng Buffer Overflow, tràn bộ nhớ).</li>
+<li><strong>Verify DID:</strong> Xác thực chữ ký số của Nhà phát triển qua DID trước khi Sandbox khởi chạy.</li>
+<li><strong>Instantiate:</strong> Control Plane cấp phát Virtual Memory, Guard Pages, Ring Buffer.</li>
+<li><strong>Execute:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> chạy trong Sandbox cô lập. Mọi network request qua Secure Host Proxy.</li>
+<li><strong>Suspend:</strong> State snapshot AES-256-GCM encrypted. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat_wakeup</code> hook cho re-hydration.</li>
+<li><strong>Terminate:</strong> Giải phóng RAM, hủy Capability Tokens, dọn KV-Cache.</li>
+</ol>
+<h3 id="marketplace-02-wasm-security-scanning">MARKETPLACE-02: WASM Security Scanning</h3>
+<ul>
+<li>💻☁️ <strong>Tự động quét mã WASM:</strong> Phát hiện lỗ hổng Buffer Overflow, tràn bộ nhớ, các syscall nguy hiểm trước khi lên Marketplace.</li>
+<li>💻☁️ <strong>Manifest Domain Declaration:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bắt buộc khai báo trước danh sách Domain/API sẽ dùng trong manifest. Proxy Host enforce theo danh sách này.</li>
+<li>☁️ <strong>DID Developer Verification:</strong> Nhà phát triển phải đăng ký DID hợp lệ. Signature được verify mỗi lần Sandbox launch.</li>
+</ul>
+<h3 id="marketplace-03-tapp-did-verification-flow">MARKETPLACE-03: .tapp DID Verification Flow</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>[Developer uploads .tapp]
+        ↓
+[WASM Auto-scan: Buffer Overflow, Memory Leak, Forbidden Syscall check]
+        ↓
+[Manifest validation: Domain/API whitelist declared]
+        ↓
+[Developer DID Signature Verification]
+        ↓ (Pass)
+[Marketplace Approved]
+        ↓
+[Client Install → TEE Attestation → Sandbox Launch]</code></pre></div>
+<h3 id="marketplace-04-ai-token-economy">MARKETPLACE-04: AI Token Economy</h3>
+<ul>
+<li>💻📱 <strong>B2B App Store Model:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> miễn phí, nhưng AI features yêu cầu "TeraChat Pro" hoặc AI Token purchase.</li>
+<li>💻📱 <strong>AI Quota per DID:</strong> 10,000 tokens/giờ mặc định. Enterprise plan: vô hạn.</li>
+<li>💻📱 <strong>Upgrade prompt:</strong> Gold-tinted Frosted Glass Modal khi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> hết AI Quota.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

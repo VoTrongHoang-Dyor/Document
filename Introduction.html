@@ -355,6 +355,8 @@
 <a href="#14-high-level-architecture-philosophy" class="nav-link" style="padding-left:0.8rem;">1.4 High-Level Architecture Philosophy</a>
 <a href="#15-the-life-of-a-message-dòng-chảy-dữ-liệu" class="nav-link" style="padding-left:0.8rem;">1.5 The Life of a Message (Dòng chảy Dữ liệu)</a>
 <a href="#16-documentation-map" class="nav-link" style="padding-left:0.8rem;">1.6 Documentation Map</a>
+<a href="#mục-mới-terachat-ecosystem-architecture-overview" class="nav-link" style="padding-left:0.8rem;">Mục Mới: TeraChat Ecosystem Architecture Overview</a>
+<a href="#tổng-quan-kiến-trúc-hệ-sinh-thái-terachat" class="nav-link" style="padding-left:0.8rem;">Tổng quan Kiến trúc Hệ sinh thái TeraChat</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -537,6 +539,59 @@
 </tr>
 </tbody></table></div>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-terachat-ecosystem-architecture-overview">Mục Mới: TeraChat Ecosystem Architecture Overview</h2>
+<h3 id="tổng-quan-kiến-trúc-hệ-sinh-thái-terachat">Tổng quan Kiến trúc Hệ sinh thái TeraChat</h3>
+<p>TeraChat được xây dựng trên 4 trụ cột kiến trúc cốt lõi:</p>
+<h4 id="1-shared-rust-core-lợi-thế-cạnh-tranh-kỹ-thuật">1. Shared Rust Core – Lợi thế Cạnh tranh Kỹ thuật</h4>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>"Ứng dụng lõi Rust thống nhất bảo đảm hiệu năng tối đa và tính bảo mật đồng nhất từ Desktop đến Mobile"</strong></p>
+<ul>
+<li><strong>Triết lý:</strong> Toàn bộ logic nặng và nhạy cảm (E2EE encryption, P2P protocol, Database cục bộ, AI SLM) chỉ viết <strong>một lần duy nhất</strong> bằng Rust. Cross-compile sang mọi nền tảng.</li>
+<li><strong>Lợi ích:</strong> Cập nhật bảo mật sửa ở <strong>1 nơi duy nhất</strong> (Rust Core), không bao giờ sai lệch logic giữa platfrom.</li>
+<li><strong>Binding:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">uniffi-rs</code> tự động sinh Swift/Kotlin bindings an toàn. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Protobuf</code> cho IPC chuẩn hóa.</li>
+</ul>
+<h4 id="2-terachat-ecosystem-mở-nhưng-an-toàn-tuyệt-đối">2. TeraChat Ecosystem – Mở nhưng An toàn Tuyệt đối</h4>
+<ul>
+<li><strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> (TeraChat App):</strong> Tiện ích doanh nghiệp có thể mở rộng được xây dựng xung quanh TeraChat, chạy trong <strong>WASM Sandbox</strong> cô lập hoàn toàn.</li>
+<li><strong>Control Plane (Host):</strong> Lõi Rust kiểm soát mọi tài nguyên hệ thống, mạng, mật mã. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không bao giờ có thể "nhúng tay" vào lõi.</li>
+<li><strong>Data Plane (Sandbox):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> thực thi trong môi trường cách ly hoặc tối đa hóa bảo mật, không có quyền truy cập trực tiếp Network/Filesystem/Memory của Host.</li>
+<li><strong>Secure Host Proxy:</strong> Mọi network request từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> phải qua "chốt chặn Zero Trust", kiểm tra DID, Whitelist URL và AI SLM Payload Inspection trước khi được phép ra ngoài.</li>
+</ul>
+<h4 id="3-dual-state-network-sovereign-messenger">3. Dual-State Network – Sovereign Messenger</h4>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>State</th>
+<th>Điều kiện</th>
+<th>Cơ chế Mạng</th>
+<th>UI Theme</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Online (Default)</strong></td>
+<td>Có Internet/VPN</td>
+<td>TCP/IP → VPS Doanh nghiệp (gRPC/WebSocket + mTLS)</td>
+<td>Frosted Glass sáng</td>
+</tr>
+<tr>
+<td><strong>Emergency Mesh</strong></td>
+<td>Mất Internet &gt;30s</td>
+<td>BLE 5.0 + Wi-Fi Direct. Store-and-Forward Gossip.</td>
+<td>Dark/Cyberpunk</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li><strong>Không phụ thuộc Internet:</strong> TeraChat tiếp tục hoạt động trong vùng không có mạng qua BLE/Wi-Fi Direct Mesh.</li>
+<li><strong>Asymmetric Bitchat:</strong> Desktop = Heavy Relay Node (Backbone). Mobile = Light Node. Phân cấp theo năng lực phần cứng.</li>
+<li><strong>Border Node:</strong> Thiết bị có đồng thời Internet + BLE tự động làm cầu nối giữa 2 thế giới.</li>
+</ul>
+<h4 id="4-zero-trust-security-layered-defense">4. Zero Trust Security – Layered Defense</h4>
+<ul>
+<li><strong>Hardware Root of Trust:</strong> TEE (Secure Enclave/ARM TrustZone) lưu giữ Master Key. App Attestation kiểm tra Binary chưa bị sửa đổi mỗi lần khởi động.</li>
+<li><strong>E2EE Double Ratchet + Epoch ZKP:</strong> Forward Secrecy tuyệt đối. Zero "Ratchet Break". Epoch-based architecture chống mất đồng bộ phiên dài hạn.</li>
+<li><strong>M-of-N Threshold Kill-Switch:</strong> Root Key phân mảnh 7 shards (5/7 ngưỡng). DKG Proactive Refresh tự chữa lành mạng lưới hàng năm.</li>
+<li><strong>TOMBSTONE + Cryptographic Erasure:</strong> Nhân sự nghỉ việc → GDPR-compliant data destruction tự động lan truyền qua Gossip Protocol.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Chi tiết kỹ thuật: xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Core_Spec.md</code>. Chi tiết tính năng: xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code>. Thiết kế UI/UX: xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Design.md</code>.</em></p>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

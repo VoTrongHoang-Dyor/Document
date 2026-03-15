@@ -4612,6 +4612,451 @@
               "subsections": []
             }
           ]
+        },
+        {
+          "id": "10-wasm-sandbox-runtime-secure-host-proxy",
+          "level": 2,
+          "heading": "10. WASM Sandbox Runtime & Secure Host Proxy",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "101-kiến-trúc-wasm-sandbox-controldata-plane",
+              "level": 3,
+              "heading": "10.1 Kiến trúc WASM Sandbox (Control/Data Plane)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻🖥️☁️🗄️ Control Plane (Host - Rust Core): Quản lý tài nguyên hệ thống, duy trì kết nối mạng phân tán, mã hóa E2EE, quản lý DID phi tập trung và tích hợp AI SLM. Nắm quyền \"sinh sát\" đối với mọi tiến trình Sandbox.",
+                    "💻📱🖥️ Data Plane (WASM Sandbox): Mỗi .tapp biên dịch thành module .wasm, chạy trong VM cô lập hoàn toàn (Wasmtime/Wasmi). .tapp không có quyền truy cập trực tiếp vào Network, File System hay Memory của Host.",
+                    "💻📱🖥️ IPC Bridge: Sử dụng Message Passing (Async RPC qua Shared Memory có kiểm soát) theo chuẩn Protobuf. Control Plane kiểm tra quyền DID trước khi trả dữ liệu.",
+                    "💻🖥️ WASM Engine: Wasmtime (JIT) cho Desktop/Server; Wasmi Interpreter hoặc AOT compilation cho iOS (tuân thủ W^X policy của Apple).",
+                    "📱 Mesh Survival Kill-switch: Khi chuyển sang BLE/Wi-Fi Direct mesh mode, TOÀN BỘ WASM Sandbox bị Terminate ngay lập tức. Control Plane thu hồi 100% RAM/CPU cho Emergency Mesh routing."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "102-rủi-ro-wasm-biện-pháp-kỹ-thuật",
+              "level": 3,
+              "heading": "10.2 Rủi ro WASM & Biện pháp Kỹ thuật",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻🖥️ Side-channel Attack (Spectre/Meltdown): Mỗi .tapp chạy trong Virtual Memory riêng. Guard Pages 4-8GB bao quanh mỗi WASM instance. API thời gian terachat.time.now() bị giảm độ phân giải (làm tròn tới 20ms) + thêm jitter ngẫu nhiên.",
+                    "📱💻 Cold Start Latency: AOT Compilation pre-warming các .tapp thường dùng khi khởi động app. Memory Snapshot AES-256-GCM encrypted → mmap trực tiếp vào RAM, cold start < 50ms.",
+                    "💻📱 WASM Binary Size: Build flag opt-level = 'z', lto = true, strip = 'debuginfo'. Custom Host API Bridge cực mỏng thay vì nhúng toàn bộ WASI.",
+                    "💻🖥️ Buffer Overflow từ Protobuf: 3-layer protection: Size Byte Prefix limit → Hard Limit 5MB → Chunking stream (không phân bổ bộ nhớ động).",
+                    "📱 Memory Heap cho Mobile: Max 50MB mỗi .tapp. Pre-warming bị tắt trên Mobile."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "103-secure-host-proxy-zero-trust-egress-filtering",
+              "level": 3,
+              "heading": "10.3 Secure Host Proxy – Zero Trust Egress Filtering",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Luồng Proxy (terachat_proxy_request): Guest (.tapp) đóng gói request Protobuf → đẩy vào Shared Memory → Host (Rust) polling/interrupt đọc → Validate DID + Whitelist URL + AI SLM Payload Inspection → Native I/O (tokio/reqwest) → Sanitize response → trả về Sandbox.",
+                    "💻📱 Giao thức được phép: HTTP/2, HTTPS, Secure WebSockets only. Tuyệt đối chặn Raw TCP/UDP Socket.",
+                    "📱 Rate Limiting (Token Bucket): 50 token/giây mỗi .tapp. Cạn kiệt liên tục 5 giây → Host SUSPEND .tapp.",
+                    "📱 Mesh Kill-switch: NETWORK_MESH_RESTRICTED trả về ngay lập tức mọi API Call từ .tapp trong Survival Mesh mode.",
+                    "💻��️ Desktop Multiplexing: Thread-pool đa luồng, SLM chạy trên GPU/NPU để Deep Packet Inspection (DPI) real-time.",
+                    "📱💻 Mobile/Laptop Batching: Gom API calls vào Queue khi mạng chập chờn, thực thi Batch khi có tín hiệu mạng mạnh."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "104-inter-tapp-zero-trust-data-escrow-ring-buffer",
+              "level": 3,
+              "heading": "10.4 Inter-tapp Zero-Trust Data Escrow & Ring Buffer",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Intent-based IPC: .tapp A không kết nối trực tiếp với .tapp B. Phải phát Intent qua Host (Honest Broker). Host kiểm tra Mutual DID, tạo Capability Token giới hạn quyền đọc cho .tapp B.",
+                    "💻📱 Ring Buffer (Zero-copy Async): Vùng Shared Memory cố định 1MB hoạt động theo vòng tròn. Atomic Wakers thay cho CPU polling. Host gửi tín hiệu TCP Backpressure (Layer 7) nếu .tapp xử lý chậm.",
+                    "📱 Mobile Flat Memory Profile: Ring Buffer triệt tiêu Dynamic Allocation, giữ RAM ở đường thẳng ngang.",
+                    "💻📱 Circuit Breaker: Ngưỡng 80% → Emergency Waker; Ngưỡng 100% → Drop Frame hoặc gửi TCP RST/WebSocket 1008."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "105-ai-slm-isolation-kv-cache-architecture",
+              "level": 3,
+              "heading": "10.5 AI SLM Isolation & KV-Cache Architecture",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ KV-Cache per DID: Engine SLM (llama.cpp/ONNX Runtime) tạo Virtual KV-Cache Slot riêng biệt gắn DID từng .tapp. Weights được share trên RAM duy nhất.",
+                    "📱💻 Context Switch: Khi luồng chuyển từ .tapp A sang B, Host đóng băng và lưu KV-Cache A xuống ổ (Lz4 nén 3-4x trên Mobile), nạp KV-Cache B vào RAM Hot.",
+                    "💻📱 Token Time-slicing: Priority Queue; SLM sinh 10 token cho A → Context Switch → 10 token cho B (Real-time stream qua Ring Buffer).",
+                    "💻📱🖥️ Semantic Firewall: Hidden System Prompt mã hóa cứng mỗi phiên. Input/Output đều bị Regex/Heuristic quét trước IPC Bridge.",
+                    "📱 Mesh Survival: ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED trả về ngay. SLM bị Unload khỏi RAM. CPU 100% cho ECC/BLE mesh."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "106-zero-day-kill-switch-decentralized-threat-intel",
+              "level": 3,
+              "heading": "10.6 Zero-day Kill-Switch & Decentralized Threat Intel",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ KILL_DIRECTIVE: TeraChat Foundation ký bản tin KILL_DIRECTIVE nhắm DID .tapp độc hại bằng Root Master Key phân mảnh (M-of-N Threshold ECDSA). Lan truyền qua Gossip Protocol (kể cả khi offline qua BLE mesh).",
+                    "💻📱🖥️ Thực thi: Terminate WASM process → Xóa KV-Cache, Snapshot, DB → Hủy mọi Delegation Token.",
+                    "💻📱 Bloom Filter Sync (Mesh): CRL băm thành Bloom Filter (~10MB cho 10,000 DIDs). Gossip trao đổi Merkle Tree Hash Root, chỉ sync khi Hash khác nhau. False Positive → Suspend + Merkle Proof verification trước khi Kill."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "107-m-of-n-threshold-kill-switch-dkg-proactive-refresh",
+              "level": 3,
+              "heading": "10.7 M-of-N Threshold Kill-Switch & DKG Proactive Refresh",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "🗄️ Shamir's Secret Sharing (7 shards, ngưỡng 5/7): Private Key không tồn tại nguyên vẹn. Lưu trong HSM/YubiKey tại 7 vị trí địa lý khác nhau. Public Key hard-code vào mọi Client.",
+                    "🗄️ DKG Proactive Refresh (PSS): Hàng năm hoặc khi 1 node mất tín hiệu >30 ngày, 4 node online chạy SMPC sinh bộ đa thức mới, tạo 7 shard mới. Private Key gốc KHÔNG bao giờ được tái tạo trong RAM. Public Key Client không thay đổi.",
+                    "🗄️ BFT Emergency Eviction: Đồng hồ đếm ngược 72h. Node liên tục nộp chữ ký sai bị Evict toán học. Ngưỡng hạ từ 5/7 xuống 4/6. Force Commit phát hành shard mới."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "108-nonce-enforcement-simd-cryptography",
+              "level": 3,
+              "heading": "10.8 Nonce Enforcement & SIMD Cryptography",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱 Hardware-Accelerated AEAD: AES-NI (Intel/AMD) + ARMv8 Crypto Extensions (Apple Silicon/Snapdragon). Giảm 95% tải CPU.",
+                    "💻📱 Atomic Nonce Counter: std::sync::atomic::AtomicU64 trực tiếp trên thanh ghi phần cứng. fetch_add nguyên tử trước mỗi frame → Nonce độc bản tuyệt đối. Overflow → Force WebRTC Key Re-keying trong 100ms.",
+                    "📱💻 ChaCha20-Poly1305 Fallback: Hardware Sanity Check (FIPS 140-2 Monobit/Poker test) khi First Boot. Phát hiện entropy thấp/Nonce lặp → HW_CRYPTO_UNSAFE flag → tắt AES-NI, dùng ChaCha20 software.",
+                    "💻📱 SIMD ChaCha20: AVX2/AVX-512 (Intel/AMD) và ARM NEON (Apple/Snapdragon). Băng thông mã hóa từ ~800MB/s (Scalar) lên ~3000MB/s (SIMD)."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "109-cryptographic-erasure-tombstone-directive",
+              "level": 3,
+              "heading": "10.9 Cryptographic Erasure & TOMBSTONE Directive",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ TOMBSTONE_SHRED(DID_A): Bản tin phát tán qua Gossip Protocol (Internet + BLE Mesh). Không cần online đồng thời.",
+                    "💻📱🖥️ Thực thi tại Host: Xóa vĩnh viễn Root Key + Chain Keys khỏi Secure Enclave/Hardware Keystore. Ciphertext cũ trở thành Cryptographic Noise. Garbage Collection sweep Database.",
+                    "📱 Mesh Silent Erasure: Lõi Rust thực hiện âm thầm. .tapp query lịch sử → ERR_CRYPTOGRAPHIC_SHRED_ENFORCED.",
+                    "💻📱🖥️ Gossip Storm Suppression (Vector Clocks + Hash History): Mỗi thiết bị gán Vector Clock. TOMBSTONE mang serial A:n. Sau khi thực thi, Hash SHA-256 lệnh → lưu LRU Cache. Duplicate → Drop ngay tại Network Interface."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "1010-tee-remote-attestation-sqlite-sealed-access",
+              "level": 3,
+              "heading": "10.10 TEE Remote Attestation & SQLite Sealed Access",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 Code Attestation: Khi khởi động, Lõi Rust gửi Hash Binary của chính nó vào TEE (Apple Secure Enclave / ARM TrustZone). Chỉ khi Binary CHƯA BỊ SỬA ĐỔI mới nhận Master Key giải mã Database.",
+                    "📱 Mobile Attestation: Tích hợp FaceID/Fingerprint/DeviceCheck API.",
+                    "🗄️ MDM Alert: Thiết bị vi phạm Attestation → Cảnh báo Đỏ MDM (Tampered Device)."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "1011-dual-state-network-cross-platform-architecture",
+              "level": 3,
+              "heading": "10.11 Dual-State Network & Cross-Platform Architecture",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ State 1 (Online): TCP/IP qua VPS Doanh nghiệp. Module P2P Rust \"ngủ\". Push Notification qua APNs/FCM.",
+                    "📱💻🖥️ State 2 (Emergency Mesh): Trigger khi Heartbeat timeout >30s hoặc mất Wi-Fi/4G. mDNS (LAN) + BLE Scan. UI animation đóng băng.",
+                    "💻📱🖥️ UniFFI Bridge: Bắt buộc dùng uniffi-rs để sinh Swift/Kotlin bindings từ Rust. Loại bỏ rò rỉ bộ nhớ qua ranh giới ngôn ngữ.",
+                    "💻📱🖥️ Protobuf IPC: Mọi message structure Rust ↔ Frontend và Client ↔ Client định nghĩa bằng Protobuf.",
+                    "💻 Cross-compilation: Rust cross-compile thành .so (Android), .a/.xcframework (iOS), .dll (Windows). Loại bỏ toàn bộ module Onion Routing/Tor khỏi Cargo.toml."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "1012-zero-knowledge-epoch-ratchet-session-state-recovery",
+              "level": 3,
+              "heading": "10.12 Zero-Knowledge Epoch Ratchet & Session State Recovery",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Epoch-based Ratchet: Chuỗi khóa E2EE trượt theo Epoch (24h). Dữ liệu mã hóa bằng Merkle Tree. Khi vỡ phiên, thiết bị tạo ZKP chứng minh ownership DID → nhận Root Key Epoch bị thiếu.",
+                    "💻📱 Dynamic Skip Keys: Mobile 2,000 / Laptop 10,000 skip keys. Garbage Collection tự động hủy keys bỏ qua >48h.",
+                    "💻📱🖥️ Forward Secrecy Ephemeral Lease (TTL 7 ngày): Chain Keys gắn TTL 7 ngày. Sau TTL, Host BẮT BUỘC đàm phán lại DH với thiết bị gốc (Lease Renewal). Tombstone ngăn chặn mọi Lease Renewal mới."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Xem Feature_Spec.md cho App-layer. Xem Function.md cho Product flows."
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "10-wasm-sandbox-runtime-secure-host-proxy",
+          "level": 2,
+          "heading": "10. WASM Sandbox Runtime & Secure Host Proxy",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "101-kiến-trúc-wasm-sandbox-controldata-plane",
+              "level": 3,
+              "heading": "10.1 Kiến trúc WASM Sandbox (Control/Data Plane)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻🖥️☁️🗄️ Control Plane (Host - Rust Core): Quản lý tài nguyên hệ thống, duy trì kết nối mạng phân tán, mã hóa E2EE, quản lý DID phi tập trung và tích hợp AI SLM. Nắm quyền \"sinh sát\" đối với mọi tiến trình Sandbox.",
+                    "💻📱🖥️ Data Plane (WASM Sandbox): Mỗi .tapp biên dịch thành module .wasm, chạy trong VM cô lập hoàn toàn (Wasmtime/Wasmi). .tapp không có quyền truy cập trực tiếp vào Network, File System hay Memory của Host.",
+                    "💻📱🖥️ IPC Bridge: Message Passing (Async RPC qua Shared Memory có kiểm soát) theo chuẩn Protobuf. Control Plane kiểm tra quyền DID trước khi trả dữ liệu.",
+                    "💻🖥️ WASM Engine Desktop: Wasmtime (JIT) cho Desktop/Server. WASM Interpreter hoặc AOT compilation cho iOS (tuân thủ W^X policy của Apple).",
+                    "📱 Mobile Memory Limit: Max 50MB mỗi .tapp. Pre-warming tắt trên Mobile để tiết kiệm pin.",
+                    "📱 Mesh Survival Kill-switch: Khi chuyển sang BLE/Wi-Fi Direct, TOÀN BỘ WASM Sandbox bị Terminate tức thì. Control Plane thu 100% RAM/CPU cho Emergency Mesh routing."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "102-rủi-ro-wasm-biện-pháp-kỹ-thuật",
+              "level": 3,
+              "heading": "10.2 Rủi ro WASM & Biện pháp Kỹ thuật",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻🖥️ Side-channel Attack (Spectre/Meltdown): Guard Pages 4-8GB bao quanh mỗi WASM instance. API terachat.time.now() bị giảm độ phân giải 20ms + jitter ngẫu nhiên.",
+                    "📱💻 Cold Start Latency: AOT Compilation pre-warming. Memory Snapshot AES-256-GCM encrypted → mmap vào RAM → cold start < 50ms.",
+                    "💻📱 WASM Binary Size: Build flag opt-level = 'z', lto = true, strip = 'debuginfo'. Custom Host API Bridge tối giản.",
+                    "💻📱 Buffer Overflow (Protobuf): 3-layer: Size Byte Prefix check → Hard Limit 5MB → Chunking stream (không phân bổ bộ nhớ động).",
+                    "💻📱 WASM Lifecycle Timeout (terachat_wakeup): Wasmtime Epoch Interruption. Cấp \"nhiên liệu\" tương đương 500ms CPU. Dùng hết mà chưa READY → Trap::OutOfFuel → Purge snapshot → Cold Start lại."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "103-secure-host-proxy-zero-trust-egress-filtering",
+              "level": 3,
+              "heading": "10.3 Secure Host Proxy – Zero Trust Egress Filtering",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Luồng terachat_proxy_request: Guest (.tapp) đóng gói request Protobuf → Shared Memory → Host polling → Validate DID + Whitelist URL + AI SLM inspection → Native I/O (tokio/reqwest) → Sanitize → trả về Sandbox.",
+                    "💻📱 Giao thức cho phép: HTTP/2, HTTPS, Secure WebSockets. Tuyệt đối chặn Raw TCP/UDP.",
+                    "📱 Rate Limiting (Token Bucket): 50 token/giây mỗi .tapp. Cạn liên tục 5s → SUSPEND.",
+                    "📱 Mesh Kill-switch: NETWORK_MESH_RESTRICTED cho mọi API call trong Survival Mesh mode.",
+                    "💻🖥️ Desktop DPI: Thread-pool đa luồng. SLM chạy GPU/NPU real-time Deep Packet Inspection.",
+                    "📱💻 Mobile Batching: Gom API calls vào Queue khi mạng không ổn định; Batch khi có mạng mạnh."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "104-inter-tapp-zero-trust-data-escrow-ring-buffer",
+              "level": 3,
+              "heading": "10.4 Inter-tapp Zero-Trust Data Escrow & Ring Buffer",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Intent-based IPC: .tapp A không kết nối trực tiếp .tapp B. Gửi Intent + payload mã hóa → Host kiểm tra Mutual DID → tạo Capability Token. Chuẩn: terachat.ipc.share(target_did, payload).",
+                    "💻📱 Ring Buffer (Zero-copy Async): Shared Memory cố định 1MB theo vòng tròn. Atomic Wakers thay Polling. Host gửi TCP Backpressure (Layer 7) nếu .tapp xử lý chậm.",
+                    "📱 Flat Memory Profile: Ring Buffer triệt tiêu Dynamic Allocation trên Mobile.",
+                    "💻📱 Circuit Breaker: 80% → Emergency Waker. 100% → Drop Frame hoặc TCP RST / WebSocket 1008."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "105-ai-slm-kv-cache-isolation-air-gapped-worker",
+              "level": 3,
+              "heading": "10.5 AI SLM – KV-Cache Isolation & Air-Gapped Worker",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Virtual KV-Cache per DID: Engine SLM tạo slot riêng biệt gắn DID từng .tapp. Weights shared RAM một lần.",
+                    "📱💻 Context Switch: Đóng băng KV-Cache A (Lz4 nén 3-4x sang Cold RAM), nạp KV-Cache B vào Hot RAM.",
+                    "📱💻 Bounded Context: Mobile max 1024 tokens. Desktop 8k-32k tokens (Hot RAM).",
+                    "💻📱🖥️ Token Time-slicing: Priority Queue; SLM sinh 10 token A → Context Switch → 10 token B (Real-time stream qua Ring Buffer).",
+                    "💻📱🖥️ Semantic Firewall: Hidden System Prompt hóa cứng mỗi phiên. Input/Output bị Regex/Heuristic quét trước IPC Bridge.",
+                    "💻📱🖥️ AI Quota (Cryptographic): Tokenizer nội bộ (tiktoken-rs) đếm trước. Quota 10,000 tokens/giờ mỗi .tapp lưu SQLite mã hóa. Vượt → ERR_AI_QUOTA_EXCEEDED.",
+                    "💻🖥️📱 Air-Gapped AI Worker: terachat-main và terachat-ai-worker chạy 2 OS Process riêng biệt. Giao tiếp qua Anonymous Pipes/UDS. Watchdog: Rust main Supervisor, nếu worker Crash → spawn lại ngay. E2EE Keys vẫn an toàn 100%.",
+                    "🖥️💻 Process-level Isolation Desktop: std::process::Command + AppArmor/Sandbox OS.",
+                    "📱 iOS/Android: XPC Service (iOS) / Isolated Bound Service (Android).",
+                    "📱 Mesh Survival: ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED. SLM Unload khỏi RAM."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "106-zero-day-kill-switch-decentralized-threat-intel",
+              "level": 3,
+              "heading": "10.6 Zero-day Kill-Switch & Decentralized Threat Intel",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ KILL_DIRECTIVE (M-of-N): Root Master Key phân mảnh Shamir's Secret Sharing (7 shards, ngưỡng 5/7, lưu HSM/YubiKey). Public Key hard-code mọi Client.",
+                    "💻📱🖥️ Lan truyền Kill-Switch: KILL_DIRECTIVE qua Gossip Protocol (Internet + BLE Mesh). Offline sync khi gặp thiết bị có Internet.",
+                    "💻📱🖥️ Thực thi tại Host: Terminate WASM → Xóa KV-Cache/Snapshot/DB → Hủy mọi Delegation Token.",
+                    "📱💻 Bloom Filter CRL Sync (Mesh): ~10MB cho 10,000 DIDs. Gossip trao đổi Merkle Hash Root. False Positive → Suspend + Merkle Proof verify trước khi Kill."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "107-dkg-proactive-refresh-bft-two-phase-commit",
+              "level": 3,
+              "heading": "10.7 DKG Proactive Refresh & BFT Two-Phase Commit",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "🗄️ Proactive Secret Sharing (PSS): Hàng năm hoặc khi node mất >30 ngày, 4 node online chạy SMPC sinh đa thức mới, tạo 7 shard mới. Private Key gốc KHÔNG bao giờ tái tạo trong RAM. Public Key không đổi.",
+                    "🗄️ BFT Two-Phase Commit: Giai đoạn 1: Tính SMPC → lưu Temp Cache. Giai đoạn 2: Collect 100% chữ ký nhóm → COMMIT đồng loạt. Bất kỳ node Timeout/sai chữ ký → Abort → Rollback về state trước. Zero Split-brain.",
+                    "🗄️ BFT Emergency Eviction: Đồng hồ 72h. Node phá hoại liên tục → Evict toán học (Cryptographic Proof of Misbehavior). Ngưỡng hạ tạm thời → Force Commit phát shard mới."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "108-nonce-enforcement-simdhardware-cryptography",
+              "level": 3,
+              "heading": "10.8 Nonce Enforcement & SIMD/Hardware Cryptography",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱 Hardware-Accelerated AEAD: AES-NI (Intel/AMD) và ARMv8 Crypto Extensions (Apple Silicon/Snapdragon). Giảm 95% tải CPU.",
+                    "💻📱 Atomic Nonce Counter: std::sync::atomic::AtomicU64 trên thanh ghi phần cứng. fetch_add nguyên tử mỗi frame → Nonce độc bản. Overflow → Force Key Re-keying 100ms.",
+                    "📱 Hardware Sanity Check: First Boot: FIPS 140-2 Monobit/Poker test bộ tạo ngẫu nhiên. Entropy thấp/Nonce lặp → HW_CRYPTO_UNSAFE → tắt AES-NI → ChaCha20 software.",
+                    "💻📱 SIMD ChaCha20: core::arch AVX2/AVX-512 (Intel/AMD) và ARM NEON (Apple/Snapdragon). Băng thông từ ~800MB/s lên ~3000MB/s."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "109-cryptographic-erasure-tombstone-directive",
+              "level": 3,
+              "heading": "10.9 Cryptographic Erasure & TOMBSTONE Directive",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ TOMBSTONE_SHRED(DID_A): Gossip Protocol (Internet + BLE Mesh). Không cần online đồng thời.",
+                    "💻📱🖥️ Thực thi: Xóa vĩnh viễn Root Key + Chain Keys khỏi Secure Enclave. Ciphertext cũ = Cryptographic Noise. Garbage Collection sweep Database.",
+                    "📱 Mesh Silent Erasure: .tapp query lịch sử → ERR_CRYPTOGRAPHIC_SHRED_ENFORCED.",
+                    "💻📱🖥️ Gossip Storm Suppression (Vector Clocks + LRU Hash History): Mỗi thiết bị gán Vector Clock. Sau khi thực thi TOMBSTONE, Hash SHA-256 lệnh → lưu LRU Cache. Duplicate gói tin → Drop tại Network Interface.",
+                    "📱💻 Forward Secrecy Ephemeral Lease (TTL 7 ngày): Chain Keys gắn TTL 7 ngày. Sau TTL, Host đàm phán lại DH (Lease Renewal). Tombstone ngăn chặn mọi Renewal mới → Rolling Key Eviction."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "1010-tee-remote-attestation-sealed-database-access",
+              "level": 3,
+              "heading": "10.10 TEE Remote Attestation & Sealed Database Access",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 Code Attestation: Khởi động → Rust gửi Hash Binary vào TEE (Apple Secure Enclave/ARM TrustZone). Binary bị sửa đổi → Hash đổi → TEE từ chối nhả Master Key → App Brick.",
+                    "📱 Mobile: Tích hợp FaceID/Fingerprint/DeviceCheck API.",
+                    "🗄️ MDM Alert: Thiết bị vi phạm Attestation → Cảnh báo Đỏ MDM."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "1011-dual-state-network-uniffi-cross-platform",
+              "level": 3,
+              "heading": "10.11 Dual-State Network & UniFFI Cross-Platform",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ State 1 (Online - Default): TCP/IP qua VPS Doanh nghiệp. WebSocket/gRPC. Push Notification APNs/FCM. P2P module \"ngủ\".",
+                    "📱💻🖥️ State 2 (Emergency Mesh): Trigger: Heartbeat timeout >30s hoặc mất mạng. mDNS (LAN) + BLE Scan. Animation đóng băng. Tất cả .tapp Terminate.",
+                    "💻📱🖥️ UniFFI Binding: Bắt buộc uniffi-rs để sinh Swift/Kotlin bindings an toàn từ Rust. Loại bỏ C-binding tay viết.",
+                    "💻📱🖥️ Protobuf IPC: Định nghĩa mọi structure truyền tải Rust ↔ Frontend và Client ↔ Client.",
+                    "💻 Cross-compilation: .so (Android), .a/.xcframework (iOS), .dll (Windows). Xóa module Onion Routing/Tor khỏi Cargo.toml."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "1012-zero-knowledge-epoch-ratchet-session-healing",
+              "level": 3,
+              "heading": "10.12 Zero-Knowledge Epoch Ratchet & Session Healing",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Epoch Ratchet (24h/epoch): Dữ liệu Epoch mã hóa Merkle Tree. Vỡ phiên → tạo ZKP chứng minh DID ownership → nhận Root Key Epoch bị thiếu. Không bao giờ \"vỡ\" tin nhắn đơn lẻ.",
+                    "💻📱 Dynamic Skip Keys: Mobile 2,000; Laptop 10,000. Garbage Collection hủy keys bỏ qua >48h.",
+                    "💻📱🖥️ Asymmetric TTL Message Queue: VIP/C-level accounts TTL 90 ngày thay vì 7 ngày default.",
+                    "💻📱 Automated Session Healing: Rust phát hiện MAC mismatch → tín hiệu Control Plane → người gửi re-encrypt tin nhắn bị rớt bằng Pre-Key mới của máy nhận."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Xem Feature_Spec.md cho Client App-layer. Xem Function.md cho Product flows."
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }

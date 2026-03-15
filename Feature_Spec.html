@@ -427,6 +427,14 @@
 <a href="#912-client-driven-merkle-dag-reconciliation-chống-rogue-server" class="nav-link" style="padding-left:0.8rem;">9.12 Client-Driven Merkle DAG Reconciliation (Chống Rogue Server)</a>
 <a href="#913-tấn-công-nhật-thực-eclipse-attack-cross-client-gossip-protocol" class="nav-link" style="padding-left:0.8rem;">9.13 Tấn công Nhật thực (Eclipse Attack) — Cross-Client Gossip Protocol</a>
 <a href="#914-air-gapped-diagnostic-isolation-teradiag" class="nav-link" style="padding-left:0.8rem;">9.14 Air-Gapped Diagnostic Isolation (TeraDiag)</a>
+<a href="#mục-mới-wasm-sandbox-client-side-implementation" class="nav-link" style="padding-left:0.8rem;">Mục Mới: WASM Sandbox Client-side Implementation</a>
+<a href="#wasm-01-controldata-plane-client-architecture" class="nav-link" style="padding-left:0.8rem;">WASM-01: Control/Data Plane Client Architecture</a>
+<a href="#wasm-02-secure-host-proxy-client-behavior" class="nav-link" style="padding-left:0.8rem;">WASM-02: Secure Host Proxy – Client Behavior</a>
+<a href="#wasm-03-inter-tapp-ipc-delegation-token" class="nav-link" style="padding-left:0.8rem;">WASM-03: Inter-tapp IPC & Delegation Token</a>
+<a href="#wasm-04-ai-slm-client-integration" class="nav-link" style="padding-left:0.8rem;">WASM-04: AI SLM Client Integration</a>
+<a href="#wasm-05-zero-loss-transient-state-recovery" class="nav-link" style="padding-left:0.8rem;">WASM-05: Zero-Loss Transient State Recovery</a>
+<a href="#wasm-06-peer-relay-offline-messaging" class="nav-link" style="padding-left:0.8rem;">WASM-06: Peer-Relay Offline Messaging</a>
+<a href="#wasm-07-enterprise-onboarding-network-fencing" class="nav-link" style="padding-left:0.8rem;">WASM-07: Enterprise Onboarding & Network Fencing</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -2131,6 +2139,57 @@ Desktop thu gom "orphan chains" → O(N log N) merge → push snapshot về Mobi
 <li>💻 <strong>WASM Sandbox (ReadOnly Partition):</strong> TeraDiag chạy trong một instance WASM Sandbox riêng biệt. Nó chỉ có quyền <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PROT_READ</code> đối với phân vùng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">diag_logs</code> và không thể truy cập <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">hot_dag.db</code> hay <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">cold_state.db</code>.</li>
 <li>💻 <strong>AEAD (XChaCha20-Poly1305 Pipeline):</strong> Toàn bộ log trước khi rời Sandbox được mã hóa qua pipeline XChaCha20-Poly1305 với khóa ephemeral sinh từ Hardware Enclave. Dữ liệu chẩn đoán là Zero-Knowledge đối với trạm trung chuyển.</li>
 <li>📱 <strong>Wi-Fi Direct (Log Sync over Mesh):</strong> Khi thiết bị không có internet, TeraDiag kích hoạt Wi-Fi Direct để đồng bộ Log chẩn đoán sang thiết bị của kỹ thuật viên (Diagnostic Node) trong cùng mạng Mesh mà không cần đi qua Cloud.</li>
+</ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-wasm-sandbox-client-side-implementation">Mục Mới: WASM Sandbox Client-side Implementation</h2>
+<h3 id="wasm-01-controldata-plane-client-architecture">WASM-01: Control/Data Plane Client Architecture</h3>
+<ul>
+<li>💻🖥️☁️ <strong>Desktop/Server (Online):</strong> Wasmtime JIT execution. Pre-warming tối đa 10 <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> song song. Guard Pages 8GB. SLM real-time DPI.</li>
+<li>📱💻 <strong>Laptop/iPad:</strong> WASM sandbox với Memory Limit. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> ngầm bị "đóng băng" khi không tương tác. Rate-limit Proxy nghiêm ngặt. WebSocket Multiplexing qua 1 TCP pipe.</li>
+<li>📱 <strong>Mobile (iOS/Android):</strong> WASM Interpreter. Max 50MB heap mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. On-demand loading. Không pre-warming.</li>
+<li>📱 <strong>Survival Mesh (BLE 5.0 / Wi-Fi Direct):</strong> TOÀN BỘ WASM Sandbox Terminate tức thì → State snapshot → khôi phục khi có Internet.</li>
+</ul>
+<h3 id="wasm-02-secure-host-proxy-client-behavior">WASM-02: Secure Host Proxy – Client Behavior</h3>
+<ul>
+<li>💻📱🖥️ <strong>Egress Filtering Rules:</strong> DID Whitelist enforcement. URL domain declaration bắt buộc (manifest khi submit Marketplace). Hard-coded: HTTP/2, HTTPS, Secure WebSocket only.</li>
+<li>📱 <strong>Mobile Rate-limit:</strong> Token Bucket 50 req/s mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Cạn liên tục → SUSPEND.</li>
+<li>📱 <strong>Mesh Kill-switch:</strong> Proxy disabled hoàn toàn. Kết nối <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> trả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">NETWORK_MESH_RESTRICTED</code>.</li>
+<li>💻📱 <strong>High-bandwidth API:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Video Conference gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.rtc.request_call</code> thay vì UDP socket. Rust Core quản lý WebRTC/DTLS-SRTP. Chỉ Video Frame byte array trả về Sandbox.</li>
+</ul>
+<h3 id="wasm-03-inter-tapp-ipc-delegation-token">WASM-03: Inter-tapp IPC & Delegation Token</h3>
+<ul>
+<li>💻📱🖥️ <strong>Intent-based Share:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.ipc.share(target_did, payload)</code>. Host kiểm tra Mutual DID → Capability Token.</li>
+<li>💻📱 <strong>Auto-grant Trust (Policy Decision Point):</strong> "Luôn cho phép 30 ngày" → Delegation Token TTL 30 ngày ký bởi User DID.</li>
+<li>💻🖥️ <strong>Enterprise MDM Policy:</strong> Admin đẩy Global Trust Policy xuống thiết bị qua MDM. Office <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> set mặc định allowed.</li>
+<li>📱 <strong>Mesh:</strong> Mọi Delegation Token liên .tapp bị Suspended.</li>
+</ul>
+<h3 id="wasm-04-ai-slm-client-integration">WASM-04: AI SLM Client Integration</h3>
+<ul>
+<li>💻📱 <strong>KV-Cache per .tapp:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.ai.ask()</code> → Virtual KV-Cache Slot riêng. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> không thấy ngữ cảnh nhau.</li>
+<li>📱 <strong>Mobile:</strong> 1 KV-Cache active tại một thời điểm. Còn lại: Lz4 compressed → Storage.</li>
+<li>💻 <strong>Desktop:</strong> Nhiều KV-Cache song song trong Hot RAM.</li>
+<li>💻📱 <strong>AI Quota:</strong> 10,000 tokens/giờ mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Vượt → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_AI_QUOTA_EXCEEDED</code> + Gold-tinted Modal đề nghị nâng cấp Pro.</li>
+<li>📱 <strong>Mesh:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED</code>.</li>
+</ul>
+<h3 id="wasm-05-zero-loss-transient-state-recovery">WASM-05: Zero-Loss Transient State Recovery</h3>
+<ul>
+<li>💻📱🖥️ <strong>terachat.storage.persist_keyval(key, value):</strong> LSM-Tree trên RAM, phân vùng theo DID. Debouncing 500ms. Mã hóa AES-256-GCM tức thời.</li>
+<li>💻📱 <strong>Fresh Start Recovery:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat.storage.get_transient_state()</code> → UI nạp lại y hệt trạng thái trước crash. Thời gian &lt; 50ms (chỉ thấy blink nhẹ).</li>
+<li>📱 <strong>Mesh:</strong> Tính năng tắt để dồn RAM/CPU cho BLE routing.</li>
+</ul>
+<h3 id="wasm-06-peer-relay-offline-messaging">WASM-06: Peer-Relay Offline Messaging</h3>
+<ul>
+<li>💻📱🖥️ <strong>Asymmetric Bitchat:</strong> Desktop/Laptop = Heavy Node/Relay Node (Quota 500MB-1GB, TTL 48-72h). Mobile = Light Node (Quota 50MB, không làm relay trừ khi không có Desktop).</li>
+<li>💻📱🖥️ <strong>Store-and-Forward:</strong> Thiết bị trung gian giữ hộ gói tin E2EE mã hóa. Chỉ thiết bị đích giải mã được.</li>
+<li>💻📱🖥️ <strong>Border Node:</strong> Thiết bị có cả Internet và BLE tự động nhận ra là Border Node → định tuyến TCP/IP ↔ BLE Mesh.</li>
+<li>💻📱 <strong>AI Semantic Compression:</strong> File &gt;BLE bandwidth → SLM tóm tắt thành ≤500 bytes + flag <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">[AI_COMPRESSED_RECOVERY]</code>.</li>
+</ul>
+<h3 id="wasm-07-enterprise-onboarding-network-fencing">WASM-07: Enterprise Onboarding & Network Fencing</h3>
+<ul>
+<li>💻📱🖥️ <strong>Enterprise Onboarding:</strong> Người dùng quét QR Code hoặc nhập Token IT Admin cấp → thiết bị nhận Certificate (mTLS) → gia nhập mạng công ty.</li>
+<li>💻📱🖥️ <strong>Short-lived mTLS Certificates:</strong> VPS cấp chứng chỉ 12-24h. Hết ngày làm việc → vô hiệu.</li>
+<li>💻📱 <strong>Geofencing / Network Fencing:</strong> Tự động disable Relay khi thiết bị ra khỏi mạng công ty hoặc ngắt VPN.</li>
+<li>📱💻 <strong>Background WebSocket Termination:</strong> Khi Doze/Jetsam kill app, các reconnect hook tự động khi app resume.</li>
 </ul>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);

@@ -226,3 +226,47 @@
   - 🗄️ **128MB Resident Memory Cap:** Cấp hạn mức RAM vật lý cố định 128MB cho TeraDiag để xử lý các tệp log lớn mà không gây ảnh hưởng đến Messaging Core.
   - 🗄️ **Deterministic Memory Chunking (Multi-part Archive):** Dữ liệu chẩn đoán được chia nhỏ và đóng gói thành Multi-part Archive phục vụ truyền tải qua mạng Mesh.
   - ⭐ **Publisher Trust Tier 1 (TeraChat HQ Sign):** Mọi ứng dụng TeraDiag phải mang chữ ký Root CA của TeraChat HQ để đảm bảo tính chính danh và quyền can thiệp hệ thống mức cao.
+
+
+---
+
+## Mục Mới: .tapp Lifecycle & WASM Security Standards
+
+### MARKETPLACE-01: .tapp Vòng đời (Lifecycle)
+
+Mọi tiện ích `.tapp` trên TeraChat Marketplace phải tuân thủ vòng đời sau:
+
+1. **Install:** Tải về, quét mã WASM tự động (lỗ hổng Buffer Overflow, tràn bộ nhớ).
+2. **Verify DID:** Xác thực chữ ký số của Nhà phát triển qua DID trước khi Sandbox khởi chạy.
+3. **Instantiate:** Control Plane cấp phát Virtual Memory, Guard Pages, Ring Buffer.
+4. **Execute:** `.tapp` chạy trong Sandbox cô lập. Mọi network request qua Secure Host Proxy.
+5. **Suspend:** State snapshot AES-256-GCM encrypted. `terachat_wakeup` hook cho re-hydration.
+6. **Terminate:** Giải phóng RAM, hủy Capability Tokens, dọn KV-Cache.
+
+### MARKETPLACE-02: WASM Security Scanning
+
+- 💻☁️ **Tự động quét mã WASM:** Phát hiện lỗ hổng Buffer Overflow, tràn bộ nhớ, các syscall nguy hiểm trước khi lên Marketplace.
+- 💻☁️ **Manifest Domain Declaration:** `.tapp` bắt buộc khai báo trước danh sách Domain/API sẽ dùng trong manifest. Proxy Host enforce theo danh sách này.
+- ☁️ **DID Developer Verification:** Nhà phát triển phải đăng ký DID hợp lệ. Signature được verify mỗi lần Sandbox launch.
+
+### MARKETPLACE-03: .tapp DID Verification Flow
+
+```
+[Developer uploads .tapp]
+        ↓
+[WASM Auto-scan: Buffer Overflow, Memory Leak, Forbidden Syscall check]
+        ↓
+[Manifest validation: Domain/API whitelist declared]
+        ↓
+[Developer DID Signature Verification]
+        ↓ (Pass)
+[Marketplace Approved]
+        ↓
+[Client Install → TEE Attestation → Sandbox Launch]
+```
+
+### MARKETPLACE-04: AI Token Economy
+
+- 💻📱 **B2B App Store Model:** `.tapp` miễn phí, nhưng AI features yêu cầu "TeraChat Pro" hoặc AI Token purchase.
+- 💻📱 **AI Quota per DID:** 10,000 tokens/giờ mặc định. Enterprise plan: vô hạn.
+- 💻📱 **Upgrade prompt:** Gold-tinted Frosted Glass Modal khi `.tapp` hết AI Quota.

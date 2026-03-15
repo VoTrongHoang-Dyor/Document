@@ -577,6 +577,82 @@
             }
           ],
           "subsections": []
+        },
+        {
+          "id": "mục-mới-tapp-lifecycle-wasm-security-standards",
+          "level": 2,
+          "heading": "Mục Mới: .tapp Lifecycle & WASM Security Standards",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "marketplace-01-tapp-vòng-đời-lifecycle",
+              "level": 3,
+              "heading": "MARKETPLACE-01: .tapp Vòng đời (Lifecycle)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Mọi tiện ích .tapp trên TeraChat Marketplace phải tuân thủ vòng đời sau:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Install: Tải về, quét mã WASM tự động (lỗ hổng Buffer Overflow, tràn bộ nhớ).",
+                    "Verify DID: Xác thực chữ ký số của Nhà phát triển qua DID trước khi Sandbox khởi chạy.",
+                    "Instantiate: Control Plane cấp phát Virtual Memory, Guard Pages, Ring Buffer.",
+                    "Execute: .tapp chạy trong Sandbox cô lập. Mọi network request qua Secure Host Proxy.",
+                    "Suspend: State snapshot AES-256-GCM encrypted. terachat_wakeup hook cho re-hydration.",
+                    "Terminate: Giải phóng RAM, hủy Capability Tokens, dọn KV-Cache."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-02-wasm-security-scanning",
+              "level": 3,
+              "heading": "MARKETPLACE-02: WASM Security Scanning",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻☁️ Tự động quét mã WASM: Phát hiện lỗ hổng Buffer Overflow, tràn bộ nhớ, các syscall nguy hiểm trước khi lên Marketplace.",
+                    "💻☁️ Manifest Domain Declaration: .tapp bắt buộc khai báo trước danh sách Domain/API sẽ dùng trong manifest. Proxy Host enforce theo danh sách này.",
+                    "☁️ DID Developer Verification: Nhà phát triển phải đăng ký DID hợp lệ. Signature được verify mỗi lần Sandbox launch."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-03-tapp-did-verification-flow",
+              "level": 3,
+              "heading": "MARKETPLACE-03: .tapp DID Verification Flow",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[Developer uploads .tapp]\n        ↓\n[WASM Auto-scan: Buffer Overflow, Memory Leak, Forbidden Syscall check]\n        ↓\n[Manifest validation: Domain/API whitelist declared]\n        ↓\n[Developer DID Signature Verification]\n        ↓ (Pass)\n[Marketplace Approved]\n        ↓\n[Client Install → TEE Attestation → Sandbox Launch]"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-04-ai-token-economy",
+              "level": 3,
+              "heading": "MARKETPLACE-04: AI Token Economy",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱 B2B App Store Model: .tapp miễn phí, nhưng AI features yêu cầu \"TeraChat Pro\" hoặc AI Token purchase.",
+                    "💻📱 AI Quota per DID: 10,000 tokens/giờ mặc định. Enterprise plan: vô hạn.",
+                    "💻📱 Upgrade prompt: Gold-tinted Frosted Glass Modal khi .tapp hết AI Quota."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }

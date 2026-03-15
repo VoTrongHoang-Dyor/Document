@@ -730,6 +730,66 @@
               "subsections": []
             }
           ]
+        },
+        {
+          "id": "mục-mới-wasm-network-function-specifications",
+          "level": 2,
+          "heading": "Mục Mới: WASM & Network Function Specifications",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "func-01-terachat-proxy-request-guest-host-external",
+              "level": 3,
+              "heading": "FUNC-01: terachat_proxy_request (Guest → Host → External)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Đầu vào: payload (Protobuf) từ .tapp trong WASM Sandbox\nLuồng:\n  1. Guest serialize payload Protobuf → ghi vào Shared Memory vùng riêng\n  2. Host (Rust) polling/Async Interrupt đọc từ Shared Memory\n  3. Validate:\n     a. DID Signature của .tapp (Trusted Chain check)\n     b. URL đích có trong Whitelist đã khai báo (Manifest) không?\n     c. AI SLM Payload Inspection (ZKP nếu E2EE, Regex nếu plaintext)\n  4. Rate Limit check (Token Bucket 50 req/s)\n  5. Nếu Pass → tokio/reqwest thực thi Native I/O\n  6. Nhận Response → Sanitize headers/body → serialize Protobuf\n  7. Đẩy response lại Shared Memory cho Guest\nLỗi:\n  - NETWORK_MESH_RESTRICTED (Survival Mesh mode)\n  - PAYLOAD_TOO_LARGE (>5MB)\n  - ERR_DID_UNAUTHORIZED (DID không hợp lệ)\n  - ERR_RATE_LIMIT (Token Bucket cạn)\n  - ERR_DOMAIN_NOT_WHITELISTED (URL ngoài Manifest)"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-02-message-ttl-lifecycle-bitchat-store-and-forward",
+              "level": 3,
+              "heading": "FUNC-02: Message TTL Lifecycle (Bitchat Store-and-Forward)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Quy tắc lưu trữ tạm tin nhắn mã hóa:\n  - Desktop/Laptop (Relay/Heavy Node):\n    TTL: 48-72 giờ\n    Quota: 500MB - 1GB\n    Behavior: Luôn nhận và giữ hộ gói tin Gossip\n  - Mobile (Light Node):\n    TTL: 24 giờ\n    Quota: 50MB\n    Behavior: CHỈ nhận tin nhắn của chính mình, không làm Relay\n              (Ngoại lệ: Làm Temporary Super Node nếu không có Desktop)\n\nGarbage Collection:\n  - Scan định kỳ Database\n  - TTL expired → Drop packet, giải phóng ổ cứng\n  - Tombstone processed → Crypto-shred keys → Vacuum Database\n\nFalse Positive DID (Bloom Filter):\n  - Suspend .tapp thay vì Kill ngay\n  - Gửi Merkle Proof verification đến nodes lân cận\n  - Chỉ Kill sau khi 100% xác nhận"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-03-sync-logic-khi-device-reconnect",
+              "level": 3,
+              "heading": "FUNC-03: Sync Logic khi Device Reconnect",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Khi thiết bị B online trở lại:\n  1. State 1 (VPS) reconnect: Rust Core ping VPS → nhận delta messages từ Cloud\n  2. Ưu tiên nguồn gần nhất:\n     a. LAN Sync trước (mDNS discovery → kéo từ Desktop Relay gần nhất)\n     b. Fallback: VPN Chi nhánh\n     c. Cuối cùng: Cloud VPS\n  3. Hỏi mạng lưới: \"Có ai giữ tin nhắn của tôi không?\" (Gossip query by DID)\n  4. Skip-Key Recovery:\n     - Nếu Ratchet gap nhỏ: Dynamic Skip Keys khôi phục tin nhắn\n     - Nếu Ratchet gap lớn (>7 ngày): Epoch Ratchet ZKP approach\n  5. Automated Session Healing:\n     - Rust phát hiện MAC mismatch → Signal Control Plane\n     - Người gửi re-encrypt bằng Pre-Key mới của máy nhận\n  6. UI: Thanh trạng thái \"Đang xác thực Zero-Trust...\" không block đọc file cũ\n\nXử lý Out-of-Order Messages:\n  - Dynamic Skip Keys: Mobile 2,000 / Laptop 10,000\n  - Garbage Collection: Keys bỏ qua >48h → Drop tự động\n  - Shimmer animation khi tin nhắn muộn được giải mã và re-ordered"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-04-webrtc-fallback-ice-pool-management",
+              "level": 3,
+              "heading": "FUNC-04: WebRTC Fallback & ICE Pool Management",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Luồng khởi tạo Video Call:\n  1. .tapp gọi terachat.rtc.request_call() (KHÔNG phép tự tạo UDP socket)\n  2. Host Rust ICE Gathering từ Pre-warmed ICE Pool (cập nhật 5 phút/lần hoặc khi đổi mạng)\n  3. SDP gửi mDNS candidate (terachat-node-xxxx.local) thay vì IP thực\n  4. Timeout 200ms không có ICE response → Restricted NAT detected\n  5. Fallback tự động → Internal TURN Server (DMZ của doanh nghiệp)\n  6. DTLS-SRTP mã hóa E2EE. TURN Server Zero-Knowledge (chỉ forward packets)\n  7. .tapp chỉ nhận Video Frame bytes từ Sandbox boundary\n\nNetwork Shield Status:\n  - \"P2P (Direct)\" → xanh lá\n  - \"Relayed (E2EE)\" → trắng bạc (tinh thể)\n  - \"Mesh (BLE only)\" → xám (WebRTC disabled)\n\nKiêm kỳ: Khi Network Mobile thay đổi (4G → Wi-Fi), Rust nhận System Network Callback → cập nhật ICE Pool ngay (tiết kiệm pin, không polling liên tục)."
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }

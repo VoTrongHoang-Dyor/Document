@@ -1516,3 +1516,57 @@ Hybrid Mesh Bonding — Dual-Path Architecture
   - 💻 **AEAD (XChaCha20-Poly1305 Pipeline):** Toàn bộ log trước khi rời Sandbox được mã hóa qua pipeline XChaCha20-Poly1305 với khóa ephemeral sinh từ Hardware Enclave. Dữ liệu chẩn đoán là Zero-Knowledge đối với trạm trung chuyển.
   - 📱 **Wi-Fi Direct (Log Sync over Mesh):** Khi thiết bị không có internet, TeraDiag kích hoạt Wi-Fi Direct để đồng bộ Log chẩn đoán sang thiết bị của kỹ thuật viên (Diagnostic Node) trong cùng mạng Mesh mà không cần đi qua Cloud.
 
+
+
+---
+
+## Mục Mới: WASM Sandbox Client-side Implementation
+
+### WASM-01: Control/Data Plane Client Architecture
+
+- 💻🖥️☁️ **Desktop/Server (Online):** Wasmtime JIT execution. Pre-warming tối đa 10 `.tapp` song song. Guard Pages 8GB. SLM real-time DPI.
+- 📱💻 **Laptop/iPad:** WASM sandbox với Memory Limit. `.tapp` ngầm bị "đóng băng" khi không tương tác. Rate-limit Proxy nghiêm ngặt. WebSocket Multiplexing qua 1 TCP pipe.
+- 📱 **Mobile (iOS/Android):** WASM Interpreter. Max 50MB heap mỗi `.tapp`. On-demand loading. Không pre-warming.
+- 📱 **Survival Mesh (BLE 5.0 / Wi-Fi Direct):** TOÀN BỘ WASM Sandbox Terminate tức thì → State snapshot → khôi phục khi có Internet.
+
+### WASM-02: Secure Host Proxy – Client Behavior
+
+- 💻📱🖥️ **Egress Filtering Rules:** DID Whitelist enforcement. URL domain declaration bắt buộc (manifest khi submit Marketplace). Hard-coded: HTTP/2, HTTPS, Secure WebSocket only.
+- 📱 **Mobile Rate-limit:** Token Bucket 50 req/s mỗi `.tapp`. Cạn liên tục → SUSPEND.
+- 📱 **Mesh Kill-switch:** Proxy disabled hoàn toàn. Kết nối `.tapp` trả `NETWORK_MESH_RESTRICTED`.
+- 💻📱 **High-bandwidth API:** `.tapp` Video Conference gọi `terachat.rtc.request_call` thay vì UDP socket. Rust Core quản lý WebRTC/DTLS-SRTP. Chỉ Video Frame byte array trả về Sandbox.
+
+### WASM-03: Inter-tapp IPC & Delegation Token
+
+- 💻📱🖥️ **Intent-based Share:** `terachat.ipc.share(target_did, payload)`. Host kiểm tra Mutual DID → Capability Token.
+- 💻📱 **Auto-grant Trust (Policy Decision Point):** "Luôn cho phép 30 ngày" → Delegation Token TTL 30 ngày ký bởi User DID.
+- 💻🖥️ **Enterprise MDM Policy:** Admin đẩy Global Trust Policy xuống thiết bị qua MDM. Office `.tapp` set mặc định allowed.
+- 📱 **Mesh:** Mọi Delegation Token liên .tapp bị Suspended.
+
+### WASM-04: AI SLM Client Integration
+
+- 💻📱 **KV-Cache per .tapp:** `terachat.ai.ask()` → Virtual KV-Cache Slot riêng. `.tapp` không thấy ngữ cảnh nhau.
+- 📱 **Mobile:** 1 KV-Cache active tại một thời điểm. Còn lại: Lz4 compressed → Storage.
+- 💻 **Desktop:** Nhiều KV-Cache song song trong Hot RAM.
+- 💻📱 **AI Quota:** 10,000 tokens/giờ mỗi `.tapp`. Vượt → `ERR_AI_QUOTA_EXCEEDED` + Gold-tinted Modal đề nghị nâng cấp Pro.
+- 📱 **Mesh:** `ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED`.
+
+### WASM-05: Zero-Loss Transient State Recovery
+
+- 💻📱🖥️ **terachat.storage.persist_keyval(key, value):** LSM-Tree trên RAM, phân vùng theo DID. Debouncing 500ms. Mã hóa AES-256-GCM tức thời.
+- 💻📱 **Fresh Start Recovery:** `terachat.storage.get_transient_state()` → UI nạp lại y hệt trạng thái trước crash. Thời gian < 50ms (chỉ thấy blink nhẹ).
+- 📱 **Mesh:** Tính năng tắt để dồn RAM/CPU cho BLE routing.
+
+### WASM-06: Peer-Relay Offline Messaging
+
+- 💻📱🖥️ **Asymmetric Bitchat:** Desktop/Laptop = Heavy Node/Relay Node (Quota 500MB-1GB, TTL 48-72h). Mobile = Light Node (Quota 50MB, không làm relay trừ khi không có Desktop).
+- 💻📱🖥️ **Store-and-Forward:** Thiết bị trung gian giữ hộ gói tin E2EE mã hóa. Chỉ thiết bị đích giải mã được.
+- 💻📱🖥️ **Border Node:** Thiết bị có cả Internet và BLE tự động nhận ra là Border Node → định tuyến TCP/IP ↔ BLE Mesh.
+- 💻📱 **AI Semantic Compression:** File >BLE bandwidth → SLM tóm tắt thành ≤500 bytes + flag `[AI_COMPRESSED_RECOVERY]`.
+
+### WASM-07: Enterprise Onboarding & Network Fencing
+
+- 💻📱🖥️ **Enterprise Onboarding:** Người dùng quét QR Code hoặc nhập Token IT Admin cấp → thiết bị nhận Certificate (mTLS) → gia nhập mạng công ty.
+- 💻📱🖥️ **Short-lived mTLS Certificates:** VPS cấp chứng chỉ 12-24h. Hết ngày làm việc → vô hiệu.
+- 💻📱 **Geofencing / Network Fencing:** Tự động disable Relay khi thiết bị ra khỏi mạng công ty hoặc ngắt VPN.
+- 📱💻 **Background WebSocket Termination:** Khi Doze/Jetsam kill app, các reconnect hook tự động khi app resume.

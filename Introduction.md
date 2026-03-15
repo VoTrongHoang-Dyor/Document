@@ -104,3 +104,49 @@ Triết lý cốt lõi của hệ thống được xây dựng trên sự cân b
 | **`BusinessPlan.md`** | Stakeholders, Sales | Mô hình kinh doanh đột phá **"Zero Bandwidth Cost"**, chiến lược mã nguồn mở có kiểm soát (Open-Core) và lộ trình chiếm lĩnh thị trường (Go-to-Market). |
 
 ---
+
+
+---
+
+## Mục Mới: TeraChat Ecosystem Architecture Overview
+
+### Tổng quan Kiến trúc Hệ sinh thái TeraChat
+
+TeraChat được xây dựng trên 4 trụ cột kiến trúc cốt lõi:
+
+#### 1. Shared Rust Core – Lợi thế Cạnh tranh Kỹ thuật
+
+> **"Ứng dụng lõi Rust thống nhất bảo đảm hiệu năng tối đa và tính bảo mật đồng nhất từ Desktop đến Mobile"**
+
+- **Triết lý:** Toàn bộ logic nặng và nhạy cảm (E2EE encryption, P2P protocol, Database cục bộ, AI SLM) chỉ viết **một lần duy nhất** bằng Rust. Cross-compile sang mọi nền tảng.
+- **Lợi ích:** Cập nhật bảo mật sửa ở **1 nơi duy nhất** (Rust Core), không bao giờ sai lệch logic giữa platfrom.
+- **Binding:** `uniffi-rs` tự động sinh Swift/Kotlin bindings an toàn. `Protobuf` cho IPC chuẩn hóa.
+
+#### 2. TeraChat Ecosystem – Mở nhưng An toàn Tuyệt đối
+
+- **`.tapp` (TeraChat App):** Tiện ích doanh nghiệp có thể mở rộng được xây dựng xung quanh TeraChat, chạy trong **WASM Sandbox** cô lập hoàn toàn.
+- **Control Plane (Host):** Lõi Rust kiểm soát mọi tài nguyên hệ thống, mạng, mật mã. `.tapp` không bao giờ có thể "nhúng tay" vào lõi.
+- **Data Plane (Sandbox):** `.tapp` thực thi trong môi trường cách ly hoặc tối đa hóa bảo mật, không có quyền truy cập trực tiếp Network/Filesystem/Memory của Host.
+- **Secure Host Proxy:** Mọi network request từ `.tapp` phải qua "chốt chặn Zero Trust", kiểm tra DID, Whitelist URL và AI SLM Payload Inspection trước khi được phép ra ngoài.
+
+#### 3. Dual-State Network – Sovereign Messenger
+
+| State | Điều kiện | Cơ chế Mạng | UI Theme |
+|---|---|---|---|
+| **Online (Default)** | Có Internet/VPN | TCP/IP → VPS Doanh nghiệp (gRPC/WebSocket + mTLS) | Frosted Glass sáng |
+| **Emergency Mesh** | Mất Internet >30s | BLE 5.0 + Wi-Fi Direct. Store-and-Forward Gossip. | Dark/Cyberpunk |
+
+- **Không phụ thuộc Internet:** TeraChat tiếp tục hoạt động trong vùng không có mạng qua BLE/Wi-Fi Direct Mesh.
+- **Asymmetric Bitchat:** Desktop = Heavy Relay Node (Backbone). Mobile = Light Node. Phân cấp theo năng lực phần cứng.
+- **Border Node:** Thiết bị có đồng thời Internet + BLE tự động làm cầu nối giữa 2 thế giới.
+
+#### 4. Zero Trust Security – Layered Defense
+
+- **Hardware Root of Trust:** TEE (Secure Enclave/ARM TrustZone) lưu giữ Master Key. App Attestation kiểm tra Binary chưa bị sửa đổi mỗi lần khởi động.
+- **E2EE Double Ratchet + Epoch ZKP:** Forward Secrecy tuyệt đối. Zero "Ratchet Break". Epoch-based architecture chống mất đồng bộ phiên dài hạn.
+- **M-of-N Threshold Kill-Switch:** Root Key phân mảnh 7 shards (5/7 ngưỡng). DKG Proactive Refresh tự chữa lành mạng lưới hàng năm.
+- **TOMBSTONE + Cryptographic Erasure:** Nhân sự nghỉ việc → GDPR-compliant data destruction tự động lan truyền qua Gossip Protocol.
+
+---
+
+*Chi tiết kỹ thuật: xem `Core_Spec.md`. Chi tiết tính năng: xem `Feature_Spec.md`. Thiết kế UI/UX: xem `Design.md`.*
