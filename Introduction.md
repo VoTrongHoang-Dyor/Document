@@ -150,3 +150,48 @@ TeraChat được xây dựng trên 4 trụ cột kiến trúc cốt lõi:
 ---
 
 *Chi tiết kỹ thuật: xem `Core_Spec.md`. Chi tiết tính năng: xem `Feature_Spec.md`. Thiết kế UI/UX: xem `Design.md`.*
+
+
+---
+
+## Mục Mới: Platform Matrix & Architecture Clarifications
+
+### Platform Support Matrix (Updated)
+
+| Platform | Status | Package Format | Mesh Role |
+|---|---|---|---|
+| macOS (Intel + Apple Silicon) | ✅ GA | .dmg, .pkg | Super Node / Relay |
+| Windows x64 | ✅ GA | .exe, MSIX | Super Node / Relay |
+| **Windows ARM64** | ✅ GA | .exe, MSIX | Super Node / Relay |
+| Linux x64 | ✅ GA | .deb, .rpm, AppImage | Super Node / Relay / Server |
+| **Linux ARM64** | ✅ GA | .deb, .rpm | Server deployment |
+| iOS | ✅ GA | App Store / MDM | Leaf Node |
+| Android | ✅ GA | Play Store / APK | Leaf / Super Node |
+| **Huawei HarmonyOS** | 🔵 Beta | AppGallery | Leaf Node |
+
+### Offline Survival – 3 Cấp Độ
+
+TeraChat Offline Survival hoạt động ở 3 cấp độ rõ ràng:
+
+| Cấp độ | Điều kiện | Năng lực |
+|---|---|---|
+| **Cấp 1 (Full Mesh)** | Desktop/Laptop làm Super Node, BLE hoặc Wi-Fi Direct | Đầy đủ: text, file (tóm tắt), voice (nếu bandwidth đủ), CRDT full merge |
+| **Cấp 2 (Partial Mesh)** | Mix Desktop + Mobile, Desktop làm mediator | Text + file summary, CRDT với Conflict Marker |
+| **Cấp 3 (Mobile-Only SOS)** | Chỉ iOS Leaf Nodes, không có Desktop | Text SOS only (Tactical Relay), Append-Only CRDT, không đảm bảo full consistency |
+
+Cấp 3 **không đảm bảo** collaboration đầy đủ — chỉ đảm bảo tin nhắn đến nơi.
+
+### Zero-Knowledge Retention (Clarification)
+
+TeraChat không phải "Zero-Retention" theo nghĩa server không giữ gì. Cam kết chính xác:
+
+- **Zero-Knowledge Retention:** Server giữ ciphertext đã mã hóa (cold_state.db) nhưng **không có key** để đọc nội dung. Key chỉ tồn tại trên client.
+- **Client-Controlled TTL:** Enterprise tự configure VPS cold storage TTL (7 ngày → không giới hạn).
+- **Compliance Retention:** Banking/Gov có thể giữ audit log 7 năm, encrypted at rest, key ở client.
+
+### Lợi thế Kỹ thuật Cốt lõi
+
+1. **Shared Rust Core:** Logic bảo mật, mesh protocol, CRDT viết một lần, cross-compile sang tất cả platform.
+2. **Flutter Unified Mobile:** iOS + Android + Huawei từ 1 Dart codebase qua Dart FFI → Rust C ABI.
+3. **Tauri Desktop:** Web tech UI + Rust backend, native performance.
+4. **WASM Behavioral Parity:** `wasm3` (iOS) và `wasmtime` (Android/Desktop) đảm bảo output identical qua CI gate.

@@ -1570,3 +1570,176 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 - 💻📱🖥️ **Short-lived mTLS Certificates:** VPS cấp chứng chỉ 12-24h. Hết ngày làm việc → vô hiệu.
 - 💻📱 **Geofencing / Network Fencing:** Tự động disable Relay khi thiết bị ra khỏi mạng công ty hoặc ngắt VPN.
 - 📱💻 **Background WebSocket Termination:** Khi Doze/Jetsam kill app, các reconnect hook tự động khi app resume.
+
+
+---
+
+## Mục Mới: Cross-Platform Runtime, Packaging & OS Integration
+
+### PLATFORM-01: Flutter Unified Mobile Architecture
+
+- 📱📱 **Loại bỏ React Native.** Flutter Dart FFI → Rust C ABI cho cả iOS + Android + Huawei.
+- 📱 **iOS:** Dart FFI → UniquePtr C++ wrapper. Throughput ~400MB/s.
+- 📱 **Android:** Dart FFI TypedData. ~400MB/s đồng nhất.
+- 💻🖥️ **Tauri Desktop:** Giữ nguyên, không thay đổi.
+- **Trade-off:** Mất JSI C++ pointer tối ưu iOS ~5-10% vs Dart FFI. Được: -50% surface bug, +1 platform (Huawei).
+
+### PLATFORM-02: WASM Behavioral Parity Test Suite
+
+- 💻📱 **WasmParity CI gate:** Chạy cùng test vector trên `wasm3` (iOS interpreter) và `wasmtime` (Android/Desktop JIT).
+- **Rule:** Fail → block merge. Latency delta ≤ 20ms chấp nhận được, output semantic phải **identical**.
+- **Định nghĩa:** `wasm3` = reference runtime, `wasmtime` = optimized runtime.
+
+### PLATFORM-03: Tauri IPC Tier Ladder (SAB/COOP Fallback)
+
+- 💻🖥️ **Tier 1:** SharedArrayBuffer (COOP+COEP headers OK) → ~500MB/s.
+- 💻 **Tier 2:** Named Pipe IPC (Windows) → ~200MB/s.
+- 💻 **Tier 3:** Protobuf-over-stdin copy → ~50MB/s.
+- Rust Core detect SAB availability lúc init, chọn tier cao nhất. UI không biết tier. Log tier selection vào audit trail.
+
+### PLATFORM-04: iOS Push Key – Versioned Key Ladder
+
+Thêm field `push_key_version (u32)` vào Shared Keychain:
+
+```
+NSE đọc version từ payload header trước khi decrypt:
+- payload_version == keychain_version → giải mã bình thường
+- Lệch version → NSE cache ciphertext raw vào nse_staging.db
+  → bắn content-available:1
+  → Main App wakeup → rotate key → decrypt staged payload → clear staging
+Result: Zero notification loss dù key rotation xảy ra.
+```
+
+### PLATFORM-05: iOS Mesh Graceful Super Node Handover
+
+- 📱 Khi iOS detect memory pressure sắp trigger Jetsam: Rust Core broadcast `MeshRoleHandover(candidate_node_id)` tới Desktop/Android peer qua BLE **trước khi** BLE scan bị kill.
+- Desktop nhận → assume Super Node role ngay. iOS → Leaf Node.
+- UI hiển thị: *"Đã chuyển vai trò Relay sang [tên thiết bị]"* thay vì silent disconnect.
+
+### PLATFORM-06: Linux Multi-Init Daemon Support
+
+- 🐧💻 **Init detection:** systemd / openrc / runit / s6 / launchd → generate correct service file.
+- **Fallback:** XDG autostart (`.desktop` file) cho desktop environments không có systemd.
+- `terachat-daemon` viết PID file → bất kỳ init nào có thể monitor.
+
+### PLATFORM-07: macOS Entitlement Matrix (XPC Process Isolation)
+
+```
+Main process: com.apple.security.app-sandbox=true, NO allow-jit
+terachat-wasm-worker (XPC Service):
+  com.apple.security.cs.allow-jit=true
+  com.apple.security.cs.disable-library-validation=true
+  com.apple.security.network.client=true
+NSE Extension: com.apple.security.app-sandbox=true, NO network
+```
+
+### PLATFORM-08: Linux Packaging Strategy (2-Tier)
+
+| Format | memfd_create | seccomp-bpf | Gov Enterprise |
+|---|---|---|---|
+| **Signed .deb/.rpm** | ✅ OK | ✅ OK | ✅ GPG signed |
+| **AppImage (fallback)** | ✅ OK | ✅ OK | ⚠️ Cosign signature |
+| ~~Flatpak~~ | 🔴 Blocked | 🔴 Conflict | ❌ Không dùng |
+
+```
+Tier 1 (Enterprise/Gov): Signed .deb và .rpm — GPG signed, Ubuntu 20.04+, RHEL 8+
+Tier 2 (Other distros): AppImage — portable, glibc 2.31+, AppImageUpdate
+```
+
+### PLATFORM-09: Unified Build Target Matrix
+
+```
+x86_64-apple-darwin        → macOS Intel
+aarch64-apple-darwin       → macOS Apple Silicon
+x86_64-pc-windows-msvc     → Windows x64
+aarch64-pc-windows-msvc    → Windows ARM64 (MỚI)
+x86_64-unknown-linux-gnu   → Linux x64 (.deb/.rpm/AppImage)
+aarch64-unknown-linux-gnu  → Linux ARM64 (server deployment)
+aarch64-apple-ios          → iOS
+aarch64-linux-android      → Android
+aarch64-linux-android      → Huawei HarmonyOS (buildable qua OHOS SDK)
+```
+
+### PLATFORM-10: iOS Keychain Access Group Segmentation
+
+```
+App Group: group.com.terachat
+├── kSecAttrAccessGroup = "group.com.terachat.nse"    → push_key_<chat_id> (NSE only)
+├── kSecAttrAccessGroup = "group.com.terachat.main"   → device_identity_key (Main App only)
+└── kSecAttrAccessGroup = "group.com.terachat.share"  → share_extension_token (Share Ext)
+```
+
+Push_Key chỉ có NSE access group — Share Extension không thể đọc không cần FaceID.
+
+### PLATFORM-11: Linux Wayland Clipboard Backend Detection
+
+```rust
+let clipboard_backend = if std::env::var("WAYLAND_DISPLAY").is_ok() {
+    ClipboardBackend::WlClipboard  // wl-clipboard — Wayland native
+} else {
+    ClipboardBackend::Xclip        // xclip/xsel — X11
+};
+```
+
+### PLATFORM-12: iOS AWDL Monitor – Tier Downgrade
+
+```swift
+// NWPathMonitor detect: hotspot (bridge interface) → AWDL unavailable
+// Rust Core via FFI:
+// 1. Downgrade Tier 2 → Tier 3 (BLE only)
+// 2. Emit UIEvent::TierChanged + message giải thích
+// 3. Queue voice packets TTL 30s
+// 4. Sau 30s không phục hồi → drop voice, notify user
+```
+
+### PLATFORM-13: SQLite Schema Migration Protocol
+
+```rust
+const CURRENT_HOT_DAG_SCHEMA_VERSION: u32 = 1;
+// MigrationRunner: backup → BEGIN EXCLUSIVE TRANSACTION → up() → update user_version → COMMIT
+// Safety net: cold_state.db có thể rebuild từ hot_dag.db bất kỳ lúc nào
+// Nếu migration cold_state.db fail → drop và rebuild từ hot_dag.db
+```
+
+### PLATFORM-14: Dart FFI NativeFinalizer Contract
+
+```dart
+class TeraSecureBuffer {
+  // Mọi buffer PHẢI được wrap bởi useInTransaction hoặc explicit releaseNow()
+  // Không được để GC làm finalizer là đường duy nhất release
+  void releaseNow() { /* explicit release trước GC */ }
+  T useInTransaction<T>(T Function(Pointer<Uint8> ptr) action) {
+    try { return action(_token.toPointer()); }
+    finally { releaseNow(); } // Always release kể cả exception
+  }
+}
+```
+
+### PLATFORM-15: Whisper AI Memory Budget Protocol
+
+```rust
+pub enum WhisperModelTier { Tiny, Base, Disabled }
+
+pub fn select_whisper_tier(available_ram_mb: u32, battery_pct: u8) -> WhisperModelTier {
+    if battery_pct < 20 { return Disabled; }
+    if available_ram_mb > 200 { return Base; }   // 74MB model
+    if available_ram_mb > 100 { return Tiny; }   // 39MB model
+    Disabled // Ưu tiên stability
+}
+// Khi Disabled: "Thiết bị đang tiết kiệm RAM — Voice tạm chuyển sang text."
+```
+
+### PLATFORM-16: Linux AppArmor/SELinux Profile
+
+```
+# Ubuntu AppArmor /etc/apparmor.d/usr.bin.terachat
+/dev/shm/terachat** rw,
+capability ipc_lock,      # cho mlock()
+@{PROC}/*/fd/* rw,        # cho memfd_create
+
+# RHEL SELinux terachat.te
+allow terachat_t self:memfd_create { create };
+allow terachat_t self:process { setsched };
+```
+
+Package postinstall script detect và load profile phù hợp tự động.

@@ -653,6 +653,115 @@
               "subsections": []
             }
           ]
+        },
+        {
+          "id": "mục-mới-host-function-abi-versioning-linux-signing-huawei-rules",
+          "level": 2,
+          "heading": "Mục Mới: Host Function ABI Versioning, Linux Signing & Huawei Rules",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "marketplace-05-host-function-abi-versioning-contract",
+              "level": 3,
+              "heading": "MARKETPLACE-05: Host Function ABI Versioning Contract",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "json",
+                  "code": "// manifest.json của mọi .tapp bắt buộc có:\n{\n  \"host_api_version\": \"1.3.0\",\n  \"min_host_api_version\": \"1.0.0\",\n  \"max_host_api_version\": \"2.0.0\"\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rules:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "TeraChat Core publish Host API Changelog theo semver.",
+                    "Breaking changes chỉ trong major version.",
+                    "Minor version chỉ additive (không phá vỡ backward compat).",
+                    ".tapp load bị reject nếu host_api_version nằm ngoài range Core hỗ trợ.",
+                    "TeraChat Foundation cam kết support 2 major versions đồng thời (deprecation window 12 tháng)."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-06-linux-package-signing-gpg-cosign",
+              "level": 3,
+              "heading": "MARKETPLACE-06: Linux Package Signing (GPG + Cosign)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "🐧 .deb/.rpm: Signed bằng TeraChat GPG Release Key. Public key published tại packages.terachat.com/gpg.key.",
+                    "🐧 AppImage: Signed bằng Sigstore Cosign. Verify: cosign verify-blob --key terachat-root.pub terachat.AppImage."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "AppArmor note cho Linux .tapp publishers: .tapp chạy trong WASM Sandbox của Rust Core — seccomp-bpf profile của TeraChat đã include các syscall cần thiết. Publishers không cần (và không được phép) request thêm syscall ngoài whitelist."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-07-huawei-harmonyos-tapp-distribution-rules",
+              "level": 3,
+              "heading": "MARKETPLACE-07: Huawei HarmonyOS .tapp Distribution Rules",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 AOT bundle bắt buộc: Không có dynamic WASM loading từ Marketplace trên Huawei (tương tự iOS).",
+                    "📱 AOT precompile: Mỗi .tapp phải submit kèm AOT-compiled binary .waot cho HarmonyOS ARM64.",
+                    "📱 Attestation: HMS SafetyDetect verify .tapp DID trước khi Sandbox launch.",
+                    "📱 Distribution: AppGallery — submit source .tapp + .waot bundle vào AppGallery Developer Console."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-08-whisper-voice-plugin-requirements",
+              "level": 3,
+              "heading": "MARKETPLACE-08: Whisper Voice Plugin Requirements",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Các .tapp có voice-to-text feature PHẢI khai báo trong manifest:"
+                },
+                {
+                  "type": "code",
+                  "language": "json",
+                  "code": "{\n  \"features\": [\"voice_transcription\"],\n  \"whisper_model_tier\": \"tiny\",  // \"tiny\" (39MB) hoặc \"base\" (74MB)\n  \"min_available_ram_mb\": 100    // Rust Core enforce trước khi load model\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Host Runtime tự chọn tier theo WhisperModelTier protocol — publisher không được override."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "marketplace-09-publisher-migration-guide-abi-breaking-changes",
+              "level": 3,
+              "heading": "MARKETPLACE-09: Publisher Migration Guide (ABI Breaking Changes)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "6 tháng trước deprecation: Thông báo trong Developer Console + Email.",
+                    "3 tháng trước: Warning trong CI/CD khi .tapp compile against old ABI.",
+                    "Deprecation day: Core hỗ trợ cả 2 ABI version. Old .tapp vẫn load, nhưng badged ⚠️ \"Cần cập nhật\".",
+                    "EoL (End-of-Life): 12 tháng sau deprecation — Core drop support, .tapp cũ bị reject."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }

@@ -407,6 +407,14 @@
 <a href="#design-wasm-07-video-call-security-ux" class="nav-link" style="padding-left:0.8rem;">DESIGN-WASM-07: Video Call Security UX</a>
 <a href="#design-wasm-08-admin-dkg-control-panel" class="nav-link" style="padding-left:0.8rem;">DESIGN-WASM-08: Admin DKG Control Panel</a>
 <a href="#design-wasm-09-cryptographic-erasure-ui" class="nav-link" style="padding-left:0.8rem;">DESIGN-WASM-09: Cryptographic Erasure UI</a>
+<a href="#mục-mới-gpu-capability-tiers-huawei-breakpoints-xpc-recovery-states" class="nav-link" style="padding-left:0.8rem;">Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States</a>
+<a href="#design-gpu-01-gpu-capability-fallback-matrix" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-01: GPU Capability Fallback Matrix</a>
+<a href="#design-gpu-02-responsive-states-cho-mesh-role-changed" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-02: Responsive States cho Mesh Role Changed</a>
+<a href="#design-gpu-03-xpc-crash-recovery-ui-state" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-03: XPC Crash Recovery UI State</a>
+<a href="#design-gpu-04-huawei-harmonyos-breakpoints" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-04: Huawei HarmonyOS Breakpoints</a>
+<a href="#design-gpu-05-conflict-resolution-ui" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-05: Conflict Resolution UI</a>
+<a href="#design-gpu-06-aes-ni-performance-warning" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-06: AES-NI Performance Warning</a>
+<a href="#design-gpu-07-license-graceful-degradation-ui" class="nav-link" style="padding-left:0.8rem;">DESIGN-GPU-07: License Graceful Degradation UI</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -1029,6 +1037,127 @@ AI</code></pre></div>
 <li>📱 <strong>Mesh Silent Erasure:</strong> Xóa khóa âm thầm. Không render, tiết kiệm RAM/pin.</li>
 <li>💻📱 <strong>Rolling Key Eviction UI:</strong> Khi Lease Renewal thành công, viền Glass Card Chat lóe Cyan Sweep 0.2s. Biểu tượng khóa: "Khóa phiên đang được bảo vệ (Cập nhật 2 phút trước)".</li>
 </ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-gpu-capability-tiers-huawei-breakpoints-xpc-recovery-states">Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States</h2>
+<h3 id="design-gpu-01-gpu-capability-fallback-matrix">DESIGN-GPU-01: GPU Capability Fallback Matrix</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Tier</th>
+<th>Điều kiện</th>
+<th>Glassmorphism Rendering</th>
+<th>CSS</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Tier A</strong></td>
+<td>GPU Hardware Compositing</td>
+<td>Full Glass: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">backdrop-filter: blur(16-24px)</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">transform: translateZ(0); will-change: backdrop-filter</code></td>
+</tr>
+<tr>
+<td><strong>Tier B</strong></td>
+<td>Software Compositing</td>
+<td>Frosted Glass Lite: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">blur(8px)</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">opacity: 0.85</code></td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">backdrop-filter: blur(8px)</code></td>
+</tr>
+<tr>
+<td><strong>Tier C</strong></td>
+<td>No Compositing (Intel UHD 620 cũ)</td>
+<td>Flat Solid với border accent</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">background: rgba(255, 255, 255, 0.75)</code></td>
+</tr>
+</tbody></table></div>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>.glass-layer {
+  transform: translateZ(0);          /* Force GPU composite */
+  will-change: backdrop-filter;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.75); /* Tier C fallback */
+}</code></pre></div>
+<p>Rust Core detect WebView2 GPU caps lúc init → emit <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">GpuCapability(has_backdrop_filter: bool)</code> → UI render Glass hoặc Flat variant.</p>
+<h3 id="design-gpu-02-responsive-states-cho-mesh-role-changed">DESIGN-GPU-02: Responsive States cho Mesh Role Changed</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>UI State</th>
+<th>Trigger</th>
+<th>Banner</th>
+<th>Theme</th>
+</tr></thead><tbody>
+<tr>
+<td>Normal Operation</td>
+<td>Online/Mesh</td>
+<td>-</td>
+<td>Normal</td>
+</tr>
+<tr>
+<td><strong>MeshRoleChanged</strong></td>
+<td>iOS handover Super Node sang Desktop</td>
+<td>Toast: "Đã chuyển vai trò Relay sang [tên thiết bị]"</td>
+<td>Dark subtle</td>
+</tr>
+<tr>
+<td>AWDL Unavailable</td>
+<td>Hotspot active / CarPlay</td>
+<td>Warning bar: "Hotspot đang bật — Mesh chuyển sang BLE. Voice tạm không khả dụng."</td>
+<td>Amber</td>
+</tr>
+<tr>
+<td>Voice Drop</td>
+<td>AWDL timeout 30s</td>
+<td>Notification: "Cuộc gọi bị ngắt do mất kết nối Mesh"</td>
+<td>Red</td>
+</tr>
+</tbody></table></div>
+<h3 id="design-gpu-03-xpc-crash-recovery-ui-state">DESIGN-GPU-03: XPC Crash Recovery UI State</h3>
+<ul>
+<li>💻 <strong>macOS:</strong> Khi XPC Worker crash giữa Smart Approval → hiển thị modal:</li>
+<li><em>"Phiên ký bị gián đoạn. Vui lòng ký lại."</em></li>
+<li>Nút primary: "Ký lại" | Nút secondary: "Bỏ qua"</li>
+<li>Glass Modal viền cam (Warning Indicator)</li>
+</ul>
+<h3 id="design-gpu-04-huawei-harmonyos-breakpoints">DESIGN-GPU-04: Huawei HarmonyOS Breakpoints</h3>
+<ul>
+<li>📱 <strong>Breakpoint Huawei:</strong> Tuân thủ HarmonyOS Design Language (tương tự Material 3 nhưng có adaptation riêng). Padding mặc định 16dp, đỉnh status bar theo HarmonyOS spec.</li>
+<li>📱 <strong>Glassmorphism trên Huawei:</strong> wasmtime JIT có sẵn → Tier A full Glass.</li>
+<li>📱 <strong>Font hệ thống:</strong> HarmonyOS Sans (fallback: system-ui).</li>
+</ul>
+<h3 id="design-gpu-05-conflict-resolution-ui">DESIGN-GPU-05: Conflict Resolution UI</h3>
+<ul>
+<li>💻📱🖥️ <strong>Online Conflict (Shadow DAG):</strong> Modal Glassmorphism hiện 2 cột: "Phiên bản của [Bạn]" và "Phiên bản của [Đồng nghiệp]". Toolbar merge: "Giữ của tôi", "Giữ của họ", "Gộp thủ công".</li>
+<li>📱💻 <strong>Mesh Conflict Marker:</strong> Badge ⚠️ trên document với tooltip "Mâu thuẫn phát hiện — sẽ được giải quyết khi có kết nối đầy đủ".</li>
+<li>🚫 <strong>Không bao giờ silent LWW</strong> trên document <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">content_type = CONTRACT | POLICY | APPROVAL</code>.</li>
+</ul>
+<h3 id="design-gpu-06-aes-ni-performance-warning">DESIGN-GPU-06: AES-NI Performance Warning</h3>
+<ul>
+<li>📱💻 <strong>Software Crypto Warning:</strong> Trong Settings &gt; Bảo mật, chip không có AES-NI → badge nhỏ: <em>"Chế độ mã hóa phần mềm — hiệu suất thấp hơn. Nâng cấp thiết bị để cải thiện."</em></li>
+</ul>
+<h3 id="design-gpu-07-license-graceful-degradation-ui">DESIGN-GPU-07: License Graceful Degradation UI</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Thời điểm</th>
+<th>UI</th>
+<th>Ảnh hưởng hoạt động</th>
+</tr></thead><tbody>
+<tr>
+<td>T-30 ngày</td>
+<td>Banner vàng trong Admin Console</td>
+<td>Không ảnh hưởng</td>
+</tr>
+<tr>
+<td>T-0</td>
+<td>Admin Console partial lock</td>
+<td>Chat/Mesh bình thường, AI + add user bị khóa</td>
+</tr>
+<tr>
+<td>T+90</td>
+<td>System refuse new bootstrap</td>
+<td>App đang chạy OK, không restart được</td>
+</tr>
+<tr>
+<td>Gia hạn</td>
+<td>JWT mới → restore trong &lt;5s</td>
+<td>Không restart</td>
+</tr>
+</tbody></table></div>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

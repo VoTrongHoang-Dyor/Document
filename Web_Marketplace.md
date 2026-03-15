@@ -270,3 +270,61 @@ Mọi tiện ích `.tapp` trên TeraChat Marketplace phải tuân thủ vòng đ
 - 💻📱 **B2B App Store Model:** `.tapp` miễn phí, nhưng AI features yêu cầu "TeraChat Pro" hoặc AI Token purchase.
 - 💻📱 **AI Quota per DID:** 10,000 tokens/giờ mặc định. Enterprise plan: vô hạn.
 - 💻📱 **Upgrade prompt:** Gold-tinted Frosted Glass Modal khi `.tapp` hết AI Quota.
+
+
+---
+
+## Mục Mới: Host Function ABI Versioning, Linux Signing & Huawei Rules
+
+### MARKETPLACE-05: Host Function ABI Versioning Contract
+
+```json
+// manifest.json của mọi .tapp bắt buộc có:
+{
+  "host_api_version": "1.3.0",
+  "min_host_api_version": "1.0.0",
+  "max_host_api_version": "2.0.0"
+}
+```
+
+**Rules:**
+- TeraChat Core publish Host API Changelog theo semver.
+- Breaking changes chỉ trong **major version**.
+- Minor version chỉ additive (không phá vỡ backward compat).
+- `.tapp` load bị reject nếu `host_api_version` nằm ngoài range Core hỗ trợ.
+- TeraChat Foundation cam kết support 2 major versions đồng thời (deprecation window 12 tháng).
+
+### MARKETPLACE-06: Linux Package Signing (GPG + Cosign)
+
+- 🐧 **.deb/.rpm:** Signed bằng TeraChat GPG Release Key. Public key published tại `packages.terachat.com/gpg.key`.
+- 🐧 **AppImage:** Signed bằng Sigstore Cosign. Verify: `cosign verify-blob --key terachat-root.pub terachat.AppImage`.
+
+**AppArmor note cho Linux .tapp publishers:** `.tapp` chạy trong WASM Sandbox của Rust Core — seccomp-bpf profile của TeraChat đã include các syscall cần thiết. Publishers không cần (và không được phép) request thêm syscall ngoài whitelist.
+
+### MARKETPLACE-07: Huawei HarmonyOS .tapp Distribution Rules
+
+- 📱 **AOT bundle bắt buộc:** Không có dynamic WASM loading từ Marketplace trên Huawei (tương tự iOS).
+- 📱 **AOT precompile:** Mỗi `.tapp` phải submit kèm AOT-compiled binary `.waot` cho HarmonyOS ARM64.
+- 📱 **Attestation:** HMS SafetyDetect verify `.tapp` DID trước khi Sandbox launch.
+- 📱 **Distribution:** AppGallery — submit source `.tapp` + `.waot` bundle vào AppGallery Developer Console.
+
+### MARKETPLACE-08: Whisper Voice Plugin Requirements
+
+Các `.tapp` có voice-to-text feature PHẢI khai báo trong manifest:
+
+```json
+{
+  "features": ["voice_transcription"],
+  "whisper_model_tier": "tiny",  // "tiny" (39MB) hoặc "base" (74MB)
+  "min_available_ram_mb": 100    // Rust Core enforce trước khi load model
+}
+```
+
+Host Runtime tự chọn tier theo `WhisperModelTier` protocol — publisher không được override.
+
+### MARKETPLACE-09: Publisher Migration Guide (ABI Breaking Changes)
+
+1. **6 tháng trước deprecation:** Thông báo trong Developer Console + Email.
+2. **3 tháng trước:** Warning trong CI/CD khi `.tapp` compile against old ABI.
+3. **Deprecation day:** Core hỗ trợ cả 2 ABI version. Old `.tapp` vẫn load, nhưng badged ⚠️ "Cần cập nhật".
+4. **EoL (End-of-Life):** 12 tháng sau deprecation — Core drop support, `.tapp` cũ bị reject.

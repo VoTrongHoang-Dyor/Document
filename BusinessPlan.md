@@ -62,3 +62,104 @@
 - 🖥️ **Open-Core (AGPLv3):** Công khai lõi mật mã Rust và Giao thức liên kết để các tổ chức Gov/Banking xác minh độc lập, xóa bỏ rào cản về "backdoor".
 - 🗄️ **Proprietary:** Bảo vệ bản quyền Admin Console, Module AI (Magic Logger) và Hệ thống License Manager nhằm đảm bảo dòng tiền doanh thu.
 - 🗄️ **Protocol Versioning:** Sử dụng tính không tương thích của các phiên bản giao thức lớn để thúc đẩy chu kỳ nâng cấp License định kỳ theo yêu cầu tuân thủ IT.
+
+
+---
+
+## Mục Mới: Huawei Strategy, Signing Pipeline, License & TCO
+
+### BIZ-HUAWEI-01: Huawei AppGallery Distribution Strategy
+
+- 📱 **Thị trường mục tiêu Huawei:** Việt Nam, Đông Nam Á, Trung Đông, Đông Âu — vùng Huawei có thị phần >20% doanh nghiệp.
+- 📱 **AppGallery Listing:** Submit `.apk` + AOT-bundled `.tapp` packages. Không có dynamic WASM download.
+- 📱 **HMS Freemium:** Cung cấp Community tier miễn phí trên AppGallery để tăng DAU. Upsell Enterprise qua HMS Enterprise Bundle.
+- 📱 **Enterprise MDM:** Tích hợp Huawei Device Manager cho Enterprise enrollment — tương đương Apple DEP/Android EMM.
+
+**Market Sizing (Huawei Segment):**
+- Việt Nam: ~3M thiết bị Huawei trong doanh nghiệp SME (ước tính IDC 2025)
+- Cơ hội: Enterprise tier @150USD/user/năm × 5% penetration = ~45M USD TAM
+
+### BIZ-SIGNING-02: CI/CD Code Signing Pipeline & Certificate Management
+
+```yaml
+iOS Signing:
+  - Apple Distribution Certificate (GitHub Secrets encrypted)
+  - Provisioning Profile: Main App + NSE + Share Extension (riêng biệt)
+  - fastlane match để sync certificates
+  - Notarize via Apple Transporter
+
+macOS Signing:
+  - Developer ID Application Certificate
+  - notarytool (Xcode 13+)
+  - Staple ticket vào .dmg
+
+Windows Signing:
+  - EV Code Signing Certificate (DigiCert KeyLocker — Cloud HSM)
+  - signtool.exe integration trong GitHub Actions
+  - SmartScreen: cần 30+ ngày clean submissions để reputation tốt
+  - MSIX packaging cho Microsoft Store
+
+Android Signing:
+  - Keystore file (encrypted in GitHub Secrets)
+  - Google Play App Signing (delegate signing to Google)
+  - APK + AAB dual signing
+
+Linux Signing:
+  - GPG key cho .deb/.rpm packages
+  - Cosign cho AppImage
+  - Public key: packages.terachat.com/gpg.key
+```
+
+**COGS note:** Windows EV Code Signing Certificate (Cloud HSM) ~$500/năm — bắt buộc để SmartScreen không cảnh báo. Thêm vào COGS và pricing model.
+
+### BIZ-LICENSE-03: License Architecture Gaps (Resolution)
+
+**Open-Core Boundary rõ ràng:**
+
+| Thành phần | License | Ai có thể audit |
+|---|---|---|
+| `terachat-core` (Crypto, MLS, CRDT, Mesh) | AGPLv3 | Gov, Bank, Public |
+| `terachat-license-guard` | BSL (Business Source License) | Không public |
+| `terachat-ui` (Tauri, Flutter) | Apache 2.0 | Public |
+
+Sales pitch → Gov/Bank: *"Toàn bộ cryptographic core có thể compile và audit độc lập. License validation là module riêng không ảnh hưởng security audit scope."*
+
+**License Distribution Channels:**
+- Online: JWT qua email bảo mật + `cosign verify-blob` để chống supply chain attack
+- Air-Gapped (SCIF): JWT trên USB AES-256, giao vật lý cho CISO
+
+### BIZ-TCO-04: TCO Reference Architecture (Enterprise On-Premise)
+
+| Quy mô | Cold Storage/năm | VPS tối thiểu | DR RTO |
+|---|---|---|---|
+| 1,000 users | ~500GB | 4 vCPU, 8GB RAM, 100GB SSD | <15 phút |
+| 5,000 users | ~2.5TB | 8 vCPU, 16GB RAM, 250GB SSD | <15 phút |
+| 10,000 users | ~5TB | 16 vCPU, 32GB RAM, 1TB SSD | <15 phút |
+
+**DR Strategy:** Active-Passive với PostgreSQL/SQLite WAL streaming replication. RTO <15 phút, RPO <5 phút.
+
+**Backup:** Admin cần export và lưu trữ Shamir shares (5 YubiKey cho C-Level). Mất toàn bộ shares = mất hệ thống.
+
+### BIZ-TIER-05: GovMilitary Tier – Premium Features
+
+| Feature | Community | Enterprise | **GovMilitary** |
+|---|---|---|---|
+| Offline TTL | 24h | 7 ngày (configurable) | **30 ngày** |
+| EMDP Tactical Relay | ❌ | ✅ | ✅ |
+| Air-Gapped License | ❌ | ✅ | ✅ |
+| Compliance Retention | ❌ | 90 ngày | **7 năm** |
+| Chaos Engineering Plan | ❌ | Optional | **Bắt buộc trước go-live** |
+| TEE License (SGX option) | ❌ | ❌ | **Available** |
+
+**Pricing note:** GovMilitary tier — custom pricing, minimum commitment 3 năm.
+
+### BIZ-AES-06: AES-NI Performance Tier Note (SME Market)
+
+Tại thị trường SME Việt Nam/Đông Nam Á, các thiết bị Android cũ (Cortex-A53, Helio A22) phổ biến. TeraChat vẫn functional với software crypto backend, nhưng mã hóa chậm 3x. Định vị: *"Chạy được trên mọi thiết bị, tối ưu nhất trên thiết bị từ 2019 trở đi."*
+
+### BIZ-CHAOS-07: Chaos Engineering Plan (Điều kiện tiên quyết Gov Contract)
+
+Trước khi ký hợp đồng với Government/Military customers, **bắt buộc** demonstrate 7 combined-failure scenarios trong `TestMatrix.md`. Đây là non-negotiable — Gov customers yêu cầu evidence-based reliability, không chỉ documentation.
+
+**Thời gian ước tính:** 4-6 tuần Chaos Engineering + UAT với khách hàng pilot Gov.
+

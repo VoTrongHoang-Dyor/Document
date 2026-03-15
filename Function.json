@@ -790,6 +790,105 @@
               "subsections": []
             }
           ]
+        },
+        {
+          "id": "mục-mới-mesh-handover-conflict-resolution-platform-flows",
+          "level": 2,
+          "heading": "Mục Mới: Mesh Handover, Conflict Resolution & Platform Flows",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "func-05-mesh-graceful-super-node-handover-flow",
+              "level": 3,
+              "heading": "FUNC-05: Mesh Graceful Super Node Handover Flow",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[iOS detect memory pressure → Jetsam warning]\n        ↓\n[Rust Core: broadcast MeshRoleHandover(candidate_node_id) qua BLE]\n        ↓\n[Desktop/Android nhận → assume Super Node role ngay lập tức]\n        ↓\n[iOS → chuyển xuống Leaf Node]\n        ↓\n[EMDP Key Escrow: Desktop xuất ephemeral key → encrypt với iOS pubkey → gửi BLE]\n        ↓\n[UI: Toast \"Đã chuyển vai trò Relay sang [tên thiết bị]\"]\n        ↓\n[Khi Desktop reconnect sau EMDP: decrypt escrow → merge relay messages → DAG sync]"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-06-awdl-hotspot-conflict-user-flow",
+              "level": 3,
+              "heading": "FUNC-06: AWDL Hotspot Conflict User Flow",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[User bật Personal Hotspot trong khi đang voice call Tier 2]\n        ↓\n[iOS: AWDL hardware conflict → AWDL bị tắt ngầm]\n        ↓\n[AWDLMonitor phát hiện → Rust Core via FFI]\n        ↓\n[Downgrade: Tier 2 (AWDL) → Tier 3 (BLE only)]\n        ↓\n[UI: Warning bar \"Hotspot đang bật — Voice tạm không khả dụng qua Mesh\"\n      Gợi ý: \"Tắt Hotspot để khôi phục Voice\"]\n        ↓\n[Voice packets queue với TTL 30s]\n        ↓\n[Sau 30s không phục hồi → Drop voice → Notify user]"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-07-offline-conflict-resolution-flow",
+              "level": 3,
+              "heading": "FUNC-07: Offline Conflict Resolution Flow",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[User chỉnh sửa document khi offline]\n        ↓\n[Lưu local Optimistic Append + WARNING \"Bản này có thể thay đổi khi đồng bộ\"]\n        ↓\n[Reconnect → sync → conflict detected]\n        ↓\n[content_type CONTRACT/POLICY/APPROVAL?]\n        YES ↓                               NO ↓\n[Bắt buộc hiện Conflict Resolution UI]   [Auto-merge với notification]\n[2 cột: Bản của tôi | Bản của họ]\n[User chọn → commit]"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-08-huawei-notification-flow-hms-push",
+              "level": 3,
+              "heading": "FUNC-08: Huawei Notification Flow (HMS Push)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[Server sinh push notification (E2EE)]\n        ↓\n[Gửi qua HMS Push Kit (HPK) thay FCM]\n        ↓\n[Huawei app nhận HMS Data Message]\n        ↓\n[Rust Core FFI → decrypt E2EE payload]\n        ↓\n[Nếu push_key_version lệch → cache → wakeup Main App → rotate key → decrypt]\n        ↓\n[Render notification]\n\nLưu ý: CRL refresh delay Huawei tối đa 4h (vs iOS/Android 30 phút)"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-09-gpu-tier-c-user-flow-flat-mode",
+              "level": 3,
+              "heading": "FUNC-09: GPU Tier C User Flow (Flat Mode)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[Rust Core detect GPU không hỗ trợ backdrop-filter]\n        ↓\n[Emit GpuCapability(has_backdrop_filter: false)]\n        ↓\n[UI render Flat Solid variant thay Glassmorphism]\n        ↓\n[Tất cả tính năng vẫn FUNCTIONAL — chỉ khác về visual]\n        ↓\n[Settings > Giao diện: \"Chế độ tương thích GPU đang bật\"]"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-10-fcp-trust-boundary-declaration",
+              "level": 3,
+              "heading": "FUNC-10: FCP Trust Boundary Declaration",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Default Mode (Zero-Knowledge):\n  Server = Blind Relay. AI Agent = nhận masked context.\n  Cam kết: Server không đọc được nội dung.\n\nFCP Mode (Admin-Opt-In — YubiKey + typed consent + audit log signed):\n  Server vẫn Blind Relay. AI Agent = nhận plaintext context.\n  Cam kết bị giới hạn: TLS bảo vệ transit.\n  Phù hợp: AI endpoint là on-premise model do doanh nghiệp tự host."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "func-11-aes-ni-performance-fallback-user-flow",
+              "level": 3,
+              "heading": "FUNC-11: AES-NI Performance Fallback User Flow",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[First Boot: Hardware Sanity Check]\n        ↓\n[is_cpu_feature_detected!(\"aes\") → false?]\n        Yes ↓\n[CryptoBackend::Software → ChaCha20-Poly1305]\n        ↓\n[Admin Console: Warning badge thiết bị dùng software crypto]\n[Settings > Bảo mật: \"Chế độ mã hóa phần mềm — hiệu suất ~3x thấp hơn\"]"
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }

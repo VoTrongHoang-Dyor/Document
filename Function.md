@@ -450,3 +450,119 @@ Network Shield Status:
 
 Kiêm kỳ: Khi Network Mobile thay đổi (4G → Wi-Fi), Rust nhận System Network Callback → cập nhật ICE Pool ngay (tiết kiệm pin, không polling liên tục).
 ```
+
+
+---
+
+## Mục Mới: Mesh Handover, Conflict Resolution & Platform Flows
+
+### FUNC-05: Mesh Graceful Super Node Handover Flow
+
+```
+[iOS detect memory pressure → Jetsam warning]
+        ↓
+[Rust Core: broadcast MeshRoleHandover(candidate_node_id) qua BLE]
+        ↓
+[Desktop/Android nhận → assume Super Node role ngay lập tức]
+        ↓
+[iOS → chuyển xuống Leaf Node]
+        ↓
+[EMDP Key Escrow: Desktop xuất ephemeral key → encrypt với iOS pubkey → gửi BLE]
+        ↓
+[UI: Toast "Đã chuyển vai trò Relay sang [tên thiết bị]"]
+        ↓
+[Khi Desktop reconnect sau EMDP: decrypt escrow → merge relay messages → DAG sync]
+```
+
+### FUNC-06: AWDL Hotspot Conflict User Flow
+
+```
+[User bật Personal Hotspot trong khi đang voice call Tier 2]
+        ↓
+[iOS: AWDL hardware conflict → AWDL bị tắt ngầm]
+        ↓
+[AWDLMonitor phát hiện → Rust Core via FFI]
+        ↓
+[Downgrade: Tier 2 (AWDL) → Tier 3 (BLE only)]
+        ↓
+[UI: Warning bar "Hotspot đang bật — Voice tạm không khả dụng qua Mesh"
+      Gợi ý: "Tắt Hotspot để khôi phục Voice"]
+        ↓
+[Voice packets queue với TTL 30s]
+        ↓
+[Sau 30s không phục hồi → Drop voice → Notify user]
+```
+
+### FUNC-07: Offline Conflict Resolution Flow
+
+```
+[User chỉnh sửa document khi offline]
+        ↓
+[Lưu local Optimistic Append + WARNING "Bản này có thể thay đổi khi đồng bộ"]
+        ↓
+[Reconnect → sync → conflict detected]
+        ↓
+[content_type CONTRACT/POLICY/APPROVAL?]
+        YES ↓                               NO ↓
+[Bắt buộc hiện Conflict Resolution UI]   [Auto-merge với notification]
+[2 cột: Bản của tôi | Bản của họ]
+[User chọn → commit]
+```
+
+### FUNC-08: Huawei Notification Flow (HMS Push)
+
+```
+[Server sinh push notification (E2EE)]
+        ↓
+[Gửi qua HMS Push Kit (HPK) thay FCM]
+        ↓
+[Huawei app nhận HMS Data Message]
+        ↓
+[Rust Core FFI → decrypt E2EE payload]
+        ↓
+[Nếu push_key_version lệch → cache → wakeup Main App → rotate key → decrypt]
+        ↓
+[Render notification]
+
+Lưu ý: CRL refresh delay Huawei tối đa 4h (vs iOS/Android 30 phút)
+```
+
+### FUNC-09: GPU Tier C User Flow (Flat Mode)
+
+```
+[Rust Core detect GPU không hỗ trợ backdrop-filter]
+        ↓
+[Emit GpuCapability(has_backdrop_filter: false)]
+        ↓
+[UI render Flat Solid variant thay Glassmorphism]
+        ↓
+[Tất cả tính năng vẫn FUNCTIONAL — chỉ khác về visual]
+        ↓
+[Settings > Giao diện: "Chế độ tương thích GPU đang bật"]
+```
+
+### FUNC-10: FCP Trust Boundary Declaration
+
+```
+Default Mode (Zero-Knowledge):
+  Server = Blind Relay. AI Agent = nhận masked context.
+  Cam kết: Server không đọc được nội dung.
+
+FCP Mode (Admin-Opt-In — YubiKey + typed consent + audit log signed):
+  Server vẫn Blind Relay. AI Agent = nhận plaintext context.
+  Cam kết bị giới hạn: TLS bảo vệ transit.
+  Phù hợp: AI endpoint là on-premise model do doanh nghiệp tự host.
+```
+
+### FUNC-11: AES-NI Performance Fallback User Flow
+
+```
+[First Boot: Hardware Sanity Check]
+        ↓
+[is_cpu_feature_detected!("aes") → false?]
+        Yes ↓
+[CryptoBackend::Software → ChaCha20-Poly1305]
+        ↓
+[Admin Console: Warning badge thiết bị dùng software crypto]
+[Settings > Bảo mật: "Chế độ mã hóa phần mềm — hiệu suất ~3x thấp hơn"]
+```

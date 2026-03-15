@@ -1940,3 +1940,276 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 ---
 
 *Xem `Feature_Spec.md` cho Client App-layer. Xem `Function.md` cho Product flows.*
+
+
+---
+
+## 11. Huawei HarmonyOS Stack
+
+### 11.1 HMS Integration (Thay thế Google Services)
+
+- 🗄️☁️ **Push:** HMS Push Kit (HPK) thay FCM. Rust FFI gọi HiAI Foundation API thay NNAPI.
+- 📱 **BLE:** HarmonyOS BLE API tương đương CoreBluetooth/Android BLE.
+- 📱 **Attestation:** HMS SafetyDetect `DeviceIntegrity()` thay Play Integrity. TrustZone TEE thay StrongBox (cùng ARM API, khác HAL).
+- 📱 **WASM:** HarmonyOS cho phép wasmtime JIT (không bị W^X như iOS) → dùng cùng engine Android. Distribution: AppGallery.
+- 📱 **Enterprise MDM:** Huawei Device Manager thay MDM thông thường. Không có dynamic WASM từ marketplace → AOT bundle như iOS.
+
+### 11.2 Formal IPC Memory Ownership Contract (Token Protocol)
+
+Rust Core xuất 2 FFI primitive thay vì raw pointer:
+
+1. `tera_buf_acquire(id)` → trả handle opaque (`u64` token), không phải raw pointer.
+2. `tera_buf_release(token)` → Rust mới được phép zeroize.
+
+iOS JSI và Android Dart FFI đều gọi `tera_buf_release()` trong destructor/finalizer. Rust Core có reference counter per-token: `ZeroizeOnDrop` chỉ thực thi khi `ref_count == 0`.
+
+**CI lint rule:** Cấm FFI endpoint trả `Vec<u8>/ptr` trực tiếp không qua Token Protocol.
+
+### 11.3 iOS Key Protection – Double-Buffer Zeroize Protocol
+
+- 📱 iOS **Double-Buffer:** Phân bổ key vào 2 page liền kề `MAP_ANONYMOUS|MAP_PRIVATE`. Ngay sau decrypt xong: ghi đè `0x00` vào page 1 TRƯỚC KHI dùng key. Dùng key từ page 2. Sau `ZeroizeOnDrop`: ghi đè cả 2 page. Nếu Jetsam kill trước Drop: page 1 đã clean, page 2 còn key nhưng là 1 page đơn lẻ khó exploit hơn.
+
+### 11.4 macOS XPC Worker – JIT Process Isolation
+
+- 💻 **macOS Hardened Runtime:** Tách `wasmtime` JIT ra process con riêng `terachat-wasm-worker`. Process cha không có `allow-jit`. Giao tiếp qua XPC Service (Mach port).
+
+```
+TeraChat.app/
+├── Contents/MacOS/
+│   ├── terachat            ← Main process, NO allow-jit
+│   └── terachat-wasm-worker ← Child process, allow-jit only
+```
+
+**Entitlement Matrix macOS:**
+- Main: `com.apple.security.app-sandbox=true`, NO `allow-jit`
+- `terachat-wasm-worker`: `allow-jit=true`, `disable-library-validation=true`
+- NSE Extension: `app-sandbox=true`, NO network
+
+### 11.5 Android 14+ Battery Bucket – FCM Throttle Handling
+
+- 📱 **Vấn đề:** Android 14 (API 34) — App vào "Restricted" bucket sau 3+ ngày không dùng → FCM Data Message throttle 10 lần/giờ → delay push E2EE 5-15 phút.
+- 📱 **Giải pháp:** FCM `high` priority message + Companion Device Manager registration để bypass Doze.
+
+```kotlin
+<uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+val cdm = getSystemService(CompanionDeviceManager::class.java)
+// Request REQUEST_COMPANION_RUN_IN_BACKGROUND
+```
+
+### 11.6 Remote Attestation – Platform Matrix
+
+| Platform | Attestation API | TEE |
+|---|---|---|
+| iOS | DeviceCheck + App Attest | Secure Enclave |
+| Android | Play Integrity API | StrongBox Keymaster |
+| **Huawei** | HMS SafetyDetect DeviceIntegrity() | TrustZone (ARM) |
+| macOS | Notarization + Hardened Runtime | Secure Enclave |
+| Windows | TPM 2.0 + Measured Boot | vTPM/PTT |
+| Linux | TPM 2.0 + IMA | varies |
+
+---
+
+## 12. Emergency Mobile Dictator Protocol (EMDP)
+
+### 12.1 EMDP State Machine
+
+- 💻📱🖥️ **Normal:** BLAKE3 Hash Election chọn Desktop/Android Super Node.
+- 📱 **EmergencyMobileOnly:** Khi tất cả peer là iOS Leaf Node, chọn iOS node có battery cao nhất + BLE signal mạnh nhất làm "Tactical Relay".
+- 📱 **SoloAppendOnly:** Chỉ 1 thiết bị, không cần election.
+
+**Tactical Relay ≠ Super Node:** Chỉ `Append-Only CRDT` đơn giản, store-and-forward text. KHÔNG merge DAG, KHÔNG rotate MLS Epoch. Auto-expire sau 60 phút.
+
+```rust
+pub enum DictatorElectionMode { Normal, EmergencyMobileOnly }
+// Chọn theo: battery_score + ble_rssi score
+// TacticalRelayMode::TextOnlyForward, ttl_minutes: 60
+```
+
+### 12.2 EMDP Key Escrow Handshake
+
+Trước khi Desktop offline/handover, Desktop xuất EMDP Escrow Key:
+
+```rust
+pub struct EmdpKeyEscrow {
+    relay_session_key: AesKey256,
+    emdp_start_epoch: u64,
+    emdp_expires_at: u64, // now() + 3600
+}
+// Encrypt với iOS device pubkey → gửi qua BLE Control Plane
+```
+
+Khi Desktop reconnect: nhận lại escrow từ iOS → decrypt relay messages trong EMDP window → merge vào DAG với đúng epoch context. Không bị orphan messages.
+
+---
+
+## 13. License Architecture & Cryptographic Entanglement
+
+### 13.1 License JWT Structure (HSM FIPS 140-3 Level 4)
+
+```json
+{
+  "tenant_id": "acme-corp-vn",
+  "domain": "acme.terachat.io",
+  "max_seats": 500,
+  "tier": "enterprise",
+  "valid_until": "2027-03-15T00:00:00Z",
+  "max_protocol_version": "2.0",
+  "offline_ttl_hours": 720,
+  "features": ["mesh_survival", "ai_dlp", "federation", "compliance_audit"]
+}
+```
+
+Chữ ký **Ed25519** từ HSM Private Key — key không bao giờ rời chip.
+
+### 13.2 License Boundary Separation (Open-Core)
+
+```
+Mã nguồn mở (AGPLv3): terachat-core/ ← Crypto, CRDT, MLS, Mesh
+Mã nguồn đóng (BSL):  terachat-license-guard/ ← License validation
+```
+
+`terachat-core` gọi FFI vào `license-guard` để lấy `Feature_Flags`. Không có raw key nào đi qua FFI. Không có `license-guard.so` → Community mode (unlimited users, watermark).
+
+### 13.3 Cryptographic Entanglement (Write-Only Pattern)
+
+```rust
+fn derive_master_unlock_key(license_token: &LicenseToken, epoch: u64) -> Result<MasterUnlockKey> {
+    let device_key_material = secure_enclave::sign_derive(b"license-kdf-v1", epoch.to_le_bytes())?;
+    // DeviceIdentityKey không rời chip — chỉ làm KDF input
+    let kdf_input = [device_key_material, license_token.signature, &epoch.to_le_bytes()].concat();
+    Ok(MasterUnlockKey(hkdf_sha256(&kdf_input, b"terachat-master-v1")))
+}
+```
+
+### 13.4 License Heartbeat Validation (24h, offline-capable)
+
+| Kiểm tra | Cơ chế | Fail → |
+|---|---|---|
+| JWT signature | Ed25519 vs bundled Root CA | Immediate lock |
+| Thời hạn | `valid_until` > Monotonic Counter TPM | Immediate lock |
+| Seat count | `active_device_keys` ≤ `max_seats` | Block new enrollment |
+| Revocation | CRL endpoint (online) / skip (air-gapped) | Immediate lock |
+
+### 13.5 Offline TTL Profile (Dynamic, không hardcode 24h)
+
+```rust
+pub enum OfflineTTLProfile {
+    Consumer { ttl_hours: 24 },
+    Enterprise { ttl_hours: u32 },      // configurable
+    GovMilitary { ttl_hours: 720 },     // 30 ngày
+    AirGapped { revocation_only: bool },
+}
+```
+
+TTL được cấu hình bởi Admin và baked vào License JWT field `offline_ttl_hours`.
+
+### 13.6 Tiered Conflict Resolution Protocol (Shadow DAG)
+
+```
+Tier 1 (Online):       Shadow DAG full → User thấy conflict, chọn merge
+Tier 2 (Mesh P2P):     Lightweight Conflict Marker → Desktop Super Node mediator
+Tier 3 (Solo offline): Optimistic Append → WARNING "Bản này có thể bị ghi đè"
+```
+
+Bắt buộc hiển thị Conflict Resolution UI trước khi ghi với `content_type = CONTRACT | POLICY | APPROVAL`.
+
+---
+
+## 14. Network Layer – QUIC Scope & WebRTC Reliability
+
+### 14.1 QUIC / eBPF Scope Correction
+
+⚠️ **eBPF/XDP là server-side Linux kernel technology — KHÔNG phải client-side.**
+
+```
+Server-side (☁️🗄️): eBPF/XDP anti-DDoS — hợp lệ
+Client-side:
+  iOS/Android: Network.framework QUIC native
+  Desktop Linux: seccomp-bpf (KHÔNG phải XDP)
+  Windows: Windows Filtering Platform (WFP)
+```
+
+Client không implement eBPF/XDP filtering. Client hưởng lợi từ server-side protection qua connection quality.
+
+### 14.2 iOS WebRTC TURN – CallKit Integration
+
+- 📱 **Vấn đề:** iOS cho app Background tối đa 30s network. TURN failover 3s + SRTP renegotiate có thể vượt window.
+- 📱 **Giải pháp:** Sử dụng CallKit — iOS treat TeraChat calls như native calls, không bị background kill.
+
+```swift
+class TeraCallKitProvider: NSObject, CXProviderDelegate {
+    // CXProvider giữ audio session active dù app background
+    // TURN failover xảy ra trong CallKit context → không bị suspend
+}
+```
+
+Thêm **dual TURN preconnect**: khi call active và app sắp vào Background, Rust Core proactively connect tới TURN server dự phòng.
+
+### 14.3 iOS AWDL Monitor – Hotspot/CarPlay Conflict
+
+- 📱 **Vấn đề:** iOS tự tắt AWDL khi bật Personal Hotspot hoặc CarPlay → voice call drop không giải thích.
+
+```swift
+class AWDLMonitor {
+    // NWPathMonitor detect AWDL interface + bridge (hotspot)
+    // Callback → Rust Core downgrade Tier 2 → Tier 3 (BLE only)
+    // Emit UIEvent::TierChanged với message giải thích
+    // Queue voice packets TTL 30s chờ AWDL phục hồi
+}
+```
+
+### 14.4 XPC Transaction Journal Protocol
+
+```rust
+// hot_dag.db journal trước khi dispatch sang XPC Worker
+// States: PENDING → VERIFIED → COMMITTED
+// Crash in PENDING → abort + notify user "Phiên ký bị gián đoạn. Vui lòng ký lại."
+// Crash in VERIFIED → commit from journal (idempotent)
+```
+
+### 14.5 AES-NI / ARM NEON – Software Fallback
+
+```rust
+pub fn init_crypto_backend() -> CryptoBackend {
+    if is_cpu_feature_detected!("aes") && is_cpu_feature_detected!("sse2") {
+        CryptoBackend::HardwareAccelerated
+    } else {
+        tracing::warn!("AES-NI not available, using software backend. Expect ~3x slower.");
+        CryptoBackend::Software
+    }
+}
+```
+
+Admin Console hiển thị warning khi thiết bị dùng software backend.
+
+### 14.6 Huawei CRL Polling Fallback
+
+- 📱 **Vấn đề:** HMS không có equivalent APNs `content-available` background push cho CRL updates.
+- 📱 **Giải pháp:** CRL refresh 4h polling khi Foreground + HMS Data Message khi Background. Acknowledge delay tối đa 4h vs iOS/Android 30 phút.
+
+### 14.7 Shadow DB Write Lock Protocol
+
+```rust
+pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
+// NSURLSession completion check lock → queue to hot_dag.db nếu migration đang chạy
+// Đảm bảo không race giữa shadow rename và NSURLSession write
+```
+
+---
+
+## 15. Chaos Engineering Test Matrix
+
+| Scenario | Điều kiện | Expected behavior |
+|---|---|---|
+| SC-01 | iOS AWDL off + TURN failover + CRDT merge >5000 events | AWDL warn → BLE → TURN preconnect → CRDT queue |
+| SC-02 | Jetsam kill NSE mid-WAL + Desktop offline + EMDP active | WAL rollback → DAG self-heal → EMDP key escrow |
+| SC-03 | XPC Worker OOM + Smart Approval pending | Journal PENDING → abort → user re-sign prompt |
+| SC-04 | Battery <20% + Mesh active + Whisper loading | Whisper disabled → Voice text-fallback → BLE only |
+| SC-05 | AppArmor deny memfd + mlock + seccomp active | Graceful degrade to software crypto → performance warn |
+| SC-06 | License expire T+0 + Active emergency call | Chat survives → Admin Console lock only |
+| SC-07 | EMDP 60min + Desktop reconnect + 1000 relay messages | Key escrow decrypt → DAG merge → epoch reconcile |
+
+---
+
+*Xem `Feature_Spec.md` cho client implementation. Xem `Design.md` cho UX states.*

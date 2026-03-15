@@ -5057,6 +5057,540 @@
               "subsections": []
             }
           ]
+        },
+        {
+          "id": "11-huawei-harmonyos-stack",
+          "level": 2,
+          "heading": "11. Huawei HarmonyOS Stack",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "111-hms-integration-thay-thế-google-services",
+              "level": 3,
+              "heading": "11.1 HMS Integration (Thay thế Google Services)",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "🗄️☁️ Push: HMS Push Kit (HPK) thay FCM. Rust FFI gọi HiAI Foundation API thay NNAPI.",
+                    "📱 BLE: HarmonyOS BLE API tương đương CoreBluetooth/Android BLE.",
+                    "📱 Attestation: HMS SafetyDetect DeviceIntegrity() thay Play Integrity. TrustZone TEE thay StrongBox (cùng ARM API, khác HAL).",
+                    "📱 WASM: HarmonyOS cho phép wasmtime JIT (không bị W^X như iOS) → dùng cùng engine Android. Distribution: AppGallery.",
+                    "📱 Enterprise MDM: Huawei Device Manager thay MDM thông thường. Không có dynamic WASM từ marketplace → AOT bundle như iOS."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "112-formal-ipc-memory-ownership-contract-token-protocol",
+              "level": 3,
+              "heading": "11.2 Formal IPC Memory Ownership Contract (Token Protocol)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Rust Core xuất 2 FFI primitive thay vì raw pointer:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "tera_buf_acquire(id) → trả handle opaque (u64 token), không phải raw pointer.",
+                    "tera_buf_release(token) → Rust mới được phép zeroize."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "iOS JSI và Android Dart FFI đều gọi tera_buf_release() trong destructor/finalizer. Rust Core có reference counter per-token: ZeroizeOnDrop chỉ thực thi khi ref_count == 0."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "CI lint rule: Cấm FFI endpoint trả Vec<u8>/ptr trực tiếp không qua Token Protocol."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "113-ios-key-protection-double-buffer-zeroize-protocol",
+              "level": 3,
+              "heading": "11.3 iOS Key Protection – Double-Buffer Zeroize Protocol",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 iOS Double-Buffer: Phân bổ key vào 2 page liền kề MAP_ANONYMOUS|MAP_PRIVATE. Ngay sau decrypt xong: ghi đè 0x00 vào page 1 TRƯỚC KHI dùng key. Dùng key từ page 2. Sau ZeroizeOnDrop: ghi đè cả 2 page. Nếu Jetsam kill trước Drop: page 1 đã clean, page 2 còn key nhưng là 1 page đơn lẻ khó exploit hơn."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "114-macos-xpc-worker-jit-process-isolation",
+              "level": 3,
+              "heading": "11.4 macOS XPC Worker – JIT Process Isolation",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻 macOS Hardened Runtime: Tách wasmtime JIT ra process con riêng terachat-wasm-worker. Process cha không có allow-jit. Giao tiếp qua XPC Service (Mach port)."
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "TeraChat.app/\n├── Contents/MacOS/\n│   ├── terachat            ← Main process, NO allow-jit\n│   └── terachat-wasm-worker ← Child process, allow-jit only"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Entitlement Matrix macOS:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Main: com.apple.security.app-sandbox=true, NO allow-jit",
+                    "terachat-wasm-worker: allow-jit=true, disable-library-validation=true",
+                    "NSE Extension: app-sandbox=true, NO network"
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "115-android-14-battery-bucket-fcm-throttle-handling",
+              "level": 3,
+              "heading": "11.5 Android 14+ Battery Bucket – FCM Throttle Handling",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Vấn đề: Android 14 (API 34) — App vào \"Restricted\" bucket sau 3+ ngày không dùng → FCM Data Message throttle 10 lần/giờ → delay push E2EE 5-15 phút.",
+                    "📱 Giải pháp: FCM high priority message + Companion Device Manager registration để bypass Doze."
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "kotlin",
+                  "code": "<uses-permission android:name=\"android.permission.USE_EXACT_ALARM\"/>\n<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>\nval cdm = getSystemService(CompanionDeviceManager::class.java)\n// Request REQUEST_COMPANION_RUN_IN_BACKGROUND"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "116-remote-attestation-platform-matrix",
+              "level": 3,
+              "heading": "11.6 Remote Attestation – Platform Matrix",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Attestation API",
+                    "TEE"
+                  ],
+                  "rows": [
+                    [
+                      "iOS",
+                      "DeviceCheck + App Attest",
+                      "Secure Enclave"
+                    ],
+                    [
+                      "Android",
+                      "Play Integrity API",
+                      "StrongBox Keymaster"
+                    ],
+                    [
+                      "**Huawei**",
+                      "HMS SafetyDetect DeviceIntegrity()",
+                      "TrustZone (ARM)"
+                    ],
+                    [
+                      "macOS",
+                      "Notarization + Hardened Runtime",
+                      "Secure Enclave"
+                    ],
+                    [
+                      "Windows",
+                      "TPM 2.0 + Measured Boot",
+                      "vTPM/PTT"
+                    ],
+                    [
+                      "Linux",
+                      "TPM 2.0 + IMA",
+                      "varies"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "12-emergency-mobile-dictator-protocol-emdp",
+          "level": 2,
+          "heading": "12. Emergency Mobile Dictator Protocol (EMDP)",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "121-emdp-state-machine",
+              "level": 3,
+              "heading": "12.1 EMDP State Machine",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Normal: BLAKE3 Hash Election chọn Desktop/Android Super Node.",
+                    "📱 EmergencyMobileOnly: Khi tất cả peer là iOS Leaf Node, chọn iOS node có battery cao nhất + BLE signal mạnh nhất làm \"Tactical Relay\".",
+                    "📱 SoloAppendOnly: Chỉ 1 thiết bị, không cần election."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Tactical Relay ≠ Super Node: Chỉ Append-Only CRDT đơn giản, store-and-forward text. KHÔNG merge DAG, KHÔNG rotate MLS Epoch. Auto-expire sau 60 phút."
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub enum DictatorElectionMode { Normal, EmergencyMobileOnly }\n// Chọn theo: battery_score + ble_rssi score\n// TacticalRelayMode::TextOnlyForward, ttl_minutes: 60"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "122-emdp-key-escrow-handshake",
+              "level": 3,
+              "heading": "12.2 EMDP Key Escrow Handshake",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Trước khi Desktop offline/handover, Desktop xuất EMDP Escrow Key:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub struct EmdpKeyEscrow {\n    relay_session_key: AesKey256,\n    emdp_start_epoch: u64,\n    emdp_expires_at: u64, // now() + 3600\n}\n// Encrypt với iOS device pubkey → gửi qua BLE Control Plane"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Khi Desktop reconnect: nhận lại escrow từ iOS → decrypt relay messages trong EMDP window → merge vào DAG với đúng epoch context. Không bị orphan messages."
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "13-license-architecture-cryptographic-entanglement",
+          "level": 2,
+          "heading": "13. License Architecture & Cryptographic Entanglement",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "131-license-jwt-structure-hsm-fips-140-3-level-4",
+              "level": 3,
+              "heading": "13.1 License JWT Structure (HSM FIPS 140-3 Level 4)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "json",
+                  "code": "{\n  \"tenant_id\": \"acme-corp-vn\",\n  \"domain\": \"acme.terachat.io\",\n  \"max_seats\": 500,\n  \"tier\": \"enterprise\",\n  \"valid_until\": \"2027-03-15T00:00:00Z\",\n  \"max_protocol_version\": \"2.0\",\n  \"offline_ttl_hours\": 720,\n  \"features\": [\"mesh_survival\", \"ai_dlp\", \"federation\", \"compliance_audit\"]\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Chữ ký Ed25519 từ HSM Private Key — key không bao giờ rời chip."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "132-license-boundary-separation-open-core",
+              "level": 3,
+              "heading": "13.2 License Boundary Separation (Open-Core)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Mã nguồn mở (AGPLv3): terachat-core/ ← Crypto, CRDT, MLS, Mesh\nMã nguồn đóng (BSL):  terachat-license-guard/ ← License validation"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "terachat-core gọi FFI vào license-guard để lấy Feature_Flags. Không có raw key nào đi qua FFI. Không có license-guard.so → Community mode (unlimited users, watermark)."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "133-cryptographic-entanglement-write-only-pattern",
+              "level": 3,
+              "heading": "13.3 Cryptographic Entanglement (Write-Only Pattern)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "fn derive_master_unlock_key(license_token: &LicenseToken, epoch: u64) -> Result<MasterUnlockKey> {\n    let device_key_material = secure_enclave::sign_derive(b\"license-kdf-v1\", epoch.to_le_bytes())?;\n    // DeviceIdentityKey không rời chip — chỉ làm KDF input\n    let kdf_input = [device_key_material, license_token.signature, &epoch.to_le_bytes()].concat();\n    Ok(MasterUnlockKey(hkdf_sha256(&kdf_input, b\"terachat-master-v1\")))\n}"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "134-license-heartbeat-validation-24h-offline-capable",
+              "level": 3,
+              "heading": "13.4 License Heartbeat Validation (24h, offline-capable)",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Kiểm tra",
+                    "Cơ chế",
+                    "Fail →"
+                  ],
+                  "rows": [
+                    [
+                      "JWT signature",
+                      "Ed25519 vs bundled Root CA",
+                      "Immediate lock"
+                    ],
+                    [
+                      "Thời hạn",
+                      "`valid_until` > Monotonic Counter TPM",
+                      "Immediate lock"
+                    ],
+                    [
+                      "Seat count",
+                      "`active_device_keys` ≤ `max_seats`",
+                      "Block new enrollment"
+                    ],
+                    [
+                      "Revocation",
+                      "CRL endpoint (online) / skip (air-gapped)",
+                      "Immediate lock"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "135-offline-ttl-profile-dynamic-không-hardcode-24h",
+              "level": 3,
+              "heading": "13.5 Offline TTL Profile (Dynamic, không hardcode 24h)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub enum OfflineTTLProfile {\n    Consumer { ttl_hours: 24 },\n    Enterprise { ttl_hours: u32 },      // configurable\n    GovMilitary { ttl_hours: 720 },     // 30 ngày\n    AirGapped { revocation_only: bool },\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "TTL được cấu hình bởi Admin và baked vào License JWT field offline_ttl_hours."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "136-tiered-conflict-resolution-protocol-shadow-dag",
+              "level": 3,
+              "heading": "13.6 Tiered Conflict Resolution Protocol (Shadow DAG)",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Tier 1 (Online):       Shadow DAG full → User thấy conflict, chọn merge\nTier 2 (Mesh P2P):     Lightweight Conflict Marker → Desktop Super Node mediator\nTier 3 (Solo offline): Optimistic Append → WARNING \"Bản này có thể bị ghi đè\""
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Bắt buộc hiển thị Conflict Resolution UI trước khi ghi với content_type = CONTRACT | POLICY | APPROVAL."
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "14-network-layer-quic-scope-webrtc-reliability",
+          "level": 2,
+          "heading": "14. Network Layer – QUIC Scope & WebRTC Reliability",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "141-quic-ebpf-scope-correction",
+              "level": 3,
+              "heading": "14.1 QUIC / eBPF Scope Correction",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "⚠️ eBPF/XDP là server-side Linux kernel technology — KHÔNG phải client-side."
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Server-side (☁️🗄️): eBPF/XDP anti-DDoS — hợp lệ\nClient-side:\n  iOS/Android: Network.framework QUIC native\n  Desktop Linux: seccomp-bpf (KHÔNG phải XDP)\n  Windows: Windows Filtering Platform (WFP)"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Client không implement eBPF/XDP filtering. Client hưởng lợi từ server-side protection qua connection quality."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "142-ios-webrtc-turn-callkit-integration",
+              "level": 3,
+              "heading": "14.2 iOS WebRTC TURN – CallKit Integration",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Vấn đề: iOS cho app Background tối đa 30s network. TURN failover 3s + SRTP renegotiate có thể vượt window.",
+                    "📱 Giải pháp: Sử dụng CallKit — iOS treat TeraChat calls như native calls, không bị background kill."
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "swift",
+                  "code": "class TeraCallKitProvider: NSObject, CXProviderDelegate {\n    // CXProvider giữ audio session active dù app background\n    // TURN failover xảy ra trong CallKit context → không bị suspend\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Thêm dual TURN preconnect: khi call active và app sắp vào Background, Rust Core proactively connect tới TURN server dự phòng."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "143-ios-awdl-monitor-hotspotcarplay-conflict",
+              "level": 3,
+              "heading": "14.3 iOS AWDL Monitor – Hotspot/CarPlay Conflict",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Vấn đề: iOS tự tắt AWDL khi bật Personal Hotspot hoặc CarPlay → voice call drop không giải thích."
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "swift",
+                  "code": "class AWDLMonitor {\n    // NWPathMonitor detect AWDL interface + bridge (hotspot)\n    // Callback → Rust Core downgrade Tier 2 → Tier 3 (BLE only)\n    // Emit UIEvent::TierChanged với message giải thích\n    // Queue voice packets TTL 30s chờ AWDL phục hồi\n}"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "144-xpc-transaction-journal-protocol",
+              "level": 3,
+              "heading": "14.4 XPC Transaction Journal Protocol",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// hot_dag.db journal trước khi dispatch sang XPC Worker\n// States: PENDING → VERIFIED → COMMITTED\n// Crash in PENDING → abort + notify user \"Phiên ký bị gián đoạn. Vui lòng ký lại.\"\n// Crash in VERIFIED → commit from journal (idempotent)"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "145-aes-ni-arm-neon-software-fallback",
+              "level": 3,
+              "heading": "14.5 AES-NI / ARM NEON – Software Fallback",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub fn init_crypto_backend() -> CryptoBackend {\n    if is_cpu_feature_detected!(\"aes\") && is_cpu_feature_detected!(\"sse2\") {\n        CryptoBackend::HardwareAccelerated\n    } else {\n        tracing::warn!(\"AES-NI not available, using software backend. Expect ~3x slower.\");\n        CryptoBackend::Software\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Admin Console hiển thị warning khi thiết bị dùng software backend."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "146-huawei-crl-polling-fallback",
+              "level": 3,
+              "heading": "14.6 Huawei CRL Polling Fallback",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Vấn đề: HMS không có equivalent APNs content-available background push cho CRL updates.",
+                    "📱 Giải pháp: CRL refresh 4h polling khi Foreground + HMS Data Message khi Background. Acknowledge delay tối đa 4h vs iOS/Android 30 phút."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "147-shadow-db-write-lock-protocol",
+              "level": 3,
+              "heading": "14.7 Shadow DB Write Lock Protocol",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }\n// NSURLSession completion check lock → queue to hot_dag.db nếu migration đang chạy\n// Đảm bảo không race giữa shadow rename và NSURLSession write"
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "15-chaos-engineering-test-matrix",
+          "level": 2,
+          "heading": "15. Chaos Engineering Test Matrix",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Scenario",
+                "Điều kiện",
+                "Expected behavior"
+              ],
+              "rows": [
+                [
+                  "SC-01",
+                  "iOS AWDL off + TURN failover + CRDT merge >5000 events",
+                  "AWDL warn → BLE → TURN preconnect → CRDT queue"
+                ],
+                [
+                  "SC-02",
+                  "Jetsam kill NSE mid-WAL + Desktop offline + EMDP active",
+                  "WAL rollback → DAG self-heal → EMDP key escrow"
+                ],
+                [
+                  "SC-03",
+                  "XPC Worker OOM + Smart Approval pending",
+                  "Journal PENDING → abort → user re-sign prompt"
+                ],
+                [
+                  "SC-04",
+                  "Battery <20% + Mesh active + Whisper loading",
+                  "Whisper disabled → Voice text-fallback → BLE only"
+                ],
+                [
+                  "SC-05",
+                  "AppArmor deny memfd + mlock + seccomp active",
+                  "Graceful degrade to software crypto → performance warn"
+                ],
+                [
+                  "SC-06",
+                  "License expire T+0 + Active emergency call",
+                  "Chat survives → Admin Console lock only"
+                ],
+                [
+                  "SC-07",
+                  "EMDP 60min + Desktop reconnect + 1000 relay messages",
+                  "Key escrow decrypt → DAG merge → epoch reconcile"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Xem Feature_Spec.md cho client implementation. Xem Design.md cho UX states."
+            }
+          ],
+          "subsections": []
         }
       ]
     }

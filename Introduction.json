@@ -420,6 +420,159 @@
               ]
             }
           ]
+        },
+        {
+          "id": "mục-mới-platform-matrix-architecture-clarifications",
+          "level": 2,
+          "heading": "Mục Mới: Platform Matrix & Architecture Clarifications",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "platform-support-matrix-updated",
+              "level": 3,
+              "heading": "Platform Support Matrix (Updated)",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Status",
+                    "Package Format",
+                    "Mesh Role"
+                  ],
+                  "rows": [
+                    [
+                      "macOS (Intel + Apple Silicon)",
+                      "✅ GA",
+                      ".dmg, .pkg",
+                      "Super Node / Relay"
+                    ],
+                    [
+                      "Windows x64",
+                      "✅ GA",
+                      ".exe, MSIX",
+                      "Super Node / Relay"
+                    ],
+                    [
+                      "**Windows ARM64**",
+                      "✅ GA",
+                      ".exe, MSIX",
+                      "Super Node / Relay"
+                    ],
+                    [
+                      "Linux x64",
+                      "✅ GA",
+                      ".deb, .rpm, AppImage",
+                      "Super Node / Relay / Server"
+                    ],
+                    [
+                      "**Linux ARM64**",
+                      "✅ GA",
+                      ".deb, .rpm",
+                      "Server deployment"
+                    ],
+                    [
+                      "iOS",
+                      "✅ GA",
+                      "App Store / MDM",
+                      "Leaf Node"
+                    ],
+                    [
+                      "Android",
+                      "✅ GA",
+                      "Play Store / APK",
+                      "Leaf / Super Node"
+                    ],
+                    [
+                      "**Huawei HarmonyOS**",
+                      "🔵 Beta",
+                      "AppGallery",
+                      "Leaf Node"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "offline-survival-3-cấp-độ",
+              "level": 3,
+              "heading": "Offline Survival – 3 Cấp Độ",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "TeraChat Offline Survival hoạt động ở 3 cấp độ rõ ràng:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Cấp độ",
+                    "Điều kiện",
+                    "Năng lực"
+                  ],
+                  "rows": [
+                    [
+                      "**Cấp 1 (Full Mesh)**",
+                      "Desktop/Laptop làm Super Node, BLE hoặc Wi-Fi Direct",
+                      "Đầy đủ: text, file (tóm tắt), voice (nếu bandwidth đủ), CRDT full merge"
+                    ],
+                    [
+                      "**Cấp 2 (Partial Mesh)**",
+                      "Mix Desktop + Mobile, Desktop làm mediator",
+                      "Text + file summary, CRDT với Conflict Marker"
+                    ],
+                    [
+                      "**Cấp 3 (Mobile-Only SOS)**",
+                      "Chỉ iOS Leaf Nodes, không có Desktop",
+                      "Text SOS only (Tactical Relay), Append-Only CRDT, không đảm bảo full consistency"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Cấp 3 không đảm bảo collaboration đầy đủ — chỉ đảm bảo tin nhắn đến nơi."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "zero-knowledge-retention-clarification",
+              "level": 3,
+              "heading": "Zero-Knowledge Retention (Clarification)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "TeraChat không phải \"Zero-Retention\" theo nghĩa server không giữ gì. Cam kết chính xác:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Zero-Knowledge Retention: Server giữ ciphertext đã mã hóa (cold_state.db) nhưng không có key để đọc nội dung. Key chỉ tồn tại trên client.",
+                    "Client-Controlled TTL: Enterprise tự configure VPS cold storage TTL (7 ngày → không giới hạn).",
+                    "Compliance Retention: Banking/Gov có thể giữ audit log 7 năm, encrypted at rest, key ở client."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "lợi-thế-kỹ-thuật-cốt-lõi",
+              "level": 3,
+              "heading": "Lợi thế Kỹ thuật Cốt lõi",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "Shared Rust Core: Logic bảo mật, mesh protocol, CRDT viết một lần, cross-compile sang tất cả platform.",
+                    "Flutter Unified Mobile: iOS + Android + Huawei từ 1 Dart codebase qua Dart FFI → Rust C ABI.",
+                    "Tauri Desktop: Web tech UI + Rust backend, native performance.",
+                    "WASM Behavioral Parity: wasm3 (iOS) và wasmtime (Android/Desktop) đảm bảo output identical qua CI gate."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }

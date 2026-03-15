@@ -491,6 +491,32 @@
 <a href="#1010-tee-remote-attestation-sealed-database-access" class="nav-link" style="padding-left:0.8rem;">10.10 TEE Remote Attestation & Sealed Database Access</a>
 <a href="#1011-dual-state-network-uniffi-cross-platform" class="nav-link" style="padding-left:0.8rem;">10.11 Dual-State Network & UniFFI Cross-Platform</a>
 <a href="#1012-zero-knowledge-epoch-ratchet-session-healing" class="nav-link" style="padding-left:0.8rem;">10.12 Zero-Knowledge Epoch Ratchet & Session Healing</a>
+<a href="#11-huawei-harmonyos-stack" class="nav-link" style="padding-left:0.8rem;">11. Huawei HarmonyOS Stack</a>
+<a href="#111-hms-integration-thay-thế-google-services" class="nav-link" style="padding-left:0.8rem;">11.1 HMS Integration (Thay thế Google Services)</a>
+<a href="#112-formal-ipc-memory-ownership-contract-token-protocol" class="nav-link" style="padding-left:0.8rem;">11.2 Formal IPC Memory Ownership Contract (Token Protocol)</a>
+<a href="#113-ios-key-protection-double-buffer-zeroize-protocol" class="nav-link" style="padding-left:0.8rem;">11.3 iOS Key Protection – Double-Buffer Zeroize Protocol</a>
+<a href="#114-macos-xpc-worker-jit-process-isolation" class="nav-link" style="padding-left:0.8rem;">11.4 macOS XPC Worker – JIT Process Isolation</a>
+<a href="#115-android-14-battery-bucket-fcm-throttle-handling" class="nav-link" style="padding-left:0.8rem;">11.5 Android 14+ Battery Bucket – FCM Throttle Handling</a>
+<a href="#116-remote-attestation-platform-matrix" class="nav-link" style="padding-left:0.8rem;">11.6 Remote Attestation – Platform Matrix</a>
+<a href="#12-emergency-mobile-dictator-protocol-emdp" class="nav-link" style="padding-left:0.8rem;">12. Emergency Mobile Dictator Protocol (EMDP)</a>
+<a href="#121-emdp-state-machine" class="nav-link" style="padding-left:0.8rem;">12.1 EMDP State Machine</a>
+<a href="#122-emdp-key-escrow-handshake" class="nav-link" style="padding-left:0.8rem;">12.2 EMDP Key Escrow Handshake</a>
+<a href="#13-license-architecture-cryptographic-entanglement" class="nav-link" style="padding-left:0.8rem;">13. License Architecture & Cryptographic Entanglement</a>
+<a href="#131-license-jwt-structure-hsm-fips-140-3-level-4" class="nav-link" style="padding-left:0.8rem;">13.1 License JWT Structure (HSM FIPS 140-3 Level 4)</a>
+<a href="#132-license-boundary-separation-open-core" class="nav-link" style="padding-left:0.8rem;">13.2 License Boundary Separation (Open-Core)</a>
+<a href="#133-cryptographic-entanglement-write-only-pattern" class="nav-link" style="padding-left:0.8rem;">13.3 Cryptographic Entanglement (Write-Only Pattern)</a>
+<a href="#134-license-heartbeat-validation-24h-offline-capable" class="nav-link" style="padding-left:0.8rem;">13.4 License Heartbeat Validation (24h, offline-capable)</a>
+<a href="#135-offline-ttl-profile-dynamic-không-hardcode-24h" class="nav-link" style="padding-left:0.8rem;">13.5 Offline TTL Profile (Dynamic, không hardcode 24h)</a>
+<a href="#136-tiered-conflict-resolution-protocol-shadow-dag" class="nav-link" style="padding-left:0.8rem;">13.6 Tiered Conflict Resolution Protocol (Shadow DAG)</a>
+<a href="#14-network-layer-quic-scope-webrtc-reliability" class="nav-link" style="padding-left:0.8rem;">14. Network Layer – QUIC Scope & WebRTC Reliability</a>
+<a href="#141-quic-ebpf-scope-correction" class="nav-link" style="padding-left:0.8rem;">14.1 QUIC / eBPF Scope Correction</a>
+<a href="#142-ios-webrtc-turn-callkit-integration" class="nav-link" style="padding-left:0.8rem;">14.2 iOS WebRTC TURN – CallKit Integration</a>
+<a href="#143-ios-awdl-monitor-hotspotcarplay-conflict" class="nav-link" style="padding-left:0.8rem;">14.3 iOS AWDL Monitor – Hotspot/CarPlay Conflict</a>
+<a href="#144-xpc-transaction-journal-protocol" class="nav-link" style="padding-left:0.8rem;">14.4 XPC Transaction Journal Protocol</a>
+<a href="#145-aes-ni-arm-neon-software-fallback" class="nav-link" style="padding-left:0.8rem;">14.5 AES-NI / ARM NEON – Software Fallback</a>
+<a href="#146-huawei-crl-polling-fallback" class="nav-link" style="padding-left:0.8rem;">14.6 Huawei CRL Polling Fallback</a>
+<a href="#147-shadow-db-write-lock-protocol" class="nav-link" style="padding-left:0.8rem;">14.7 Shadow DB Write Lock Protocol</a>
+<a href="#15-chaos-engineering-test-matrix" class="nav-link" style="padding-left:0.8rem;">15. Chaos Engineering Test Matrix</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -2620,6 +2646,276 @@ Step 3 │ WebSocket Secure (wss:// over TCP:443)
 </ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho Client App-layer. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Function.md</code> cho Product flows.</em></p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="11-huawei-harmonyos-stack">11. Huawei HarmonyOS Stack</h2>
+<h3 id="111-hms-integration-thay-thế-google-services">11.1 HMS Integration (Thay thế Google Services)</h3>
+<ul>
+<li>🗄️☁️ <strong>Push:</strong> HMS Push Kit (HPK) thay FCM. Rust FFI gọi HiAI Foundation API thay NNAPI.</li>
+<li>📱 <strong>BLE:</strong> HarmonyOS BLE API tương đương CoreBluetooth/Android BLE.</li>
+<li>📱 <strong>Attestation:</strong> HMS SafetyDetect <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">DeviceIntegrity()</code> thay Play Integrity. TrustZone TEE thay StrongBox (cùng ARM API, khác HAL).</li>
+<li>📱 <strong>WASM:</strong> HarmonyOS cho phép wasmtime JIT (không bị W^X như iOS) → dùng cùng engine Android. Distribution: AppGallery.</li>
+<li>📱 <strong>Enterprise MDM:</strong> Huawei Device Manager thay MDM thông thường. Không có dynamic WASM từ marketplace → AOT bundle như iOS.</li>
+</ul>
+<h3 id="112-formal-ipc-memory-ownership-contract-token-protocol">11.2 Formal IPC Memory Ownership Contract (Token Protocol)</h3>
+<p>Rust Core xuất 2 FFI primitive thay vì raw pointer:</p>
+<ol>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera_buf_acquire(id)</code> → trả handle opaque (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">u64</code> token), không phải raw pointer.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera_buf_release(token)</code> → Rust mới được phép zeroize.</li>
+</ol>
+<p>iOS JSI và Android Dart FFI đều gọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera_buf_release()</code> trong destructor/finalizer. Rust Core có reference counter per-token: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code> chỉ thực thi khi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ref_count == 0</code>.</p>
+<p><strong>CI lint rule:</strong> Cấm FFI endpoint trả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Vec&lt;u8&gt;/ptr</code> trực tiếp không qua Token Protocol.</p>
+<h3 id="113-ios-key-protection-double-buffer-zeroize-protocol">11.3 iOS Key Protection – Double-Buffer Zeroize Protocol</h3>
+<ul>
+<li>📱 iOS <strong>Double-Buffer:</strong> Phân bổ key vào 2 page liền kề <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MAP_ANONYMOUS|MAP_PRIVATE</code>. Ngay sau decrypt xong: ghi đè <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">0x00</code> vào page 1 TRƯỚC KHI dùng key. Dùng key từ page 2. Sau <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ZeroizeOnDrop</code>: ghi đè cả 2 page. Nếu Jetsam kill trước Drop: page 1 đã clean, page 2 còn key nhưng là 1 page đơn lẻ khó exploit hơn.</li>
+</ul>
+<h3 id="114-macos-xpc-worker-jit-process-isolation">11.4 macOS XPC Worker – JIT Process Isolation</h3>
+<ul>
+<li>💻 <strong>macOS Hardened Runtime:</strong> Tách <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasmtime</code> JIT ra process con riêng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-wasm-worker</code>. Process cha không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow-jit</code>. Giao tiếp qua XPC Service (Mach port).</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>TeraChat.app/
+├── Contents/MacOS/
+│   ├── terachat            ← Main process, NO allow-jit
+│   └── terachat-wasm-worker ← Child process, allow-jit only</code></pre></div>
+<p><strong>Entitlement Matrix macOS:</strong></p>
+<ul>
+<li>Main: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">com.apple.security.app-sandbox=true</code>, NO <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow-jit</code></li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-wasm-worker</code>: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">allow-jit=true</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">disable-library-validation=true</code></li>
+<li>NSE Extension: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">app-sandbox=true</code>, NO network</li>
+</ul>
+<h3 id="115-android-14-battery-bucket-fcm-throttle-handling">11.5 Android 14+ Battery Bucket – FCM Throttle Handling</h3>
+<ul>
+<li>📱 <strong>Vấn đề:</strong> Android 14 (API 34) — App vào "Restricted" bucket sau 3+ ngày không dùng → FCM Data Message throttle 10 lần/giờ → delay push E2EE 5-15 phút.</li>
+<li>📱 <strong>Giải pháp:</strong> FCM <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">high</code> priority message + Companion Device Manager registration để bypass Doze.</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>&lt;uses-permission android:name="android.permission.USE_EXACT_ALARM"/&gt;
+&lt;uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/&gt;
+val cdm = getSystemService(CompanionDeviceManager::class.java)
+// Request REQUEST_COMPANION_RUN_IN_BACKGROUND</code></pre></div>
+<h3 id="116-remote-attestation-platform-matrix">11.6 Remote Attestation – Platform Matrix</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Platform</th>
+<th>Attestation API</th>
+<th>TEE</th>
+</tr></thead><tbody>
+<tr>
+<td>iOS</td>
+<td>DeviceCheck + App Attest</td>
+<td>Secure Enclave</td>
+</tr>
+<tr>
+<td>Android</td>
+<td>Play Integrity API</td>
+<td>StrongBox Keymaster</td>
+</tr>
+<tr>
+<td><strong>Huawei</strong></td>
+<td>HMS SafetyDetect DeviceIntegrity()</td>
+<td>TrustZone (ARM)</td>
+</tr>
+<tr>
+<td>macOS</td>
+<td>Notarization + Hardened Runtime</td>
+<td>Secure Enclave</td>
+</tr>
+<tr>
+<td>Windows</td>
+<td>TPM 2.0 + Measured Boot</td>
+<td>vTPM/PTT</td>
+</tr>
+<tr>
+<td>Linux</td>
+<td>TPM 2.0 + IMA</td>
+<td>varies</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="12-emergency-mobile-dictator-protocol-emdp">12. Emergency Mobile Dictator Protocol (EMDP)</h2>
+<h3 id="121-emdp-state-machine">12.1 EMDP State Machine</h3>
+<ul>
+<li>💻📱🖥️ <strong>Normal:</strong> BLAKE3 Hash Election chọn Desktop/Android Super Node.</li>
+<li>📱 <strong>EmergencyMobileOnly:</strong> Khi tất cả peer là iOS Leaf Node, chọn iOS node có battery cao nhất + BLE signal mạnh nhất làm "Tactical Relay".</li>
+<li>📱 <strong>SoloAppendOnly:</strong> Chỉ 1 thiết bị, không cần election.</li>
+</ul>
+<p><strong>Tactical Relay ≠ Super Node:</strong> Chỉ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Append-Only CRDT</code> đơn giản, store-and-forward text. KHÔNG merge DAG, KHÔNG rotate MLS Epoch. Auto-expire sau 60 phút.</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub enum DictatorElectionMode { Normal, EmergencyMobileOnly }
+// Chọn theo: battery_score + ble_rssi score
+// TacticalRelayMode::TextOnlyForward, ttl_minutes: 60</code></pre></div>
+<h3 id="122-emdp-key-escrow-handshake">12.2 EMDP Key Escrow Handshake</h3>
+<p>Trước khi Desktop offline/handover, Desktop xuất EMDP Escrow Key:</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub struct EmdpKeyEscrow {
+    relay_session_key: AesKey256,
+    emdp_start_epoch: u64,
+    emdp_expires_at: u64, // now() + 3600
+}
+// Encrypt với iOS device pubkey → gửi qua BLE Control Plane</code></pre></div>
+<p>Khi Desktop reconnect: nhận lại escrow từ iOS → decrypt relay messages trong EMDP window → merge vào DAG với đúng epoch context. Không bị orphan messages.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="13-license-architecture-cryptographic-entanglement">13. License Architecture & Cryptographic Entanglement</h2>
+<h3 id="131-license-jwt-structure-hsm-fips-140-3-level-4">13.1 License JWT Structure (HSM FIPS 140-3 Level 4)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>{
+  "tenant_id": "acme-corp-vn",
+  "domain": "acme.terachat.io",
+  "max_seats": 500,
+  "tier": "enterprise",
+  "valid_until": "2027-03-15T00:00:00Z",
+  "max_protocol_version": "2.0",
+  "offline_ttl_hours": 720,
+  "features": ["mesh_survival", "ai_dlp", "federation", "compliance_audit"]
+}</code></pre></div>
+<p>Chữ ký <strong>Ed25519</strong> từ HSM Private Key — key không bao giờ rời chip.</p>
+<h3 id="132-license-boundary-separation-open-core">13.2 License Boundary Separation (Open-Core)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Mã nguồn mở (AGPLv3): terachat-core/ ← Crypto, CRDT, MLS, Mesh
+Mã nguồn đóng (BSL):  terachat-license-guard/ ← License validation</code></pre></div>
+<p><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-core</code> gọi FFI vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">license-guard</code> để lấy <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Flags</code>. Không có raw key nào đi qua FFI. Không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">license-guard.so</code> → Community mode (unlimited users, watermark).</p>
+<h3 id="133-cryptographic-entanglement-write-only-pattern">13.3 Cryptographic Entanglement (Write-Only Pattern)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>fn derive_master_unlock_key(license_token: &amp;LicenseToken, epoch: u64) -&gt; Result&lt;MasterUnlockKey&gt; {
+    let device_key_material = secure_enclave::sign_derive(b"license-kdf-v1", epoch.to_le_bytes())?;
+    // DeviceIdentityKey không rời chip — chỉ làm KDF input
+    let kdf_input = [device_key_material, license_token.signature, &amp;epoch.to_le_bytes()].concat();
+    Ok(MasterUnlockKey(hkdf_sha256(&amp;kdf_input, b"terachat-master-v1")))
+}</code></pre></div>
+<h3 id="134-license-heartbeat-validation-24h-offline-capable">13.4 License Heartbeat Validation (24h, offline-capable)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Kiểm tra</th>
+<th>Cơ chế</th>
+<th>Fail →</th>
+</tr></thead><tbody>
+<tr>
+<td>JWT signature</td>
+<td>Ed25519 vs bundled Root CA</td>
+<td>Immediate lock</td>
+</tr>
+<tr>
+<td>Thời hạn</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">valid_until</code> &gt; Monotonic Counter TPM</td>
+<td>Immediate lock</td>
+</tr>
+<tr>
+<td>Seat count</td>
+<td><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">active_device_keys</code> ≤ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">max_seats</code></td>
+<td>Block new enrollment</td>
+</tr>
+<tr>
+<td>Revocation</td>
+<td>CRL endpoint (online) / skip (air-gapped)</td>
+<td>Immediate lock</td>
+</tr>
+</tbody></table></div>
+<h3 id="135-offline-ttl-profile-dynamic-không-hardcode-24h">13.5 Offline TTL Profile (Dynamic, không hardcode 24h)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub enum OfflineTTLProfile {
+    Consumer { ttl_hours: 24 },
+    Enterprise { ttl_hours: u32 },      // configurable
+    GovMilitary { ttl_hours: 720 },     // 30 ngày
+    AirGapped { revocation_only: bool },
+}</code></pre></div>
+<p>TTL được cấu hình bởi Admin và baked vào License JWT field <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">offline_ttl_hours</code>.</p>
+<h3 id="136-tiered-conflict-resolution-protocol-shadow-dag">13.6 Tiered Conflict Resolution Protocol (Shadow DAG)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Tier 1 (Online):       Shadow DAG full → User thấy conflict, chọn merge
+Tier 2 (Mesh P2P):     Lightweight Conflict Marker → Desktop Super Node mediator
+Tier 3 (Solo offline): Optimistic Append → WARNING "Bản này có thể bị ghi đè"</code></pre></div>
+<p>Bắt buộc hiển thị Conflict Resolution UI trước khi ghi với <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">content_type = CONTRACT | POLICY | APPROVAL</code>.</p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="14-network-layer-quic-scope-webrtc-reliability">14. Network Layer – QUIC Scope & WebRTC Reliability</h2>
+<h3 id="141-quic-ebpf-scope-correction">14.1 QUIC / eBPF Scope Correction</h3>
+<p>⚠️ <strong>eBPF/XDP là server-side Linux kernel technology — KHÔNG phải client-side.</strong></p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Server-side (☁️🗄️): eBPF/XDP anti-DDoS — hợp lệ
+Client-side:
+  iOS/Android: Network.framework QUIC native
+  Desktop Linux: seccomp-bpf (KHÔNG phải XDP)
+  Windows: Windows Filtering Platform (WFP)</code></pre></div>
+<p>Client không implement eBPF/XDP filtering. Client hưởng lợi từ server-side protection qua connection quality.</p>
+<h3 id="142-ios-webrtc-turn-callkit-integration">14.2 iOS WebRTC TURN – CallKit Integration</h3>
+<ul>
+<li>📱 <strong>Vấn đề:</strong> iOS cho app Background tối đa 30s network. TURN failover 3s + SRTP renegotiate có thể vượt window.</li>
+<li>📱 <strong>Giải pháp:</strong> Sử dụng CallKit — iOS treat TeraChat calls như native calls, không bị background kill.</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>class TeraCallKitProvider: NSObject, CXProviderDelegate {
+    // CXProvider giữ audio session active dù app background
+    // TURN failover xảy ra trong CallKit context → không bị suspend
+}</code></pre></div>
+<p>Thêm <strong>dual TURN preconnect</strong>: khi call active và app sắp vào Background, Rust Core proactively connect tới TURN server dự phòng.</p>
+<h3 id="143-ios-awdl-monitor-hotspotcarplay-conflict">14.3 iOS AWDL Monitor – Hotspot/CarPlay Conflict</h3>
+<ul>
+<li>📱 <strong>Vấn đề:</strong> iOS tự tắt AWDL khi bật Personal Hotspot hoặc CarPlay → voice call drop không giải thích.</li>
+</ul>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>class AWDLMonitor {
+    // NWPathMonitor detect AWDL interface + bridge (hotspot)
+    // Callback → Rust Core downgrade Tier 2 → Tier 3 (BLE only)
+    // Emit UIEvent::TierChanged với message giải thích
+    // Queue voice packets TTL 30s chờ AWDL phục hồi
+}</code></pre></div>
+<h3 id="144-xpc-transaction-journal-protocol">14.4 XPC Transaction Journal Protocol</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>// hot_dag.db journal trước khi dispatch sang XPC Worker
+// States: PENDING → VERIFIED → COMMITTED
+// Crash in PENDING → abort + notify user "Phiên ký bị gián đoạn. Vui lòng ký lại."
+// Crash in VERIFIED → commit from journal (idempotent)</code></pre></div>
+<h3 id="145-aes-ni-arm-neon-software-fallback">14.5 AES-NI / ARM NEON – Software Fallback</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub fn init_crypto_backend() -&gt; CryptoBackend {
+    if is_cpu_feature_detected!("aes") &amp;&amp; is_cpu_feature_detected!("sse2") {
+        CryptoBackend::HardwareAccelerated
+    } else {
+        tracing::warn!("AES-NI not available, using software backend. Expect ~3x slower.");
+        CryptoBackend::Software
+    }
+}</code></pre></div>
+<p>Admin Console hiển thị warning khi thiết bị dùng software backend.</p>
+<h3 id="146-huawei-crl-polling-fallback">14.6 Huawei CRL Polling Fallback</h3>
+<ul>
+<li>📱 <strong>Vấn đề:</strong> HMS không có equivalent APNs <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">content-available</code> background push cho CRL updates.</li>
+<li>📱 <strong>Giải pháp:</strong> CRL refresh 4h polling khi Foreground + HMS Data Message khi Background. Acknowledge delay tối đa 4h vs iOS/Android 30 phút.</li>
+</ul>
+<h3 id="147-shadow-db-write-lock-protocol">14.7 Shadow DB Write Lock Protocol</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
+// NSURLSession completion check lock → queue to hot_dag.db nếu migration đang chạy
+// Đảm bảo không race giữa shadow rename và NSURLSession write</code></pre></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="15-chaos-engineering-test-matrix">15. Chaos Engineering Test Matrix</h2>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Scenario</th>
+<th>Điều kiện</th>
+<th>Expected behavior</th>
+</tr></thead><tbody>
+<tr>
+<td>SC-01</td>
+<td>iOS AWDL off + TURN failover + CRDT merge &gt;5000 events</td>
+<td>AWDL warn → BLE → TURN preconnect → CRDT queue</td>
+</tr>
+<tr>
+<td>SC-02</td>
+<td>Jetsam kill NSE mid-WAL + Desktop offline + EMDP active</td>
+<td>WAL rollback → DAG self-heal → EMDP key escrow</td>
+</tr>
+<tr>
+<td>SC-03</td>
+<td>XPC Worker OOM + Smart Approval pending</td>
+<td>Journal PENDING → abort → user re-sign prompt</td>
+</tr>
+<tr>
+<td>SC-04</td>
+<td>Battery &lt;20% + Mesh active + Whisper loading</td>
+<td>Whisper disabled → Voice text-fallback → BLE only</td>
+</tr>
+<tr>
+<td>SC-05</td>
+<td>AppArmor deny memfd + mlock + seccomp active</td>
+<td>Graceful degrade to software crypto → performance warn</td>
+</tr>
+<tr>
+<td>SC-06</td>
+<td>License expire T+0 + Active emergency call</td>
+<td>Chat survives → Admin Console lock only</td>
+</tr>
+<tr>
+<td>SC-07</td>
+<td>EMDP 60min + Desktop reconnect + 1000 relay messages</td>
+<td>Key escrow decrypt → DAG merge → epoch reconcile</td>
+</tr>
+</tbody></table></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<p><em>Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> cho client implementation. Xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Design.md</code> cho UX states.</em></p>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

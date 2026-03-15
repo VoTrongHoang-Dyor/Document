@@ -435,6 +435,23 @@
 <a href="#wasm-05-zero-loss-transient-state-recovery" class="nav-link" style="padding-left:0.8rem;">WASM-05: Zero-Loss Transient State Recovery</a>
 <a href="#wasm-06-peer-relay-offline-messaging" class="nav-link" style="padding-left:0.8rem;">WASM-06: Peer-Relay Offline Messaging</a>
 <a href="#wasm-07-enterprise-onboarding-network-fencing" class="nav-link" style="padding-left:0.8rem;">WASM-07: Enterprise Onboarding & Network Fencing</a>
+<a href="#mục-mới-cross-platform-runtime-packaging-os-integration" class="nav-link" style="padding-left:0.8rem;">Mục Mới: Cross-Platform Runtime, Packaging & OS Integration</a>
+<a href="#platform-01-flutter-unified-mobile-architecture" class="nav-link" style="padding-left:0.8rem;">PLATFORM-01: Flutter Unified Mobile Architecture</a>
+<a href="#platform-02-wasm-behavioral-parity-test-suite" class="nav-link" style="padding-left:0.8rem;">PLATFORM-02: WASM Behavioral Parity Test Suite</a>
+<a href="#platform-03-tauri-ipc-tier-ladder-sabcoop-fallback" class="nav-link" style="padding-left:0.8rem;">PLATFORM-03: Tauri IPC Tier Ladder (SAB/COOP Fallback)</a>
+<a href="#platform-04-ios-push-key-versioned-key-ladder" class="nav-link" style="padding-left:0.8rem;">PLATFORM-04: iOS Push Key – Versioned Key Ladder</a>
+<a href="#platform-05-ios-mesh-graceful-super-node-handover" class="nav-link" style="padding-left:0.8rem;">PLATFORM-05: iOS Mesh Graceful Super Node Handover</a>
+<a href="#platform-06-linux-multi-init-daemon-support" class="nav-link" style="padding-left:0.8rem;">PLATFORM-06: Linux Multi-Init Daemon Support</a>
+<a href="#platform-07-macos-entitlement-matrix-xpc-process-isolation" class="nav-link" style="padding-left:0.8rem;">PLATFORM-07: macOS Entitlement Matrix (XPC Process Isolation)</a>
+<a href="#platform-08-linux-packaging-strategy-2-tier" class="nav-link" style="padding-left:0.8rem;">PLATFORM-08: Linux Packaging Strategy (2-Tier)</a>
+<a href="#platform-09-unified-build-target-matrix" class="nav-link" style="padding-left:0.8rem;">PLATFORM-09: Unified Build Target Matrix</a>
+<a href="#platform-10-ios-keychain-access-group-segmentation" class="nav-link" style="padding-left:0.8rem;">PLATFORM-10: iOS Keychain Access Group Segmentation</a>
+<a href="#platform-11-linux-wayland-clipboard-backend-detection" class="nav-link" style="padding-left:0.8rem;">PLATFORM-11: Linux Wayland Clipboard Backend Detection</a>
+<a href="#platform-12-ios-awdl-monitor-tier-downgrade" class="nav-link" style="padding-left:0.8rem;">PLATFORM-12: iOS AWDL Monitor – Tier Downgrade</a>
+<a href="#platform-13-sqlite-schema-migration-protocol" class="nav-link" style="padding-left:0.8rem;">PLATFORM-13: SQLite Schema Migration Protocol</a>
+<a href="#platform-14-dart-ffi-nativefinalizer-contract" class="nav-link" style="padding-left:0.8rem;">PLATFORM-14: Dart FFI NativeFinalizer Contract</a>
+<a href="#platform-15-whisper-ai-memory-budget-protocol" class="nav-link" style="padding-left:0.8rem;">PLATFORM-15: Whisper AI Memory Budget Protocol</a>
+<a href="#platform-16-linux-apparmorselinux-profile" class="nav-link" style="padding-left:0.8rem;">PLATFORM-16: Linux AppArmor/SELinux Profile</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -2191,6 +2208,149 @@ Desktop thu gom "orphan chains" → O(N log N) merge → push snapshot về Mobi
 <li>💻📱 <strong>Geofencing / Network Fencing:</strong> Tự động disable Relay khi thiết bị ra khỏi mạng công ty hoặc ngắt VPN.</li>
 <li>📱💻 <strong>Background WebSocket Termination:</strong> Khi Doze/Jetsam kill app, các reconnect hook tự động khi app resume.</li>
 </ul>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-cross-platform-runtime-packaging-os-integration">Mục Mới: Cross-Platform Runtime, Packaging & OS Integration</h2>
+<h3 id="platform-01-flutter-unified-mobile-architecture">PLATFORM-01: Flutter Unified Mobile Architecture</h3>
+<ul>
+<li>📱📱 <strong>Loại bỏ React Native.</strong> Flutter Dart FFI → Rust C ABI cho cả iOS + Android + Huawei.</li>
+<li>📱 <strong>iOS:</strong> Dart FFI → UniquePtr C++ wrapper. Throughput ~400MB/s.</li>
+<li>📱 <strong>Android:</strong> Dart FFI TypedData. ~400MB/s đồng nhất.</li>
+<li>💻🖥️ <strong>Tauri Desktop:</strong> Giữ nguyên, không thay đổi.</li>
+<li><strong>Trade-off:</strong> Mất JSI C++ pointer tối ưu iOS ~5-10% vs Dart FFI. Được: -50% surface bug, +1 platform (Huawei).</li>
+</ul>
+<h3 id="platform-02-wasm-behavioral-parity-test-suite">PLATFORM-02: WASM Behavioral Parity Test Suite</h3>
+<ul>
+<li>💻📱 <strong>WasmParity CI gate:</strong> Chạy cùng test vector trên <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasm3</code> (iOS interpreter) và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasmtime</code> (Android/Desktop JIT).</li>
+<li><strong>Rule:</strong> Fail → block merge. Latency delta ≤ 20ms chấp nhận được, output semantic phải <strong>identical</strong>.</li>
+<li><strong>Định nghĩa:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasm3</code> = reference runtime, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasmtime</code> = optimized runtime.</li>
+</ul>
+<h3 id="platform-03-tauri-ipc-tier-ladder-sabcoop-fallback">PLATFORM-03: Tauri IPC Tier Ladder (SAB/COOP Fallback)</h3>
+<ul>
+<li>💻🖥️ <strong>Tier 1:</strong> SharedArrayBuffer (COOP+COEP headers OK) → ~500MB/s.</li>
+<li>💻 <strong>Tier 2:</strong> Named Pipe IPC (Windows) → ~200MB/s.</li>
+<li>💻 <strong>Tier 3:</strong> Protobuf-over-stdin copy → ~50MB/s.</li>
+<li>Rust Core detect SAB availability lúc init, chọn tier cao nhất. UI không biết tier. Log tier selection vào audit trail.</li>
+</ul>
+<h3 id="platform-04-ios-push-key-versioned-key-ladder">PLATFORM-04: iOS Push Key – Versioned Key Ladder</h3>
+<p>Thêm field <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">push_key_version (u32)</code> vào Shared Keychain:</p>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>NSE đọc version từ payload header trước khi decrypt:
+- payload_version == keychain_version → giải mã bình thường
+- Lệch version → NSE cache ciphertext raw vào nse_staging.db
+  → bắn content-available:1
+  → Main App wakeup → rotate key → decrypt staged payload → clear staging
+Result: Zero notification loss dù key rotation xảy ra.</code></pre></div>
+<h3 id="platform-05-ios-mesh-graceful-super-node-handover">PLATFORM-05: iOS Mesh Graceful Super Node Handover</h3>
+<ul>
+<li>📱 Khi iOS detect memory pressure sắp trigger Jetsam: Rust Core broadcast <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">MeshRoleHandover(candidate_node_id)</code> tới Desktop/Android peer qua BLE <strong>trước khi</strong> BLE scan bị kill.</li>
+<li>Desktop nhận → assume Super Node role ngay. iOS → Leaf Node.</li>
+<li>UI hiển thị: <em>"Đã chuyển vai trò Relay sang [tên thiết bị]"</em> thay vì silent disconnect.</li>
+</ul>
+<h3 id="platform-06-linux-multi-init-daemon-support">PLATFORM-06: Linux Multi-Init Daemon Support</h3>
+<ul>
+<li>🐧💻 <strong>Init detection:</strong> systemd / openrc / runit / s6 / launchd → generate correct service file.</li>
+<li><strong>Fallback:</strong> XDG autostart (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.desktop</code> file) cho desktop environments không có systemd.</li>
+<li><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">terachat-daemon</code> viết PID file → bất kỳ init nào có thể monitor.</li>
+</ul>
+<h3 id="platform-07-macos-entitlement-matrix-xpc-process-isolation">PLATFORM-07: macOS Entitlement Matrix (XPC Process Isolation)</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Main process: com.apple.security.app-sandbox=true, NO allow-jit
+terachat-wasm-worker (XPC Service):
+  com.apple.security.cs.allow-jit=true
+  com.apple.security.cs.disable-library-validation=true
+  com.apple.security.network.client=true
+NSE Extension: com.apple.security.app-sandbox=true, NO network</code></pre></div>
+<h3 id="platform-08-linux-packaging-strategy-2-tier">PLATFORM-08: Linux Packaging Strategy (2-Tier)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Format</th>
+<th>memfd_create</th>
+<th>seccomp-bpf</th>
+<th>Gov Enterprise</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Signed .deb/.rpm</strong></td>
+<td>✅ OK</td>
+<td>✅ OK</td>
+<td>✅ GPG signed</td>
+</tr>
+<tr>
+<td><strong>AppImage (fallback)</strong></td>
+<td>✅ OK</td>
+<td>✅ OK</td>
+<td>⚠️ Cosign signature</td>
+</tr>
+<tr>
+<td>~~Flatpak~~</td>
+<td>🔴 Blocked</td>
+<td>🔴 Conflict</td>
+<td>❌ Không dùng</td>
+</tr>
+</tbody></table></div>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>Tier 1 (Enterprise/Gov): Signed .deb và .rpm — GPG signed, Ubuntu 20.04+, RHEL 8+
+Tier 2 (Other distros): AppImage — portable, glibc 2.31+, AppImageUpdate</code></pre></div>
+<h3 id="platform-09-unified-build-target-matrix">PLATFORM-09: Unified Build Target Matrix</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>x86_64-apple-darwin        → macOS Intel
+aarch64-apple-darwin       → macOS Apple Silicon
+x86_64-pc-windows-msvc     → Windows x64
+aarch64-pc-windows-msvc    → Windows ARM64 (MỚI)
+x86_64-unknown-linux-gnu   → Linux x64 (.deb/.rpm/AppImage)
+aarch64-unknown-linux-gnu  → Linux ARM64 (server deployment)
+aarch64-apple-ios          → iOS
+aarch64-linux-android      → Android
+aarch64-linux-android      → Huawei HarmonyOS (buildable qua OHOS SDK)</code></pre></div>
+<h3 id="platform-10-ios-keychain-access-group-segmentation">PLATFORM-10: iOS Keychain Access Group Segmentation</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>App Group: group.com.terachat
+├── kSecAttrAccessGroup = "group.com.terachat.nse"    → push_key_&lt;chat_id&gt; (NSE only)
+├── kSecAttrAccessGroup = "group.com.terachat.main"   → device_identity_key (Main App only)
+└── kSecAttrAccessGroup = "group.com.terachat.share"  → share_extension_token (Share Ext)</code></pre></div>
+<p>Push_Key chỉ có NSE access group — Share Extension không thể đọc không cần FaceID.</p>
+<h3 id="platform-11-linux-wayland-clipboard-backend-detection">PLATFORM-11: Linux Wayland Clipboard Backend Detection</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>let clipboard_backend = if std::env::var("WAYLAND_DISPLAY").is_ok() {
+    ClipboardBackend::WlClipboard  // wl-clipboard — Wayland native
+} else {
+    ClipboardBackend::Xclip        // xclip/xsel — X11
+};</code></pre></div>
+<h3 id="platform-12-ios-awdl-monitor-tier-downgrade">PLATFORM-12: iOS AWDL Monitor – Tier Downgrade</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>// NWPathMonitor detect: hotspot (bridge interface) → AWDL unavailable
+// Rust Core via FFI:
+// 1. Downgrade Tier 2 → Tier 3 (BLE only)
+// 2. Emit UIEvent::TierChanged + message giải thích
+// 3. Queue voice packets TTL 30s
+// 4. Sau 30s không phục hồi → drop voice, notify user</code></pre></div>
+<h3 id="platform-13-sqlite-schema-migration-protocol">PLATFORM-13: SQLite Schema Migration Protocol</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>const CURRENT_HOT_DAG_SCHEMA_VERSION: u32 = 1;
+// MigrationRunner: backup → BEGIN EXCLUSIVE TRANSACTION → up() → update user_version → COMMIT
+// Safety net: cold_state.db có thể rebuild từ hot_dag.db bất kỳ lúc nào
+// Nếu migration cold_state.db fail → drop và rebuild từ hot_dag.db</code></pre></div>
+<h3 id="platform-14-dart-ffi-nativefinalizer-contract">PLATFORM-14: Dart FFI NativeFinalizer Contract</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>class TeraSecureBuffer {
+  // Mọi buffer PHẢI được wrap bởi useInTransaction hoặc explicit releaseNow()
+  // Không được để GC làm finalizer là đường duy nhất release
+  void releaseNow() { /* explicit release trước GC */ }
+  T useInTransaction&lt;T&gt;(T Function(Pointer&lt;Uint8&gt; ptr) action) {
+    try { return action(_token.toPointer()); }
+    finally { releaseNow(); } // Always release kể cả exception
+  }
+}</code></pre></div>
+<h3 id="platform-15-whisper-ai-memory-budget-protocol">PLATFORM-15: Whisper AI Memory Budget Protocol</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>pub enum WhisperModelTier { Tiny, Base, Disabled }
+
+pub fn select_whisper_tier(available_ram_mb: u32, battery_pct: u8) -&gt; WhisperModelTier {
+    if battery_pct &lt; 20 { return Disabled; }
+    if available_ram_mb &gt; 200 { return Base; }   // 74MB model
+    if available_ram_mb &gt; 100 { return Tiny; }   // 39MB model
+    Disabled // Ưu tiên stability
+}
+// Khi Disabled: "Thiết bị đang tiết kiệm RAM — Voice tạm chuyển sang text."</code></pre></div>
+<h3 id="platform-16-linux-apparmorselinux-profile">PLATFORM-16: Linux AppArmor/SELinux Profile</h3>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code># Ubuntu AppArmor /etc/apparmor.d/usr.bin.terachat
+/dev/shm/terachat** rw,
+capability ipc_lock,      # cho mlock()
+@{PROC}/*/fd/* rw,        # cho memfd_create
+
+# RHEL SELinux terachat.te
+allow terachat_t self:memfd_create { create };
+allow terachat_t self:process { setsched };</code></pre></div>
+<p>Package postinstall script detect và load profile phù hợp tự động.</p>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

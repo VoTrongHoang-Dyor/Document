@@ -723,3 +723,69 @@ Displayed in **top status bar**.
 - 💻🖥️ **TOMBSTONE Animation (Online/Desktop):** Bong bóng chat của A: kính rạn nứt từ từ → Dust Particle Effect bay mất. Để lại Panel kính viền đỏ sẫm: "Dữ liệu đã được tiêu hủy vĩnh viễn theo Quyền Lãng quên (GDPR Compliance)."
 - 📱 **Mesh Silent Erasure:** Xóa khóa âm thầm. Không render, tiết kiệm RAM/pin.
 - 💻📱 **Rolling Key Eviction UI:** Khi Lease Renewal thành công, viền Glass Card Chat lóe Cyan Sweep 0.2s. Biểu tượng khóa: "Khóa phiên đang được bảo vệ (Cập nhật 2 phút trước)".
+
+
+---
+
+## Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States
+
+### DESIGN-GPU-01: GPU Capability Fallback Matrix
+
+| Tier | Điều kiện | Glassmorphism Rendering | CSS |
+|---|---|---|---|
+| **Tier A** | GPU Hardware Compositing | Full Glass: `backdrop-filter: blur(16-24px)` | `transform: translateZ(0); will-change: backdrop-filter` |
+| **Tier B** | Software Compositing | Frosted Glass Lite: `blur(8px)`, `opacity: 0.85` | `backdrop-filter: blur(8px)` |
+| **Tier C** | No Compositing (Intel UHD 620 cũ) | Flat Solid với border accent | `background: rgba(255, 255, 255, 0.75)` |
+
+```css
+.glass-layer {
+  transform: translateZ(0);          /* Force GPU composite */
+  will-change: backdrop-filter;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.75); /* Tier C fallback */
+}
+```
+
+Rust Core detect WebView2 GPU caps lúc init → emit `GpuCapability(has_backdrop_filter: bool)` → UI render Glass hoặc Flat variant.
+
+### DESIGN-GPU-02: Responsive States cho Mesh Role Changed
+
+| UI State | Trigger | Banner | Theme |
+|---|---|---|---|
+| Normal Operation | Online/Mesh | - | Normal |
+| **MeshRoleChanged** | iOS handover Super Node sang Desktop | Toast: "Đã chuyển vai trò Relay sang [tên thiết bị]" | Dark subtle |
+| AWDL Unavailable | Hotspot active / CarPlay | Warning bar: "Hotspot đang bật — Mesh chuyển sang BLE. Voice tạm không khả dụng." | Amber |
+| Voice Drop | AWDL timeout 30s | Notification: "Cuộc gọi bị ngắt do mất kết nối Mesh" | Red |
+
+### DESIGN-GPU-03: XPC Crash Recovery UI State
+
+- 💻 **macOS:** Khi XPC Worker crash giữa Smart Approval → hiển thị modal:
+  - *"Phiên ký bị gián đoạn. Vui lòng ký lại."*
+  - Nút primary: "Ký lại" | Nút secondary: "Bỏ qua"
+  - Glass Modal viền cam (Warning Indicator)
+
+### DESIGN-GPU-04: Huawei HarmonyOS Breakpoints
+
+- 📱 **Breakpoint Huawei:** Tuân thủ HarmonyOS Design Language (tương tự Material 3 nhưng có adaptation riêng). Padding mặc định 16dp, đỉnh status bar theo HarmonyOS spec.
+- 📱 **Glassmorphism trên Huawei:** wasmtime JIT có sẵn → Tier A full Glass.
+- 📱 **Font hệ thống:** HarmonyOS Sans (fallback: system-ui).
+
+### DESIGN-GPU-05: Conflict Resolution UI
+
+- 💻📱🖥️ **Online Conflict (Shadow DAG):** Modal Glassmorphism hiện 2 cột: "Phiên bản của [Bạn]" và "Phiên bản của [Đồng nghiệp]". Toolbar merge: "Giữ của tôi", "Giữ của họ", "Gộp thủ công".
+- 📱💻 **Mesh Conflict Marker:** Badge ⚠️ trên document với tooltip "Mâu thuẫn phát hiện — sẽ được giải quyết khi có kết nối đầy đủ".
+- 🚫 **Không bao giờ silent LWW** trên document `content_type = CONTRACT | POLICY | APPROVAL`.
+
+### DESIGN-GPU-06: AES-NI Performance Warning
+
+- 📱💻 **Software Crypto Warning:** Trong Settings > Bảo mật, chip không có AES-NI → badge nhỏ: *"Chế độ mã hóa phần mềm — hiệu suất thấp hơn. Nâng cấp thiết bị để cải thiện."*
+
+### DESIGN-GPU-07: License Graceful Degradation UI
+
+| Thời điểm | UI | Ảnh hưởng hoạt động |
+|---|---|---|
+| T-30 ngày | Banner vàng trong Admin Console | Không ảnh hưởng |
+| T-0 | Admin Console partial lock | Chat/Mesh bình thường, AI + add user bị khóa |
+| T+90 | System refuse new bootstrap | App đang chạy OK, không restart được |
+| Gia hạn | JWT mới → restore trong <5s | Không restart |

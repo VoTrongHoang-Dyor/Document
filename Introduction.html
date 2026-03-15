@@ -357,6 +357,11 @@
 <a href="#16-documentation-map" class="nav-link" style="padding-left:0.8rem;">1.6 Documentation Map</a>
 <a href="#mục-mới-terachat-ecosystem-architecture-overview" class="nav-link" style="padding-left:0.8rem;">Mục Mới: TeraChat Ecosystem Architecture Overview</a>
 <a href="#tổng-quan-kiến-trúc-hệ-sinh-thái-terachat" class="nav-link" style="padding-left:0.8rem;">Tổng quan Kiến trúc Hệ sinh thái TeraChat</a>
+<a href="#mục-mới-platform-matrix-architecture-clarifications" class="nav-link" style="padding-left:0.8rem;">Mục Mới: Platform Matrix & Architecture Clarifications</a>
+<a href="#platform-support-matrix-updated" class="nav-link" style="padding-left:0.8rem;">Platform Support Matrix (Updated)</a>
+<a href="#offline-survival-3-cấp-độ" class="nav-link" style="padding-left:0.8rem;">Offline Survival – 3 Cấp Độ</a>
+<a href="#zero-knowledge-retention-clarification" class="nav-link" style="padding-left:0.8rem;">Zero-Knowledge Retention (Clarification)</a>
+<a href="#lợi-thế-kỹ-thuật-cốt-lõi" class="nav-link" style="padding-left:0.8rem;">Lợi thế Kỹ thuật Cốt lõi</a>
 
     <div class="search-no-results" id="searchNoResults">Không tìm thấy kết quả.</div>
 </nav>
@@ -592,6 +597,104 @@
 </ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <p><em>Chi tiết kỹ thuật: xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Core_Spec.md</code>. Chi tiết tính năng: xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code>. Thiết kế UI/UX: xem <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Design.md</code>.</em></p>
+<hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
+<h2 id="mục-mới-platform-matrix-architecture-clarifications">Mục Mới: Platform Matrix & Architecture Clarifications</h2>
+<h3 id="platform-support-matrix-updated">Platform Support Matrix (Updated)</h3>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Platform</th>
+<th>Status</th>
+<th>Package Format</th>
+<th>Mesh Role</th>
+</tr></thead><tbody>
+<tr>
+<td>macOS (Intel + Apple Silicon)</td>
+<td>✅ GA</td>
+<td>.dmg, .pkg</td>
+<td>Super Node / Relay</td>
+</tr>
+<tr>
+<td>Windows x64</td>
+<td>✅ GA</td>
+<td>.exe, MSIX</td>
+<td>Super Node / Relay</td>
+</tr>
+<tr>
+<td><strong>Windows ARM64</strong></td>
+<td>✅ GA</td>
+<td>.exe, MSIX</td>
+<td>Super Node / Relay</td>
+</tr>
+<tr>
+<td>Linux x64</td>
+<td>✅ GA</td>
+<td>.deb, .rpm, AppImage</td>
+<td>Super Node / Relay / Server</td>
+</tr>
+<tr>
+<td><strong>Linux ARM64</strong></td>
+<td>✅ GA</td>
+<td>.deb, .rpm</td>
+<td>Server deployment</td>
+</tr>
+<tr>
+<td>iOS</td>
+<td>✅ GA</td>
+<td>App Store / MDM</td>
+<td>Leaf Node</td>
+</tr>
+<tr>
+<td>Android</td>
+<td>✅ GA</td>
+<td>Play Store / APK</td>
+<td>Leaf / Super Node</td>
+</tr>
+<tr>
+<td><strong>Huawei HarmonyOS</strong></td>
+<td>🔵 Beta</td>
+<td>AppGallery</td>
+<td>Leaf Node</td>
+</tr>
+</tbody></table></div>
+<h3 id="offline-survival-3-cấp-độ">Offline Survival – 3 Cấp Độ</h3>
+<p>TeraChat Offline Survival hoạt động ở 3 cấp độ rõ ràng:</p>
+<div class="comparison-table"><table>
+<thead><tr>
+<th>Cấp độ</th>
+<th>Điều kiện</th>
+<th>Năng lực</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Cấp 1 (Full Mesh)</strong></td>
+<td>Desktop/Laptop làm Super Node, BLE hoặc Wi-Fi Direct</td>
+<td>Đầy đủ: text, file (tóm tắt), voice (nếu bandwidth đủ), CRDT full merge</td>
+</tr>
+<tr>
+<td><strong>Cấp 2 (Partial Mesh)</strong></td>
+<td>Mix Desktop + Mobile, Desktop làm mediator</td>
+<td>Text + file summary, CRDT với Conflict Marker</td>
+</tr>
+<tr>
+<td><strong>Cấp 3 (Mobile-Only SOS)</strong></td>
+<td>Chỉ iOS Leaf Nodes, không có Desktop</td>
+<td>Text SOS only (Tactical Relay), Append-Only CRDT, không đảm bảo full consistency</td>
+</tr>
+</tbody></table></div>
+<p>Cấp 3 <strong>không đảm bảo</strong> collaboration đầy đủ — chỉ đảm bảo tin nhắn đến nơi.</p>
+<h3 id="zero-knowledge-retention-clarification">Zero-Knowledge Retention (Clarification)</h3>
+<p>TeraChat không phải "Zero-Retention" theo nghĩa server không giữ gì. Cam kết chính xác:</p>
+<ul>
+<li><strong>Zero-Knowledge Retention:</strong> Server giữ ciphertext đã mã hóa (cold_state.db) nhưng <strong>không có key</strong> để đọc nội dung. Key chỉ tồn tại trên client.</li>
+<li><strong>Client-Controlled TTL:</strong> Enterprise tự configure VPS cold storage TTL (7 ngày → không giới hạn).</li>
+<li><strong>Compliance Retention:</strong> Banking/Gov có thể giữ audit log 7 năm, encrypted at rest, key ở client.</li>
+</ul>
+<h3 id="lợi-thế-kỹ-thuật-cốt-lõi">Lợi thế Kỹ thuật Cốt lõi</h3>
+<ol>
+<li><strong>Shared Rust Core:</strong> Logic bảo mật, mesh protocol, CRDT viết một lần, cross-compile sang tất cả platform.</li>
+<li><strong>Flutter Unified Mobile:</strong> iOS + Android + Huawei từ 1 Dart codebase qua Dart FFI → Rust C ABI.</li>
+<li><strong>Tauri Desktop:</strong> Web tech UI + Rust backend, native performance.</li>
+<li><strong>WASM Behavioral Parity:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasm3</code> (iOS) và <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">wasmtime</code> (Android/Desktop) đảm bảo output identical qua CI gate.</li>
+</ol>
 
     <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);
                 color:var(--text-secondary);font-size:0.9rem;text-align:center;">

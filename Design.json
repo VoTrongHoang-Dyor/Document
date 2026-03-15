@@ -1366,6 +1366,204 @@
               "subsections": []
             }
           ]
+        },
+        {
+          "id": "mục-mới-gpu-capability-tiers-huawei-breakpoints-xpc-recovery-states",
+          "level": 2,
+          "heading": "Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "design-gpu-01-gpu-capability-fallback-matrix",
+              "level": 3,
+              "heading": "DESIGN-GPU-01: GPU Capability Fallback Matrix",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tier",
+                    "Điều kiện",
+                    "Glassmorphism Rendering",
+                    "CSS"
+                  ],
+                  "rows": [
+                    [
+                      "**Tier A**",
+                      "GPU Hardware Compositing",
+                      "Full Glass: `backdrop-filter: blur(16-24px)`",
+                      "`transform: translateZ(0); will-change: backdrop-filter`"
+                    ],
+                    [
+                      "**Tier B**",
+                      "Software Compositing",
+                      "Frosted Glass Lite: `blur(8px)`, `opacity: 0.85`",
+                      "`backdrop-filter: blur(8px)`"
+                    ],
+                    [
+                      "**Tier C**",
+                      "No Compositing (Intel UHD 620 cũ)",
+                      "Flat Solid với border accent",
+                      "`background: rgba(255, 255, 255, 0.75)`"
+                    ]
+                  ]
+                },
+                {
+                  "type": "code",
+                  "language": "css",
+                  "code": ".glass-layer {\n  transform: translateZ(0);          /* Force GPU composite */\n  will-change: backdrop-filter;\n  backdrop-filter: blur(16px);\n  -webkit-backdrop-filter: blur(16px);\n  background: rgba(255, 255, 255, 0.75); /* Tier C fallback */\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rust Core detect WebView2 GPU caps lúc init → emit GpuCapability(has_backdrop_filter: bool) → UI render Glass hoặc Flat variant."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "design-gpu-02-responsive-states-cho-mesh-role-changed",
+              "level": 3,
+              "heading": "DESIGN-GPU-02: Responsive States cho Mesh Role Changed",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "UI State",
+                    "Trigger",
+                    "Banner",
+                    "Theme"
+                  ],
+                  "rows": [
+                    [
+                      "Normal Operation",
+                      "Online/Mesh",
+                      "-",
+                      "Normal"
+                    ],
+                    [
+                      "**MeshRoleChanged**",
+                      "iOS handover Super Node sang Desktop",
+                      "Toast: \"Đã chuyển vai trò Relay sang [tên thiết bị]\"",
+                      "Dark subtle"
+                    ],
+                    [
+                      "AWDL Unavailable",
+                      "Hotspot active / CarPlay",
+                      "Warning bar: \"Hotspot đang bật — Mesh chuyển sang BLE. Voice tạm không khả dụng.\"",
+                      "Amber"
+                    ],
+                    [
+                      "Voice Drop",
+                      "AWDL timeout 30s",
+                      "Notification: \"Cuộc gọi bị ngắt do mất kết nối Mesh\"",
+                      "Red"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "design-gpu-03-xpc-crash-recovery-ui-state",
+              "level": 3,
+              "heading": "DESIGN-GPU-03: XPC Crash Recovery UI State",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻 macOS: Khi XPC Worker crash giữa Smart Approval → hiển thị modal:",
+                    "\"Phiên ký bị gián đoạn. Vui lòng ký lại.\"",
+                    "Nút primary: \"Ký lại\" | Nút secondary: \"Bỏ qua\"",
+                    "Glass Modal viền cam (Warning Indicator)"
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "design-gpu-04-huawei-harmonyos-breakpoints",
+              "level": 3,
+              "heading": "DESIGN-GPU-04: Huawei HarmonyOS Breakpoints",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Breakpoint Huawei: Tuân thủ HarmonyOS Design Language (tương tự Material 3 nhưng có adaptation riêng). Padding mặc định 16dp, đỉnh status bar theo HarmonyOS spec.",
+                    "📱 Glassmorphism trên Huawei: wasmtime JIT có sẵn → Tier A full Glass.",
+                    "📱 Font hệ thống: HarmonyOS Sans (fallback: system-ui)."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "design-gpu-05-conflict-resolution-ui",
+              "level": 3,
+              "heading": "DESIGN-GPU-05: Conflict Resolution UI",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "💻📱🖥️ Online Conflict (Shadow DAG): Modal Glassmorphism hiện 2 cột: \"Phiên bản của [Bạn]\" và \"Phiên bản của [Đồng nghiệp]\". Toolbar merge: \"Giữ của tôi\", \"Giữ của họ\", \"Gộp thủ công\".",
+                    "📱💻 Mesh Conflict Marker: Badge ⚠️ trên document với tooltip \"Mâu thuẫn phát hiện — sẽ được giải quyết khi có kết nối đầy đủ\".",
+                    "🚫 Không bao giờ silent LWW trên document content_type = CONTRACT | POLICY | APPROVAL."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "design-gpu-06-aes-ni-performance-warning",
+              "level": 3,
+              "heading": "DESIGN-GPU-06: AES-NI Performance Warning",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 Software Crypto Warning: Trong Settings > Bảo mật, chip không có AES-NI → badge nhỏ: \"Chế độ mã hóa phần mềm — hiệu suất thấp hơn. Nâng cấp thiết bị để cải thiện.\""
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "design-gpu-07-license-graceful-degradation-ui",
+              "level": 3,
+              "heading": "DESIGN-GPU-07: License Graceful Degradation UI",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Thời điểm",
+                    "UI",
+                    "Ảnh hưởng hoạt động"
+                  ],
+                  "rows": [
+                    [
+                      "T-30 ngày",
+                      "Banner vàng trong Admin Console",
+                      "Không ảnh hưởng"
+                    ],
+                    [
+                      "T-0",
+                      "Admin Console partial lock",
+                      "Chat/Mesh bình thường, AI + add user bị khóa"
+                    ],
+                    [
+                      "T+90",
+                      "System refuse new bootstrap",
+                      "App đang chạy OK, không restart được"
+                    ],
+                    [
+                      "Gia hạn",
+                      "JWT mới → restore trong <5s",
+                      "Không restart"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     }
