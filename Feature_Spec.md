@@ -1,3 +1,15 @@
+```yaml
+# DOCUMENT IDENTITY
+id:       "TERA-FEAT"
+title:    "TeraChat — Client Feature Specification"
+version:  "2.0"
+audience: "Developer (Mobile), Developer (Backend), Plugin Developer"
+purpose:  "Đặc tả triển khai tính năng trên client: IPC, storage, OS hooks, WASM runtime. Giải quyết platform-specific behavior."
+
+ai_routing_hint: |
+  "AI mở file này khi người dùng hỏi về cách implement tính năng client (mobile/desktop), IPC, OS hooks, lưu trữ cục bộ, hoặc platform constraints."
+```
+
 # Feature_Spec.md — TeraChat Alpha v0.3.0
 
 > **Status:** `ACTIVE — Implementation Reference`
@@ -847,7 +859,7 @@ Mọi file tải về đều nằm trong thư mục Application Sandbox dưới 
 
 ---
 
-## 7. Ecosystem & Integration
+## 7. Ecosystem & Integration [ARCHITECTURE] [PLUGIN]
 
 ### 7.1 WASM Sandbox (.tapp) & Dual-Registry
 
@@ -1079,11 +1091,12 @@ hot_dag.db (SQLite WAL)
 
 ---
 
-*Tài liệu này chỉ chứa App-layer implementation. Xem `Core_Spec.md` cho Infrastructure/Security. Xem `Function.md` cho Product flows.*
+*Tài liệu này chỉ chứa App-layer implementation. → TERA-CORE (Infrastructure/Security)
+→ TERA-FUNC (Product flows)*
 
 ---
 
-## 8. Large File Handling & Advanced Sync
+## 8. Large File Handling & Advanced Sync [PERFORMANCE] [IMPLEMENTATION]
 
 ### 8.1 Xử lý File Khổng lồ — mmap + BLAKE3 Segmented Merkle + Native-to-Rust Media DataSource Bridge
 
@@ -1339,12 +1352,12 @@ hot_dag.db (SQLite WAL)
 
 - 📱💻 **ONNX Runtime INT8 (DeBERTa-v3-xsmall):** Sử dụng `DeBERTa-v3-xsmall` (22M params) quantized xuống INT8 (model size ~45MB). Inference time: < 80ms trên CPU mobile. Model được lazy-load vào `mlock` arena, chỉ khởi động khi EDES trigger threshold (≥ 2 borderline entities trong 5 tin nhắn).
 - 📱💻 **Asynchronous NLP Inference Pipeline:** ONNX inference chạy trong thread riêng biệt (không block UI thread). Lõi Rust nhận kết quả qua async channel (`tokio::sync::oneshot`). Message được hiển thị lên UI trước với trạng thái "Đang kiểm tra...", sau khi inference hoàn thành mới unlock interaction.
-- 📱💻 **Zero-shot Intent Scoring:** Model trả về confidence scores cho các category: `[SAFE, BORDERLINE, PHISHING, SOCIAL_ENGINEERING, MONEY_TRANSFER_MANIPULATION, CREDENTIAL_HARVESTING]`. Nếu bất kỳ harmful category nào > 0.75 → trigger SSA Retroactive Taint (§5.36 Core_Spec). Threshold có thể Admin-configure qua OPA Policy.
+- 📱💻 **Zero-shot Intent Scoring:** Model trả về confidence scores cho các category: `[SAFE, BORDERLINE, PHISHING, SOCIAL_ENGINEERING, MONEY_TRANSFER_MANIPULATION, CREDENTIAL_HARVESTING]`. Nếu bất kỳ harmful category nào > 0.75 → trigger SSA Retroactive Taint (→ TERA-CORE §5.36). Threshold có thể Admin-configure qua OPA Policy.
 
 ### 8.20 TTL-based Garbage Collection — Checkpoint Auto-Purge
 
 - 📱💻 **Manifest-bound TTL (24h default):** Mỗi Checkpoint file được gắn TTL trong Manifest metadata. TTL default = 24 giờ từ thời điểm tạo, configurable bởi Admin (min 1h, max 7 ngày). Sau khi TTL hết, Checkpoint trở thành "garbage" và sẽ bị purged tại lần boot-time GC tiếp theo.
-- 📱💻 **Boot-time Purge Logic:** Khi TeraChat khởi động, Lõi Rust chạy GC sweep qua directory Checkpoint: quét tất cả file có `creation_timestamp + TTL < now()`. File expired được crypto-shred (Hierarchical 3-pass — §5.35 Core_Spec). GC chạy trong background thread, không block app launch.
+- 📱💻 **Boot-time Purge Logic:** Khi TeraChat khởi động, Lõi Rust chạy GC sweep qua directory Checkpoint: quét tất cả file có `creation_timestamp + TTL < now()`. File expired được crypto-shred (Hierarchical 3-pass — → TERA-CORE §5.35). GC chạy trong background thread, không block app launch.
 - 📱 **iOS/Android Cache Directory Placement:** Checkpoint file được lưu trong OS-managed Cache Directory (`NSCachesDirectory` trên iOS, `getCacheDir()` trên Android) — OS có quyền xóa khi low storage, thêm một lớp bảo vệ kép. Không được phép lưu trong Documents directory (user-accessible via Files app).
 
 ### 8.21 Epoch-bound Rolling Buffer — SSA Context Memory Management
@@ -1355,7 +1368,7 @@ hot_dag.db (SQLite WAL)
 
 ### 8.22 FCP API — `terachat.agent.unrestricted_stream` & Non-Repudiation Binding
 
-> **Điều kiện kích hoạt:** `.tapp` phải được Admin cấp quyền FCP (xem §5.37 Core_Spec và Function.md §13). API này không khả dụng ở default mode.
+> **Điều kiện kích hoạt:** `.tapp` phải được Admin cấp quyền FCP (xem → TERA-CORE §5.37 và Function.md §13). API này không khả dụng ở default mode.
 
 - 📱💻 **`terachat.agent.unrestricted_stream({ context_uuid: String, prompt: String })`:** API cấp cao bypass toàn bộ EDES/NER/O-LLVM pipeline. Lõi Rust truyền thẳng raw plaintext từ `mlock` arena → TLS stream → AI endpoint. Không có redaction, không delay cho NER processing. AI nhận 100% context nguyên bản.
 - 📱💻 **Pre-call FCP Gate Check:** Trước khi execute, Lõi Rust verify: (1) `FCP_Enabled = true` trong OPA Policy của `.tapp`, (2) User consent modal đã được xác nhận trong session này (không thể bypass bằng code), (3) `Device_Ed25519_Signature` hiện tại hợp lệ. Bất kỳ check nào fail → return `FcpNotAuthorized` error, không rò rỉ byte.
@@ -1377,13 +1390,13 @@ hot_dag.db (SQLite WAL)
 - 📱💻 **Hàm FFI `terachat.fs.safe_reconstruct`:** Giao thức Native (Swift/Kotlin) gọi xuống Rust. Rust biên dịch cấu trúc văn bản PDF/DOCX sang định dạng Markdown cấp thấp hoặc JSON Schema ngặt nghèo (Text + Bounding Boxes + Link).
 - 📱💻 **Host-Side Generator:** App React Native / Tauri nhận JSON Schema này và **tự phục hồi giao diện khung hình Text Renderer** hoàn toàn chủ động, từ chối tải thư viện PDF Native Component hoặc WebView iFrame. UI Native Reader an toàn tuyệt đối, triệt tiêu viễn cảnh click zero-day iframe.
 
-### 9.1 Unidirectional Federated State Sync
+### 9.1 [IMPLEMENTATION] Unidirectional Federated State Sync
 
 - 📱💻🖥️ **Unidirectional State Sync (StateChanged Signal):** Bắn tín hiệu `StateChanged(table, version)` qua IPC để UI chủ động kéo snapshot thay vì Rust đẩy JSON cục bộ — tránh tình trạng treo thread do push data lớn từ các cụm Federation.
 - 📱💻🖥️ **IPC Bridge Zero-Copy (~500MB/s):** Sử dụng JSI C++ Shared Memory (iOS) hoặc `SharedArrayBuffer` (Desktop) đạt tốc độ ~500MB/s cho các payload lớn — đảm bảo không có bottleneck khi đồng bộ trạng thái liên cụm.
 - 📱💻🖥️ **Lazy UI Hydration (Sliding Window):** Giới hạn việc nạp dữ liệu trong viewport hiện tại (20 tin nhắn gần nhất); phần còn lại tải qua Infinite Scroll — giảm thiểu RAM footprint khi nhận tin nhắn batch từ Federation.
 
-### 9.2 Zero-Knowledge Push Notification & JIT Decryption
+### 9.2 [IMPLEMENTATION] Zero-Knowledge Push Notification & JIT Decryption
 
 - 📱 **Notification Service Extension (NSE — iOS):** Sử dụng `UNNotificationServiceExtension` + `mutable-content: 1` để đánh thức tiến trình con xử lý ciphertext mà không hiển thị trực tiếp Plaintext lên hệ điều hành.
 - 📱 **Data Messages (Android):** FCM Data Message → `FirebaseMessagingService` → giải mã Rust FFI trong tiến trình con cô lập, không để APNs/FCM server thấy nội dung thông báo.
@@ -1393,7 +1406,7 @@ hot_dag.db (SQLite WAL)
 - 📱☁️ **Blind Payload Architecture (CBOR + Dummy Alert):** Sử dụng ciphertext nén bằng chuẩn CBOR kết hợp chuỗi Dummy Alert tĩnh để ngăn chặn Apple/Google thu thập Business Intelligence từ nội dung thông báo.
 - 📱 **ZeroizeOnDrop sau NSE:** Thực thi ghi đè `0x00` xóa sạch plaintext khỏi RAM ngay sau khi trả kết quả thông báo cho Native OS — không có window nào để key hay plaintext bị trích xuất.
 
-### 9.3 Client-Side Dual-Mask Protocol (Dynamic PII Tokenization)
+### 9.3 [IMPLEMENTATION] Client-Side Dual-Mask Protocol (Dynamic PII Tokenization)
 
 - 📱💻🖥️ **Local NER (Platform-Agnostic Inference Adapter):**
   - > **Attack Surface (Trước):** Chạy WASM/ONNX trên iOS tốn gấp 3-4x RAM so với NPU, Apple chặn JIT-compiled WASM → hiệu năng thảm hại + nguy cơ OOM Kill.
@@ -1404,13 +1417,13 @@ hot_dag.db (SQLite WAL)
 - 📱💻🖥️ **Entity Mapping Table (RAM-only):** Lưu trữ tạm thời trên RAM (mlock'd) để ánh xạ dữ liệu thật sang Token giả mạo (`[REDACTED_PHONE_1]`, `[REDACTED_EMAIL_2]`) — bảo toàn cấu trúc câu cho AI mà không để lộ PII.
 - 📱💻🖥️ **ZeroizeOnDrop (RAII):** Thực thi ghi đè `0x00` tiêu hủy Entity Mapping Table ngay sau khi quá trình De-tokenization hoàn tất; Session Vault tồn tại trong RAM duy nhất cho 1 request.
 
-### 9.4 LLM Iron Dome & Markdown AST Sanitizer (Mở rộng)
+### 9.4 [IMPLEMENTATION] LLM Iron Dome & Markdown AST Sanitizer (Mở rộng)
 
 - 📱💻🖥️ **Markdown AST Sanitizer (Chống Pixel Tracking):** Chặn đứng các thẻ `<img src="...">` hoặc liên kết `![alt](external_url)` trỏ tới URL bên ngoài; chỉ cho phép hiển thị nội dung từ Local VFS (`localhost` hoặc base64 nội bộ).
 - 📱💻🖥️ **Egress Firewall (WASM Sandbox Whitelist):** Giới hạn kết nối mạng của WASM Sandbox chỉ đến các Whitelist Domains đã được phê duyệt bởi Admin qua OPA Policy — ngăn chặn data exfiltration qua markdown content.
 - 💻🖥️ **Local Semantic Guardrail (NLP nội bộ):** Sử dụng mô hình NLP ONNX tại biên để kiểm soát và chặn các mẫu System Instruction Spoofing, Jailbreak Pattern trước khi gửi đến LLM — bảo vệ khỏi Prompt Injection nâng cao.
 
-### 9.5 State Machine cho Offline Survival & Bảo vệ dữ liệu RAM (mlock)
+### 9.5 [IMPLEMENTATION] State Machine cho Offline Survival & Bảo vệ dữ liệu RAM (mlock)
 
 - 📱💻 **State 1 (Disconnected):** Ngắt IPC Socket tới Server.
 - 📱💻 **State 2 (Prompting):** UI gọi hàm FFI/JSI `request_mesh_activation()`.
@@ -1447,17 +1460,17 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 
 
 
-### 9.6 Trạng thái Mạng chập chờn (Intermittent Network State Machine)
+### 9.6 [IMPLEMENTATION] Trạng thái Mạng chập chờn (Intermittent Network State Machine)
 
 - 📱💻 Thay vì chỉ có On/Off, hệ thống áp dụng trạng thái **Zombie_Sync**. Nếu Sếp ở TH1 vừa dùng YubiKey khôi phục máy tính mới, thiết bị sẽ chuyển sang chế độ gom nhặt dữ liệu (Hydration) theo từng khối (Chunk) nhỏ qua BLE từ các nhân viên đi cùng, hoặc bắt từng nhịp sóng Wi-Fi yếu để kéo `hot_dag.db` về mà không làm hỏng file.
 
-### 9.7 Khôi phục Định danh qua Admin-approved QR Key Exchange
+### 9.7 [IMPLEMENTATION] Khôi phục Định danh qua Admin-approved QR Key Exchange
 
 - 📱💻 **Admin-approved QR Key Exchange:** Admin xác thực Biometric trên thiết bị của chính mình, tạo mã QR mã hóa (Ed25519 Signed Recovery Ticket). Người dùng quét QR bằng thiết bị mới — không cần phần cứng ngoại vi.
 - 📱 **Lõi Rust xác minh Signed Ticket:** Lõi Rust trên thiết bị mới kiểm tra chữ ký Ed25519 của Recovery Ticket trước khi giải mã `cold_state.db` tải về từ Cloud — chống Recovery Ticket giả mạo.
 - 💻 **Fallback: Recovery Phrase (BIP-39):** Nếu không tiếp cận được Admin, nhập 24-word Mnemonic + Biometric để tự khôi phục cục bộ mà không cần Server.
 
-### 9.8 Xung đột Đứt gãy Liên hợp (Federation Mismatch) và Tấn công Brute-force Từ xa
+### 9.8 [IMPLEMENTATION] Xung đột Đứt gãy Liên hợp (Federation Mismatch) và Tấn công Brute-force Từ xa
 
 > **Bài toán:** Khác biệt phiên bản Schema giữa các Node liên hợp hoặc Brute-Force vào kết nối Mesh.
 
@@ -1465,7 +1478,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 - 📱 **Physical Lockout State Machine:** Kích hoạt State Machine `LOCKED_PHYSICAL_AUTH` sau 5 lần thất bại xác thực liên hợp hoặc Mesh, kích nổ `ZeroizeOnDrop` xóa trắng Key Cache trên thiết bị.
 - 💻 **In-Person Recovery (Cross-signing):** Cưỡng ép Cross-signing ngoại tuyến (In-Person Recovery) qua QR/NFC yêu cầu Admin sử dụng `Admin Private Key` để chứng thực mới cho phép tái hòa nhập mạng lưới.
 
-### 9.9 Chặn luồng Cấp phát (Blocking Latency) và OOM trên Mobile (Tiered Memory Pre-fetching)
+### 9.9 [IMPLEMENTATION] Chặn luồng Cấp phát (Blocking Latency) và OOM trên Mobile (Tiered Memory Pre-fetching)
 
 > **Bài toán:** Nạp khối dữ liệu lớn cùng lúc dùng `MAP_POPULATE` có thể kích nổ OOM-Kill trên Mobile do mồi chủ động nạp toàn bộ Page vào RAM trước khi cần.
 
@@ -1473,7 +1486,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 - 📱 **Vector Embeddings Chunked Streaming (5MB):** Chia nhỏ luồng Vector Embeddings thành các khối 5MB trước khi đẩy qua JSI Native Pointer. Lõi Rust chỉ giữ tối đa 2 khối trong RAM tại bất kỳ thời điểm nào.
 - 📱 **LRU Cache + `munmap()` Chủ động:** Thuật toán LRU Cache giám sát mức sử dụng; khi Resident Set vượt 10MB, tự động gọi `munmap()` giải phóng trang nhớ Stale nhất — giữ footprint dẹt liên tục.
 
-### 9.10 Tránh Treo luồng / Infinite Spin-lock (WASM Isolate Guillotine)
+### 9.10 [IMPLEMENTATION] Tránh Treo luồng / Infinite Spin-lock (WASM Isolate Guillotine)
 
 > **Bài toán:** IPC Call từ `.tapp` độc hại có thể Spin vĩnh viễn bên trong Sandbox, tinh tạo Deadlock mềm (Soft Deadlock) lập tức thâu tóm toàn bộ CPU time.
 
@@ -1481,7 +1494,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 - 🖥️ **`v8::Isolate::TerminateExecution()` / `Worker.terminate()` (Desktop/Mobile):** Desktop kích hoạt `v8::Isolate::TerminateExecution()` — Mobile kích hoạt `Worker.terminate()` — chấm dứt ngay lập tức mà không chờ Cooperative Yield.
 - ☁️ **Crypto-Shredding Linear Memory sau Kill:** Ngay khi Kill, Lõi Rust thực thi `ZeroizeOnDrop` xóa sạch toàn bộ Linear Memory của Sandbox — không để lại bất kỳ dấu vết plaintext hay pointer rác.
 
-### 9.11 Truy xuất Dữ liệu An toàn trong WASM Sandbox (Generational Handle Validation)
+### 9.11 [IMPLEMENTATION] Truy xuất Dữ liệu An toàn trong WASM Sandbox (Generational Handle Validation)
 
 > **Bài toán:** Con trỏ WASM trỏ vào Slot bộ nhớ đã tái cấp phát dẫn đến Use-After-Free.
 
@@ -1489,7 +1502,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 - 💻 **Kiểm tra `Header.generation == expected_generation`:** Trước mỗi chu kỳ đọc, WASM Reader so sánh `Handle.generation` với `Header.generation` trong Shared Slot; lệch pha → Read bị từ chối ngay lập tức.
 - 🖥️ **`StalePointerError` + OPA IPC Guardrail:** Phát hiện lệch pha thế hệ → Throw `StalePointerError` → Buộc Sandbox tái cấp phát qua OPA IPC Guardrail trước khi tiếp nhiệm Handle mới.
 
-### 9.12 Client-Driven Merkle DAG Reconciliation (Chống Rogue Server)
+### 9.12 [IMPLEMENTATION] Client-Driven Merkle DAG Reconciliation (Chống Rogue Server)
 
 > **Bài toán:** Nội gián thiết lập máy chủ giả mạo có thể phá vỡ cây DAG và phân phối Delta-State nhồi độc.
 
@@ -1497,7 +1510,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 - 💻 **Ed25519 Signature trên mỗi Delta-State CRDT Node:** Mọi Delta-State tải về bắt buộc mang chữ ký Ed25519 của `DeviceIdentityKey` người gửi; từ chối mọi Node có chữ ký không hợp lệ.
 - 🖥️ **Zero-Trust Handshake + Root_Hash Reconciliation:** Trước mọi phiên Sync, Client đối chiếu `Root_Hash` với Quorum Peers qua Gossip — nếu Root_Hash Server trả về lệch Quorum → Circuit Breaker cắt kết nối.
 
-### 9.13 Tấn công Nhật thực (Eclipse Attack) — Cross-Client Gossip Protocol
+### 9.13 [IMPLEMENTATION] Tấn công Nhật thực (Eclipse Attack) — Cross-Client Gossip Protocol
 
 > **Bài toán:** Server độc hại kiểm soát toàn bộ kết nối của một Client, chặn đứng hoàn toàn luồng tin tức thực (Eclipse Attack).
 
@@ -1507,7 +1520,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 
 ---
 
-### 9.14 Air-Gapped Diagnostic Isolation (TeraDiag)
+### 9.14 [IMPLEMENTATION] Air-Gapped Diagnostic Isolation (TeraDiag)
 
 > **"Chẩn đoán lỗi mà không làm lộ dữ liệu. TeraDiag tạo ra một vùng cách ly tuyệt đối, nơi log hệ thống được xử lý, mã hóa và đồng bộ mà không cần chạm vào luồng dữ liệu chính của App."**
 
@@ -1520,7 +1533,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 
 ---
 
-## Mục Mới: WASM Sandbox Client-side Implementation
+## Mục Mới: WASM Sandbox Client-side Implementation [PLUGIN] [ARCHITECTURE]
 
 ### WASM-01: Control/Data Plane Client Architecture
 
@@ -1574,7 +1587,7 @@ Hybrid Mesh Bonding — Dual-Path Architecture
 
 ---
 
-## Mục Mới: Cross-Platform Runtime, Packaging & OS Integration
+## Mục Mới: Cross-Platform Runtime, Packaging & OS Integration [PLATFORM] [ARCHITECTURE]
 
 ### PLATFORM-01: Flutter Unified Mobile Architecture
 

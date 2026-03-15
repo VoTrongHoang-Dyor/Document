@@ -1,11 +1,24 @@
 # Design.md — TeraChat Alpha v0.3.0
 
+```yaml
+# DOCUMENT IDENTITY
+id:       "TERA-DESIGN"
+title:    "TeraChat — Product Requirements Document (Design)"
+version:  "2.0"
+audience: "Designer, Frontend Developer, Product Manager"
+purpose:  "Đặc tả hệ thống thiết kế UI/UX Glassmorphism, component library, UI state machine và animation specs."
+
+ai_routing_hint: |
+  "AI mở file này khi người dùng hỏi về UI design, Glassmorphism, animation, components, hoặc các trạng thái (states) của UI."
+```
+
+
 > **Status:** `ACTIVE — Design Reference`
 > **Audience:** UX/UI Designer · Frontend Engineer · Product Manager · Security Architect
 > **Scope:** Glassmorphism Design System · Component Library · Screen Flows · Animation Specs · Security State Visualization · Survival Mesh HUD
 > **Platform:** Desktop 🖥️ · Laptop 💻 · Mobile 📱
 > **Last Updated:** 2026-03-15
-> **Depends On:** `Feature_Spec.md` (IPC signals triggering UI state), `Function.md` (User flows), `Core_Spec.md` (Rust Crypto Core)
+> **Depends On:** → TERA-FEAT (IPC signals triggering UI state), → TERA-FUNC (User flows), → TERA-CORE (Rust Crypto Core)
 > **Consumed By:** React Native / Tauri frontend implementation
 
 ---
@@ -83,7 +96,7 @@ Information First
 
 ---
 
-# §1 Design Philosophy
+# §1 Design Philosophy [CONCEPT] [UI]
 
 TeraChat UI được thiết kế theo triết lý:
 
@@ -102,7 +115,7 @@ UI phải thể hiện rõ:
 
 ---
 
-# §2 Architecture Mapping
+# §2 Architecture Mapping [ARCHITECTURE] [UI]
 
 UI không xử lý logic bảo mật.
 
@@ -118,7 +131,7 @@ Frontend chỉ render **state do Rust Core gửi lên**.
 
 ---
 
-# §3 Control Plane vs Data Plane Visualization
+# §3 Control Plane vs Data Plane Visualization [ARCHITECTURE] [UI]
 
 | Plane         | Purpose                  | Transport               |
 | ------------- | ------------------------ | ----------------------- |
@@ -134,7 +147,7 @@ Data: Wi-Fi Direct 480 Mbps
 
 ---
 
-# §4 Adaptive Glassmorphism State Machine
+# §4 Adaptive Glassmorphism State Machine [UI]
 
 UI thay đổi theo state machine:
 
@@ -159,7 +172,7 @@ Emergency Mesh
 
 ---
 
-# §5 Survival Mesh HUD
+# §5 Survival Mesh HUD [UI]
 
 Mesh Mode UI phải hiển thị:
 
@@ -179,7 +192,7 @@ Nodes pulse outward
 
 ---
 
-# §6 Messaging Layout
+# §6 Messaging Layout [UI]
 
 Layout:
 
@@ -198,7 +211,7 @@ security badge
 
 ---
 
-# §7 Security Event Animation
+# §7 Security Event Animation [SECURITY] [UI]
 
 Mọi security event **bắt buộc animation spec**.
 
@@ -254,7 +267,7 @@ fade out
 
 ---
 
-# §8 Memory Zeroization Overlay
+# §8 Memory Zeroization Overlay [SECURITY] [UI]
 
 Khi Rust Core phát IPC:
 
@@ -277,7 +290,7 @@ progress bar
 
 ---
 
-# §9 Byzantine Fault Indicator
+# §9 Byzantine Fault Indicator [SECURITY] [UI]
 
 Nếu cluster phát hiện fault:
 
@@ -294,7 +307,7 @@ Node isolation triggered
 
 ---
 
-# §10 Failure Containment Protocol (FCP)
+# §10 Failure Containment Protocol (FCP) [SECURITY] [UI]
 
 UI hiển thị:
 
@@ -310,7 +323,7 @@ fcp_triggered
 
 ---
 
-# §11 Sealed Session View
+# §11 Sealed Session View [SECURITY] [UI]
 
 Khi session bị sealed:
 
@@ -326,7 +339,7 @@ SESSION SEALED
 
 ---
 
-# §12 Memory Pressure Feedback
+# §12 Memory Pressure Feedback [UI] [PERFORMANCE]
 
 Nếu thiết bị thiếu RAM:
 
@@ -351,7 +364,7 @@ Glass blur giảm:
 
 ---
 
-# §13 E2EE State Indicator
+# §13 E2EE State Indicator [SECURITY] [UI]
 
 Trạng thái encryption hiển thị trên header.
 
@@ -368,7 +381,7 @@ Rekeying session
 
 ---
 
-# §14 DID Identity Visualization
+# §14 DID Identity Visualization [SECURITY] [UI]
 
 Identity badge:
 
@@ -384,7 +397,7 @@ SHA256 fingerprint
 
 ---
 
-# §15 AI Mode Indicator
+# §15 AI Mode Indicator [UI]
 
 Nếu AI SLM hoạt động:
 
@@ -400,7 +413,7 @@ AI Mode: External ⚠
 
 ---
 
-# §16 WASM Sandbox App View (.tapp)
+# §16 WASM Sandbox App View (.tapp) [PLUGIN] [UI]
 
 Marketplace apps chạy trong:
 
@@ -416,7 +429,7 @@ App Permissions
 
 ---
 
-# §17 IPC Signal Mapping
+# §17 IPC Signal Mapping [IMPLEMENTATION] [UI]
 
 Rust Core gửi IPC → UI update.
 
@@ -431,7 +444,7 @@ Rust Core gửi IPC → UI update.
 
 ---
 
-# §18 Latency Visualization
+# §18 Latency Visualization [PERFORMANCE] [UI]
 
 ```
 Latency: 45 ms
@@ -448,7 +461,7 @@ Color:
 
 ---
 
-# §19 Throughput Indicator
+# §19 Throughput Indicator [PERFORMANCE] [UI]
 
 ```
 Transfer: 120 Mbps
@@ -456,7 +469,7 @@ Transfer: 120 Mbps
 
 ---
 
-# §20 Attack Surface Awareness
+# §20 Attack Surface Awareness [SECURITY] [UI]
 
 Nếu suspicious activity:
 
@@ -466,7 +479,7 @@ Security anomaly detected
 
 ---
 
-# §21 Desktop Layout 🖥️
+# §21 Desktop Layout 🖥️ [PLATFORM] [UI]
 
 ```
 | Sidebar | Conversation | Tools |
@@ -474,7 +487,7 @@ Security anomaly detected
 
 ---
 
-# §22 Mobile Layout 📱
+# §22 Mobile Layout 📱 [PLATFORM] [UI]
 
 ```
 Conversation Fullscreen
@@ -484,13 +497,13 @@ Sidebar slide.
 
 ---
 
-# §23 Laptop Layout 💻
+# §23 Laptop Layout 💻 [PLATFORM] [UI]
 
 Adaptive grid.
 
 ---
 
-# §24 Animation Timing
+# §24 Animation Timing [UI]
 
 | Animation      | Duration  |
 | -------------- | --------- |
@@ -623,7 +636,7 @@ Displayed in **top status bar**.
 
 ---
 
-## Mục Mới: Glassmorphism WASM States & Network Topology UX
+## Mục Mới: Glassmorphism WASM States & Network Topology UX [UI] [PLUGIN]
 
 ### DESIGN-WASM-01: Glass Card States cho .tapp
 
@@ -727,7 +740,7 @@ Displayed in **top status bar**.
 
 ---
 
-## Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States
+## Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States [UI] [PLATFORM]
 
 ### DESIGN-GPU-01: GPU Capability Fallback Matrix
 

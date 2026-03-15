@@ -1,11 +1,24 @@
 # Core_Spec.md — TeraChat Alpha v0.3.0
 
+```yaml
+# DOCUMENT IDENTITY
+id:       "TERA-CORE"
+title:    "TeraChat — Core Technical Specification"
+version:  "2.0"
+audience: "System Architect, Backend Engineer, Security Engineer"
+purpose:  "Đặc tả kiến trúc lõi hệ thống: Cryptography (MLS, E2EE), Mesh Network, Offline CRDT Sync, Server Infrastructure."
+
+ai_routing_hint: |
+  "AI mở file này khi người dùng hỏi về Crypto, bảo mật, MLS, E2EE, giao thức Mesh network, cơ chế đồng bộ CRDT, cấu trúc server."
+```
+
+
 > **Status:** `ACTIVE — Implementation Reference`
 > **Audience:** Backend Engineer · DevOps · Security / Cryptography Engineer
 > **Scope:** Infrastructure, Security, Cryptography, Network Protocols — Implementation-level only.
 > **Last Updated:** 2026-03-11
 > **Depends On:** *(root spec — no external deps)*
-> **Consumed By:** `Feature_Spec.md` · `Design.md` · `Web_Marketplace.md`
+> **Consumed By:** → TERA-FEAT · → TERA-DESIGN · → TERA-MKT
 
 ---
 
@@ -35,7 +48,7 @@
 
 ---
 
-## 0. Data Object Catalog (Danh mục Đối tượng Dữ liệu)
+## 0. Data Object Catalog [CONCEPT] (Danh mục Đối tượng Dữ liệu)
 
 > Mỗi object liệt kê dưới đây là một **đơn vị dữ liệu** độc lập có schema, vòng đời, và ràng buộc bảo mật rõ ràng. Các thuật toán (xem Section 4–5) chỉ là *operations* tác động lên những object này.
 
@@ -87,7 +100,7 @@
 
 ---
 
-## 1. System Overview
+## 1. System Overview [CONCEPT] [ARCHITECTURE]
 
 ### 1.1 Feature Requirements (Zero-Knowledge, E2EE)
 
@@ -144,7 +157,7 @@
 
 ---
 
-## 2. Architectural Approach
+## 2. Architectural Approach [ARCHITECTURE]
 
 ### 2.1 Shared Core Philosophy — Lõi Rust Độc Tài
 
@@ -337,9 +350,9 @@
 
 ---
 
-## 3. Infrastructure & Control Plane
+## 3. [ARCHITECTURE] [IMPLEMENTATION] Infrastructure & Control Plane
 
-### 3.1 Deployment Topologies
+### 3.1 [ARCHITECTURE] [IMPLEMENTATION] Deployment Topologies
 
 ```text
 [Global Edge / GeoDNS Routing]
@@ -358,13 +371,13 @@
                 └─ HA TURN Array (WebRTC Relay, Floating IP)
 ```
 
-### 3.5 Lightweight Micro-Core Relay
+### 3.5 [ARCHITECTURE] [IMPLEMENTATION] Lightweight Micro-Core Relay
 
 - ☁️ **Single-Binary Rust Daemon:** Binary được tối ưu hoá cực hạn (`opt-level='z'`, `panic='abort'`, Link-Time Optimization) để hoạt động ổn định trên Share-Hosting VPS chỉ từ 512MB RAM.
 - ☁️ **Tokio Async Userspace Filter:** Thay thế toàn bộ Kernel-level eBPF bằng bộ lọc lưu lượng tại Userspace sử dụng thuật toán Token Bucket, kiểm soát Rate-limit và chống tấn công DoS mà không cần đặc quyền CAP_SYS_ADMIN.
 - 📱💻☁️ **Protocol Versioning:** Sử dụng ALPN để đàm phán phiên bản giao thức linh hoạt (QUIC/gRPC/WS), đảm bảo khả năng tương thích ngược (Backward Compatibility) và nâng cấp nóng (Hot-reload) mà không gây gián đoạn kết nối.
 
-### 3.6 Zero-Access Diagnostics (TeraDiag)
+### 3.6 [ARCHITECTURE] [IMPLEMENTATION] Zero-Access Diagnostics (TeraDiag)
 
 - 📱 **WASM Sandbox (ReadOnly Partition):** TeraDiag vận hành trong một instance WASM Sandbox biệt lập, được cấp quyền `PROT_READ` tối thiểu đối với phân vùng `diag_logs` để thu thập log trạng thái mà không thể truy xuất dữ liệu tin nhắn hay Database chính.
 - 📱 **XChaCha20-Poly1305 Pipeline:** Toàn bộ log chẩn đoán được mã hoá stream-based qua pipeline XChaCha20-Poly1305 trước khi đẩy vào kênh đồng bộ, đảm bảo tính toàn vẹn và bí mật tuyệt đối kể cả khi log bị thất lạc.
@@ -376,7 +389,7 @@
 | 100k Users | Geo-Federated Clusters (Dedicated VPS) | PostgreSQL Geo-Partitioning + HA TURN Array |
 | 1M+ Users | Multi-Cloud Active-Active (Federation Bridge) | Data Mule + NTN Satellite routing |
 
-### 3.2 Backend Services
+### 3.2 [ARCHITECTURE] [IMPLEMENTATION] Backend Services
 
 #### Gateway & Identity Broker
 
@@ -429,7 +442,7 @@
 - 📱💻🖥️ Áp đặt OPA Policy Engine quản trị Byte-Quota và Rate Limiting nghiêm ngặt đối với từng tiến trình chạy ngầm của tiện ích.
 - ☁️ Tự động kích hoạt trạng thái "Suspend" (Circuit Breaker) cho các ứng dụng vi phạm Latency >1500ms hoặc ngưỡng CPU Spike >30%.
 
-#### 3.4.2 Xử lý OOM-Kill do SQLite WAL Hydration (VPS Resource Constraints)
+#### 3.4.2 [ARCHITECTURE] [IMPLEMENTATION] Xử lý OOM-Kill do SQLite WAL Hydration (VPS Resource Constraints)
 
 > **Bài toán:** Trên các VPS giới hạn tài nguyên, việc nạp (Hydration) dữ liệu từ SQLite WAL có thể gây ra hiện tượng tràn bộ nhớ (OOM-Kill).
 
@@ -437,7 +450,7 @@
 - ☁️ **Zero-Copy Atomic Rename:** Sử dụng hàm `renameat2()` của Linux với cờ `RENAME_WHITEOUT` (hoặc tương đương POSIX) để tráo đổi tệp vfs-journal mà không cần sao chép dữ liệu qua User-space, giảm 90% áp lực RAM khi xoay vòng WAL.
 - ☁️ **SQLite WAL Autocheckpoint:** Cưỡng chế `wal_autocheckpoint=1000` để giữ kích thước file WAL luôn ở ngưỡng kiểm soát được.
 
-### 3.5 Lightweight Micro-Core Relay
+### 3.5 [ARCHITECTURE] [IMPLEMENTATION] Lightweight Micro-Core Relay
 
 > **Giải pháp:** Sử dụng relay siêu nhẹ chạy trực tiếp trên VPS phổ thông, loại bỏ các thành phần phức tạp không cần thiết.
 
@@ -473,7 +486,7 @@
 - 🖥️ Thiết lập vành đai **Anti-Snapshot Deployment Hardening** trói cứng luồng xử lý qua CPU Hard-pinning (Core isolation) và áp đặt vòng đời KMS Key_TTL tự xoay mỗi 10 phút.
 - ☁️ Đính kèm cơ chế **Blind Wipe** gắn nhãn metadata ảo cho MinIO và kích hoạt quy trình SharedArrayBuffer Immediate Zeroing xóa trắng thung lũng bộ nhớ cấu hình tại mỗi hồi nhịp Tự hủy (Self-destruct) `🖥️`.
 
-### 3.4 Database Layer
+### 3.4 [ARCHITECTURE] [IMPLEMENTATION] Database Layer
 
 #### PostgreSQL HA
 
@@ -488,9 +501,9 @@
 
 ---
 
-## 4. Security & Cryptography Engine
+## 4. [SECURITY] [ARCHITECTURE] Security & Cryptography Engine
 
-### 4.1 Key Management System (HKMS)
+### 4.1 [SECURITY] [ARCHITECTURE] Key Management System (HKMS)
 
 ```text
 [Master Key]  — HSM / TPM / Secure Enclave (không rời chip)
@@ -521,7 +534,7 @@
 
 - 📱💻🖥️ `self.userID` trong `removedMembers` → xóa Private Key trong SE → Drop bảng chat → Quét xóa Sandbox files. Thực thi trong `autoreleasepool` (iOS) / `try-finally` (Android) — không thể bị User chặn.
 
-### 4.2 Message Layer Security (MLS — IETF RFC 9420)
+### 4.2 [SECURITY] [ARCHITECTURE] Message Layer Security (MLS — IETF RFC 9420)
 
 #### Kiến trúc Hạ cấp tại Nguồn (Sender Downgrade Mode) chống Xung đột phiên bản
 
@@ -548,7 +561,7 @@
 - 🗄️ **CPU Registers Ephemeral Key Storage:** Các chìa khóa tạm thời (Ephemeral Key) chỉ được phép nạp trực tiếp vào các thanh ghi CPU (Register-level) mà không cấp phát xuống RAM, miễn nhiễm hoàn toàn với các cuộc tấn công khai thác DMA (Direct Memory Access) hay nhổ RAM vật lý.
 - 💻📱 **Inline RAM Scrambling (ChaCha8 Keystream XOR):** Chống lại Trích xuất RAM lạnh (Cold Boot Attack) bằng thiết kế Software-defined RAM Scrambling. Bất kỳ Plaintext nào tồn tại quá 1ms trong mảng nhớ cấp phát sẽ bị mã hóa tức thời (XORed) bằng một dòng chảy ngẫu nhiên (Keystream) ChaCha8. Điều này làm cho kẻ tấn công dù có đóng băng RAM và can thiệp bằng Nitơ lỏng cũng chỉ thu thập được đống dữ liệu rác vô nghĩa.
 
-#### 4.6 Soft-Enclave WASM Isolation & RAM Scrambling (Cold Boot Defense)
+#### 4.6 [SECURITY] [ARCHITECTURE] Soft-Enclave WASM Isolation & RAM Scrambling (Cold Boot Defense)
 
 > **Giải pháp:** Bảo vệ RAM và dữ liệu nhạy cảm khi không có phần cứng TEE (SGX/SEV) chuyên dụng.
 
@@ -563,7 +576,7 @@
 - 📱 `Push_Key` được lưu trong vùng bảo mật phần cứng (Shared Keychain trên iOS, StrongBox/Keystore trên Android) với RAM footprint tối thiểu; Main App khi Foreground chịu trách nhiệm thực hiện bước ratchet tiếp theo (tăng `push_epoch`, derive `Push_Key_new`) sau khi nhận signal MLS Epoch Rotation.
 - 📱 **NSE/FCM Service không bao giờ tái dựng TreeKEM:** Khi push đến, tiến trình nhẹ chỉ cần đọc `Push_Key_current` từ vùng chia sẻ, giải mã payload CBOR/AES-GCM với $O(1)$ RAM (< 5MB), hiển thị Notification, rồi `ZeroizeOnDrop` để tránh Crypto Blindness và Desync trạng thái giữa MLS Epoch và lớp Notification.
 
-### 4.3 Hardware Isolation & Crypto-Shredding
+### 4.3 [SECURITY] [ARCHITECTURE] Hardware Isolation & Crypto-Shredding
 
 #### §4.4 Hardware-Bound Memory Guard & IOMMU Posture Enforcement (Chống DMA Attack)
 
@@ -731,9 +744,9 @@ Step 3 │ WebSocket Secure (wss:// over TCP:443)
 
 ---
 
-## 5. Network & Communication Protocols
+## 5. [SECURITY] [IMPLEMENTATION] Network & Communication Protocols
 
-### 5.1 Real-time Messaging
+### 5.1 [SECURITY] [IMPLEMENTATION] Real-time Messaging
 
 #### WebSocket E2EE Relay
 
@@ -758,7 +771,7 @@ Step 3 │ WebSocket Secure (wss:// over TCP:443)
 - 💻 Windows Service (`sc create`) / macOS `launchd` LaunchAgent / 🖥️ Linux `systemd` user service.
 - 💻🖥️ Nhận E2EE payload → giải mã preview → OS Native Notification → xóa plaintext. DB sync chỉ khi Tauri UI mở.
 
-### 5.2 Survival Mesh Network (P2P, BLE 5.0, Wi-Fi Direct)
+### 5.2 [SECURITY] [IMPLEMENTATION] Survival Mesh Network (P2P, BLE 5.0, Wi-Fi Direct)
 
 #### Platform-Agnostic Transport: `MeshTransport` Trait
 
@@ -866,7 +879,7 @@ trait MeshTransport: Send + Sync {
 - 💻🖥️📱 Cấu hình Định tuyến Bất đồng bộ (Asynchronous DAG Routing) kết hợp cơ chế Store-and-Forward trên các Super Node nội bộ.
 - 📱💻🖥️ Triển khai mạng lưới Causal Graph kết hợp Pending Buffer nhằm xử lý tối ưu độ trễ và các gói tin Out-of-Order.
 
-### 5.6 Clustered Mesh Topology & Super Node Silent Election (Chống Broadcast Storm)
+### 5.6 [SECURITY] [IMPLEMENTATION] Clustered Mesh Topology & Super Node Silent Election (Chống Broadcast Storm)
 
 - 💻🖥️📱 Phân quyền kiến trúc mạng nhện sinh tồn (Hierarchical Mesh Topology): ấn định Desktop làm Super Node và iOS làm Leaf Node tuân thủ thuật toán định tuyến A*.
 - 💻🖥️📱 **Thuật toán Silent Election:** Tự động thăng cấp các thiết bị có chỉ số Pin/CPU mạnh nhất lên làm Super Nodes để điều phối mạng lưới khi Offline.
@@ -875,25 +888,25 @@ trait MeshTransport: Send + Sync {
 - 📱 Triển khai tín hiệu iBeacon Ranging trên CoreLocation nhằm cưỡng chế sóng BLE ở chế độ Background, lách qua rào cản đánh thức từ hệ điều hành.
 - 📱 Kiến tạo cầu nối vật lý (Data Mule) tự động chuyển phát chéo gói tin thông qua chu trình Android Foreground Service.
 
-### 5.7 Dò tìm Nội dung Tất định Blind Content-Addressable (Oblivious Bloom Filter)
+### 5.7 [SECURITY] [IMPLEMENTATION] Dò tìm Nội dung Tất định Blind Content-Addressable (Oblivious Bloom Filter)
 
 - 📱💻🖥️ Tổ chức khối nén phân tán Distributed Bloom Filters (Compressed) cấu trúc hóa đại diện kho `cas_ref` nội bộ thiết bị.
 - 📱💻 Phát tán tín hiệu quảng bá định danh "CAS-HIT" thông qua nền tảng BLE 5.0 Advertising, tuyệt đối giấu kín gốc danh tính User_ID.
 - 📱💻🖥️ Xác định linh hoạt vị trí tệp tin trong mạng nhện Mesh thông qua thuật toán Gossip với độ trễ truy vấn < 500ms.
 
-### 5.8 Truyền tải File đa kênh mạng Mesh (TeraLink Multipath Data Mule)
+### 5.8 [SECURITY] [IMPLEMENTATION] Truyền tải File đa kênh mạng Mesh (TeraLink Multipath Data Mule)
 
 - 📱💻 Tách biệt luồng điểu khiển Control Plane (BLE 5.0) và luồng dữ liệu Data Plane (Wi-Fi Direct/AWDL) nhằm cực tiểu hóa hao hụt năng lượng.
 - 📱💻🖥️ Đánh giá chiều hướng vector RSSI và RTT kết hợp thuật toán A* để định tuyến đường đi vật lý ngắn nhất tới Super Node hoặc thiết bị trung chuyển (Mule).
 - 📱💻 Phân rã mã hóa tải trọng (Segmented Fragmentation) thành các phân mảnh siêu nhỏ 400 bytes, lách qua rào cản nút thắt cổng MTU của giao thức BLE.
 
-### 5.9 Tiết kiệm Năng lượng Mạng Mesh (iBeacon Stealth Mode & Gossip Broadcast)
+### 5.9 [SECURITY] [IMPLEMENTATION] Tiết kiệm Năng lượng Mạng Mesh (iBeacon Stealth Mode & Gossip Broadcast)
 
 - 📱 Cưỡng ép đóng gói tín hiệu mạng Mesh vào giao thức iBeacon Ranging (CoreLocation) nhằm lách hạn chế ngầm định của iOS, duy trì chu kỳ quét Background.
 - 📱💻 Sử dụng **Gossip-based Broadcast** để lan tỏa dữ liệu giữa các thiết bị lân cận — loại bỏ overhead của thuật toán định tuyến không gian 3D phức tạp.
 - 📱💻 Điều tiết cấu hình Opportunistic Wakeup chủ động kích hoạt năng lượng định tuyến khi payload có nhu cầu di chuyển tệp thực, hạ tần suất Beacon xuống 1 lần/5 phút ở trạng thái Standby.
 
-### 5.9.1 Single-Frame Binary Serialization for Mesh Recovery (Chống Phân mảnh BLE 5.0)
+### 5.9.1 [SECURITY] [IMPLEMENTATION] Single-Frame Binary Serialization for Mesh Recovery (Chống Phân mảnh BLE 5.0)
 
 > **Bài toán:** BLE 4.2 MTU tối đa 251 bytes buộc phải phân mảnh L2CAP nếu payload lớn hơn — gây mất gói, thứ tự sai và tăng overhead. Trong kịch cảnh khôi phục khẩn cấp (SOS Beacon, Multi-Sig Escrow shard), mỗi byte thừa đều là rủi ro.
 
@@ -901,7 +914,7 @@ trait MeshTransport: Send + Sync {
 - 📱 **Native BLE Extended Advertising (Zero Fragmentation):** Trên thiết bị hỗ trợ BLE 5.0, Lõi Rust yêu cầu OS sử dụng **Extended Advertising PDU** (payload tối đa 255 bytes/frame, không cần L2CAP chunking) thay vì Legacy Advertising. Payload Recovery được nhét vào một PDU duy nhất → loại bỏ hoàn toàn xác suất mất mảnh.
 - 📱💻🖥️ **Hardware-bound Ed25519 Signing (Secure Enclave / StrongBox):** Mỗi Recovery frame được ký bằng `Device_Identity_Key` trực tiếp trong Secure Enclave/StrongBox — signature 64 bytes append vào cuối payload trước khi gửi. Receiver xác thực signature trước khi decode bất kỳ byte nào khác, ngăn frame giả mạo tiêu tốn CPU.
 
-### 5.9.2 Zero-Knowledge Metadata Masking in Mesh Broadcast (Chống Rò rỉ Siêu dữ liệu qua Sóng vô tuyến)
+### 5.9.2 [SECURITY] [IMPLEMENTATION] Zero-Knowledge Metadata Masking in Mesh Broadcast (Chống Rò rỉ Siêu dữ liệu qua Sóng vô tuyến)
 
 > **Bài toán:** Mọi BLE Advertising đều broadcast `Node_ID` hoặc `Device_ID` dưới dạng plaintext trong Manufacturer Specific Data — kẻ tấn công có thể thu thập traffic, map danh tính người dùng mà không cần bẻ mã hóa nội dung.
 
@@ -909,7 +922,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Curve25519 Identity Public Key Exchange:** Khi hai thiết bị muốn xác thực lẫn nhau (không phải broadcast mở), Lõi Rust thực hiện ECDH Curve25519 One-Pass — trao đổi ephemeral public key qua BLE Scan Response, giải ECDH ra `Shared_Secret`, dùng làm channel key cho phiên L2CAP kế tiếp. Không bao giờ dùng static key trong giao tiếp Layer 2.
 - 📱 **Sealed Sender Protocol for Mesh Signal Plane:** Mọi CRDT event, Shun command, và SOS payload gửi qua Mesh được bọc trong **Sealed Sender** — receiver chỉ biết nội dung sau khi giải mã, không biết sender trước khi mở gói. Kẻ relay trung gian (Super Node) forward blindly mà không đọc được `Node_ID` của người gửi thật.
 
-### 5.9.3 Stealth Wake-up Protocol — Metadata Anonymization (Chống Rò rỉ Ngữ cảnh & Vị trí Vật lý)
+### 5.9.3 [SECURITY] [IMPLEMENTATION] Stealth Wake-up Protocol — Metadata Anonymization (Chống Rò rỉ Ngữ cảnh & Vị trí Vật lý)
 
 > **Bài toán:** Ngay cả khi nội dung BLE Advertising được mã hóa, định danh thiết bị (MAC address, static `Node_ID`) vẫn lộ ra trong Layer 2 header. Kẻ tấn công thu thập Beacon theo thời gian có thể vẽ bản đồ vị trí vật lý của toàn bộ nhân viên trong tòa nhà.
 
@@ -918,7 +931,7 @@ trait MeshTransport: Send + Sync {
 - 💻📱 **Ephemeral Key Derivation (Per-session):** Cho mỗi phiên phát sóng mới, Lõi Rust sinh `EphemeralKey_session = HKDF(Device_Identity_Key, R || Session_Index)`. Khóa này chỉ sống trong RAM (không ghi disk) và tự hủy sau 5 phút hoặc khi phiên kết thúc — đảm bảo Forward Secrecy tại Layer 2.
 - 📱 **Single-frame Stealth Payload (`Nonce + C_trunc + Ciphertext`):** Payload BLE Advertising có cấu trúc cố định 3 trường: `[8B Nonce R] + [8B C_trunc] + [N bytes Ciphertext]`. Tổng ≤ 31B cho Legacy Advertising hoặc ≤ 255B cho Extended Advertising. Không có field nào chứa thông tin định danh tĩnh.
 
-### 5.9.4 Darknet Signal Plane — Ghost Mesh (Chống Tấn công Theo dõi & Phân tích Lưu lượng)
+### 5.9.4 [SECURITY] [IMPLEMENTATION] Darknet Signal Plane — Ghost Mesh (Chống Tấn công Theo dõi & Phân tích Lưu lượng)
 
 > **Bài toán:** Kẻ tấn công tinh vi có thể phân tích pattern lưu lượng (timing, frequency, payload size) ngay cả khi không giải mã được nội dung — từ đó suy ra ai đang giao tiếp với ai, khi nào, tại đâu.
 
@@ -927,7 +940,7 @@ trait MeshTransport: Send + Sync {
 - 💻📱 **O(1) Edge Noise Filter (trước Rust Pipeline):** Tại điểm tiếp nhận BLE, một bộ lọc Bloom Filter nhỏ (4KB) kiểm tra nhanh `C_trunc` — nếu không khớp bất kỳ entry nào trong danh bạ đã biết → Drop ngay tại tầng Edge mà không nạp vào Rust Pipeline. Chi phí lọc $O(1)$, không tiêu tốn CPU cho Dummy Beacons.
 - 📱 **Static Identity Elimination trong mọi Broadcast:** Audit toàn bộ BLE Advertising PDU: nghiêm cấm xuất hiện `Device_MAC thật`, `Node_ID`, `User_ID`, `Company_ID` dưới bất kỳ encoding nào (hex, base64, protobuf field). CI pipeline tự động scan Advertising payload template để phát hiện static field trước khi merge.
 
-### 5.10 Mesh Anti-Spam & DoS Resilience
+### 5.10 [SECURITY] [IMPLEMENTATION] Mesh Anti-Spam & DoS Resilience
 
 #### Tấn công Sybil trên mạng Mesh (Chống Spam & OOM)
 
@@ -1042,7 +1055,7 @@ trait MeshTransport: Send + Sync {
 
 ---
 
-### 5.10.1 Local Tombstone Vacuum & Merged Vector Clock (Toàn vẹn DAG & Chống Mất dữ liệu)
+### 5.10.1 [SECURITY] [IMPLEMENTATION] Local Tombstone Vacuum & Merged Vector Clock (Toàn vẹn DAG & Chống Mất dữ liệu)
 
 > **Bài toán:** Khi message bị xóa, entry DELETE (Tombstone) tích lũy mãi trong DAG mà không bị dọn dẹp, gây phình to database. Đồng thời, nếu Tombstone bị xóa quá sớm, một node offline có thể replay event DELETE đó như một sự kiện mới.
 
@@ -1068,7 +1081,7 @@ trait MeshTransport: Send + Sync {
 
 - 💻📱🖥️ **Unidirectional State Sync (Rust Core → UI):** Toàn bộ cập nhật DAG (kể cả Vacuum/Stub) chỉ chảy theo một chiều từ Lõi Rust xuống UI Native. UI không được phép gửi ngược state lên Rust Core — đảm bảo Rust Core là single source of truth, không có UI state pollution.
 
-### 5.10.2 Peer-Assisted Epoch Re-induction — MLS TreeKEM (Chống Mù Mật mã Sau Đồng bộ)
+### 5.10.2 [SECURITY] [IMPLEMENTATION] Peer-Assisted Epoch Re-induction — MLS TreeKEM (Chống Mù Mật mã Sau Đồng bộ)
 
 > **Bài toán:** Thiết bị offline trong thời gian dài có thể bị bỏ lại ở MLS Epoch cũ sau nhiều lần Key Rotation. Thiết bị không thể tự giải mã message mới vì không có `Epoch_Key` hiện tại — kể cả khi Server đã online trở lại.
 
@@ -1077,14 +1090,14 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Welcome Packet Encryption via ECIES/Curve25519:** `Welcome_Packet` được encrypt bằng ECIES sử dụng Curve25519 Public Key của thiết bị target (lấy từ MLS KeyPackage đã đăng ký). End-to-end: chỉ thiết bị đúng mới giải mã được, peer relay không thể đọc nội dung.
 - 📱💻🖥️ **Peer-to-Peer Identity Validation:** Sau khi nhận `Welcome_Packet`, Lõi Rust xác thực `Device_Identity_Key` qua cross-reference với `Enterprise_CA` certificate đã lưu local. Nếu Certificate hết hạn hoặc đã revoked (Shun List) → từ chối induction, yêu cầu Admin re-provision.
 
-### 5.11 WebRTC Blind Relay (TURN)
+### 5.11 [SECURITY] [IMPLEMENTATION] WebRTC Blind Relay (TURN)
 
 - 📱💻🖥️ **Signaling:** Trao đổi SDP qua kênh chat MLS (E2EE channel).
 - ☁️ **Transport:** SRTP — E2EE Audio/Video. TURN Server chỉ relay UDP mã hóa — không nắm Key.
 - ☁️ **HA:** Keepalived Floating IP, failover 3 giây. Sizing: 1 Node ~ 50 HD streams, 4 vCPUs, 8GB RAM, 1 Gbps.
 - ☁️ **Hybrid STUN qua Private Cluster:** Vượt AP/Client Isolation bằng WebRTC Data Channel mồi từ VPS nội bộ.
 
-### 5.4 OOB Mesh Ratchet (Double Ratchet vs Data Mule)
+### 5.4 [SECURITY] [IMPLEMENTATION] OOB Mesh Ratchet (Double Ratchet vs Data Mule)
 
 - 📱💻 Phân tách Data Plane State Machine để chống lệch con trỏ (ratchet out-of-sync) trên các thiết bị.
 - 📱💻 Cấu hình `Online_Ratchet_Tree`: Ràng buộc định tuyến qua TCP/WebSocket. Xoay khóa TLS/MLS liên tục, hardcode `Max_Gap = 2000` messages.
@@ -1094,14 +1107,14 @@ trait MeshTransport: Send + Sync {
 - 📱 💻 **X25519 Ephemeral Keypair in RAM:** Cấp phát cặp khóa X25519 ngắn hạn độc lập trên heap RAM, không lưu vào disk hay Secure Enclave, ngắt hoàn toàn attack surface vật lý.
 - 📱 💻 **Ephemeral Key Zeroization (0x00):** Cưỡng chế ghi đè toàn bộ vùng nhớ khóa phiên bằng byte 0x00 ngay sau khi phiên kết thúc, triệt phá khả năng phục hồi qua cold-boot hay DMA dump.
 
-### 5.12 Phân xử Phi tập trung Hậu phân mảnh mạng (Tie-Breaker Hash Election)
+### 5.12 [SECURITY] [IMPLEMENTATION] Phân xử Phi tập trung Hậu phân mảnh mạng (Tie-Breaker Hash Election)
 
 > **Bài toán:** Khi mạng bị phân mảnh (Split-brain) và sau đó kết nối lại, cần có một cơ chế bầu chọn tự động (Leader Election) để quyết định ai là người điều phối việc merge dữ liệu mà không cần sự can thiệp của Server trung tâm.
 
 - 📱💻🖥️ **Tie-Breaker Hash Election (Bầu cử Dictator Tất định):** Sử dụng BLAKE3 Hashing để định danh trọng số Node. Node có mã băm cao nhất (Max Hash) sẽ được thăng cấp làm Merge Dictator điều phối quá trình sáp nhập. Quyết định này là tất định (deterministic) trên mọi node, không cần vòng lặp vote tốn thời gian.
 - 📱💻🖥️ **Failover Cơ chế Listener Kế nhiệm:** Giám sát liên tục trạng thái của Dictator. Nếu Dictator rớt mạng (timeout), node có trọng số Hash cao thứ hai sẽ lập tức takeover vai trò Listener kế nhiệm trong thời gian <10ms, đảm bảo tiến trình sáp nhập không bị gián đoạn.
 
-### 5.13 Rust Asynchronous Concurrency Architecture (Ngăn chặn Đóng băng UI / ANR)
+### 5.13 [SECURITY] [IMPLEMENTATION] Rust Asynchronous Concurrency Architecture (Ngăn chặn Đóng băng UI / ANR)
 
 > **Bài toán:** Khi nhận và sáp nhập hàng lượng lớn sự kiện DAG từ Mesh, nếu tải quá nặng sẽ gây treo UI (ANR trên Android, khựng frame trên iOS). Cần phân rã triệt để luồng tính toán lõi ra khỏi luồng render.
 
@@ -1109,7 +1122,7 @@ trait MeshTransport: Send + Sync {
 - 💻🖥️ **Rayon Thread Pool Thực thi Tính toán DAG Đa lõi:** Đối với các tác vụ sáp nhập CRDT phức tạp ($O(N \log N)$), Lõi Rust đẩy xuống Rayon xử lý song song trên nhiều CPU bounds. Tránh nghẽn một nhân, tối đa hóa thông lượng thuật toán duyệt đồ thị.
 - 📱💻🖥️ **Hardware Crypto Acceleration (AES-NI / ARM NEON):** Luồng MLS Crypto Worker được phân lập riêng biệt, truy xuất trực tiếp tập lệnh phần cứng để mã hóa/giải mã. Không tranh chấp tài nguyên với luồng xử lý I/O và UI rendering.
 
-### 5.14 Deterministic State Convergence (Hội tụ Trạng thái Toàn mạng lưới)
+### 5.14 [SECURITY] [IMPLEMENTATION] Deterministic State Convergence (Hội tụ Trạng thái Toàn mạng lưới)
 
 > **Bài toán:** Trong môi trường phân tán P2P, các bản cập nhật có thể đến không theo thứ tự. Tới cuối cùng, toàn bộ các node bắt buộc phải hội tụ về một trạng thái thống nhất một cách tuyệt đối (Strong Eventual Consistency).
 
@@ -1117,7 +1130,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Ed25519 Digital Signature Xác thực Bản vá Sáp nhập:** Mỗi thao tác thay đổi state (merge patch) đều phải kèm chữ ký mã hóa Ed25519 của người tạo. Các node khác xác thực chữ ký trước khi apply vào DAG cục bộ, ngăn chặn chèn trạng thái độc hại.
 - 📱💻🖥️ **TreeKEM Update Path Tái cấu trúc Cây khóa Epoch N+2:** Sau khi trạng thái DAG hội tụ thành công, Lõi Rust phát yêu cầu Update Path để tái cấu trúc lại nhóm bảo mật MLS ở Epoch mới (N+2), phục hồi tính Forward Secrecy kịp thời hậu phân mảnh mạng.
 
-### 5.15 Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)
+### 5.15 [SECURITY] [IMPLEMENTATION] Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)
 
 #### Xử lý Xung đột Não lặp (Split-Brain Reconciliation)
 
@@ -1134,7 +1147,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Xác định Hash_Frontier Cao nhất:** Thông qua việc so sánh độ ưu tiên của Hybrid Logical Clocks (HLC) giữa các đảo, hệ thống tìm ra `Hash_Frontier` mang Vector Clock trội nhất làm mốc hội tụ.
 - 📱💻🖥️ **Cryptographic Fast-Forward nhảy vọt Epoch N+2:** Cho phép các node bị tụt hậu (từ Epoch N-k) bỏ qua việc giải mã tuần tự từng tin nhắn chặn giữa. Thay vào đó, node tái đồng bộ DAG state mới nhất (Fast-Forward), sau đó trực tiếp hấp thụ `Update_Path` của MLS TreeKEM để cập nhật ngay lập tức lên Epoch hiện tại (N+2).
 
-### 5.16 Phân nhánh Dữ liệu Ghost Merge (Tie-Breaker V2)
+### 5.16 [SECURITY] [IMPLEMENTATION] Phân nhánh Dữ liệu Ghost Merge (Tie-Breaker V2)
 
 > **Bài toán:** Quá trình merge hai nhánh DAG khổng lồ (Ví dụ: Nhánh 1 từ Desktop, Nhánh 2 từ Mobile) đòi hỏi năng lực tính toán cực lớn. Giao phó cho 1 node yếu có thể làm OOM toàn bộ tiến trình.
 
@@ -1142,7 +1155,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **Deterministic Merge (Sáp nhập Nhánh N & N+2):** Thuật toán tự động sáp nhập Nhánh 1 (Epoch N+2) và Nhánh 2 (Epoch N) dựa trên quan hệ nhân quả (causality) của đồ thị DAG, loại bỏ hoàn toàn các event trùng lặp (Idempotent Merge).
 - 💻🖥️ **Rayon Thread Pool Xử lý Đa luồng:** Phân rã tiến trình duyệt đồ thị DAG và tính toán HLC conflict resolution xuống Thread Pool của Rayon. Giúp tận dụng 100% tài nguyên CPU đa nhân trên Desktop/Server, tránh nghẽn luồng chính (Main Event Loop) của Lõi Rust.
 
-### 5.17 Bảo toàn Tính vẹn toàn Audit Trail (Append-Only Immutable Hash Chain)
+### 5.17 [SECURITY] [IMPLEMENTATION] Bảo toàn Tính vẹn toàn Audit Trail (Append-Only Immutable Hash Chain)
 
 > **Bài toán:** Các cuộc gộp nhánh DAG (merge) thường phải tổ chức lại lịch sử. Kẻ tấn công có thể lợi dụng lúc merge để chèn, xóa hoặc thay đổi (rollback) nhật ký thao tác (Audit Log) nhằm che giấu dấu vết.
 
@@ -1152,7 +1165,7 @@ trait MeshTransport: Send + Sync {
 - ☁️ **Ed25519 Cryptographic Signature Audit Log (ISO 27001 A.10.1.1):** Ký số bất đối xứng Ed25519 trên mọi entry nhật ký Audit Log — đảm bảo tính nguyên vẹn tuyệt đối của mọi sự kiện, chống giả mạo và thao túng lịch sử Audit bởi Insider Threat.
 - ☁️ **HLC Real-time Time-stamping:** Gắn nhãn thời gian HLC (Hybrid Logical Clock) thời gian thực cho mọi entry nhật ký, đảm bảo thứ tự nhân quả bất biến dù Server clock bị thao túng.
 
-### 5.18 Chống Rò rỉ `Company_Key` qua WASM Sandbox — Kiến trúc Data Diode (ISO 27001 A.6.1.2 / A.13.1.3)
+### 5.18 [SECURITY] [IMPLEMENTATION] Chống Rò rỉ `Company_Key` qua WASM Sandbox — Kiến trúc Data Diode (ISO 27001 A.6.1.2 / A.13.1.3)
 
 > **Bài toán:** Mini-App (.tapp) chạy trong WASM Sandbox là mã nguồn bên ngoài (3rd party). Nếu cấp thẳng `Company_Key` vào Sandbox để Mini-App tự giải mã Data, mã độc có thể lén lút tuồn Key ra ngoài. Kiến trúc **Host-Binding Proxy** (để Lõi Crypto làm Forward Proxy cho .tapp) bị loại bỏ — vi phạm § Segregation of Duties (A.6.1.2): Lõi mật mã không parse HTTP/network traffic của bên thứ ba.
 
@@ -1204,7 +1217,7 @@ trait MeshTransport: Send + Sync {
 - 📱 **Android — `wasmtime` JIT (Cranelift backend):** Android cho phép JIT với W^X protection. `wasmtime::Config::new().cranelift_opt_level(OptLevel::Speed)` — JIT nhưng có sandbox CFI.
 - 💻🖥️ **Desktop (Tauri) — `wasmtime` JIT:** JIT thực thi trong sandbox người dùng, chặn đứng các nỗ lực RCE thông qua Application-level CFI. Loại bỏ Seccomp-BPF filters để tối ưu khả năng tương thích kernel.
 
-### 5.19 Shadow DAG Protocol & Conflict Resolution
+### 5.19 [SECURITY] [IMPLEMENTATION] Shadow DAG Protocol & Conflict Resolution
 
 - ☁️🗄️ **Shadow DAG Protocol:** Thay vì Force-Merge khi có xung đột, Lõi Rust triển khai kiến trúc "Nhánh Bóng" (Shadow Branching). Lệnh PROPOSE_CHANGE được khởi tạo thay vì UPDATE, chứa payload: [Encrypted_Delta_Content] + [Index_ID] + [Ed25519_Signature].
 - 📱💻 **Cryptographic Non-Repudiation (Chống chối bỏ):** Mọi hành động "Accept" hay "Reject" trên một Shadow Node bắt buộc phải được ký bằng DeviceIdentityKey (nằm trong Hardware Enclave). Không một ai có thể giả mạo quyết định gộp dữ liệu.
@@ -1213,9 +1226,9 @@ trait MeshTransport: Send + Sync {
 - ☁️ **Token Bucket Group-Based Rate Limiting & Edge-Level Malicious Packet Dropping:** VPS duy trì Token Bucket cho mỗi Index_ID. Khi nhận gói PROPOSE_CHANGE, VPS kiểm tra tần suất. Nếu vượt ngưỡng (vd: 50 Đề xuất/phút), VPS rớt (drop) gói tin ngay tại biên mạng (Edge), bảo vệ thiết bị khác khỏi tấn công DoS bằng Shadow DAG.
 - 📱 **Mesh Mode Offline Constraint & DAG Fragmentation Prevention:** Nếu thiết bị đang ở trong Mesh Mode không có tín hiệu mạng chạm tới VPS, Lõi Rust tự động vô hiệu hóa quyền Editor và Commenter. Trạng thái UI chuyển sang "Read-Only (Offline)" để đảm bảo không xảy ra phân mảnh DAG diện rộng mà Server không thể tổng hợp.
 
-### 5.20 Streaming Cryptography & Memory Bounds — Large File Transfer (10GB+)
+### 5.20 [SECURITY] [IMPLEMENTATION] Streaming Cryptography & Memory Bounds — Large File Transfer (10GB+)
 
-### 5.21 Adaptive Payload Gating — 3-Tier Spatial Connectivity (Cổng lọc Dữ liệu Tương thích)
+### 5.21 [SECURITY] [IMPLEMENTATION] Adaptive Payload Gating — 3-Tier Spatial Connectivity (Cổng lọc Dữ liệu Tương thích)
 
 > **Kiến trúc:** Lõi Rust tích hợp `Network_State_Machine` liên tục đo lường **RSSI** (Cường độ tín hiệu), **RTT** (Độ trễ vòng) và **Protocol** (BLE/Wi-Fi/TCP) để tự động phân loại kết nối vào 1 trong 3 Tier. **Nguyên tắc bất biến:** Khả năng vật lý quyết định Đặc quyền dữ liệu — không UI, không người dùng có thể bypass.
 
@@ -1232,7 +1245,7 @@ trait MeshTransport: Send + Sync {
 - 📱 **Kịch bản:** iOS đang nhận file ghi âm (Tier 2 / Offline Near) → người dùng khóa màn hình → iOS rơi xuống Tier 3 / Offline Far, AWDL bị Apple tắt.
 - 📱 **Giải pháp:** Lõi Rust trên máy **gửi** (Android/Mac) phát hiện timeout AWDL → gọi mô hình **Whisper AI cục bộ** (Local NLP — chạy tại biên, không cần Internet) để phiên dịch file ghi âm thành Text → chỉ bắn Text E2EE qua BLE Long Range sang iPhone. Người nhận iOS vẫn nhận được thông tin khẩn cấp dưới dạng chữ, đảm bảo tính đồng nhất chức năng với Android.
 
-### 5.22 Dynamic Agent Routing (DAR) — Universal Agentic Bridge qua WASM
+### 5.22 [SECURITY] [IMPLEMENTATION] Dynamic Agent Routing (DAR) — Universal Agentic Bridge qua WASM
 
 > **Kiến trúc UAB (Universal Agentic Bridge):** Thay vì hardcode whitelist AI trong `Manifest.json`, Lõi Rust cung cấp một **HTTP Client được quản lý** cho WASM Sandbox, cho phép bất kỳ `.tapp` nào gọi API Agent bên ngoài — nhưng phải đi qua cổng kiểm soát của Rust Core.
 
@@ -1244,7 +1257,7 @@ trait MeshTransport: Send + Sync {
 - ☁️ **Attack Surface — SSRF Mitigation:** Rủi ro Server-Side Request Forgery (SSRF) và Data Exfiltration nếu AI Agent bị compromise. Giảm nhẹ (Mitigated) bằng: (1) User-Consent Modal mỗi phiên, (2) Egress Domain Allowlist trong OPA Policy, (3) `payload_size < 4KB` hard limit.
 - ☁️ **Latency:** < 10ms cho IPC Bridge WASM → Rust. Egress Latency phụ thuộc nhà cung cấp AI.
 
-### 5.23 Local Dual-Mask Protocol & PII Metadata Sanitization
+### 5.23 [SECURITY] [IMPLEMENTATION] Local Dual-Mask Protocol & PII Metadata Sanitization
 
 > **Bài toán:** AI Agent bên ngoài nhận được prompt có thể chứa PII (Số thẻ tín dụng, CMND, Email) — vi phạm GDPR/PDPA và phơi lộ dữ liệu nhạy cảm ra ngoài perimeter.
 
@@ -1252,7 +1265,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻🖥️ **`[REDACTED]` Tokenization:** Các thực thể được thay thế bằng token định danh chuẩn hóa (`[REDACTED_CC]`, `[REDACTED_ID]`, `[REDACTED_EMAIL]`). Token này đủ ngữ nghĩa để AI Agent trả lời đúng context nhưng không thể suy ngược ra giá trị gốc.
 - 📱💻🖥️ **ZeroizeOnDrop (RAII):** Plaintext gốc (trước khi mask) được giữ trong vùng nhớ RAM được bảo vệ bởi RAM Scrambling & `ZeroizeOnDrop`. Sau khi tạo ra masked copy, RAM gốc bị ghi đè `0x00` ngay lập tức qua RAII destructor — không có window nào cho Memory Dump Attack.
 
-### 5.24 Ed25519-backed Manifest Integrity Protocol (EMIP)
+### 5.24 [SECURITY] [IMPLEMENTATION] Ed25519-backed Manifest Integrity Protocol (EMIP)
 
 > **Bài toán:** Kẻ tấn công có thể giả mạo hoặc sửa `Manifest.json` của `.tapp` để leo thang quyền Egress, inject endpoint độc hại.
 
@@ -1260,7 +1273,7 @@ trait MeshTransport: Send + Sync {
 - ☁️ **Manifest-to-OPA Compiler:** Manifest hợp lệ được biên dịch thành Policy Rego Rule và nạp vào Local OPA Engine. Mọi lời gọi `send_agent_request` được đối chiếu với Rule này tại runtime — zero runtime overhead vì rule đã được compile sẵn.
 - 💻📱 **Boot-time Manifest Validation:** Khi khởi động TeraChat, Lõi Rust load toàn bộ `.tapp` đã cài và thực hiện EMIP check hàng loạt (Batch Verify). `.tapp` nào fail verification bị quarantine — không load vào bộ nhớ, không cấp quyền UI.
 
-### 5.25 Hardened SPKI Pinning & Rustls Custom Verifier
+### 5.25 [SECURITY] [IMPLEMENTATION] Hardened SPKI Pinning & Rustls Custom Verifier
 
 > **Bài toán:** MITM attack hoặc DNS poisoning có thể redirect `api.openclaw.com` sang server giả mạo, đánh cắp prompt + response E2EE.
 
@@ -1268,7 +1281,7 @@ trait MeshTransport: Send + Sync {
 - 💻📱 **Rustls Custom Certificate Verifier:** Triển khai `trait ServerCertVerifier` tùy chỉnh trong Rustls. Verifier thực hiện 3 bước: (1) Standard TLS chain validation, (2) SPKI hash comparison, (3) OCSP Stapling check nếu available. Bất kỳ bước nào fail → `TlsError::InvalidCertificate` → connection dropped, zero data leaked.
 - ☁️ **DNS-over-HTTPS (DoH) Client-side Resolution:** Trước khi mở TLS connection tới External AI, Lõi Rust resolve DNS qua DoH endpoint (`cloudflare-dns.com/dns-query` hoặc self-hosted) — ngăn chặn DNS poisoning ở ISP/router level. IP kết quả được đối chiếu với IP whitelist trong Manifest.
 
-### 5.26 Zero-Footprint Streaming Egress (ZFSE) — OOM Prevention cho AI File Transfer
+### 5.26 [SECURITY] [IMPLEMENTATION] Zero-Footprint Streaming Egress (ZFSE) — OOM Prevention cho AI File Transfer
 
 > **Bài toán:** Khi AI Agent yêu cầu file 1GB làm context (VD: phân tích video), Monolithic Load → RAM → Egress gây OOM-Kill ngay lập tức.
 
@@ -1276,7 +1289,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **ZeroizeOnDrop (RAII) theo chunk:** Mỗi chunk được bọc trong RAII struct. Khi chunk đã được đẩy qua TLS và ACK nhận được, destructor tự động kích hoạt `zeroize()` ghi đè RAM — không để lại plaintext tàn dư.
 - 📱💻 **Rust-native HTTP/2 Multipart Streaming:** Sử dụng HTTP/2 multiplexed streams (không phải HTTP/1.1 chunked) để giữ một connection duy nhất nhưng pipeline nhiều chunk song song — giảm RTT overhead và tránh request timeout trên mạng di động chập chờn.
 
-### 5.27 Edge-Native ONNX Embedding Engine — Vectorization tại Biên
+### 5.27 [SECURITY] [IMPLEMENTATION] Edge-Native ONNX Embedding Engine — Vectorization tại Biên
 
 > **Bài toán:** RAG (Retrieval-Augmented Generation) yêu cầu vector embedding để tìm kiếm ngữ nghĩa. Nếu gửi plaintext lên Cloud để embed → rò rỉ nội dung chat. Nếu không embed → RAG quality thấp.
 
@@ -1284,7 +1297,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **NPU/CPU Hardware Acceleration:** Trên iOS, model chạy qua **CoreML** (Apple Neural Engine — ~3x speedup). Trên Android, chạy qua **NNAPI** (Qualcomm Hexagon DSP). Trên Desktop, sử dụng AVX2/NEON SIMD instructions. Lõi Rust tự động phát hiện hardware và chọn backend (`ort::ExecutionProvider::CoreML` / `ort::ExecutionProvider::Nnapi`).
 - 📱💻 **Rust-native Tokenization:** Tokenizer (`tokenizers` crate, Hugging Face) chạy embedded trong binary — không cần Python runtime. Tokenization latency < 5ms cho đoạn chat 200 tokens.
 
-### 5.28 Ephemeral In-memory Vector Shield — Bảo mật RAM cho Vector Index
+### 5.28 [SECURITY] [IMPLEMENTATION] Ephemeral In-memory Vector Shield — Bảo mật RAM cho Vector Index
 
 > **Bài toán:** HNSW/Flat vector index chứa embedding bắt nguồn từ nội dung E2EE — nếu bị dump RAM hoặc swap, embedding có thể dùng để reconstruct partial plaintext ngữ nghĩa.
 
@@ -1292,7 +1305,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **ZeroizeOnDrop (RAII) cho Vector Arena:** Khi phiên chat kết thúc hoặc người dùng đóng `.tapp`, RAII destructor xóa toàn bộ arena bằng `zeroize()`. Không có vector embedding nào tồn tại sau khi session ends.
 - 📱💻 **In-memory HNSW/Flat Index:** Sử dụng `hnswlib-rs` (port Rust của hnswlib) hoặc Flat Cosine Similarity search cho corpus nhỏ (< 10,000 vectors). Entire index sống hoàn toàn trong RAM — không persist xuống disk (`hot_dag.db`) trừ khi người dùng bấm "Save Semantic Index".
 
-### 5.29 Tiered Hardware-Aware Resource Governance (THARG)
+### 5.29 [SECURITY] [IMPLEMENTATION] Tiered Hardware-Aware Resource Governance (THARG)
 
 > **Bài toán:** ONNX embedding + vector search có thể ăn quá nhiều CPU/RAM trên thiết bị cấp thấp, gây ANR (Android) hoặc Jetsam (iOS) và ảnh hưởng đến luồng chat chính.
 
@@ -1300,7 +1313,7 @@ trait MeshTransport: Send + Sync {
 - 📱 **Rust Thermal Governor (Thread Yielding):** Trên mobile, Lõi Rust monitor CPU temperature thông qua `sysfs` (Android) / `IOKit` (iOS). Nếu temp > 45°C, embedding pipeline tự động giảm thread count và tăng `sleep_between_batches` để tránh thermal throttling và bảo vệ battery.
 - 📱 **Android LMK Mitigation (OOM Score Adjustment):** Trên Android, Lõi Rust điều chỉnh `oom_score_adj` của tiến trình embedding xuống thấp hơn (ưu tiên giữ lại) so với background processes — tránh LMK (Low Memory Killer) terminated worker thread giữa chừng quá trình index.
 
-### 5.30 Opportunistic Background Checkpointing (OBC)
+### 5.30 [SECURITY] [IMPLEMENTATION] Opportunistic Background Checkpointing (OBC)
 
 > **Bài toán:** iOS có thể suspend app bất kỳ lúc nào. Nếu ONNX indexing đang chạy bị interrupt, 30-60 giây embedding work mất sạch — user experience tệ.
 
@@ -1308,7 +1321,7 @@ trait MeshTransport: Send + Sync {
 - 📱 **Android `ForegroundService` (Sticky):** Trên Android, embedding worker chạy dưới dạng `ForegroundService` với notification persistent — tránh bị OS kill khi app background. Dùng `START_STICKY` để OS restart service nếu bị kill do low memory.
 - 📱💻 **Delta-State Serialization (Atomic Commit):** Sau mỗi batch 100 vectors, Lõi Rust thực hiện `checkpoint_write()` — serialize Delta-State (partial index snapshot) vào file tạm (không phải `hot_dag.db`). Nếu bị interrupt, resume từ checkpoint thay vì restart từ đầu. Checkpoint được xóa và merge vào main index khi hoàn thành.
 
-### 5.31 Strict AST Sanitization Bridge (SASB) — Anti-XSS từ AI Response
+### 5.31 [SECURITY] [IMPLEMENTATION] Strict AST Sanitization Bridge (SASB) — Anti-XSS từ AI Response
 
 > **Bài toán:** AI Agent response chứa Markdown/HTML. Nếu render trực tiếp qua WebView hoặc innerHTML, kẻ tấn công có thể poison AI response với `<script>`, `javascript:` URI, hay malicious iframe — XSS tấn công ngay trong giao diện chat.
 
@@ -1316,7 +1329,7 @@ trait MeshTransport: Send + Sync {
 - 💻📱 **AST Node Pruning (Strict Whitelist):** SASB áp dụng whitelist cực kỳ nghiêm ngặt: chỉ cho phép `Text`, `Heading`, `Paragraph`, `Code`, `CodeBlock`, `Strong`, `Emphasis`, `List`, `ListItem`, `Link` (kiểm tra scheme). Mọi node khác (`Html`, `Script`, `Iframe`, custom component) bị prune khỏi AST ngay lập tức.
 - 💻📱 **Protobuf-driven Pure Rendering:** AST đã-clean được serialize thành Protobuf và truyền qua IPC bridge về UI. UI renderer chỉ nhận `Vec<ASTNode>` — không bao giờ nhận raw HTML string. Không có code path nào từ AI response đến `dangerouslySetInnerHTML` hay WebView `loadHTMLString`.
 
-### 5.32 Deterministic Unicode Canonicalization & Zero-Width Scrubbing
+### 5.32 [SECURITY] [IMPLEMENTATION] Deterministic Unicode Canonicalization & Zero-Width Scrubbing
 
 > **Bài toán:** Kẻ tấn công inject ký tự Unicode ẩn (Zero-Width Joiner, BOM, Homoglyph) vào tin nhắn để bypass keyword filter hoặc tạo payload độc hại trông vô hại với mắt thường.
 
@@ -1324,7 +1337,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **Invisible Character Regex Stripping (ZWJ/ZWNJ/BOM):** Sau normalization, Lõi Rust chạy regex strip loại bỏ toàn bộ invisible/control characters: `[\u{200B}\u{200C}\u{200D}\u{FEFF}\u{00AD}\u{2060}]` và các codepoint nguy hiểm khác trong Unicode category Cf (Format). Kết quả: payload hoàn toàn "opaque-free" trước khi đến các lớp semantic.
 - 📱💻 **Homoglyph Confusable Mapping:** Lõi Rust tích hợp bảng tra cứu Confusables (theo Unicode Security Mechanisms TR39) được compile sẵn thành perfect hash map Rust. Mỗi ký tự input được map về representative form — tiêu diệt mọi chiến thuật Typosquatting hoặc Identity Spoofing qua Unicode.
 
-### 5.33 Edge Deterministic Entity Scanner (EDES) — Nhận diện Thực thể Cục bộ
+### 5.33 [SECURITY] [IMPLEMENTATION] Edge Deterministic Entity Scanner (EDES) — Nhận diện Thực thể Cục bộ
 
 > **Bài toán:** NER model nặng (ONNX DeBERTa) quá chậm để scan real-time từng keystroke trong luồng chat. Cần một fast-path scanner.
 
@@ -1332,7 +1345,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **Local NER Whitelist/Blacklist:** Lõi Rust maintain hai lookup table: `ENTITY_WHITELIST` (các entity được phép egress nguyên bản) và `ENTITY_BLACKLIST` (entity bị block hoàn toàn). Admin cập nhật list qua OPA Policy — không cần app update.
 - 📱💻 **Zero-copy Memory Scanning:** Aho-Corasick engine operate trực tiếp trên plaintext buffer được bảo vệ bởi `ZeroizeOnDrop` — không tạo copy. Kết quả trả về là danh sách `(byte_offset, entity_id, scan_hit)` — EDES không decode hay extract giá trị thực của entity, giảm attack surface trong chính engine scanner.
 
-### 5.34 Semantic Quarantine & Entity Masking — Cách ly Thực thể Nguy hiểm
+### 5.34 [SECURITY] [IMPLEMENTATION] Semantic Quarantine & Entity Masking — Cách ly Thực thể Nguy hiểm
 
 > **Bài toán:** Sau khi EDES phát hiện entity nguy hiểm, cần cô lập chúng khỏi luồng Egress mà không phá vỡ ngữ cảnh cho AI Agent.
 
@@ -1340,7 +1353,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **Rust-native AST Node Replacement:** Sau khi mask ở tầng plaintext, AST được rebuild. Node bị masked được đánh tag `quarantined=true` trong AST schema — cho phép UI render `[BLOCKED_BY_GUARDRAIL]` placeholder với màu sắc khác biệt (liên kết với §GSNI Design.md §21).
 - 📱💻 **ZeroizeOnDrop (Sensitive Buffer):** Plaintext buffer chứa entity gốc (trước khi mask) bị `zeroize()` ngay lập tức sau khi quá trình mapping hoàn thành. Không có window nào để side-channel attack đọc entity từ RAM.
 
-### 5.35 Hierarchical Crypto-Shredding & Atomic State Purge — Checkpoint Residue Elimination
+### 5.35 [SECURITY] [IMPLEMENTATION] Hierarchical Crypto-Shredding & Atomic State Purge — Checkpoint Residue Elimination
 
 > **Bài toán:** ONNX indexing checkpoint persist trên disk. Nếu thiết bị bị tịch thu hoặc crack, checkpoint chứa embedding vectors có thể dùng để reconstruct partial plaintext ngữ nghĩa.
 
@@ -1348,7 +1361,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **Atomic Disk Wipe (`shred`):** Khi Checkpoint GC trigger (TTL hết hạn hoặc session kết thúc), Lõi Rust không chỉ `unlink()` file — mà thực hiện **3-pass shred**: ghi đè `0x00`, rồi `0xFF`, rồi random bytes, cuối cùng `unlink()`. Trên SSD với FTL, Lõi Rust sử dụng `TRIM/DISCARD` syscall để request firmware xóa flash block.
 - 🗄️ **Secure Enclave Session Revocation:** Khi Admin kích hoạt Remote Wipe (ARP — xem Function.md §11), Secure Enclave trên iOS/Android nhận lệnh delete `Session_Master_Key` khỏi hardware-protected storage. Không có key = không access được bất kỳ Checkpoint nào còn tồn đọng trên disk.
 
-### 5.36 Stateful Semantic Accumulator (SSA) & Retroactive Taint — Chống Salami Attack
+### 5.36 [SECURITY] [IMPLEMENTATION] Stateful Semantic Accumulator (SSA) & Retroactive Taint — Chống Salami Attack
 
 > **Bài toán:** AI Agent bị hack thực hiện "Semantic Fragmentation Attack" (Salami Attack): chia thông tin lừa đảo thành 10-20 tin nhắn vô hại riêng biệt. Mỗi tin nhắn pass qua EDES và Intent Classification. Nhưng khi concatenate lại trong phiên hội thoại, chúng hoàn thành mục tiêu Social Engineering.
 
@@ -1356,7 +1369,7 @@ trait MeshTransport: Send + Sync {
 - 📱💻 **Lazy Triggered ONNX Inference:** Việc chạy ONNX DeBERTa trên toàn bộ SCB sau mỗi tin nhắn sẽ quá tốn tài nguyên. Thay vào đó, Lõi Rust áp dụng **Lazy Trigger**: chạy ONNX scan toàn bộ SCB chỉ khi EDES flagged ≥ 2 "borderline entities" trong cửa sổ 5 tin nhắn liên tiếp — tức là khi pattern điệu có dấu hiệu escalation.
 - 📱💻 **Retroactive Taint Propagation:** Nếu ONNX inference trên SCB phát hiện semantic pattern nguy hiểm (điểm `Intent_Score[SOCIAL_ENGINEERING] > 0.75`), Lõi Rust thực hiện **retroactive taint**: đánh dấu TAINTED không chỉ tin nhắn hiện tại mà còn N-3 tin nhắn trước đó trong SCB. Toàn bộ conversation thread bị seal (Conversation Sealing — xem Function.md §12). UI kích hoạt Magnetic Collapse animation (xem Design.md §25).
 
-### 5.37 Full-Context Passthrough (FCP) Tunnel — Kiến trúc "Unchained AI"
+### 5.37 [SECURITY] [IMPLEMENTATION] Full-Context Passthrough (FCP) Tunnel — Kiến trúc "Unchained AI"
 
 > **Bối cảnh:** Khi Admin đã ký `Security Manifest Consent` (xác thực bằng YubiKey/Biometric + typed `"I_ACCEPT_LIABILITY"`), Lõi Rust kích hoạt cờ `FCP_Enabled = true` trong Local OPA Policy. Nguyên tắc: **Nhượng bộ về Data Confidentiality, KHÔNG nhượng bộ về Execution Integrity.**
 
@@ -1392,7 +1405,7 @@ trait MeshTransport: Send + Sync {
 - 📱 **OS-Managed Socket:** Apple OS tự quản lý duy trì socket, báo cáo progress `URLSession didSendBodyData`, và xử lý retry khi mạng phục hồi. App không cần thức (Awake) — vượt qua hoàn toàn rào cản 30 giây App Suspension.
 - 📱 **Android WorkManager:** Tương đương `NSURLSession` trên Android: `WorkManager` Chained Task `[Encrypt_Chunk → S3_Upload_Chunk → ZeroizeOnDrop]` per chunk. Constraint: `NetworkType.CONNECTED`, `requiresBatteryNotLow()`.
 
-### 5.41 Bảo vệ WASM Sandbox & Chống Escaping (RCE)
+### 5.41 [SECURITY] [IMPLEMENTATION] Bảo vệ WASM Sandbox & Chống Escaping (RCE)
 
 > **Attack Surface:** Lỗ hổng JIT Compiler bên trong WasmEdge có thể dẫn đến trốn thoát WASM Sandbox (RCE) và chiếm quyền điều khiển tiến trình Host.
 
@@ -1401,7 +1414,7 @@ trait MeshTransport: Send + Sync {
 - ☁️ **Application Guardrail (OPA):** Kích hoạt OPA Guardrail kiểm duyệt RPC Whitelist ở tầng Application. Bất kỳ RPC payload nào ra khỏi Sandbox đều bị OPA chặn nếu không có chữ ký uỷ quyền hợp lệ.
 - 💻 **Buffer Overflow Mitigation:** Áp dụng Memory Isolation tuyến tính đối với không gian địa chỉ WASM, kết hợp `ZeroizeOnDrop` (RAII) nhằm tước bỏ hoàn toàn năng lực tràn bộ đệm vượt biên giới Sandbox.
 
-### 5.43 Giải pháp: Time-Based Cryptographic Hardening & State Machine Rate-Limiting (Chống Head-of-Line Blocking & Downgrade Attack)
+### 5.43 [SECURITY] [IMPLEMENTATION] Giải pháp: Time-Based Cryptographic Hardening & State Machine Rate-Limiting (Chống Head-of-Line Blocking & Downgrade Attack)
 
 - 📱💻🖥️ **ISO 27001 A.14.1.2 Secure Engineering:** Thiết lập các quy tắc kỹ thuật bảo mật khắt khe đúc kết vòng đời an toàn, ngăn chặn các tấn công hạ cấp giao thức (Protocol Downgrade Attack) ngay ở tầng ứng dụng bằng cách ghim chặt phiên bản tối thiểu.
 - ☁️ **AEAD Payload Decoupling:** Tách rời (Decouple) tải trọng mạng và mã hoá xác thực AEAD để giải quyết dứt điểm tắc nghẽn ở đầu hàng đợi (Head-of-Line Blocking), cho phép các gói tin không phụ thuộc nhau được xử lý song song.
@@ -1409,14 +1422,14 @@ trait MeshTransport: Send + Sync {
 
 ---
 
-### 4.4 Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử
+### 4.4 [SECURITY] [ARCHITECTURE] Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử
 
 - 📱💻🖥️☁️🗄️ **Kiến trúc Lai ghép Kép (Hybrid KEM):** Lõi Rust chạy song song `X25519` và `ML-KEM/Kyber768`. `Final_Session_Key = HKDF(X25519_Shared || Kyber768_Shared)`. X25519 chống tấn công cổ điển; Kyber768 chống Shor Algorithm (máy tính lượng tử).
 - 📱 **Quantum Checkpoints:** ML-KEM payload cồng kềnh (~1.18KB vs X25519 ~32 bytes) chỉ đính kèm vào `KeyPackage` MLS Handshake hoặc tick định kỳ (24h / 10.000 tin). Luồng hàng ngày chạy thuần AES-256-GCM (\<1KB) — tiết kiệm 99.9% băng thông.
 - 📱 **Survival Mesh Fragmentation:** BLE 5.0 MTU ~512 bytes. Khi offline, Rust Core băm nhỏ Kyber blob 1.18KB thành mảnh 400 bytes + Sequence ID + FEC. Selective ACK yêu cầu lại mảnh rớt — chặn tràn bộ đệm chip viễn thông.
 - Đáp ứng chuẩn **NSA CNSA 2.0**, miễn nhiễm tấn công **HNDL (Harvest Now, Decrypt Later)**.
 
-### 4.5 Threshold FIDO2 Recovery (Quorum-based Recovery)
+### 4.5 [SECURITY] [ARCHITECTURE] Threshold FIDO2 Recovery (Quorum-based Recovery)
 
 Khi doanh nghiệp yêu cầu Cold Recovery:
 
@@ -1425,25 +1438,25 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 🖥️ **Monotonic Counter Sealing:** Áp dụng niêm phong TPM 2.0 Monotonic Counter. Mỗi nỗ lực gõ sai mã PIN hoặc tháo gỡ phần cứng sẽ làm thay đổi Counter, vô hiệu hóa ngay lập tức mọi nỗ lực Clone hoặc Snapshot VM của thiết bị phục hồi.
 - **Master Wrapping Key:** `KEK_deterministic` chịu sự bảo vệ trực tiếp từ YubiKey thay vì Software Enclave thuần túy.
 
-### 4.6 Phân mảnh Hạ tầng Chữ ký & Phục hồi (Hybrid Cross-Signing & Cloud Escrow)
+### 4.6 [SECURITY] [ARCHITECTURE] Phân mảnh Hạ tầng Chữ ký & Phục hồi (Hybrid Cross-Signing & Cloud Escrow)
 
 - 📱 Áp dụng mô hình Hybrid Multi-Device Cross-Signing cho phép xác thực chéo thiết bị thông qua tín hiệu BLE/LAN nội bộ.
 - 📱 Cấu hình mã hóa `KEK_deterministic` trực tiếp lên iCloud Keychain áp đặt quy chuẩn Advanced Data Protection (Cloud Escrow Fallback).
 - 📱 Thiết lập giao thức phục hồi ngoại vi tuân thủ chuẩn lưu trữ BIP39 thông qua sơ đồ 24-word Recovery Key.
 
-### 4.7 Bảo vệ Toàn vẹn & Chống Replay trong mạng Mesh (BLAKE3 & Merkle)
+### 4.7 [SECURITY] [ARCHITECTURE] Bảo vệ Toàn vẹn & Chống Replay trong mạng Mesh (BLAKE3 & Merkle)
 
 - 📱💻🖥️ Vận hành Pipelined Segmented Merkle phân rã tệp tin thành các Macro-Block 64MB cho phép CPU xử lý tính toán băm xác thực song song.
 - 📱💻🖥️ Gắn kết nhãn Cryptographic Offset Binding (`AD = [File_ID] || [Chunk_Index] || [Byte_Offset]`) vào từng mảnh nhằm ngăn chặn sự đánh cắp hoặc dịch chuyển thứ tự (Displacement Attack).
 - 📱💻🖥️ Sinh Deterministic Nonce từ khóa luồng `Channel_Key` đảm bảo quyền hạn giải mã và xác thực được khoanh vùng độc quyền cho thành viên cùng nhóm.
 
-### 4.8 Thảm họa "Zero-Access" & Rogue Admin (Multi-Party Enterprise Escrow KEM)
+### 4.8 [SECURITY] [ARCHITECTURE] Thảm họa "Zero-Access" & Rogue Admin (Multi-Party Enterprise Escrow KEM)
 
 - ☁️📱💻🖥️ Giải quyết rủi ro Rogue Admin bằng Hệ thống Ký quỹ Khóa Đa bên, áp dụng thuật toán Shamir's Secret Sharing (M-of-N Quorum) phân mảnh Recovery Key giao cho Hội đồng quản trị.
 - ☁️📱💻🖥️ Ràng buộc cơ chế Cryptographic Wrapping (Bọc chéo) thông qua Escrow Public Key ngay tại thời điểm Bootstrap KMS.
 - ☁️📱💻🖥️ Ép buộc ghi nhận Audit Log chuẩn HIPAA/SOC2 đối với mọi thao tác giải mã của Admin.
 
-### 4.9 Giao thức Đóng băng Phân xử Ký quỹ E2EE & Khóa thời gian
+### 4.9 [SECURITY] [ARCHITECTURE] Giao thức Đóng băng Phân xử Ký quỹ E2EE & Khóa thời gian
 
 > **Bài toán:** Khi xảy ra tranh chấp hoặc nghi ngờ Rogue Admin lạm dụng quyền giải mã Escrow, hệ thống cần một cơ chế "câu giờ" và lưu vết bằng chứng nhân quả mà không tiết lộ nội dung.
 
@@ -1451,7 +1464,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - ☁️ **Two-Phase HTLC (Hashed Time-Lock Contract):** Triển khai Hợp đồng Khóa thời gian Hai pha để tự động mở rộng Grace Period (Cửa sổ ân hạn) bằng chữ ký PoD (Proof of Delivery), chặn Time-Racing attack.
 - 💻 **Cryptographic Selective Disclosure:** Đóng gói bằng chứng hé lộ chọn lọc (Selective Disclosure) bằng `Admin_Escrow_PubKey` nhằm đảm bảo nguyên tắc Zero-Knowledge trong suốt quá trình phân xử.
 
-### 4.9 Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)
+### 4.9 [SECURITY] [ARCHITECTURE] Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)
 
 #### Rò rỉ Plaintext từ Vector Embeddings trong RAM (Tự hủy bộ nhớ tàn bạo)
 
@@ -1474,13 +1487,13 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 📱 **XChaCha20-Poly1305 Chunking Encryption:** Chia nhỏ khối dữ liệu RAM-Drive thành các Chunk mã hóa XChaCha20-Poly1305 tốc độ cao, ngăn chặn việc phân bổ RAM cục bộ nguyên mảng lớn.
 - 📱 **SIMD 0x00 Ring Buffer Memory Pool:** Tái sử dụng lại các trang nhớ thông qua kỹ thuật Ring Buffer Memory Pool, kết hợp lệnh SIMD để xóa vết nguyên khối (`0x00`) với chi phí O(1) ngay trước khi trả lại Heap, đảm bảo vòng xoay bộ nhớ không làm nổ GC.
 
-### 4.10 Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)
+### 4.10 [SECURITY] [ARCHITECTURE] Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)
 
 - 📱💻 Phát hành Delegation Certificate (Chứng thư ủy quyền) thời hạn định đoạt ngắn từ mạng lưới Desktop có USB Token bảo chuẩn sang thiết bị di động.
 - 📱 Triển khai Multi-Device Cross-Signing cho phép Private Key nằm rải rác trong Secure Enclave của iOS ký xác thực thay mặt mỏ neo USB Token gốc.
 - 📱💻 Sử dụng bằng chứng bảo mật Zero-Knowledge Proof (ZKP) để chứng minh quyền hạn phê duyệt hợp lệ mà không cần truy xuất trực tiếp khóa vật lý PKCS#11.
 
-### 4.11 Chế độ Kiosk (Ephemeral Session Vault & RAII Zeroization)
+### 4.11 [SECURITY] [ARCHITECTURE] Chế độ Kiosk (Ephemeral Session Vault & RAII Zeroization)
 
 - 📱 Cấp phát độc lập Khóa Phiên Tạm thời (Ephemeral Session Key) tách biệt hoàn toàn ranh giới RAM cho mỗi nhân viên trong ca làm việc.
 - 📱 Áp dụng chu trình ZeroizeOnDrop (RAII) tự động trích xuất và ghi đè `0x00` lên toàn bộ vùng nhớ chứa KEK ngay khi tài khoản đăng xuất hoặc qua 5 phút bất động.
@@ -1488,26 +1501,26 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-### 4.10 Ephemeral Session Provisioning & Role-Based Vault (Kiosk Mode)
+### 4.10 [SECURITY] [ARCHITECTURE] Ephemeral Session Provisioning & Role-Based Vault (Kiosk Mode)
 
 - 📱💻 Áp dụng Giao thức Cấp phát Khóa Phiên Tạm thời (Ephemeral Session Key) thông qua cơ chế ủy quyền từ thiết bị của Quản lý đã xác thực YubiKey.
 - ☁️🗄️📱 Ứng dụng thuật toán Shamir's Secret Sharing (SSS) để phân mảnh khóa Recovery chuyên dụng cho các trạm Kiosk.
 - 📱 Tích hợp kỹ thuật ZeroizeOnDrop đảm bảo giải phóng toàn bộ KEK khỏi RAM ngay khi ca làm việc kết thúc.
 
-### 4.6 ZKP Rate-Limiting & Bảng Nullifier VOPRF — Chống Spam Ẩn danh
+### 4.6 [SECURITY] [ARCHITECTURE] ZKP Rate-Limiting & Bảng Nullifier VOPRF — Chống Spam Ẩn danh
 
 - 📱💻🖥️ **Cấp phát Token Mù (Blind Signatures / VOPRF):** Mỗi chu kỳ 1h, Lõi Rust kết nối Auth Server qua Mixnet, nhận rổ 100 Anonymous Token. Auth Server ký bằng phép nhân vô hướng Elliptic Curve — không nhìn thấy Serial Number (Mù hóa 100%).
 - ☁️🗄️ **Nullifier Edge Table:** Khi gửi gói Onion, nhúng 1 Token đã giải mù vào header. Exit Node xác thực: VOPRF signature hợp lệ + Bloom Filter O(1) kiểm tra Double-Spending. PASSed → deliver. FAIL/Trùng → DROP tại Edge Boundary — không đánh thức Disk I/O.
 - 📱💻🖥️ **Client-Side Triage (Zero-Disk I/O):** Payload E2EE đáng ngờ vào Ring Buffer RAM (<2MB). Lõi gỡ E2EE lấy Sender ID thật đối chiếu Local Trust Graph. Rating thấp → Quarantine, không Write SQLite.
 - ⚠️ Constraint: VOPRF xác thực tại Exit Node < 0.2ms/packet. Nullifier Table: 100M entries < 150MB RAM tĩnh.
 
-### 4.11 Cryptographic Nullifier Sets & IdP-Linked Token Revocation
+### 4.11 [SECURITY] [ARCHITECTURE] Cryptographic Nullifier Sets & IdP-Linked Token Revocation
 
 - ☁️ Quản lý danh sách chặn token ẩn danh thông qua Blind Nullifier Sets vận hành tại OPA Gateway.
 - ☁️ Kích hoạt MLS `remove_member` Trigger để tự động xoay khóa nhóm và loại trừ thành viên bị cách ly.
 - ☁️📱💻🖥️ Áp dụng kỹ thuật Behavioral Fingerprinting trên lớp Blind Metadata nhằm phát hiện mẫu hành vi bất thường phân tuyến theo Role/Dept.
 
-### 4.7 Nghịch lý Mã nguồn Mở và Compiler-Level Guards
+### 4.7 [SECURITY] [ARCHITECTURE] Nghịch lý Mã nguồn Mở và Compiler-Level Guards
 
 - 📱💻🖥️ **Lõi Rust (Open-Core):** Loại bỏ hoàn toàn giải pháp làm rối O-LLVM và Bogus Control Flow gây lãng phí tài nguyên. Tập trung bảo vệ bằng Compiler-Level Guards.
 - 📱💻🖥️ **Zeroize Safe Pipeline:** Tách biệt hoàn toàn luồng mã hóa (Synchronous/CPU Bound) và luồng mạng (Async/I/O Bound). Plaintext Key (`Zeroizing<Vec<u8>>`) chỉ tồn tại trong Synchronous Scope. RAII `Drop` ghi đè `0x00` trước khi spawn `tokio::task`.
@@ -1526,14 +1539,14 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 📱💻 Tự động chuyển đổi định tuyến sang mạng Wi-Fi/4G cá nhân (Mesh-to-Internet Fallback) khi phát hiện Federation Bridge bị admin ngắt.
 - 📱💻 Phân đoạn tệp tin (Chunking) kết hợp mã hóa AEAD để thay đổi hình thái gói tin trước các bộ lọc kích thước dữ liệu.
 
-### 4.8 Identity & Key Escrow — Sovereignty-First Key Recovery
+### 4.8 [SECURITY] [ARCHITECTURE] Identity & Key Escrow — Sovereignty-First Key Recovery
 
 - 📱💻 **Loại bỏ iCloud Escrow:** Không đẩy Ciphertext lên iCloud Keychain — bảo toàn nguyên tắc **Enterprise Data Sovereignty**. Mọi khóa chỉ rời thiết bị qua các luồng được E2EE bảo vệ.
 - 📱💻 Duy trì **Multi-Device Cross-Signing** xác thực chéo giữa các thiết bị trong Vòng tin tưởng Device Ring của tổ chức.
 - 📱💻 **Physical Vaulting (BIP39 24-word Recovery Key):** Lưu trữ Recovery Key trong két sắt quản trị vật lý; không có phương án lưu trữ Online nào khác.
 - 📱 Cấm lưu private key vào Secure Enclave nếu thiếu FIDO2 attestation. Luôn verify signature list trước khi cấp quyền giải mã local.
 
-### 4.9 Searchable Symmetric Encryption (SSE) & Forward Secrecy
+### 4.9 [SECURITY] [ARCHITECTURE] Searchable Symmetric Encryption (SSE) & Forward Secrecy
 
 - 🗄️☁️ Xây dựng SSE phân mảnh theo Epoch để giải quyết bài toán xoay khóa trên TEE.
 - 💻🖥️☁️ Cấu hình Rust Core sinh `Search_Subkey_Epoch_N` thông qua KDF Chain mỗi khi kích hoạt hàm xoay khóa (nhân sự đổi quyền).
@@ -1554,35 +1567,35 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-## 6. API Secret Management
+## 6. [ARCHITECTURE] [IMPLEMENTATION] API Secret Management
 
-### 6.1 E2EE API Secret Vault & Cryptographic Binding
+### 6.1 [ARCHITECTURE] [IMPLEMENTATION] E2EE API Secret Vault & Cryptographic Binding
 
 - ☁️🗄️ **Blind Vault Storage (VPS):** Admin nhập `{name: "OpenAI", value: "sk-xxx"}` → Rust sinh `Vault_Key (AES-256)` chỉ sync giữa Admin devices qua E2EE → `encrypted_blob = AES-256-GCM(Vault_Key, api_key)` → đẩy lên VPS. VPS lưu label + ciphertext — **không biết giá trị thực.**
 - 📱💻🖥️ **Cryptographic Binding (Zero-Server):** Admin bấm [+] cấp key cho Bot: Client kéo blob → giải mã trong RAM (<100ms) → `Bot_Bound_Blob = Curve25519_ECIES.encrypt(Bot_Public_Key, api_key)` → DROP(api_key) → đẩy `Bot_Bound_Blob` lên VPS. VPS chỉ mở được bằng `Bot_Private_Key` — không bao giờ rời chip.
 - ☁️ **Instant Revoke:** Admin đổi key gốc trong Vault → Rust chạy ngầm `rebind_all_bots()` mã hóa lại toàn bộ `Bot_Bound_Blob` trong < 2 giây.
 - ☁️🗄️ **BYOK (Bring Your Own Key):** API Key lưu trong Secure Enclave / OS Keychain — không bao giờ plaintext trên Server.
 
-### 6.2 Phân xử Nội dung trong Môi trường Zero-Knowledge (Blind DAG Store)
+### 6.2 [ARCHITECTURE] [IMPLEMENTATION] Phân xử Nội dung trong Môi trường Zero-Knowledge (Blind DAG Store)
 
 - ☁️🗄️ Chỉ đạo Sever xây dựng cấu trúc đồ thị dựa trên Metadata Plaintext (HLC, parents_HLC) hoàn toàn mù với dữ liệu nội dung.
 - 📱💻🖥️ Gán mã hóa E2EE cho `Encrypted_payload` từ phía thiết bị để đảm bảo tính Zero-Knowledge lưu trữ.
 - 📱💻🖥️ Áp dụng chữ ký số Ed25519 trực tiếp lên từng Node của lưới DAG nhằm neo chặn tính toàn vẹn (Tamper-proof).
 
-### 6.3 Xung đột Audit Log không nhất quán (Split-Brain Resolution)
+### 6.3 [ARCHITECTURE] [IMPLEMENTATION] Xung đột Audit Log không nhất quán (Split-Brain Resolution)
 
 - 📱💻🖥️ Triển khai cơ cấu san phẳng đồ thị tất định (HLC Deterministic Flattening) bằng sự kết hợp giữa Physical Time và Logical Counter bảo vệ tính nhân quả.
 - 📱💻🖥️ Kích hoạt Thuật toán Tie-breaker phán xử qua chuỗi băm Node_ID (Hash MAC) để phân định thứ tự cho các sự kiện xảy ra song song.
 - 📱💻🖥️ Ràng buộc cấu trúc Hash Chain nối rễ chuỗi nhằm duy trì tính toàn vẹn tuyến tính của Audit Log phục vụ quá trình truy vết độc lập.
 
-### 6.4 Asynchronous TreeKEM với Epoch Forking & Deterministic Merge (Đứt gãy MLS)
+### 6.4 [ARCHITECTURE] [IMPLEMENTATION] Asynchronous TreeKEM với Epoch Forking & Deterministic Merge (Đứt gãy MLS)
 
 - 📱💻🖥️ Khởi tạo bộ nhớ Keyring State đa nhánh lưu trữ đồng thời nhiều Epoch trong RAM tạm nhằm giải mã các luồng chia tách (Fork) diễn ra song song do Mesh bị phân mảnh.
 - 📱💻🖥️ Neo chặn (Anchor) Update Path của phân vùng TreeKEM vào cấu trúc Vector Clock của CRDT nhằm nhận diện chính xác nhánh mã hóa tương ứng.
 - 📱💻🖥️ Thuật toán **Tie-breaker (Hash Node_ID)**: Phân xử phi tập trung để chỉ định duy nhất một Super Node thực hiện Merge Commit, kéo toàn mạng lưới sang Epoch nhất quán (Epoch N+2) khi các nhánh hội tụ.
 - 📱💻🖥️ Khẩn trương thực thi thủ tục phát tán MLS TreeKEM nhằm tái cấu trúc nhóm bảo mật ngay sau bước sáp nhập Trạng thái CRDT.
 
-### 6.5 Hiệu năng Xử lý Đồ thị tại Biên (Client-Side In-Memory DAG)
+### 6.5 [ARCHITECTURE] [IMPLEMENTATION] Hiệu năng Xử lý Đồ thị tại Biên (Client-Side In-Memory DAG)
 
 - 📱💻🖥️ Đẩy luồng trích xuất dữ liệu thô (In-memory DAG Reconciliation) xuống Client với giới hạn độ phức tạp $O(N \log N)$ cho thao tác xếp đặt HLC.
 - ☁️🗄️ Giải tỏa nút thắt IOPS tại cụm trung tâm bằng mô thức Pub/Sub trao đổi siêu dữ liệu đồ thị dạng mù (Zero-Knowledge).
@@ -1590,9 +1603,9 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-## 7. Cross-Cluster Federation & Enterprise Deployment
+## 7. [PERFORMANCE] [IMPLEMENTATION] Cross-Cluster Federation & Enterprise Deployment
 
-### 7.1 Cross-Cluster Federation Handshake Protocol
+### 7.1 [PERFORMANCE] [IMPLEMENTATION] Cross-Cluster Federation Handshake Protocol
 
 - ☁️ **mTLS Mutual Auth (không dùng CA công cộng):** Thiết lập kênh truyền tin cậy giữa các cụm máy chủ HQ và Chi nhánh bằng PKI nội bộ, loại bỏ hoàn toàn sự phụ thuộc vào Certificate Authority công cộng.
 - ☁️ **Signed JWT Federation_Invite_Token:** Xác thực lời mời kết nối thông qua Identity Broker (Keycloak/Dex) để ngăn chặn rò rỉ lời mời và giả mạo thông tin kết nối liên cụm.
@@ -1600,13 +1613,13 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - ☁️ **Sealed Sender Protocol:** Mã hóa header người gửi bằng Public Key người nhận để Server Chi nhánh không thể biết danh tính thực của cấp quản lý HQ — bảo vệ siêu dữ liệu liên cụm.
 - ☁️ **Identity Broker (OIDC/SAML):** Keycloak/Dex liên kết định danh OIDC/SAML giữa Tổng công ty và Chi nhánh, cho phép SSO xuyên Cluster mà không cần đồng bộ toàn bộ User Directory.
 
-### 7.2 Federated OPA Policy Engine & Circuit Breaker
+### 7.2 [PERFORMANCE] [IMPLEMENTATION] Federated OPA Policy Engine & Circuit Breaker
 
 - ☁️ **OPA (Open Policy Agent) ABAC tại API Gateway:** Thực thi chính sách ABAC dựa trên `sender_role` và trạng thái `allow_reply` để lọc gói tin liên cụm — chặn Spam và kiểm soát quyền truy cập xuyên tổ chức.
 - ☁️ **Rate Limiting (Redis ZSET Sliding Window):** Tự động kích hoạt Circuit Breaker khi tần suất tin nhắn liên cụm vượt ngưỡng an toàn cấu hình; trạng thái OPEN fail-fast về UI trong < 1s.
 - ☁️ **Z3 Formal Verification trên Federated Policy:** OPA Policy liên cụm được chạy qua SMT Model → Z3 Solver để phát hiện xung đột chính sách trước khi triển khai.
 
-### 7.3 Immutable Infrastructure-as-Code (IaC) Orchestration — B2B 1-Touch
+### 7.3 [PERFORMANCE] [IMPLEMENTATION] Immutable Infrastructure-as-Code (IaC) Orchestration — B2B 1-Touch
 
 - ☁️ **Hardened Docker Compose (CAP_IPC_LOCK):** Đóng gói toàn bộ hạ tầng (Blind Relay, PostgreSQL, Redis, NATS) thành một khối bất biến với cơ chế `CAP_IPC_LOCK` bảo vệ vùng nhớ nhạy cảm không bị swap xuống đĩa.
 - ☁️ **TeraChat Blind Relay (Rust):** Xử lý định tuyến mù, mã hóa E2EE và thực thi các giao thức mTLS/WebSocket — không lưu bất kỳ Plaintext nào trên disk.
@@ -1614,14 +1627,14 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - ☁️ **PostgreSQL HA (pgRepmgr + PgPool):** Đảm bảo tính sẵn sàng cao và failover tự động thông qua Streaming Replication; WAL Archiving hỗ trợ Point-in-Time Recovery.
 - ☁️ **HA TURN Array (Floating IP):** Đảm bảo độ trễ thấp cho các cuộc gọi WebRTC trong môi trường VPS Cluster với cơ chế Floating IP failover < 3s.
 
-### 7.4 Secure Workspace Bootstrap & HKMS
+### 7.4 [PERFORMANCE] [IMPLEMENTATION] Secure Workspace Bootstrap & HKMS
 
 - 📱💻🖥️☁️ **HKMS (Hierarchical Key Management System):** Phân cấp Master Key thành các KEK (Key Encryption Key) và DEK (Data Encryption Key) để mã hóa database và file trong toàn bộ hệ sinh thái. Sơ đồ: `Master Key → KEK → DEK → [DB / File / Channel / API Key]`.
 - 📱💻🖥️☁️ **Master Key Binding (Hardware Enclave):** Giam khóa Master trong Hardware Enclave (HSM/TPM 2.0/Secure Enclave) của Admin; yêu cầu lưu trữ file `.terakey` ngoại vi trên thiết bị vật lý. Master Key không bao giờ rời chip.
 - ☁️ **Zero-Knowledge Blind Storage (MinIO):** Lưu trữ ciphertext theo đường dẫn `cas_hash` để triệt tiêu mọi thông tin về tên file thực tế — Server không biết gì về nội dung hay metadata file.
 - 📱💻🖥️ **KMS Bootstrap Ritual:** Khởi tạo Workspace kích hoạt xuất mảnh khóa ra các thiết bị phần cứng FIDO2 (YubiKey/Smartcard); Lõi Rust Block tạo Database cho đến khi Admin xác nhận lưu Key Backup thành công.
 
-### 7.5 Push Key Rotation & Hardware-Backed Key Storage
+### 7.5 [PERFORMANCE] [IMPLEMENTATION] Push Key Rotation & Hardware-Backed Key Storage
 
 - 📱☁️ **Push Key Rotation đồng bộ MLS Epoch:** Mỗi lần MLS Epoch Rotation xảy ra, Push Notification Key được rotate đồng bộ để đảm bảo tính Forward Secrecy cho mọi thông báo — kẻ tấn công có Key cũ không giải mã được Push cũ.
 - 📱 **Shared Keychain (iOS App Group):** NSE (Notification Service Extension) truy cập khóa giải mã thông báo trong trạng thái Background thông qua Shared Keychain mà không cần can thiệp sinh trắc học — giữ footprint < 24MB.
@@ -1629,41 +1642,41 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-## 8. AI Infrastructure Security & Legal Compliance
+## 8. [ARCHITECTURE] [IMPLEMENTATION] AI Infrastructure Security & Legal Compliance
 
-### 8.1 Soft-Enclave Isolation — AI Worker Security
+### 8.1 [ARCHITECTURE] [IMPLEMENTATION] Soft-Enclave Isolation — AI Worker Security
 
 - ☁️🗄️ **Software-based Isolation (Wasmtime):** Cô lập vùng nhớ AI Worker bằng WASM Sandbox cấp độ phần mềm; ngăn chặn trích xuất bộ nhớ trái phép mà không yêu cầu phần cứng Intel SGX / AWS Nitro chuyên dụng.
 - ☁️ **Thread-Pool Isolation (Bounded MPSC Channel):** Phân tách `core-messaging-runtime` (ưu tiên cao) và `ai-heavy-io-runtime` (trọng tải AI) qua Bounded MPSC Channel để bảo vệ hiệu năng hệ thống messaging khỏi quá tải AI.
 - ☁️ **Circuit Breaker (AI Latency p99 > 1500ms):** Tự động chuyển trạng thái OPEN và fail-fast về UI nếu AI Latency p99 > 1500ms hoặc Packet Loss > 5% trong 10s — bảo vệ throughput messaging core.
 
-### 8.2 Threshold Cryptography Escrow (Trích xuất Pháp lý Không Backdoor)
+### 8.2 [ARCHITECTURE] [IMPLEMENTATION] Threshold Cryptography Escrow (Trích xuất Pháp lý Không Backdoor)
 
 - 📱💻🖥️☁️ **Shamir's Secret Sharing (SSS):** Băm nát Private Key thành $N$ mảnh phân tán, loại bỏ điểm yếu Master Key đơn điểm; mặc định 3-of-5 hoặc cấu hình M-of-N theo chính sách doanh nghiệp.
 - 💻🖥️ **Lagrange Interpolation tái tạo Escrow_Private_Key:** Thực hiện nội suy Lagrange trực tiếp trong vùng nhớ RAM được bảo vệ bởi ZeroizeOnDrop; plaintext Key chỉ tồn tại trong RAM < 100ms.
 - ☁️ **Escrow Ciphertext Blob:** Lưu trữ khóa phiên (Session Key) được mã hóa bằng cơ chế KEM tại Server — Server chỉ thấy ciphertext, không thể tự giải mã mà không có đủ mảnh khóa.
 
-### 8.3 KMS Bootstrap Ritual & Multi-Sig Hardware Fragments
+### 8.3 [ARCHITECTURE] [IMPLEMENTATION] KMS Bootstrap Ritual & Multi-Sig Hardware Fragments
 
 - 📱💻🖥️ **KMS Bootstrap + FIDO2 YubiKey/Smartcard:** Khởi tạo Workspace và xuất mảnh khóa ra các thiết bị phần cứng FIDO2 (YubiKey hoặc Smartcard); yêu cầu xác thực vật lý để tái hợp nhất khóa.
 - 📱💻🖥️☁️ **Master Key trong HSM/Secure Enclave (Hardware Root of Trust):** Khóa Master không bao giờ rời chip vật lý; mọi thao tác ký/giải mã đều diễn ra trong Enclave với xác thực sinh trắc học bắt buộc.
 - 📱💻🖥️ **ZeroizeOnDrop (RAII):** Thực hiện ghi đè `0x00` xóa sạch dấu vết khóa trong RAM ngay sau khi phiên giải mã kết thúc; không có window nào để key tồn tại trên heap.
 
-### 8.4 Immutable Audit Log & Append-Only Hash Chain
+### 8.4 [ARCHITECTURE] [IMPLEMENTATION] Immutable Audit Log & Append-Only Hash Chain
 
 - ☁️ **HIPAA/SOC2 Compliant Audit Log:** Ghi lại bắt buộc mọi hành vi trích xuất dữ liệu nhạy cảm với timestamp chống giả mạo; log được lưu trên Append-Only storage không thể sửa đổi ngược.
 - 📱💻🖥️☁️ **Ed25519 Digital Signature:** Xác thực tính nguyên bản và chống chối bỏ (Non-Repudiation) cho toàn bộ lịch sử chat được trích xuất; mỗi entry Audit Log mang chữ ký Ed25519 độc lập.
 - 📱💻 **Dead Man Switch (Monotonic Hardware Counter):** Kết hợp Monotonic Hardware Counter (TPM 2.0/Secure Enclave) với timestamp để chống tấn công quay ngược thời gian (Time Travel Attack) trên Audit Log; `Counter < Server's Value` → từ chối + Self-Destruct.
 
-## 9. Lưu trữ và Khôi phục Định danh E2EE (Cloud/Private Server Sync)
+## 9. [PERFORMANCE] [IMPLEMENTATION] Lưu trữ và Khôi phục Định danh E2EE (Cloud/Private Server Sync)
 
-### 9.1 Đồng bộ hóa Dữ liệu Mã hóa (E2EE Cloud Backup)
+### 9.1 [PERFORMANCE] [IMPLEMENTATION] Đồng bộ hóa Dữ liệu Mã hóa (E2EE Cloud Backup)
 
 - ☁️🗄️ **E2EE Cloud Backup (Zero-Knowledge):** Lõi Rust mã hóa `cold_state.db` bằng `Device_Key` (Secure Enclave/StrongBox) trước khi đẩy lên Cloud (hoặc Private Server nội bộ). Server chỉ thấy Ciphertext — không có plaintext nào rời thiết bị.
 - 📱💻 **Khôi phục Định danh (Biometric-backed Restore):** Khi thiết bị mới được kích hoạt, người dùng xác thực bằng FaceID/TouchID hoặc TPM 2.0. Lõi Rust tải Ciphertext về và giải mã cục bộ — không cần thiết bị phần cứng ngoại vi.
 - 📱💻 **Recovery Phrase (BIP-39 Mnemonic):** Khi thiết lập lần đầu, hệ thống phát sinh 24-word Mnemonic (BIP-39 chuẩn). Người dùng ghi offline và lưu an toàn. Dùng Mnemonic + Biometric để khôi phục `Device_Key` trong mọi kịch bản mất máy.
 
-### 9.2 Truy cập Bộ nhớ Thời gian Hằng số (Side-Channel Timing Attack & Memory Dump Defense)
+### 9.2 [PERFORMANCE] [IMPLEMENTATION] Truy cập Bộ nhớ Thời gian Hằng số (Side-Channel Timing Attack & Memory Dump Defense)
 
 > **Mối đe dọa:** Biến động độ trễ truy cập nhớ tin rầy (Cache Timing) tiết lộ khóa mật mã qua kênh kề (Side-Channel).
 
@@ -1671,7 +1684,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 💻📱 **`madvise()` + Monotonic Clocking (ISO 27001):** Ràng buộc `madvise(MADV_SEQUENTIAL | MADV_WILLNEED)` kết hợp Monotonic Hardware Clock để loại bỏ hiệu ứng phân nhiễu (Jitter); ghi nhận timestamp theo chuẩn ISO 27001 đe dệ audit thời gian truy cập nhớ.
 - 💻📱 **`ZeroizeOnDrop` (RAII) trước `munmap()`:** Thực thi ghi đè `0x00` toàn bộ nội dung vùng nhớ cục bộ vật lý trước khi trả về qua `munmap()` — ngăn chặn Memory Dump ngầu nhiên ở mọi thời điểm sau Secure Scope Exit.
 
-### 9.3 Lock-Free Seqlock (Chống DoS Futex từ .tapp)
+### 9.3 [PERFORMANCE] [IMPLEMENTATION] Lock-Free Seqlock (Chống DoS Futex từ .tapp)
 
 > **Mối đe dọa:** `.tapp` độc hại có thể giữ Mutex lock vĩnh viễn, triệt tiêu khả năng ghi của Lõi Rust (DoS Futex Deadlock).
 
@@ -1679,7 +1692,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - ☁️ **Preemptive Write Bypass (Quyền ghi tuyệt đối):** Lõi Rust tăng Counter (+1), thực hiện ghi dữ liệu, tăng Counter (+1) lần nữa — không đợi WASM Sandbox. WASM chỉ là Reader; không có Mutex lock nào được phép chiếm giữ qua ranh giới.
 - 💻 **Lock-free Fast-path Read (Retry Loop):** Phía WASM Reader kiểm tra Counter trước và sau khi đọc; nếu không khớp → Retry Loop tự động. Reader không bao giờ nắm giữ Kernel Resource.
 
-### 9.4 Generational Seqlock + Futex Synchronization (Use-After-Free Defense)
+### 9.4 [PERFORMANCE] [IMPLEMENTATION] Generational Seqlock + Futex Synchronization (Use-After-Free Defense)
 
 > **Mối đe dọa:** Lỗ hổng Use-After-Free (UAF) và Memory Corruption tại ranh giới Rust–WASM do tham chiếu con trỏ củ sau khi slot bộ nhớ đã được tái sử dụng.
 
@@ -1687,7 +1700,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 💻 **`Atomics.load` Polling (User Space Fast-path):** Phía WASM Reader thực hiện `Atomics.load` kiểm tra `Header.generation == expected_generation` trước mỗi chu kỳ đọc — phát hiện lệch pha thế hệ ngay tại User Space mà không cần toi Syscall.
 - ☁️ **`ZeroizeOnDrop` Crypto-Shredding trước tái cấp phát Slot:** Lõi Rust thực thi Crypto-Shredding (ghi đè `0x00`) và tăng Generation Counter trước khi tái sử dụng Slot bao giờ.
 
-### 9.5 Gian lận Logic Giấy phép (Cryptographic Entanglement & O-LLVM Obfuscation)
+### 9.5 [PERFORMANCE] [IMPLEMENTATION] Gian lận Logic Giấy phép (Cryptographic Entanglement & O-LLVM Obfuscation)
 
 > **Mối đe dọa:** Kẻ tấn công vá trực tiếp nhị phân Kiểm tra License để bỏ qua ngưỡng xác thực (License Patching).
 
@@ -1695,7 +1708,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 💻 **O-LLVM Control Flow Flattening:** Làm phẳng (flatten) và xáo trộn toàn bộ State Machine kiểm tra License — biến cấu trúc CFG thành mê cung phi tuyến đưa các công cụ dịch ngược như IDA Pro/Ghidra vào trạng thái mù hòa.
 - 🖥️ **Bogus Control Flow (Dead Code Injection):** Bơm mã chết (Dead Code) sinh động vào binary để tăng gấp đôi độ phức tạp phân tích CFG, triệt tiêu khả năng cụ thể hóa (concretize) các nánh điều kiện của State Machine.
 
-### 9.6 Tấn công Quay ngược Thời gian (Monotonic Counter Hardware-Backed Validation)
+### 9.6 [PERFORMANCE] [IMPLEMENTATION] Tấn công Quay ngược Thời gian (Monotonic Counter Hardware-Backed Validation)
 
 > **Mối đe dọa:** Kẻ tấn công chỉnh giờ (Clock Rollback) và hồi phục Snapshot (Time-Travel Attack) bằng cách giả mạo thời gian hệ thống.
 
@@ -1703,7 +1716,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 📱 **`Last_Seen_Timestamp` bất biến:** Duy trì biến `Last_Seen_Timestamp` trong vi mạch bảo mật; nếu OS_Time < Hardware_Counter → cảnh báo hệ thống ngay lập tức.
 - 💻 **Crypto-Shredding & Session_Key Wipe:** Khi phát hiện sai lệch thời gian ($OS\_Time < Hardware\_Counter$), Lõi Rust thực hiện `ZeroizeOnDrop` xóa sạch `Session_Key` — dữ liệu kích hoạt tự hủy trước khi rơi vào tay tấn công.
 
-### 9.7 Khôi phục Ngoại tuyến và Chống Nhân bản (HSM Sub-CA Anti-Cloning)
+### 9.7 [PERFORMANCE] [IMPLEMENTATION] Khôi phục Ngoại tuyến và Chống Nhân bản (HSM Sub-CA Anti-Cloning)
 
 > **Mối đe dọa:** Kẻ tấn công Sao chép (Clone) kých hoạt các `DeviceIdentityKey` vào nhiều thiết bị, qua mặt cơ chế Quota.
 
@@ -1711,7 +1724,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 🗄️ **Decrementing Monotonic Counter (Hard Quota):** Mỗi lần ký chứng chỉ mới, HSM giảm biến đếm ngoài tuyến không đảo ngược; khi biến đếm = 0, HSM từ chối mọi yêu cầu phát hành chứng chỉ mới — chống nhân bản ở tầng Silicon.
 - 🖥️ **Offline Ed25519 Signing (Hầm ngầm):** Ký thắng `DeviceIdentityKey` mới tại Hầm ngầm không kết nối mạng; chỉ truyền Signed Certificate ra ngoài qua USB mãt mã.
 
-### 9.8 Tấn công Freeze-and-Restore (TPM2_Quote Liveness Challenge)
+### 9.8 [PERFORMANCE] [IMPLEMENTATION] Tấn công Freeze-and-Restore (TPM2_Quote Liveness Challenge)
 
 > **Mối đe dọa:** Kẻ tấn công chụp Snapshot trạng thái TPM và nạp lại (Replay) nhằm giả mạo định danh phần cứng đã được xác thực.
 
@@ -1719,7 +1732,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - ☁️ **EK Certificate Validation (Nhà sản xuất):** Xác thực Attestation Certificate với Public Key EK do Nhà sản xuất TPM (Infineon/STMicro) cung cấp — chứng minh thiết bị vật lý thật, không phải SW emulator.
 - 🗄️ **PCR Binding vào KDF:** Ràng buộc trạng thái thanh ghi PCR (Platform Configuration Registers) lúc Boot vào hàm $KDF$ sinh `Session_Key`; PCR thay đổi (do Rollback/Tamper) → KDF sinh sai khóa → toàn bộ cơ sở dữ liệu nhắm dướng (decryption failed).
 
-### 9.9 Blind Relay Isolation (Bảo vệ Toàn vẹn Dữ liệu tại Biên)
+### 9.9 [PERFORMANCE] [IMPLEMENTATION] Blind Relay Isolation (Bảo vệ Toàn vẹn Dữ liệu tại Biên)
 
 > **Mối đe dọa:** Server giả mạo (Rogue Server) nắm giữ Source of Truth có thể sửa Hash Chain để che giấu tấn công phân tầng.
 
@@ -1727,7 +1740,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 - 🗄️ **Audit Log Ed25519 độc lập:** Mọi thay đổi trạng thái (State Transition) được ghi kèm chữ ký Ed25519 riêng của Client — Server không thể can thiệp vào cột chữ ký mà không phá vỡ tính toàn vẹn Hash Chain.
 - 💻 **ZeroizeOnDrop khi phát hiện Hash Chain bị gãy:** Khi `Root_Hash` local ≠ Root_Hash quốc hội (Quorum), Lõi Rust tự động thực thi `ZeroizeOnDrop` xóa sạch khóa giải mã — vô hiệu hóa bất kỳ cuộc tấn công khai thác dữ liệu sau đó.
 
-### 9.10 Giao thức Bằng chứng Ém nhẹm (Proof of Withholding)
+### 9.10 [PERFORMANCE] [IMPLEMENTATION] Giao thức Bằng chứng Ém nhẹm (Proof of Withholding)
 
 > **Mối đe dọa:** Server độc hại cố tình giữ lại (Withholding) một phần DAG Branch nhằm che khuất thông tin khẩn cấp trong môi trường nội bộ.
 
@@ -1737,11 +1750,11 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-*Xem `Feature_Spec.md` cho App-layer. Xem `Function.md` cho Product flows.*
+*Xem → TERA-FEAT cho App-layer. Xem → TERA-FUNC cho Product flows.*
 
 ---
 
-*Xem `Feature_Spec.md` cho App-layer. Xem `Function.md` cho Product flows.*
+*Xem → TERA-FEAT cho App-layer. Xem → TERA-FUNC cho Product flows.*
 
 ---
 
@@ -1835,7 +1848,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-*Xem `Feature_Spec.md` cho App-layer. Xem `Function.md` cho Product flows.*
+*Xem → TERA-FEAT cho App-layer. Xem → TERA-FUNC cho Product flows.*
 
 
 ---
@@ -1939,7 +1952,7 @@ Khi doanh nghiệp yêu cầu Cold Recovery:
 
 ---
 
-*Xem `Feature_Spec.md` cho Client App-layer. Xem `Function.md` cho Product flows.*
+*Xem → TERA-FEAT cho Client App-layer. Xem → TERA-FUNC cho Product flows.*
 
 
 ---
@@ -2212,4 +2225,4 @@ pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
 
 ---
 
-*Xem `Feature_Spec.md` cho client implementation. Xem `Design.md` cho UX states.*
+*Xem → TERA-FEAT cho client implementation. Xem → TERA-DESIGN cho UX states.*

@@ -2,3 +2,291 @@ Merge dữ liệu này vào hệ thống tài liệu:
 Hãy check các file trên có xung đột khi đóng gói thành app dành riêng cho điện thoại ,laptop và desktop với hệ điều hành ios ,android,windows, linux không . Có lỗ hổng, nợ kĩ thuật hay xung đột các kĩ thuật mức độ Cao - khẩn cấp  không (Khả năng xảy ra > trung bình ) .Combo kết hợp hay đơn giải pháp mà TeraChat đề ra là gì để tối ưu hoá khuyết điểm và nợ kĩ thuật cho tương lai.Tôi nên điều chỉnh nội dung ở các file nào :Introduction.md,Function.md,Feature_Spec.md,Design.md,Core_Spec.md,BusinessPlan.md,Web_Marketplace.md.
 Hãy check các file trên có xung đột khi đóng gói thành app dành riêng cho điện thoại ,laptop và desktop với hệ điều hành ios ,android,windows, linux không . Có lỗ hổng, nợ kĩ thuật hay xung đột các kĩ thuật mức độ Cao - khẩn cấp  không (Khả năng xảy ra > trung bình ) .Combo kết hợp hay đơn giải pháp mà TeraChat đề ra là gì để tối ưu hoá khuyết điểm và nợ kĩ thuật cho tương lai.Tôi nên điều chỉnh nội dung ở các file nào :Feature_Spec.md,Design.md,Core_Spec.md.Chuẩn ISO 27001
 Introduction.md,Function.md,Feature_Spec.md,Design.md,Core_Spec.md,BusinessPlan.md,Web_Marketplace.md.
+```markdown
+# TeraChat — CEO Keynote Synthesis Prompt v2.0
+
+---
+
+## ROLE & CONTEXT
+
+You are the **CEO and co-founder of TeraChat**, presenting the platform to a
+global audience during a Series A funding round and technology launch event.
+
+You have **full access to the complete TeraChat document corpus**. Before
+writing a single word, you **must read and synthesize all eight source
+documents** listed below. These files contain the authoritative technical,
+product, and business truth of the platform. Your output must reflect their
+combined depth — not just one or two files.
+
+---
+
+## MANDATORY PRE-READING (Read ALL before writing)
+
+| File | What it contains |
+|---|---|
+| `Introduction.md` | System overview, architecture philosophy, core principles |
+| `Function.md` | User & Admin flows, AI privacy, federation, product capabilities |
+| `Feature_Spec.md` | Client-side implementation: IPC, storage, OS hooks, WASM sandbox |
+| `Design.md` | Glassmorphism design system, UI state machine, component library |
+| `Core_Spec.md` | Crypto primitives, MLS protocol, Key Management, server infra, Mesh |
+| `BusinessPlan.md` | Business model, Zero Bandwidth Cost, licensing, GTM, Open-Core strategy |
+| `Web_Marketplace.md` | `.tapp` plugin lifecycle, WASM sandbox, Ed25519 signing, Marketplace |
+| `TestMatrix.md` | Combined-failure scenarios, adversarial test matrix, chaos engineering |
+
+> **Instruction:** Extract the most important insights from EACH document.
+> Identify where they converge, reinforce each other, or reveal tensions.
+> Your synthesis must represent the WHOLE system — not just the surface layer.
+
+---
+
+## YOUR TASK
+
+Rewrite and synthesize the raw material from all eight documents into a single,
+masterful document called:
+
+```
+Introduction.md — System Gateway
+```
+
+This is the **canonical first entry point** into the TeraChat ecosystem.
+
+It must answer three questions every reader has when they first encounter TeraChat:
+
+1. **What is this?**
+2. **Why does it matter?**
+3. **Where do I go next?**
+
+---
+
+## TARGET AUDIENCE
+
+Write so that ALL of the following reader types find immediate value:
+
+| Reader | What they need |
+|---|---|
+| **Developer** | Understand architecture boundaries and where to dive deeper |
+| **System Architect** | Grasp the distributed system design and security model |
+| **Product Manager** | Understand capabilities and user value propositions |
+| **Enterprise Decision-Maker** | Understand why TeraChat is the sovereign choice |
+| **Investor** | Understand the paradigm shift and defensible moat |
+| **Security Officer (CISO)** | Understand Zero-Trust, Zero-Knowledge, and compliance posture |
+
+Technical credibility is essential. Deep implementation detail is forbidden.
+
+---
+
+## CORE OBJECTIVES — Each section must achieve these
+
+### Objective 1 — Articulate the Mission with Conviction
+
+Explain why TeraChat exists as a civilizational response, not a product feature.
+
+Draw from `BusinessPlan.md` (data sovereignty, Zero Bandwidth Cost) and
+`Introduction.md` (sovereign communication manifesto).
+
+Key themes to capture:
+- Digital sovereignty as a fundamental right for organizations
+- The failure of cloud-dependent communication for sensitive industries
+- Why security-by-architecture is different from security-by-policy
+- The irreversibility of the Zero-Knowledge commitment
+
+---
+
+### Objective 2 — Define the Four Foundational Principles
+
+Each principle must be explained at two levels:
+1. **What it means** (conceptual, one paragraph)
+2. **Why it matters** for real-world deployment in governments,
+   financial institutions, and critical infrastructure
+
+The four principles, grounded across `Introduction.md`, `Core_Spec.md`,
+and `Function.md`:
+
+- **Zero-Knowledge Architecture** — the server sees only encrypted noise
+- **End-to-End Encryption (E2EE)** — keys never leave the device hardware
+- **Offline Survival** — communication persists when infrastructure fails
+- **Zero-Trust System Design** — no entity is trusted by default, ever
+
+Draw on `TestMatrix.md` adversarial scenarios to show these principles
+hold under real attack and failure conditions — not just in theory.
+
+---
+
+### Objective 3 — Describe the Architecture at Conceptual Level
+
+Convey the system's design philosophy without code or protocol detail.
+
+Synthesize from `Core_Spec.md`, `Feature_Spec.md`, and `Introduction.md`:
+
+- **Shared Rust Core** — one cryptographic brain across all platforms
+- **Client-Side Cryptography** — encryption happens before data leaves the device
+- **Blind Relay Servers** — infrastructure that cannot betray what it cannot see
+- **Survival Mesh Networking** — asymmetric peer-to-peer resilience
+- **3-Tier Connectivity Model** — Online → Tactical Mesh → Survival BLE
+
+Include the Desktop/Mobile role asymmetry (Super Node vs Leaf Node) —
+this is architecturally distinctive and worth explaining clearly.
+
+---
+
+### Objective 4 — Present Core Capabilities as Value Propositions
+
+Each capability must answer: **"What does this enable for the organization?"**
+
+Source from `Function.md`, `Feature_Spec.md`, `Web_Marketplace.md`:
+
+| Capability | Source Files |
+|---|---|
+| Secure messaging & file transfer | `Function.md`, `Feature_Spec.md` |
+| E2EE voice and video | `Core_Spec.md`, `Function.md` |
+| Offline collaboration with conflict resolution | `Core_Spec.md`, `Feature_Spec.md` |
+| AI privacy protection (Dual-Mask) | `Function.md`, `Core_Spec.md` |
+| Cross-organization federation | `Function.md`, `Core_Spec.md` |
+| Extension ecosystem (.tapp) | `Web_Marketplace.md` |
+| Enterprise Admin control plane | `Function.md`, `Design.md` |
+
+---
+
+### Objective 5 — Establish the System Terminology
+
+Introduce terms so any reader — technical or not — can navigate the corpus.
+
+Each definition: one sentence conceptual, one sentence why it matters.
+
+Required terms (sourced from across all files):
+
+| Term | Primary Source |
+|---|---|
+| `.tapp` | `Web_Marketplace.md` |
+| `Company_Key` | `Core_Spec.md`, `Introduction.md` |
+| `Blind Relay` | `Core_Spec.md`, `Introduction.md` |
+| `TreeKEM / MLS` | `Core_Spec.md` |
+| `Survival Mesh` | `Introduction.md`, `Core_Spec.md` |
+| `Shared Rust Core` | `Introduction.md`, `Core_Spec.md` |
+| `Zero-Knowledge` | `BusinessPlan.md`, `Introduction.md` |
+| `Super Node / Leaf Node` | `Introduction.md`, `Feature_Spec.md` |
+| `Dual-Mask Protocol` | `Function.md`, `Core_Spec.md` |
+| `Federation Bridge` | `Function.md`, `Core_Spec.md` |
+
+---
+
+### Objective 6 — Define Product Scope with Precision
+
+**In Scope:**
+- Sovereign enterprise communication
+- Zero-Knowledge infrastructure design
+- Offline resilience through Survival Mesh
+- Federated cross-organization collaboration
+- Hardware-backed cryptographic identity
+- AI integration with privacy preservation
+- Extension ecosystem with WASM sandbox isolation
+
+**Out of Scope:**
+- Plaintext storage on any server
+- Cloud-provider-dependent architecture
+- Server-side content inspection or metadata analysis
+- Remote code execution outside sandboxed `.tapp` environments
+- Consumer social messaging use cases
+
+---
+
+### Objective 7 — Close with the Documentation Reading Map
+
+This is the navigation layer that turns one document into a system of documents.
+
+```
+After reading this document, continue here:
+
+Role                        → Next Document
+─────────────────────────────────────────────────────
+Developer (Mobile/Desktop)  → Feature_Spec.md
+System Architect            → Core_Spec.md
+Product Manager             → Function.md
+Designer / Frontend         → Design.md
+Platform / Plugin Builder   → Web_Marketplace.md
+Investor / Executive        → BusinessPlan.md
+QA / Security Engineer      → TestMatrix.md
+```
+
+Include a brief one-line description of what each file contains.
+
+---
+
+## OUTPUT STRUCTURE
+
+Produce the document in this exact section order:
+
+```
+1. Vision & Mission Statement
+2. Why TeraChat Exists
+3. The Four Foundational Principles
+4. High-Level System Architecture
+5. Core Platform Capabilities
+6. System Terminology
+7. Product Scope (In / Out)
+8. Document Reading Map
+```
+
+Each section should feel like a chapter — complete, standalone,
+but connected to the whole.
+
+---
+
+## WRITING STYLE REQUIREMENTS
+
+| Dimension | Instruction |
+|---|---|
+| **Tone** | Visionary, authoritative, calm confidence — a founder explaining a new paradigm |
+| **Audience register** | Senior technical + executive — smart but not specialists |
+| **Sentence length** | Varied — short punchy for principles, longer for architecture |
+| **Paragraph length** | 3–5 sentences max per paragraph — scannable |
+| **Technical depth** | Architecture concepts YES — protocol implementation NO |
+| **Metaphors** | Permitted and encouraged for architecture concepts |
+| **Hedging language** | Forbidden — write with conviction |
+| **Marketing language** | Forbidden — write with technical credibility |
+
+---
+
+## STRICT PROHIBITIONS
+
+Do NOT include any of the following:
+
+- Code snippets or pseudocode
+- UI component specifications or CSS values
+- Pricing, revenue models, or subscription tiers
+- Protocol-level implementation details (MLS internals, CRDT algorithm)
+- Platform-specific OS API names (AVAssetResourceLoader, Jetsam, etc.)
+- Commit history or changelog entries
+- Anything copied verbatim from source documents
+
+---
+
+## QUALITY STANDARD
+
+Before finalizing, verify your output answers YES to all of these:
+
+- [ ] Would a CISO trust this document to understand the security posture?
+- [ ] Would a VC partner understand the architectural moat after reading?
+- [ ] Would a developer know exactly which document to read next?
+- [ ] Does every principle explained connect to a real-world consequence?
+- [ ] Does the terminology section eliminate jargon confusion for newcomers?
+- [ ] Does the scope section prevent misuse or misrepresentation of the platform?
+- [ ] Does the document reflect insights from ALL eight source files?
+- [ ] Is the voice consistent — one CEO, one vision, one platform?
+
+---
+
+## FINAL INSTRUCTION
+
+You are not summarizing. You are **synthesizing**.
+
+The eight source documents are raw material. Your job is to find the
+single narrative thread that runs through all of them — the reason TeraChat
+was built, the way it was designed, and the future it is building toward —
+and express that thread with the clarity and authority of someone who
+has been building this for years and knows exactly why it matters.
+
+Write the document that makes every reader — no matter their background —
+understand that TeraChat is not a product. It is a new infrastructure
+primitive for sovereign digital communication.
+```
