@@ -2226,3 +2226,256 @@ pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
 ---
 
 *Xem → TERA-FEAT cho client implementation. Xem → TERA-DESIGN cho UX states.*
+Đủ dữ liệu. Bây giờ tôi sẽ tổng hợp toàn bộ giải pháp theo dạng text thuần túy, phân bổ chính xác từng phần vào đúng file.
+
+---
+
+# Giải pháp Trọn vẹn cho TeraChat — Phân bổ vào Feature_Spec.md và Core_Spec.md
+
+---
+
+## Phần I — Tổng quan Nguyên tắc Phân bổ
+
+Trước khi đi vào từng vấn đề, cần nắm rõ nguyên tắc routing giữa hai tài liệu. `Core_Spec.md` là nơi đặc tả những gì hệ thống *là* — kiến trúc bảo mật, giao thức mạng, cơ chế đồng bộ, hạ tầng server. `Feature_Spec.md` là nơi đặc tả những gì hệ thống *làm* trên client — IPC bridge, hành vi OS-specific, WASM runtime, storage cục bộ, vòng đời ứng dụng trên từng platform. Khi một vấn đề thuần túy là "Rust Core phải làm gì khi X xảy ra" thì nó vào `Core_Spec.md`. Khi vấn đề là "iOS/Android/Desktop phải handle như thế nào ở tầng platform" thì nó vào `Feature_Spec.md`. Khi vấn đề span cả hai, mỗi file đặc tả phần của mình và cross-reference sang nhau bằng anchor kiểu `→ TERA-CORE §5.12`.
+
+---
+
+## Phần II — Nhóm A: Hardware Limitations
+
+### A1. Vấn đề: Không có Global RAM Budget Coordinator trên Mobile
+
+**Vào Core_Spec.md, thêm vào §2.x hoặc tạo §2.8 mới: Global Memory Arbiter.**
+
+Core_Spec.md định nghĩa RAM budget table theo device class vì đây là contract của Rust Core — Rust Core là thành phần duy nhất có tầm nhìn toàn bộ các component đang chạy đồng thời. Nội dung cần thêm:
+
+Rust Core phải khởi tạo một `MemoryArbiter` struct ở startup, đọc available RAM từ OS (`sysinfo::available_memory()`), sau đó phân bổ fixed ceiling cho từng component theo bảng sau. Trên thiết bị có RAM ≤3GB (điển hình iPhone SE, budget Android): NSE nhận 20MB (cứng, không thể tăng), WASM heap mỗi .tapp nhận 50MB nhưng chỉ tối đa 1 .tapp được pre-warm cùng lúc, Whisper model bị disabled hoàn toàn, BLE Mesh buffer được cấp 8MB. Tổng ceiling không vượt quá 100MB để bảo vệ heap cho hot_dag.db hydration. Trên thiết bị có RAM >4GB (iPhone Pro, flagship Android): cùng NSE 20MB, WASM 50MB với tối đa 2 .tapp pre-warm, Whisper Tiny được phép load (39MB), BLE buffer 12MB.
+
+Arbiter implement một `acquire(component, requested_bytes)` function. Nếu total allocated vượt ceiling, component thứ N+1 phải chờ hoặc nhận `MemoryDenied` error và tự degrade. Jemalloc stats được poll mỗi 5 giây từ một Tokio background task. Nếu allocated vượt 80% ceiling, Arbiter phát `MemoryPressureWarning` event lên IPC để UI hiển thị trạng thái.
+
+**Vào Feature_Spec.md, thêm vào §6.1 IPC Bridge Architecture: Memory Budget Contract.**
+
+Feature_Spec.md mô tả phần platform-facing: mỗi component khi init phải call `terachat_core_request_memory(component_id, bytes)` trước khi allocate. Nếu nhận `MemoryDenied`, component phải gracefully degrade (Whisper → disabled, WASM .tapp → load-on-demand thay vì pre-warm, BLE buffer → giảm xuống 4MB). iOS `applicationDidReceiveMemoryWarning` và Android `onTrimMemory(TRIM_MEMORY_RUNNING_CRITICAL)` cả hai phải gọi `terachat_core_release_memory(component_id)` để Arbiter reclaim quota và cho phép component khác dùng.
+
+### A2. Vấn đề: VPS SQLite WAL OOM trên Burst Reconnect
+
+**Vào Core_Spec.md §3.4.2, bổ sung vào section đã có: Adaptive Batch Sizing.**
+
+Section hiện tại đã có micro-batching yield mỗi 1000 rows nhưng batch size là constant. Cần thêm: Trước mỗi batch commit, Rust Core đọc `/proc/meminfo` để lấy `MemAvailable`. Nếu MemAvailable > 200MB thì batch size = 1000 rows (normal). Nếu 100MB < MemAvailable ≤ 200MB thì batch size = 500 rows. Nếu MemAvailable ≤ 100MB thì batch size = 100 rows và Tokio yield 50ms giữa các batch để cho OS GC thời gian. Nếu MemAvailable ≤ 50MB thì suspend WAL hydration hoàn toàn và emit `VPS_LOW_MEMORY` event lên Admin Console.
+
+Thêm SIGTERM handler: khi relay nhận SIGTERM (systemd stop), handler phải gọi `wal_checkpoint(TRUNCATE)` trước khi exit. Thời gian tối đa cho checkpoint là 30 giây — nếu quá 30 giây, abort checkpoint và exit clean (WAL còn lại sẽ được replay khi restart). Đây là grace period cho systemd `TimeoutStopSec=35`.
+
+**Feature_Spec.md không cần thay đổi** cho vấn đề này vì WAL hydration là server-side.
+
+### A3. Vấn đề: iOS BGTask VACUUM Không Đáng Tin Cậy
+
+**Vào Feature_Spec.md §5.2 SQLite WAL Auto-Compaction, bổ sung: Foreground Opportunistic VACUUM.**
+
+Hiện tại chỉ có BGTask (hoàn toàn phụ thuộc iOS scheduler). Cần thêm một đường thứ hai: khi app đang foreground và user không tương tác trong 60 giây liên tiếp (UIApplicationState.active nhưng không có touch event), và WAL size vượt 50MB, Rust Core spawn một Tokio low-priority task chạy `VACUUM INTO hot_dag_tmp.db` theo kiểu non-blocking. Task này tự cancel nếu user interact trở lại (touch event) trong vòng 5 giây kể từ khi VACUUM bắt đầu — VACUUM INTO là atomic nên cancel an toàn, chỉ cần xóa tmp file.
+
+Thêm user-facing storage warning: nếu WAL vượt 150MB (tức là BGTask đã không chạy được nhiều lần), hiển thị banner amber "Bộ nhớ cache đang đầy — TeraChat sẽ tự dọn dẹp khi bạn cắm sạc." Banner có nút "Dọn ngay" trigger VACUUM foreground nếu user cho phép.
+
+### A4. Vấn đề: Mobile DAG Merge CPU Spike gây ANR
+
+**Vào Core_Spec.md §5.13, bổ sung: Time-Sliced DAG Merge cho Mobile.**
+
+Section §5.13 hiện mô tả Rayon thread pool cho Desktop nhưng không có giải pháp mobile. Cần thêm: trên iOS và Android, DAG merge sau reconnect không được chạy full O(N log N) một lần. Thay vào đó, Rust Core chia merge thành batches 100 events, mỗi batch được process trong một Tokio task với explicit `tokio::task::yield_now()` giữa các batch. Điều này cho phép UI event loop có 1-2ms giữa mỗi batch để process touch events và render frames. Tổng throughput giảm khoảng 20% so với full merge nhưng UI hoàn toàn responsive.
+
+Thêm merge progress indicator contract: khi merge backlog vượt 500 events, Core emit `DagMergeProgress { completed, total }` event qua IPC mỗi 200ms. UI hiển thị subtle progress bar ở top của conversation list, biến mất khi merge hoàn tất.
+
+**Feature_Spec.md nhận phần UI**: thêm vào §6.x IPC section mô tả `DagMergeProgress` event và cách UI render progress bar theo Design spec (frosted glass overlay 2px height, không che content).
+
+---
+
+## Phần III — Nhóm B: Common Technical Failures
+
+### B1. Vấn đề: CI/CD Signing Pipeline Hoàn toàn Thiếu
+
+**Đây không phải nội dung kỹ thuật của Feature_Spec hay Core_Spec.** Signing pipeline là operational content, đúng nhà là `BusinessPlan.md §3.3` hoặc một file mới `ops/signing-pipeline.md`. Tuy nhiên, cả hai tài liệu kỹ thuật cần một cross-reference:
+
+**Core_Spec.md §3.1 Deployment Topologies** thêm một note: "Binary distribution yêu cầu code signing cho mọi platform. Xem `ops/signing-pipeline.md` để biết certificate types, rotation schedule, và CI/CD integration." Không đặt signing implementation detail vào Core_Spec vì đó là ops concern, không phải architecture.
+
+**Feature_Spec.md §PLATFORM-09 Unified Build Target Matrix** thêm một cột "Signing requirement" vào bảng target triple hiện có: iOS cần Apple Distribution Certificate + Provisioning Profile, macOS cần Developer ID + notarytool, Windows cần EV Code Signing via Cloud HSM (DigiCert KeyLocker, ~$500/năm, bắt buộc cho SmartScreen clean), Android cần Keystore + Google Play App Signing, Linux cần GPG key cho .deb/.rpm và Cosign cho AppImage.
+
+### B2. Vấn đề: WasmParity CI Gate Chưa Implement
+
+**Vào Feature_Spec.md §PLATFORM-02, thay thế mô tả hiện tại bằng spec đầy đủ hơn.**
+
+Hiện tại section này đã mô tả concept. Cần thêm implementation contract: CI job `wasm-parity-check` phải là một required check trước khi merge vào main branch và trước khi publish .tapp lên Marketplace. Job này nhận một .tapp bundle, chạy cùng một bộ test vectors lần lượt trên wasm3 (simulated iOS environment) và wasmtime (Desktop environment), so sánh output byte-by-byte. Nếu output khác nhau về semantic, job fail và block merge.
+
+Test vectors bắt buộc phải cover: crypto host ABI calls (gọi BLAKE3 hash với input cố định, kiểm tra output giống nhau), OPA policy evaluation (cùng một JSON input, cùng một .rego policy, verify decision giống nhau), transient state persistence (persist và read lại một KV pair, verify value giống nhau), CRDT event generation (tạo một message event, verify DAG node structure giống nhau). Latency delta ≤ 20ms được accept vì interpreter vs JIT có performance khác nhau, nhưng output không được differ.
+
+### B3. Vấn đề: Dart FFI NativeFinalizer Race Chưa Có CI Enforcement
+
+**Vào Core_Spec.md §2.1 (hoặc thêm §2.9 mới): Formal IPC Memory Ownership Contract.**
+
+Section này cần định nghĩa token protocol như một architecture rule, không chỉ là implementation hint: mọi FFI endpoint xuất từ Rust Core tuyệt đối không được return `Vec<u8>`, `*const u8`, hay `*mut u8` trực tiếp. Thay vào đó, caller phải gọi `tera_buf_acquire(operation_id) -> u64` để nhận một opaque token, thực hiện operation với token đó, sau đó gọi `tera_buf_release(token)` để Rust Core biết an toàn để ZeroizeOnDrop. Rust Core maintain một reference counter per token. ZeroizeOnDrop chỉ execute khi `ref_count == 0`.
+
+Đây là architecture constraint, không chỉ là coding convention. Violation là blocker theo CONTRACT section của Core_Spec.
+
+**Vào Feature_Spec.md §PLATFORM-14, bổ sung phần CI enforcement:**
+
+Dart FFI layer phải wrap mọi buffer trong `TeraSecureBuffer` class với `useInTransaction()` hoặc explicit `releaseNow()`. Thêm CI requirement: Miri test phải verify ZeroizeOnDrop cho mọi struct giữ key material. Custom Clippy lint (được define trong workspace `Cargo.toml`) reject mọi `pub fn` trong `ffi/` module có return type là `Vec<u8>` hoặc raw pointer mà không đi qua `TeraToken`. CI sẽ fail nếu lint này trigger.
+
+### B4. Vấn đề: EMDP Orphan Messages (Silent Data Loss trong SOS)
+
+**Vào Core_Spec.md §5.12 EMDP, thêm 3 protocol extensions.**
+
+Extension đầu tiên là TTL Extension Request: khi iOS Tactical Relay còn 10 phút trước khi TTL 60min hết, Relay phát một BLE advertisement `EMDP_TTL_EXTENSION_REQUEST` signed bởi Device_Identity_Key. Nếu một iOS peer khác trong range nhận được request và có battery > 30%, peer đó có thể accept bằng cách reply `EMDP_TTL_ACCEPT`. Relay gốc transfer ownership của Append-Only CRDT buffer (serialized Protobuf, max 1MB) sang peer mới qua BLE Data Plane. Peer mới assume Tactical Relay role với TTL reset về 60 phút.
+
+Extension thứ hai là CRDT Buffer Hand-off: khi transfer ownership, Relay gốc serialize toàn bộ Append-Only CRDT log thành một `EmdpHandoffPacket { messages: Vec<CrdtEvent>, relay_session_key_encrypted: Bytes, emdp_start_epoch: u64 }`. Packet được encrypt bằng public key của peer mới (ECIES Curve25519). Peer mới decrypt và ghi vào local staging area, bắt đầu nhận relay messages từ thời điểm tiếp theo. Relay gốc chuyển về Leaf Node sau khi confirm peer mới đã acknowledge receipt.
+
+Extension thứ ba là User Warning: UIEvent mới `EmdpExpiryWarning { minutes_remaining: u32 }` được emit ở T-10min và T-2min. UI hiển thị banner red: "Mạng SOS hết hạn trong X phút — di chuyển đến gần thiết bị Desktop hoặc Android." Banner có nút "Gia hạn" trigger TTL Extension Request nếu peer available.
+
+**Feature_Spec.md §5.2 Mesh + §WASM-06** thêm mô tả UIEvent::EmdpExpiryWarning và cách UI render countdown banner.
+
+### B5. Vấn đề: XPC Worker Crash Không Có Retry Policy
+
+**Vào Core_Spec.md §14.4 XPC Transaction Journal Protocol, bổ sung retry policy.**
+
+Hiện tại section định nghĩa PENDING/VERIFIED/COMMITTED states và recovery action. Cần thêm: khi `XpcRecoveryAction::AbortAndNotifyUser` được trigger, Rust Core ghi crash event vào một lightweight metrics counter trong SQLite (`xpc_crash_count: u32, last_crash_ts: i64`). Counter này tăng 1 mỗi lần crash. Nếu counter tăng 3 lần trong vòng 5 phút, Rust Core emit `XpcHealthDegraded` event lên IPC — UI hiển thị warning: "Một tính năng đang gặp sự cố. Nếu tình trạng tiếp tục, hãy liên hệ IT Admin."
+
+Retry policy cho PENDING crash: maximum 3 retry attempts với backoff 0s, 2s, 8s. Sau lần thứ 3 fail, Rust Core emit `XpcPermanentFailure { operation_id, support_id: Uuid }` event. UI hiển thị error dialog với support_id để user cung cấp cho IT Admin. Admin Console nhận alert khi support case được tạo.
+
+**Feature_Spec.md §WASM-01 Desktop/Server** thêm mô tả XPC crash retry UX flow và `xpc_health_monitor` background task.
+
+### B6. Vấn đề: QUIC Probe Waste trên UDP-Blocked Enterprise Networks
+
+**Vào Core_Spec.md §5.3 QUIC, thêm Adaptive Probe Learning.**
+
+Hiện tại Strict Compliance Mode phải được Admin cấu hình thủ công. Cần thêm cơ chế tự học: Rust Core track UDP probe results theo network identifier (mTLS server cert fingerprint + SSID hash). Nếu UDP probe fail 3 lần liên tiếp trên cùng một network identifier trong một rolling 24h window, Core tự động set `strict_compliance = true` cho network đó và lưu vào SQLite local config. Lần kết nối tiếp theo trên network đó sẽ skip UDP probe và connect thẳng gRPC TCP. Nếu network thay đổi (mTLS fingerprint khác), probe được reset về default.
+
+Admin Console nhận notification: "TeraChat đã tự động chuyển sang TCP mode trên mạng [network label]. Nếu không đúng, bạn có thể reset trong Settings." Admin có thể override về manual mode bất kỳ lúc nào.
+
+**Feature_Spec.md §6.1 IPC Bridge** thêm mô tả `NetworkProfile` object được persist trong SQLite với `probe_failure_count`, `strict_compliance_auto`, `last_probe_ts` fields.
+
+### B7. Vấn đề: iOS AWDL Silent Drop gây Voice Call Death
+
+**Vào Feature_Spec.md §PLATFORM-12, mở rộng AWDLMonitor spec.**
+
+Phần hiện tại mô tả detection. Cần thêm hai cải tiến: thứ nhất, pre-emptive interception trước khi AWDL bị kill — iOS không có API để intercept Hotspot enable intent, nhưng có thể watch Personal Hotspot state changes qua `NWPathMonitor`. Khi monitor detect `path.availableInterfaces` chứa tethering interface nhưng chưa có bridge interface, đây là 1-2 giây window trước khi AWDL bị kill. Rust Core nhận FFI callback này và bắt đầu graceful voice codec downgrade từ Opus về AMR-NB trong window này. Nếu CallKit session active, emit `UIEvent::HotspotConflictWarning`: "Bật Hotspot sẽ làm giảm chất lượng cuộc gọi Mesh — bạn có muốn tiếp tục không?" với 3 giây timeout. Nếu user không cancel trong 3 giây, hệ thống tự proceed với downgrade.
+
+Thứ hai, extend voice packet TTL: khi CallKit session đang active (Rust Core track thông qua FFI callback từ `CXCallObserver`), voice packet TTL tăng từ 30 giây lên 90 giây. Điều này cho phép voice call survive một Hotspot toggle ngắn hoặc AWDL temporary unavailability.
+
+**Core_Spec.md §14.3 iOS AWDL Monitor** thêm note về CallKit-aware TTL extension và pre-emptive downgrade window.
+
+### B8. Vấn đề: Federation Schema Mismatch
+
+**Vào Core_Spec.md §7.1 Cross-Cluster Federation Handshake Protocol, thêm Schema Version Negotiation.**
+
+Federation JWT hiện chứa identity information. Cần thêm một field `dag_schema_version: u32` vào `Federation_Invite_Token`. Khi hai cluster handshake, mỗi bên đọc schema version của bên kia và so sánh. Compatibility matrix: cùng version = full federation (mọi features). Khác nhau 1 minor version = read-only federation (messages được relay nhưng advanced features như collaborative editing bị disabled, UI hiển thị banner "Cluster này đang dùng phiên bản cũ hơn"). Khác nhau 1 major version = reject federation với error code `SCHEMA_INCOMPATIBLE`, log event vào Audit Trail, Admin của cả hai cluster nhận alert.
+
+Thêm version negotiation fallback: cluster mới hơn có thể offer "downgrade compatibility mode" — chạy với feature set của phiên bản cũ hơn để maintain federation với cluster chưa upgrade. Admin của cluster mới nhận prompt để approve downgrade mode.
+
+**Feature_Spec.md §9.8 Federation Mismatch** mô tả UI states cho read-only federation mode và downgrade compatibility prompt.
+
+### B9. Vấn đề: Thiếu Observability / Metrics
+
+**Vào Core_Spec.md §3.6 Zero-Access Diagnostics, thêm §3.7 Operational Metrics.**
+
+Đây là section mới hoàn toàn. Core_Spec định nghĩa metrics contract: Relay daemon expose một `/metrics` endpoint (HTTP, localhost-only hoặc bind to private interface, không phải public). Endpoint return Prometheus text format với các metrics sau, tất cả đều zero-knowledge (không chứa content hay identifiers):
+
+`relay_active_connections` (gauge): số WebSocket connections đang active. `relay_message_relay_total` (counter): tổng số messages đã relay, không có content. `wal_lag_bytes` (gauge): WAL file size hiện tại của hot_dag.db. `wasm_sandbox_crashes_total` (counter): số lần WASM sandbox crash kể từ startup. `xpc_crash_total` (counter, macOS only): XPC Worker crash count. `dag_merge_duration_ms` (histogram): thời gian để complete một DAG merge operation. `mls_epoch_rotations_total` (counter): số lần MLS Epoch đã rotate. `active_mesh_nodes` (gauge): số BLE Mesh nodes đang connected, không có identifiers.
+
+Metrics được expose sau 30 giây delay so với event time để prevent timing correlation attacks. Relay không log request origin của `/metrics` calls.
+
+Admin Console (hoặc enterprise IT Admin) có thể configure Prometheus scrape endpoint để collect metrics. AlertManager rules được recommend: WAL lag > 100MB, wasm_sandbox_crashes_total rate > 0.1/minute, relay_active_connections sudden drop > 50%.
+
+**Feature_Spec.md §6.3 (hoặc mới §6.x)** thêm phần Mobile Telemetry: client-side anonymized metrics được batch và gửi lên relay mỗi 15 phút (không real-time để prevent correlation). Mobile metrics: `app_foreground_duration_ms`, `dag_merge_events_count`, `wal_size_bytes`. Không có user identifiers, không có message counts, không có content.
+
+### B10. Vấn đề: Relay Process Panic & In-Flight MPSC Messages
+
+**Đây là câu hỏi phản biện từ cuối session trước. Vào Core_Spec.md §3.5 Lightweight Micro-Core Relay, thêm §3.5.1: Relay Process Fault Isolation.**
+
+Hiện tại relay dùng `panic='abort'` (LTO optimization). Cần thay đổi strategy: relay binary sử dụng `panic='unwind'` với `catch_unwind()` tại các boundary points: WASM sandbox entry point, CRDT merge entry point, DAG write entry point. Rust `catch_unwind()` cho phép relay recover từ một component panic mà không crash toàn bộ process. Khi `catch_unwind()` nhận được một panic, nó log panic info (backtrace, component name, timestamp) vào structured error log, emit `ComponentPanicEvent` lên Admin Console, và restart chỉ component đó (spawn new Tokio task) thay vì crash relay.
+
+Về in-flight MPSC messages khi panic: Tokio bounded MPSC channel không mất messages khi sender panic nếu receiver còn alive và channel chưa đầy. Vấn đề xảy ra khi receiver task panic. Giải pháp: mọi CRDT event được ghi vào WAL staging area (`wal_staging.db`) trước khi được đưa vào MPSC channel. Staging area là durability guarantee. Khi relay restart (systemd `Restart=on-failure`), startup sequence đọc `wal_staging.db`, replay bất kỳ event nào có `status=STAGED` (chưa được confirm WAL flush), và re-queue chúng vào MPSC channel. Chỉ sau khi WAL flush confirm thành công, event được mark `status=COMMITTED` và xóa khỏi staging area. Đây là at-least-once delivery guarantee cho in-flight events.
+
+**Feature_Spec.md không cần thay đổi** cho vấn đề này — đây hoàn toàn là server-side relay behavior.
+
+---
+
+## Phần IV — Nhóm C: Technical Debt & Scalability
+
+### C1. Vấn đề: Không Có Operational Runbooks
+
+**Không thuộc Feature_Spec hay Core_Spec.** Tuy nhiên, cả hai file cần cross-references:
+
+**Core_Spec.md §3.4 Database Layer** thêm note: "Disaster recovery procedure xem `ops/db-recovery.md`. PITR target recovery point: không quá 1 giờ data loss." **Core_Spec.md §4.1 KMS Bootstrap** thêm note: "Shamir ceremony procedure và Admin turnover protocol xem `ops/shamir-bootstrap.md`. Shard refresh schedule: mỗi 6 tháng hoặc khi bất kỳ Admin holder rời tổ chức."
+
+### C2. Vấn đề: Rust Core Single Process, Không Có Fault Isolation
+
+**Vào Core_Spec.md §2.x, thêm §2.10: Component Fault Isolation Policy.**
+
+Đây là policy cấp kiến trúc: mọi component boundary trong Rust Core phải wrap entry point với `std::panic::catch_unwind()`. Danh sách bắt buộc: WASM sandbox execution entry, CRDT merge function entry, MLS crypto operations entry, DAG write entry. Mỗi `catch_unwind()` site phải handle caught panic theo cùng pattern: log với structured context (component name, operation type, không có plaintext data), emit `ComponentFault` event lên IPC với severity level, quarantine component (stop accepting new requests đến component đó), schedule component restart sau 1 giây delay.
+
+Lưu ý quan trọng: `panic='abort'` hiện đang được dùng cho binary size optimization. Cần đổi sang `panic='unwind'` cho relay binary và client binary. Điều này làm tăng binary size khoảng 15% do unwind tables, nhưng đây là trade-off bắt buộc cho production stability. Desktop binary có thể giữ `panic='abort'` cho release builds nếu team chấp nhận full restart on panic — nhưng relay và mobile library bắt buộc phải là `panic='unwind'`.
+
+**Feature_Spec.md §8.10 Deterministic Memory Quota & Panic Handler** đã có một section về ONNX panic handler. Cần mở rộng section này thành general panic handler policy cho toàn bộ iOS/Android client, reference về Core_Spec §2.10 cho specification đầy đủ.
+
+### C3. Vấn đề: MLS Group Size Scaling tại 5000+ Members
+
+**Vào Core_Spec.md §5.x (hoặc thêm §5.25 mới): Batched TreeKEM Update_Path Delivery.**
+
+Vấn đề là mỗi member join/leave trigger O(n) Update_Path broadcasts. Giải pháp là batching: thay vì broadcast Update_Path ngay lập tức sau mỗi change, Rust Core buffer tất cả MLS proposals trong một sliding window. Window size được configurable theo group tier: group ≤100 members dùng window 0 giây (real-time, current behavior). Group 101-1000 members dùng window 60 giây. Group 1001-5000+ members dùng window 300 giây (configurable bởi Admin).
+
+Sau khi window đóng, Rust Core gộp tất cả proposals thành một single Commit với merged Update_Path. Server fan-out một Update_Path thay vì N Update_Paths. Đây giảm O(n × changes) xuống O(n × batches), với batches << changes.
+
+Tiếp theo cần định nghĩa group size SLA: ≤100 members thì epoch rotation latency ≤1 giây. ≤1000 members thì ≤60 giây. ≤5000 members thì ≤5 phút. Vượt 5000 members thì key rotation chỉ trigger khi Admin chủ động yêu cầu (không automatic on member change). Admin Console hiển thị group size tier và pending Commit count.
+
+### C4. Vấn đề: PostgreSQL Async Replication có Data Loss Window
+
+**Vào Core_Spec.md §3.4 Database Layer, bổ sung Replication Policy.**
+
+Thêm explicit RPO/RTO definitions: RPO (Recovery Point Objective) = tối đa 5 phút data loss, RTO (Recovery Time Objective) = tối đa 30 phút để restore service. Để đạt RPO 5 phút với async replication, `pg_dump` incremental backup phải chạy mỗi 5 phút (không chỉ trước VACUUM). Dùng WAL archiving (`archive_mode=on`, `archive_command`) để archive WAL segments liên tục sang secondary storage.
+
+Cho deployments ≥50k users: enable `synchronous_commit=remote_write` cho ít nhất một replica. Điều này tăng write latency khoảng 1-5ms nhưng đảm bảo zero data loss nếu primary fail ngay sau commit. Nếu synchronous replica không available trong 30 giây, PostgreSQL tự động fallback về async để không block writes — Rust Core nhận `synchronous_standby_names_timeout` log entry và emit Admin alert.
+
+Thêm geo-partition key specification: user records và message metadata được partitioned theo `org_domain` field (domain của Enterprise). Vietnam-domiciled orgs → VN region. Singapore-domiciled → SG region. Cross-region queries go through Federation Bridge. Partition key phải không thay đổi sau khi org được provisioned.
+
+### C5. Vấn đề: AppArmor/SELinux Postinstall Script Thiếu
+
+**Vào Feature_Spec.md §PLATFORM-16, thay mô tả hiện tại bằng full implementation spec.**
+
+Section hiện tại định nghĩa profile content nhưng nói "detect và load profile phù hợp tự động" mà không spec script. Cần thêm: postinstall script (bash, included trong .deb và .rpm) thực hiện các bước sau theo thứ tự. Bước 1: detect distribution — `grep ID /etc/os-release` để xác định Ubuntu/Debian hay RHEL/Fedora. Bước 2: kiểm tra MAC enforcement — trên Ubuntu: `apparmor_status --json | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d['profiles'] else 1)"`. Trên RHEL: `getenforce` trả về Enforcing/Permissive/Disabled. Bước 3: cài profile — nếu AppArmor enforcing, copy `usr.bin.terachat` vào `/etc/apparmor.d/` và gọi `apparmor_parser -r -W /etc/apparmor.d/usr.bin.terachat`. Nếu SELinux enforcing, compile `.te` module bằng `checkmodule` + `semodule_package` + `semodule -i`. Bước 4: verify — gọi `terachat --check-permissions` (một built-in self-test mode) để verify memfd_create và ipc_lock không bị denied. Nếu test fail, print warning nhưng không abort install. Bước 5: log kết quả vào `/var/log/terachat-install.log`.
+
+CI pipeline phải test postinstall script trong Docker containers với Ubuntu 22.04 + AppArmor enforcing, Ubuntu 20.04 + AppArmor, RHEL 9 + SELinux enforcing, RHEL 8 + SELinux, và Ubuntu minimal (no AppArmor) để verify không crash khi MAC disabled.
+
+### C6. Vấn đề: Gossip PSK Rotation Không Được Định Nghĩa
+
+**Vào Core_Spec.md §3.5 Bootstrap, thêm PSK Lifecycle Policy.**
+
+Gossip Discovery PSK hiện chỉ được setup qua `inventory.ini` một lần và không có rotation. Cần thêm: PSK phải được rotate mỗi 90 ngày hoặc bất kỳ khi nào có team member với access đến `inventory.ini` rời tổ chức. Rotation procedure là zero-downtime và gồm các bước: Admin tạo `new_psk` và distribute nó đến tất cả nodes qua encrypted channel (VPS API với mTLS). Mỗi node enter "dual-PSK mode": accept connections từ cả `old_psk` và `new_psk`. Sau khi tất cả nodes confirm nhận được `new_psk` (Admin Console shows 100% acknowledgment), Admin trigger `rotate_complete`. Mỗi node drop `old_psk` và chỉ accept `new_psk`. Total downtime: 0. PSK age được track trong Admin Console với alert khi > 80 ngày.
+
+PSK phải không được lưu trong `inventory.ini` dạng plaintext sau initial setup. Sau lần bootstrap đầu tiên, `inventory.ini` PSK field phải được replace bằng `REDACTED_SEE_HSM`. PSK thực sự được lưu trong HSM (bare-metal) hoặc trong encrypted Vault của VPS (cloud deployment).
+
+### C7. Vấn đề: LSM-Tree Crate Chưa Được Chọn
+
+**Vào Feature_Spec.md §WASM-05, bổ sung crate selection.**
+
+Thêm một dòng implementation note: transient state storage sử dụng `sled` crate (version >= 0.34) làm embedded LSM-Tree implementation. Lý do chọn `sled`: pure Rust (không có C dependencies, dễ cross-compile cho mọi target triple), compiled binary size khoảng 1-2MB, RAM footprint khi idle < 2MB, transaction throughput đủ cho .tapp use case (không cần RocksDB performance). `sled::Db` instance được tạo per-DID với isolation bằng separate tree namespace. Trên Desktop, nếu performance cần thiết cho advanced use case, có thể upgrade lên RocksDB thông qua a feature flag — nhưng default cho tất cả platforms là `sled`.
+
+---
+
+## Phần V — Vấn đề Đặc Biệt: Dead Man Switch 72h Cứng
+
+**Vào Core_Spec.md §4.1 KMS Bootstrap, Dead Man Switch section, thêm Configurable Grace Period.**
+
+Hiện tại 72h là hardcoded constant. Cần đổi thành Admin-configurable parameter per user group. Admin Console cho phép tạo "Offline Policy" với các fields: `max_offline_hours` (24 đến 168, default 72), `apply_to_groups: [GroupId]`, `warning_at_hours_before: [12, 1]` (emit warning events). Offline Policy được push xuống devices qua OPA Policy engine khi online, cached locally cho offline use.
+
+Hai UIEvent mới: `DeadManWarning { hours_remaining: u32 }` và `DeadManImminent { minutes_remaining: u32 }` (khi còn 60 phút). UI hiển thị amber banner cho Warning và red banner cho Imminent. Banner có nút "Kết nối ngay" shortcut kết nối về server.
+
+Thêm behavior khi grace expires trong active CallKit session: Core_Spec §4.1 cần explicit rule — Dead Man Switch lockout không interrupt active voice/video call. Lockout được deferred đến khi call ends. Sau call, lockout áp dụng ngay. Đây là consistent với TestMatrix SC-06 scenario.
+
+---
+
+## Phần VI — Tóm Tắt Phân Bổ theo File
+
+**Core_Spec.md nhận các phần sau:**
+
+Thêm §2.8 Global Memory Arbiter — RAM budget table và acquire/release protocol. Thêm §2.9 Formal IPC Memory Ownership Contract — token protocol, architecture rule, blocker level. Thêm §2.10 Component Fault Isolation Policy — `catch_unwind()` boundary list, ComponentFault event, `panic='unwind'` mandate. Cập nhật §3.4.2 SQLite OOM Prevention — adaptive batch sizing theo MemAvailable. Thêm §3.5.1 Relay Process Fault Isolation — catch_unwind relay, WAL staging area, at-least-once delivery. Thêm §3.7 Operational Metrics — Prometheus endpoint spec, zero-knowledge metrics list, alert thresholds. Cập nhật §3.4 Database Layer — RPO/RTO definitions, synchronous_commit policy, geo-partition key spec. Thêm §3.5 Bootstrap PSK Lifecycle — rotation procedure, dual-PSK mode, 90-day schedule. Cập nhật §4.1 Dead Man Switch — configurable grace, warning events, CallKit exception. Cập nhật §5.12 EMDP — 3 protocol extensions: TTL Extension, CRDT Buffer Hand-off, user warning. Thêm §5.25 Batched TreeKEM Update_Path — window-based batching, group size tiers, SLA table. Cập nhật §5.13 Async Concurrency — time-sliced mobile DAG merge, DagMergeProgress event. Cập nhật §7.1 Federation Handshake — schema_version field trong JWT, compatibility matrix, downgrade mode. Cập nhật §14.3 iOS AWDL Monitor — CallKit-aware TTL extension, pre-emptive downgrade window. Cập nhật §14.4 XPC Transaction Journal — retry policy, max 3 retries, backoff, support_id.
+
+**Feature_Spec.md nhận các phần sau:**
+
+Cập nhật §6.1 IPC Bridge — Memory Budget Contract, `terachat_core_request_memory()` API, platform callbacks. Cập nhật §5.2 SQLite WAL Auto-Compaction — Foreground Opportunistic VACUUM, user-facing storage warning. Cập nhật §PLATFORM-02 WasmParity — full CI job spec, mandatory test vector list, block merge condition. Cập nhật §PLATFORM-09 Build Target Matrix — thêm cột Signing Requirement. Cập nhật §PLATFORM-12 iOS AWDL Monitor — pre-emptive interception spec, 90-second TTL extension. Cập nhật §PLATFORM-14 Dart FFI NativeFinalizer — CI lint requirement, Miri test requirement. Cập nhật §PLATFORM-16 AppArmor/SELinux — đầy đủ postinstall script spec, CI container test matrix. Cập nhật §WASM-05 Zero-Loss Transient State — thêm `sled` crate selection và justification. Cập nhật §9.8 Federation Mismatch — UI states cho read-only federation và downgrade mode. Thêm §6.x Mobile Telemetry — anonymized metrics, 15-minute batch, zero-knowledge constraints. Cập nhật §WASM-01 WASM Runtime — reference §Core_Spec §2.10 Component Fault Isolation. Thêm vào §5.2 Mesh — UIEvent::EmdpExpiryWarning spec và countdown banner UI.
+
+---
