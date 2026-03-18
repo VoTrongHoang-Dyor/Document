@@ -349,27 +349,27 @@
     <div class="nav-header">Table of Contents</div><a href="#web-marketplacemd-terachat-alpha-v030" class="nav-link" style="">Web_Marketplace.md — TeraChat Alpha v0.3.0</a>
 <a href="#changelog" class="nav-link" style="padding-left:0.8rem;">CHANGELOG</a>
 <a href="#contract-plugin-publishing-requirements" class="nav-link" style="padding-left:0.8rem;">CONTRACT: Plugin Publishing Requirements</a>
-<a href="#1-decentralized-plugin-provisioning-signature-verification" class="nav-link" style="padding-left:0.8rem;">1. Decentralized Plugin Provisioning & Signature Verification</a>
-<a href="#11-kiến-trúc-phân-phối-manifest-driven-wasm-distribution" class="nav-link" style="padding-left:0.8rem;">1.1 Kiến trúc Phân phối (Manifest-driven WASM Distribution)</a>
-<a href="#12-ed25519-signature-verification" class="nav-link" style="padding-left:0.8rem;">1.2 Ed25519 Signature Verification</a>
-<a href="#13-opa-policy-injection" class="nav-link" style="padding-left:0.8rem;">1.3 OPA Policy Injection</a>
-<a href="#14-publisher-trust-tiers" class="nav-link" style="padding-left:0.8rem;">1.4 Publisher Trust Tiers</a>
-<a href="#15-revocation-emergency-kill-switch" class="nav-link" style="padding-left:0.8rem;">1.5 Revocation & Emergency Kill-switch</a>
-<a href="#2-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration" class="nav-link" style="padding-left:0.8rem;">2. Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)</a>
-<a href="#3-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze" class="nav-link" style="padding-left:0.8rem;">3. Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</a>
-<a href="#4-automated-static-scan-security-manifest-audit" class="nav-link" style="padding-left:0.8rem;">4. Automated Static Scan & Security Manifest Audit</a>
-<a href="#5-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích" class="nav-link" style="padding-left:0.8rem;">5. Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</a>
+<a href="#1-architecture-plugin-decentralized-plugin-provisioning-signature-verification" class="nav-link" style="padding-left:0.8rem;">1. [ARCHITECTURE] [PLUGIN] Decentralized Plugin Provisioning & Signature Verification</a>
+<a href="#11-architecture-plugin-kiến-trúc-phân-phối-manifest-driven-wasm-distribution" class="nav-link" style="padding-left:0.8rem;">1.1 [ARCHITECTURE] [PLUGIN] Kiến trúc Phân phối (Manifest-driven WASM Distribution)</a>
+<a href="#12-architecture-plugin-ed25519-signature-verification" class="nav-link" style="padding-left:0.8rem;">1.2 [ARCHITECTURE] [PLUGIN] Ed25519 Signature Verification</a>
+<a href="#13-architecture-plugin-opa-policy-injection" class="nav-link" style="padding-left:0.8rem;">1.3 [ARCHITECTURE] [PLUGIN] OPA Policy Injection</a>
+<a href="#14-architecture-plugin-publisher-trust-tiers" class="nav-link" style="padding-left:0.8rem;">1.4 [ARCHITECTURE] [PLUGIN] Publisher Trust Tiers</a>
+<a href="#15-architecture-plugin-revocation-emergency-kill-switch" class="nav-link" style="padding-left:0.8rem;">1.5 [ARCHITECTURE] [PLUGIN] Revocation & Emergency Kill-switch</a>
+<a href="#2-security-plugin-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration" class="nav-link" style="padding-left:0.8rem;">2. [SECURITY] [PLUGIN] Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)</a>
+<a href="#3-performance-plugin-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze" class="nav-link" style="padding-left:0.8rem;">3. [PERFORMANCE] [PLUGIN] Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</a>
+<a href="#4-security-plugin-automated-static-scan-security-manifest-audit" class="nav-link" style="padding-left:0.8rem;">4. [SECURITY] [PLUGIN] Automated Static Scan & Security Manifest Audit</a>
+<a href="#5-security-os-constraint-plugin-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích" class="nav-link" style="padding-left:0.8rem;">5. [SECURITY] [OS-CONSTRAINT] [PLUGIN] Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</a>
 <a href="#nguyên-tắc-wx-write-xor-execute" class="nav-link" style="padding-left:0.8rem;">Nguyên tắc W^X (Write XOR Execute)</a>
 <a href="#capability-declaration-manifest-whitelist" class="nav-link" style="padding-left:0.8rem;">Capability Declaration (Manifest Whitelist)</a>
-<a href="#6-dlp-bypass-prevention-wasm-egress-circuit-breaker" class="nav-link" style="padding-left:0.8rem;">6. DLP Bypass Prevention — WASM Egress Circuit Breaker</a>
+<a href="#6-security-plugin-dlp-bypass-prevention-wasm-egress-circuit-breaker" class="nav-link" style="padding-left:0.8rem;">6. [SECURITY] [PLUGIN] DLP Bypass Prevention — WASM Egress Circuit Breaker</a>
 <a href="#chống-kênh-rò-rỉ-ngầm-qua-data-diode-timing-covert-channel" class="nav-link" style="padding-left:0.8rem;">Chống Kênh Rò rỉ Ngầm qua Data Diode (Timing Covert Channel)</a>
-<a href="#7-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82" class="nav-link" style="padding-left:0.8rem;">7. Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)</a>
-<a href="#71-ed25519-signed-policy-bundles" class="nav-link" style="padding-left:0.8rem;">7.1 Ed25519 Signed Policy Bundles</a>
-<a href="#72-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum" class="nav-link" style="padding-left:0.8rem;">7.2 M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)</a>
-<a href="#9-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity" class="nav-link" style="padding-left:0.8rem;">9. Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</a>
-<a href="#8-static-egress-schema-declaration-manifest-contract-tapp-publisher" class="nav-link" style="padding-left:0.8rem;">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</a>
-<a href="#81-egress-schema-trong-manifestjson" class="nav-link" style="padding-left:0.8rem;">8.1 Egress Schema trong `manifest.json`</a>
-<a href="#9-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag" class="nav-link" style="padding-left:0.8rem;">9. Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</a>
+<a href="#7-security-architecture-plugin-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82" class="nav-link" style="padding-left:0.8rem;">7. [SECURITY] [ARCHITECTURE] [PLUGIN] Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)</a>
+<a href="#71-security-architecture-plugin-ed25519-signed-policy-bundles" class="nav-link" style="padding-left:0.8rem;">7.1 [SECURITY] [ARCHITECTURE] [PLUGIN] Ed25519 Signed Policy Bundles</a>
+<a href="#72-security-architecture-plugin-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum" class="nav-link" style="padding-left:0.8rem;">7.2 [SECURITY] [ARCHITECTURE] [PLUGIN] M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)</a>
+<a href="#9-architecture-plugin-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity" class="nav-link" style="padding-left:0.8rem;">9. [ARCHITECTURE] [PLUGIN] Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</a>
+<a href="#8-implementation-plugin-static-egress-schema-declaration-manifest-contract-tapp-publisher" class="nav-link" style="padding-left:0.8rem;">8. [IMPLEMENTATION] [PLUGIN] Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</a>
+<a href="#81-implementation-plugin-egress-schema-trong-manifestjson" class="nav-link" style="padding-left:0.8rem;">8.1 [IMPLEMENTATION] [PLUGIN] Egress Schema trong `manifest.json`</a>
+<a href="#9-architecture-plugin-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag" class="nav-link" style="padding-left:0.8rem;">9. [ARCHITECTURE] [PLUGIN] Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</a>
 <a href="#mục-mới-tapp-lifecycle-wasm-security-standards" class="nav-link" style="padding-left:0.8rem;">Mục Mới: .tapp Lifecycle & WASM Security Standards</a>
 <a href="#marketplace-01-tapp-vòng-đời-lifecycle" class="nav-link" style="padding-left:0.8rem;">MARKETPLACE-01: .tapp Vòng đời (Lifecycle)</a>
 <a href="#marketplace-02-wasm-security-scanning" class="nav-link" style="padding-left:0.8rem;">MARKETPLACE-02: WASM Security Scanning</a>
@@ -387,11 +387,20 @@
 
 <div class="main">
     <h1 id="web-marketplacemd-terachat-alpha-v030">Web_Marketplace.md — TeraChat Alpha v0.3.0</h1>
+<div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code># DOCUMENT IDENTITY
+id:       "TERA-MKT"
+title:    "TeraChat — Web Marketplace &amp; Extensions"
+version:  "2.0"
+audience: "Platform Engineer, Plugin Developer, Security Auditor"
+purpose:  "Đặc tả vòng đời plugin .tapp, sandbox WASM, cơ chế bảo mật (OPA, Egress Circuit Breaker) và quy trình phát hành (Publishing)."
+
+ai_routing_hint: |
+  "AI mở file này khi người dùng hỏi về phát triển tiện ích .tapp, WASM sandbox, Marketplace, cơ chế bảo mật plugin, hoặc quản lý extension."</code></pre></div>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Status:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">ACTIVE — Implementation Reference</code></p>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Audience:</strong> Platform Engineer · Plugin/App Dev · Security Auditor</p>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Scope:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Plugin Lifecycle, Signature Verification, OPA Policy Distribution, WASM Runtime Limits</p>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Last Updated:</strong> 2026-03-11</p>
-<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Depends On:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Core_Spec.md</code> §5.24 (EMIP Plugin Integrity), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Feature_Spec.md</code> §8.1 (WASM Sandbox)</p>
+<p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Depends On:</strong> → TERA-CORE §5.24 (EMIP Plugin Integrity), → TERA-FEAT §8.1 (WASM Sandbox)</p>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Consumed By:</strong> Admin Console plugin management UI</p>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
 <h2 id="changelog">CHANGELOG</h2>
@@ -434,15 +443,15 @@
 <li>[ ] CPU usage <strong>phải</strong> ≤ 10% sustained — spike được phép nhưng không kéo dài &gt; 500ms.</li>
 </ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="1-decentralized-plugin-provisioning-signature-verification">1. Decentralized Plugin Provisioning & Signature Verification</h2>
+<h2 id="1-architecture-plugin-decentralized-plugin-provisioning-signature-verification">1. [ARCHITECTURE] [PLUGIN] Decentralized Plugin Provisioning & Signature Verification</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Tầm nhìn:</strong> TeraChat Marketplace không phải App Store truyền thống. Đây là một <strong>Decentralized Trust Registry</strong> — nơi Publisher ký <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bằng chính Private Key của mình, TeraChat chỉ đóng vai trò xác minh chữ ký và forward. Không có server trung gian nào có thể "inject" mã độc vào plugin.</p>
-<h3 id="11-kiến-trúc-phân-phối-manifest-driven-wasm-distribution">1.1 Kiến trúc Phân phối (Manifest-driven WASM Distribution)</h3>
+<h3 id="11-architecture-plugin-kiến-trúc-phân-phối-manifest-driven-wasm-distribution">1.1 [ARCHITECTURE] [PLUGIN] Kiến trúc Phân phối (Manifest-driven WASM Distribution)</h3>
 <ul>
 <li>☁️ <strong>Manifest-driven WASM Distribution:</strong> Mỗi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> được đóng gói thành bundle: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">{ logic.wasm, manifest.json, assets/ }</code>. <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> khai báo: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">publisher_public_key</code> (Ed25519), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> (whitelist URL), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">permissions</code> (scope), <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">version_hash</code> (BLAKE3 của WASM bytecode).</li>
 <li>☁️ <strong>Content-Addressed Distribution (CAS):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bundle được lưu trên Marketplace CDN theo địa chỉ nội dung <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CAS_UUID = BLAKE3(bundle_bytes)</code>. URL tải về là xác định (deterministic) — mọi thiết bị tải cùng UUID sẽ nhận byte-for-byte identical bundle. Không thể silently swap backend.</li>
 <li>☁️ <strong>Incremental Update (Delta Manifest):</strong> Khi Publisher release update, chỉ Delta manifest (diff của <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> + nếu WASM đổi thì WASM mới) được publish. Thiết bị client tải delta, verify lại BLAKE3 + Ed25519, áp dụng atomic update.</li>
 </ul>
-<h3 id="12-ed25519-signature-verification">1.2 Ed25519 Signature Verification</h3>
+<h3 id="12-architecture-plugin-ed25519-signature-verification">1.2 [ARCHITECTURE] [PLUGIN] Ed25519 Signature Verification</h3>
 <ul>
 <li>☁️ <strong>Publisher Key Registration:</strong> Publisher đăng ký <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Ed25519_PublicKey</code> trên Marketplace Registry (on-chain hoặc self-hosted Merkle Log). Key registration event được ghi vào append-only log — không thể revoke retroactively mà không để lại dấu vết.</li>
 <li>🗄️☁️ <strong>Ed25519 Digital Signature Flow:</strong></li>
@@ -452,13 +461,13 @@
 <li>Marketplace server verify signature trước khi accept upload — server không thể tamper bundle vì không có Private Key.</li>
 <li>Client (Lõi Rust) verify lại signature khi install và mỗi khi Egress được yêu cầu (EMIP — xem Core_Spec.md §5.24).</li>
 </ol>
-<h3 id="13-opa-policy-injection">1.3 OPA Policy Injection</h3>
+<h3 id="13-architecture-plugin-opa-policy-injection">1.3 [ARCHITECTURE] [PLUGIN] OPA Policy Injection</h3>
 <ul>
 <li>☁️ <strong>Manifest-to-OPA Compiler:</strong> Khi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> được install, Marketplace backend biên dịch <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> thành OPA Rego Policy và bundle kèm vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code>. Policy này enforce: egress endpoint whitelist, max payload size, required consent level, rate limiting.</li>
 <li>☁️ <strong>Policy Version Pinning:</strong> Mỗi OPA Policy bundle được gán <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">policy_hash</code> (BLAKE3). Lõi Rust từ chối load <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nếu <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">policy_hash</code> không khớp với hash được ký trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> — ngăn server-side policy swap.</li>
 <li>💻📱 <strong>Local Manifest Validation (Boot-time):</strong> Xem Core_Spec.md §5.24 EMIP cho chi tiết boot-time validation flow.</li>
 </ul>
-<h3 id="14-publisher-trust-tiers">1.4 Publisher Trust Tiers</h3>
+<h3 id="14-architecture-plugin-publisher-trust-tiers">1.4 [ARCHITECTURE] [PLUGIN] Publisher Trust Tiers</h3>
 <div class="comparison-table"><table>
 <thead><tr>
 <th>Tier</th>
@@ -491,41 +500,41 @@
 <td>⭐ Native</td>
 </tr>
 </tbody></table></div>
-<h3 id="15-revocation-emergency-kill-switch">1.5 Revocation & Emergency Kill-switch</h3>
+<h3 id="15-architecture-plugin-revocation-emergency-kill-switch">1.5 [ARCHITECTURE] [PLUGIN] Revocation & Emergency Kill-switch</h3>
 <ul>
 <li>☁️ <strong>Publisher Key Revocation:</strong> Publisher có thể revoke key bằng cách sign <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">REVOKE { key_hash, timestamp }</code> bundle bằng Master Recovery Key (stored offline). Marketplace push revocation event đến tất cả tenants — Lõi Rust nhận và disable tất cả <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> từ key đó.</li>
 <li>☁️ <strong>TeraChat Emergency Suspension:</strong> Xem Function.md §9 PARA — Control Plane có thể push <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">REVOKE_TAPP</code> bundle đến toàn bộ fleet khi phát hiện <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> bị compromise, không cần store review hay app update.</li>
 <li>☁️ <strong>Transparency Log:</strong> Mọi sự kiện (publish, update, revocation, suspension) được ghi vào Transparency Log (append-only, Merkle-proofed). CISO của bất kỳ tenant nào có thể audit log độc lập để verify không có tampering.</li>
 </ul>
-<h2 id="2-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration">2. Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)</h2>
+<h2 id="2-security-plugin-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration">2. [SECURITY] [PLUGIN] Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Tiện ích AI tải về từ Marketplace có thể độc hại ngầm, thu thập ngữ cảnh tài liệu và lén lút tuồn dữ liệu (Exfiltration) ra máy chủ của bên thứ ba qua các API ẩn.</p>
 <ul>
 <li>☁️ <strong>OPA Egress Whitelist (Domain & Port):</strong> Lõi Rust nhúng bộ quy tắc OPA (Open Policy Agent) trực tiếp vào ranh giới mạng của Sandbox. Bất kỳ nỗ lực mở socket nào nằm ngoài danh sách Whitelist Domain & Port đã đăng ký từ trước đều bị chặt đứt ngay lập tức ở tầng OS.</li>
 <li>📱💻 <strong>Metadata Stripping Proxy:</strong> Trước khi payload HTTP/RPC rời khỏi thiết bị đến máy chủ của Tiện ích thứ 3, nó phải đi qua Proxy Kiểm duyệt cục bộ để gọt sạch mọi siêu dữ liệu nhạy cảm (User-Agent, IP, Thiết bị, Thời gian) — không chừa lại bất kỳ dấu vết định danh nào (Fingerprinting).</li>
 <li>☁️ <strong>Seccomp Sandbox (Socket/File I/O):</strong> Ép khâu giám sát vào cấp độ Sandbox. Mọi lời gọi hệ thống (Syscalls) yêu cầu mở file I/O hay tạo Socket mới đều bị chặn và đối chiếu thời gian thực (Real-time).</li>
 </ul>
-<h2 id="3-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze">3. Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</h2>
+<h2 id="3-performance-plugin-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze">3. [PERFORMANCE] [PLUGIN] Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> Các mô hình thuật toán chạy trong WASM có thể tiêu tốn 100% CPU (CPU-Bound), làm nghẽn Event Loop và đóng băng (Freeze) giao diện nhắn tin chính.</p>
 <ul>
 <li>📱💻 <strong>WasmEdge AOT Compiler (Ahead-of-Time):</strong> Chuyển đổi toàn bộ Bytecode của WASM Plugin rườm rà sang Machine Code bản địa (Native) ngay tại thời điểm tải về. Thao tác AOT này triệt tiêu hoàn toàn độ trễ của JIT (Just-In-Time) Compiler, tăng tốc thông lượng thực thi lên gấp 5 lần.</li>
 <li>☁️ <strong>SIMD (Single Instruction, Multiple Data) Vectorization:</strong> Bật cờ phần cứng SIMD (WebAssembly SIMD128) để xử lý ma trận và phép băm mã hóa song song, giải phóng băng thông cho bộ xử lý tín hiệu lõi.</li>
 <li>🗄️ <strong>Pre-warmed WASM Instance Pool:</strong> Desktop và Server duy trì sẵn một hồ bơi (Pool) các Instance WASM đã "ngâm nóng" (Pre-warmed memory). Khi người dùng kích hoạt Plugin, thời gian Cold-Start giảm từ 300ms xuống &lt; 5ms (chấm dứt tình trạng giật cục).</li>
 </ul>
-<h2 id="4-automated-static-scan-security-manifest-audit">4. Automated Static Scan & Security Manifest Audit</h2>
+<h2 id="4-security-plugin-automated-static-scan-security-manifest-audit">4. [SECURITY] [PLUGIN] Automated Static Scan & Security Manifest Audit</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Bài toán:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> độc hại lách luật kiểm duyệt thông qua hướng dẫn mang chữ ký hợp lệ nhưng chứa Bytecode thóa mã xượng vầt qua OPA Policy.</p>
 <ul>
 <li>☁️ <strong>Static WASM Syscall Scan (Chặn lệnh nhảy trái phép):</strong> Phân tích tĩnh toàn bộ Bytecode WASM bằng Abstract Interpretation trước khi chấp nhận Publish. Ký hiệu nhảy trực tiếp ra ngoài Sandbox (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">call_indirect</code> không khai báo) → Từ chối ngay lập tức.</li>
 <li>💻 <strong>Manifest Whitelist Enforcement (Khóa cứng allowed_domains):</strong> Trước khi nhận bandt tải lên, Marketplace vác định dạng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> và so sánh danh sách <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">egress_endpoints</code> với Registry Domain Whitelist — phát hiện bất kỳ domain nẳm ngoài dải cho phép ngưng Upload ngượng cưa.</li>
 <li>🗄️ <strong>Ed25519 Signed Bundle (Chứng thực CA từ TeraChat HQ):</strong> Mọi bundle <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> phải mang chữ ký hợp lệ từ ít nhất 1 trong 3 Root CA offline của TeraChat HQ. Không có chữ ký → Lõi Rust từ chối nạp.</li>
 </ul>
-<h4 id="42-heuristics-scanner-engine-emip-immutable-distribution">4.2 Heuristics Scanner Engine & EMIP Immutable Distribution</h4>
+<h4 id="42-security-plugin-heuristics-scanner-engine-emip-immutable-distribution">4.2 [SECURITY] [PLUGIN] Heuristics Scanner Engine & EMIP Immutable Distribution</h4>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Giải pháp:</strong> Chặn đứng mã độc tiêm nhiễm vào bundle <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> và rủi ro hạ tầng không tương thích.</p>
 <ul>
 <li>☁️ <strong>VPS Recommendation Engine (Heuristics Scanner):</strong> Tự động rà soát thông số phần cứng VPS (CPU, RAM, I/O) qua API để đưa ra khuyến nghị triển khai tối ưu, tránh tình trạng app crash do thiếu hụt tài nguyên.</li>
 <li>☁️ <strong>TeraPay Smart Escrow:</strong> Tiền bản quyền (tapp fee) chỉ được giải ngân cho Publisher sau khi Lõi Rust của Client xác nhận bundle đã được cài đặt và pass qua khâu kiểm tra chữ ký tại chỗ.</li>
 <li>💻 📱 <strong>BLAKE3 Segmented Merkle Tree:</strong> Sử dụng JSI/FFI để kiểm tra mã băm BLAKE3 theo từng phân đoạn (Segment) của bundle. Nếu bất kỳ byte nào bị thay đổi so với bản gốc trên Marketplace, quá trình nạp sẽ bị đình chỉ ngay lập tức.</li>
 </ul>
-<h2 id="5-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích">5. Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</h2>
+<h2 id="5-security-os-constraint-plugin-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích">5. [SECURITY] [OS-CONSTRAINT] [PLUGIN] Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Lập trường Kiến trúc:</strong> Không có <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> nào được phép yêu cầu "exception" khỏi Sandbox. Mọi Exception Policy đều phá vỡ Zero-Trust. Thay vào đó, mọi capability cần thiết đều được khai báo tường minh trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">manifest.json</code> và được OPA Policy kiểm soát.</p>
 <h3 id="nguyên-tắc-wx-write-xor-execute">Nguyên tắc W^X (Write XOR Execute)</h3>
 <h4 id="section-deprecated-bpf-syscall-trapping-removed">(Section Deprecated: BPF Syscall Trapping removed)</h4>
@@ -580,7 +589,7 @@
 <ul>
 <li>📱💻 <strong>Runtime Capability Check:</strong> Mọi syscall từ <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> đều bị intercept tại WASM host function boundary. Rust Core kiểm tra <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">granted_capabilities</code> trong <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">OPA Policy</code> trước khi forward. Capability không được khai báo → <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">PermissionDenied</code> error về sandbox, không crash app.</li>
 </ul>
-<h2 id="6-dlp-bypass-prevention-wasm-egress-circuit-breaker">6. DLP Bypass Prevention — WASM Egress Circuit Breaker</h2>
+<h2 id="6-security-plugin-dlp-bypass-prevention-wasm-egress-circuit-breaker">6. [SECURITY] [PLUGIN] DLP Bypass Prevention — WASM Egress Circuit Breaker</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Lỗ hổng:</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> độc hại có thể tích lũy dữ liệu chat qua nhiều callback nhỏ (Salami Attack) và exfiltrate qua endpoint hợp lệ trong whitelist nhưng với payload bất thường.</p>
 <ul>
 <li>☁️ <strong>Automated WASM O-LLVM Scan (Pre-publish):</strong> Marketplace backend chạy LLVM IR analysis trên WASM bytecode: phát hiện data accumulation pattern (buffer tăng dần qua multiple calls), obfuscated string construction, unusual control flow graph. Plugin nghi ngờ → manual security review queue.</li>
@@ -595,15 +604,15 @@
 <li>💻 🖥️ <strong>5ms Fixed-Interval Dispatch Metronome:</strong> Cưỡng chế nhịp độ xuất phát gói tin cố định che giấu tín hiệu phân tích tần suất gửi từ Data Diode.</li>
 <li>💻 🖥️ <strong>ChaCha20 Cryptographic Noise Padding:</strong> Bơm đệm ngẫu nhiên ngụy trang kích thước Payload gốc vô hiệu hóa thuật toán dò thám dung lượng gói tin.</li>
 </ul>
-<h2 id="7-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82">7. Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)</h2>
+<h2 id="7-security-architecture-plugin-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82">7. [SECURITY] [ARCHITECTURE] [PLUGIN] Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Mối đe dọa:</strong> Insider threat hoặc kẻ tấn công chiếm quyền Admin có thể sửa OPA Policy để tắt DLP, mở egress whitelist hoặc leo thang đặc quyền.</p>
-<h3 id="71-ed25519-signed-policy-bundles">7.1 Ed25519 Signed Policy Bundles</h3>
+<h3 id="71-security-architecture-plugin-ed25519-signed-policy-bundles">7.1 [SECURITY] [ARCHITECTURE] [PLUGIN] Ed25519 Signed Policy Bundles</h3>
 <ul>
 <li>☁️ <strong>Signed OPA Bundle:</strong> Mọi OPA Policy bundle (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tar.gz</code>) phải được ký bằng <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Enterprise_CA Ed25519 key</code> trước khi distribute. Lõi Rust trên mọi client verify signature khi boot và khi nhận policy update — policy không có chữ ký hợp lệ bị reject toàn bộ, không apply partial.</li>
 <li>☁️ <strong>Content-Hash Pinning:</strong> Sau khi verify signature, Lõi Rust tính BLAKE3 hash của policy bundle và pin vào <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">policy_hash_registry</code>. Mọi runtime OPA evaluation check <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">active_policy_hash</code> khớp pin — tránh in-memory policy tampering.</li>
 <li>🗄️ <strong>Tamper-Proof Audit Log (Policy Changes):</strong> Mọi thay đổi policy (upload bundle mới, revoke policy) đều được append vào Ed25519-signed Audit Log Merkle Chain. Không thể xóa lịch sử thay đổi mà không phá vỡ chain.</li>
 </ul>
-<h3 id="72-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum">7.2 M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)</h3>
+<h3 id="72-security-architecture-plugin-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum">7.2 [SECURITY] [ARCHITECTURE] [PLUGIN] M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)</h3>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Không có cá nhân đơn lẻ nào — kể cả CEO hay CISO — có thể đơn phương thay đổi OPA Policy sản xuất.</strong></p>
 <ul>
 <li>🗄️📱 <strong>HSM Quorum M-of-N (mặc định 2/3):</strong> Policy bundle mới phải được ký bởi ít nhất <strong>2 trong 3</strong> Hardware Security Key (YubiKey 5 FIPS / NFC-backed device) thuộc các C-Level khác nhau: <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CISO</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">CTO</code>, <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Legal</code>. Thiếu chữ ký → bundle bị server từ chối deploy.</li>
@@ -611,16 +620,16 @@
 <li>💻🖥️ <strong>Local OPA Enforcement in WASM Sandbox:</strong> Mỗi client <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> runtime sử dụng OPA WASM build (<code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">opa_wasm</code>) để enforce policy locally mà không cần round-trip server. WASM OPA binary được hash-pin và phân phối cùng với policy bundle — không thể substitute OPA engine.</li>
 <li>☁️ <strong>Policy Rollback Protection (Monotonic Version Counter):</strong> Policy bundle chứa <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">version: u64</code> (monotonic, không thể giảm). Nếu server cố push bundle version nhỏ hơn version hiện tại của client → client từ chối và alert <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">POLICY_ROLLBACK_ATTACK</code> vào Audit Log.</li>
 </ul>
-<h2 id="9-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity">9. Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</h2>
+<h2 id="9-architecture-plugin-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity">9. [ARCHITECTURE] [PLUGIN] Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Vấn đề:</strong> Triển khai mạng diện rộng VPS Enclave (SGX/Nitro/SEV) để load logic <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> Heavyweight đòi hỏi chứng chỉ DevOps/SME rất lớn, tạo rào cản quá cao cho doanh nghiệp tự host (Self-hosted).</p>
 <ul>
 <li>💻 <strong><code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> CLI (Zero-Touch Provisioning):</strong> Bọc toàn bộ các vòng lặp tay biên dịch hệ thống. IT Admin thuộc doanh nghiệp chỉ cần cung cấp Access Key (AWS/GCP), gõ 1 lệnh CLI, mọi tham chiếu Cloud sẽ tự động map 100%.</li>
 <li>☁️ <strong>Infrastructure as Code (Terraform):</strong> <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">tera-deploy</code> kích hoạt tự động các module ☁️ Terraform (đã pre-audited bởi TeraChat Core Team). Tự động spin-up Single-Binary Rust Daemons, set up VPC isolation, TLS Passthrough rule, và IAM roles với Least Privilege (Giới hạn quyền hẹp nhất có thể).</li>
 <li>🗄️ <strong>WASM Bundle Packaging (WBP) Auto-Build:</strong> Tiến trình Build Pipeline dịch Lõi Server Rust thành gói nhị phân tối ưu và băm tĩnh ra các mã BLAKE3 hash. Các mã này sẽ auto-inject trực tiếp vào OPA Policy Trust Store — CISO có checklist để apply mà không cần hiểu tầng Base Assembly.</li>
 </ul>
-<h2 id="8-static-egress-schema-declaration-manifest-contract-tapp-publisher">8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</h2>
+<h2 id="8-implementation-plugin-static-egress-schema-declaration-manifest-contract-tapp-publisher">8. [IMPLEMENTATION] [PLUGIN] Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)</h2>
 <p style="padding-left:1rem;border-left:4px solid var(--border);color:var(--text-secondary);"><strong>Yêu cầu:</strong> Mọi <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">.tapp</code> muốn publish lên TeraChat Marketplace <strong>bắt buộc</strong> khai báo tĩnh JSON Schema của tất cả payload dự định gửi qua <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">Egress_Outbox</code>. Không khai báo = không được publish.</p>
-<h3 id="81-egress-schema-trong-manifestjson">8.1 Egress Schema trong `manifest.json`</h3>
+<h3 id="81-implementation-plugin-egress-schema-trong-manifestjson">8.1 [IMPLEMENTATION] [PLUGIN] Egress Schema trong `manifest.json`</h3>
 <div style="background:#0d0d0d;padding:1rem;border-radius:6px;overflow-x:auto;border:1px solid var(--border);margin:1rem 0;"><pre style="margin:0;color:#a5b4fc;font-size:0.85rem;white-space:pre-wrap;word-break:break-word;"><code>{
   "tapp_id": "crm-integration-v2",
   "publisher": "Acme Corp",
@@ -650,7 +659,7 @@
 <li>📱💻 <strong>BLAKE3 Hash Verification Chain:</strong> Payload bytes sau khi qua JSON Schema validation → Egress Daemon tính <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">BLAKE3(validated_payload)</code> → đối chiếu with hash Lõi Rust cấp trước đó → mismatch = tampering detected → block + alert. Đây là lớp bảo vệ cuối cùng trước khi data ra Internet.</li>
 </ul>
 <hr style="border:0;border-top:1px solid var(--border);margin:2rem 0;">
-<h2 id="9-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag">9. Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</h2>
+<h2 id="9-architecture-plugin-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag">9. [ARCHITECTURE] [PLUGIN] Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag</h2>
 <ul>
 <li>☁️ <strong>System-Level Tapp Privileges & Deterministic Memory Chunking:</strong></li>
 <li>☁️ <strong>OPA Policy Enforcement (AppID com.terachat.diag Egress Blocked):</strong> Các ứng dụng chẩn đoán với ID <code style="color:var(--accent-pink);background:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:4px;">com.terachat.diag</code> được áp đặt chính sách OPA nghiêm ngặt: Tuyệt đối chặn mọi kết nối Egress ra internet (Egress Blocked). Dữ liệu chỉ được phép luân chuyển trong mạng Mesh nội bộ.</li>

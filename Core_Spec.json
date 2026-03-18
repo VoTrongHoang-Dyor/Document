@@ -8,6 +8,11 @@
       "heading": "Core_Spec.md — TeraChat Alpha v0.3.0",
       "content_blocks": [
         {
+          "type": "code",
+          "language": "yaml",
+          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-CORE\"\ntitle:    \"TeraChat — Core Technical Specification\"\nversion:  \"2.0\"\naudience: \"System Architect, Backend Engineer, Security Engineer\"\npurpose:  \"Đặc tả kiến trúc lõi hệ thống: Cryptography (MLS, E2EE), Mesh Network, Offline CRDT Sync, Server Infrastructure.\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về Crypto, bảo mật, MLS, E2EE, giao thức Mesh network, cơ chế đồng bộ CRDT, cấu trúc server.\""
+        },
+        {
           "type": "blockquote",
           "alert_type": "note",
           "lines": [
@@ -16,7 +21,7 @@
             "**Scope:** Infrastructure, Security, Cryptography, Network Protocols — Implementation-level only.",
             "**Last Updated:** 2026-03-11",
             "**Depends On:** *(root spec — no external deps)*",
-            "**Consumed By:** `Feature_Spec.md` · `Design.md` · `Web_Marketplace.md`"
+            "**Consumed By:** → TERA-FEAT · → TERA-DESIGN · → TERA-MKT"
           ]
         }
       ],
@@ -92,9 +97,9 @@
           "subsections": []
         },
         {
-          "id": "0-data-object-catalog-danh-mục-đối-tượng-dữ-liệu",
+          "id": "0-data-object-catalog-concept-danh-mục-đối-tượng-dữ-liệu",
           "level": 2,
-          "heading": "0. Data Object Catalog (Danh mục Đối tượng Dữ liệu)",
+          "heading": "0. Data Object Catalog [CONCEPT] (Danh mục Đối tượng Dữ liệu)",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -355,9 +360,9 @@
           ]
         },
         {
-          "id": "1-system-overview",
+          "id": "1-system-overview-concept-architecture",
           "level": 2,
-          "heading": "1. System Overview",
+          "heading": "1. System Overview [CONCEPT] [ARCHITECTURE]",
           "content_blocks": [],
           "subsections": [
             {
@@ -520,9 +525,9 @@
           ]
         },
         {
-          "id": "2-architectural-approach",
+          "id": "2-architectural-approach-architecture",
           "level": 2,
-          "heading": "2. Architectural Approach",
+          "heading": "2. Architectural Approach [ARCHITECTURE]",
           "content_blocks": [],
           "subsections": [
             {
@@ -1029,15 +1034,15 @@
           ]
         },
         {
-          "id": "3-infrastructure-control-plane",
+          "id": "3-architecture-implementation-infrastructure-control-plane",
           "level": 2,
-          "heading": "3. Infrastructure & Control Plane",
+          "heading": "3. [ARCHITECTURE] [IMPLEMENTATION] Infrastructure & Control Plane",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "31-deployment-topologies",
+              "id": "31-architecture-implementation-deployment-topologies",
               "level": 3,
-              "heading": "3.1 Deployment Topologies",
+              "heading": "3.1 [ARCHITECTURE] [IMPLEMENTATION] Deployment Topologies",
               "content_blocks": [
                 {
                   "type": "code",
@@ -1048,9 +1053,9 @@
               "subsections": []
             },
             {
-              "id": "35-lightweight-micro-core-relay",
+              "id": "35-architecture-implementation-lightweight-micro-core-relay",
               "level": 3,
-              "heading": "3.5 Lightweight Micro-Core Relay",
+              "heading": "3.5 [ARCHITECTURE] [IMPLEMENTATION] Lightweight Micro-Core Relay",
               "content_blocks": [
                 {
                   "type": "list",
@@ -1064,9 +1069,9 @@
               "subsections": []
             },
             {
-              "id": "36-zero-access-diagnostics-teradiag",
+              "id": "36-architecture-implementation-zero-access-diagnostics-teradiag",
               "level": 3,
-              "heading": "3.6 Zero-Access Diagnostics (TeraDiag)",
+              "heading": "3.6 [ARCHITECTURE] [IMPLEMENTATION] Zero-Access Diagnostics (TeraDiag)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -1105,9 +1110,9 @@
               "subsections": []
             },
             {
-              "id": "32-backend-services",
+              "id": "32-architecture-implementation-backend-services",
               "level": 3,
-              "heading": "3.2 Backend Services",
+              "heading": "3.2 [ARCHITECTURE] [IMPLEMENTATION] Backend Services",
               "content_blocks": [],
               "subsections": [
                 {
@@ -1256,9 +1261,9 @@
                   "subsections": []
                 },
                 {
-                  "id": "342-xử-lý-oom-kill-do-sqlite-wal-hydration-vps-resource-constraints",
+                  "id": "342-architecture-implementation-xử-lý-oom-kill-do-sqlite-wal-hydration-vps-resource-constraints",
                   "level": 4,
-                  "heading": "3.4.2 Xử lý OOM-Kill do SQLite WAL Hydration (VPS Resource Constraints)",
+                  "heading": "3.4.2 [ARCHITECTURE] [IMPLEMENTATION] Xử lý OOM-Kill do SQLite WAL Hydration (VPS Resource Constraints)",
                   "content_blocks": [
                     {
                       "type": "blockquote",
@@ -1281,9 +1286,9 @@
               ]
             },
             {
-              "id": "35-lightweight-micro-core-relay",
+              "id": "35-architecture-implementation-lightweight-micro-core-relay",
               "level": 3,
-              "heading": "3.5 Lightweight Micro-Core Relay",
+              "heading": "3.5 [ARCHITECTURE] [IMPLEMENTATION] Lightweight Micro-Core Relay",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -1356,9 +1361,9 @@
               ]
             },
             {
-              "id": "34-database-layer",
+              "id": "34-architecture-implementation-database-layer",
               "level": 3,
-              "heading": "3.4 Database Layer",
+              "heading": "3.4 [ARCHITECTURE] [IMPLEMENTATION] Database Layer",
               "content_blocks": [],
               "subsections": [
                 {
@@ -1397,15 +1402,15 @@
           ]
         },
         {
-          "id": "4-security-cryptography-engine",
+          "id": "4-security-architecture-security-cryptography-engine",
           "level": 2,
-          "heading": "4. Security & Cryptography Engine",
+          "heading": "4. [SECURITY] [ARCHITECTURE] Security & Cryptography Engine",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "41-key-management-system-hkms",
+              "id": "41-security-architecture-key-management-system-hkms",
               "level": 3,
-              "heading": "4.1 Key Management System (HKMS)",
+              "heading": "4.1 [SECURITY] [ARCHITECTURE] Key Management System (HKMS)",
               "content_blocks": [
                 {
                   "type": "code",
@@ -1492,9 +1497,9 @@
               ]
             },
             {
-              "id": "42-message-layer-security-mls-ietf-rfc-9420",
+              "id": "42-security-architecture-message-layer-security-mls-ietf-rfc-9420",
               "level": 3,
-              "heading": "4.2 Message Layer Security (MLS — IETF RFC 9420)",
+              "heading": "4.2 [SECURITY] [ARCHITECTURE] Message Layer Security (MLS — IETF RFC 9420)",
               "content_blocks": [],
               "subsections": [
                 {
@@ -1546,9 +1551,9 @@
                   "subsections": []
                 },
                 {
-                  "id": "46-soft-enclave-wasm-isolation-ram-scrambling-cold-boot-defense",
+                  "id": "46-security-architecture-soft-enclave-wasm-isolation-ram-scrambling-cold-boot-defense",
                   "level": 4,
-                  "heading": "4.6 Soft-Enclave WASM Isolation & RAM Scrambling (Cold Boot Defense)",
+                  "heading": "4.6 [SECURITY] [ARCHITECTURE] Soft-Enclave WASM Isolation & RAM Scrambling (Cold Boot Defense)",
                   "content_blocks": [
                     {
                       "type": "blockquote",
@@ -1588,9 +1593,9 @@
               ]
             },
             {
-              "id": "43-hardware-isolation-crypto-shredding",
+              "id": "43-security-architecture-hardware-isolation-crypto-shredding",
               "level": 3,
-              "heading": "4.3 Hardware Isolation & Crypto-Shredding",
+              "heading": "4.3 [SECURITY] [ARCHITECTURE] Hardware Isolation & Crypto-Shredding",
               "content_blocks": [],
               "subsections": [
                 {
@@ -2007,15 +2012,15 @@
           ]
         },
         {
-          "id": "5-network-communication-protocols",
+          "id": "5-security-implementation-network-communication-protocols",
           "level": 2,
-          "heading": "5. Network & Communication Protocols",
+          "heading": "5. [SECURITY] [IMPLEMENTATION] Network & Communication Protocols",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "51-real-time-messaging",
+              "id": "51-security-implementation-real-time-messaging",
               "level": 3,
-              "heading": "5.1 Real-time Messaging",
+              "heading": "5.1 [SECURITY] [IMPLEMENTATION] Real-time Messaging",
               "content_blocks": [],
               "subsections": [
                 {
@@ -2084,9 +2089,9 @@
               ]
             },
             {
-              "id": "52-survival-mesh-network-p2p-ble-50-wi-fi-direct",
+              "id": "52-security-implementation-survival-mesh-network-p2p-ble-50-wi-fi-direct",
               "level": 3,
-              "heading": "5.2 Survival Mesh Network (P2P, BLE 5.0, Wi-Fi Direct)",
+              "heading": "5.2 [SECURITY] [IMPLEMENTATION] Survival Mesh Network (P2P, BLE 5.0, Wi-Fi Direct)",
               "content_blocks": [],
               "subsections": [
                 {
@@ -2363,9 +2368,9 @@
               ]
             },
             {
-              "id": "56-clustered-mesh-topology-super-node-silent-election-chống-broadcast-storm",
+              "id": "56-security-implementation-clustered-mesh-topology-super-node-silent-election-chống-broadcast-storm",
               "level": 3,
-              "heading": "5.6 Clustered Mesh Topology & Super Node Silent Election (Chống Broadcast Storm)",
+              "heading": "5.6 [SECURITY] [IMPLEMENTATION] Clustered Mesh Topology & Super Node Silent Election (Chống Broadcast Storm)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -2382,9 +2387,9 @@
               "subsections": []
             },
             {
-              "id": "57-dò-tìm-nội-dung-tất-định-blind-content-addressable-oblivious-bloom-filter",
+              "id": "57-security-implementation-dò-tìm-nội-dung-tất-định-blind-content-addressable-oblivious-bloom-filter",
               "level": 3,
-              "heading": "5.7 Dò tìm Nội dung Tất định Blind Content-Addressable (Oblivious Bloom Filter)",
+              "heading": "5.7 [SECURITY] [IMPLEMENTATION] Dò tìm Nội dung Tất định Blind Content-Addressable (Oblivious Bloom Filter)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -2398,9 +2403,9 @@
               "subsections": []
             },
             {
-              "id": "58-truyền-tải-file-đa-kênh-mạng-mesh-teralink-multipath-data-mule",
+              "id": "58-security-implementation-truyền-tải-file-đa-kênh-mạng-mesh-teralink-multipath-data-mule",
               "level": 3,
-              "heading": "5.8 Truyền tải File đa kênh mạng Mesh (TeraLink Multipath Data Mule)",
+              "heading": "5.8 [SECURITY] [IMPLEMENTATION] Truyền tải File đa kênh mạng Mesh (TeraLink Multipath Data Mule)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -2414,9 +2419,9 @@
               "subsections": []
             },
             {
-              "id": "59-tiết-kiệm-năng-lượng-mạng-mesh-ibeacon-stealth-mode-gossip-broadcast",
+              "id": "59-security-implementation-tiết-kiệm-năng-lượng-mạng-mesh-ibeacon-stealth-mode-gossip-broadcast",
               "level": 3,
-              "heading": "5.9 Tiết kiệm Năng lượng Mạng Mesh (iBeacon Stealth Mode & Gossip Broadcast)",
+              "heading": "5.9 [SECURITY] [IMPLEMENTATION] Tiết kiệm Năng lượng Mạng Mesh (iBeacon Stealth Mode & Gossip Broadcast)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -2430,9 +2435,9 @@
               "subsections": []
             },
             {
-              "id": "591-single-frame-binary-serialization-for-mesh-recovery-chống-phân-mảnh-ble-50",
+              "id": "591-security-implementation-single-frame-binary-serialization-for-mesh-recovery-chống-phân-mảnh-ble-50",
               "level": 3,
-              "heading": "5.9.1 Single-Frame Binary Serialization for Mesh Recovery (Chống Phân mảnh BLE 5.0)",
+              "heading": "5.9.1 [SECURITY] [IMPLEMENTATION] Single-Frame Binary Serialization for Mesh Recovery (Chống Phân mảnh BLE 5.0)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2453,9 +2458,9 @@
               "subsections": []
             },
             {
-              "id": "592-zero-knowledge-metadata-masking-in-mesh-broadcast-chống-rò-rỉ-siêu-dữ-liệu-qua-sóng-vô-tuyến",
+              "id": "592-security-implementation-zero-knowledge-metadata-masking-in-mesh-broadcast-chống-rò-rỉ-siêu-dữ-liệu-qua-sóng-vô-tuyến",
               "level": 3,
-              "heading": "5.9.2 Zero-Knowledge Metadata Masking in Mesh Broadcast (Chống Rò rỉ Siêu dữ liệu qua Sóng vô tuyến)",
+              "heading": "5.9.2 [SECURITY] [IMPLEMENTATION] Zero-Knowledge Metadata Masking in Mesh Broadcast (Chống Rò rỉ Siêu dữ liệu qua Sóng vô tuyến)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2476,9 +2481,9 @@
               "subsections": []
             },
             {
-              "id": "593-stealth-wake-up-protocol-metadata-anonymization-chống-rò-rỉ-ngữ-cảnh-vị-trí-vật-lý",
+              "id": "593-security-implementation-stealth-wake-up-protocol-metadata-anonymization-chống-rò-rỉ-ngữ-cảnh-vị-trí-vật-lý",
               "level": 3,
-              "heading": "5.9.3 Stealth Wake-up Protocol — Metadata Anonymization (Chống Rò rỉ Ngữ cảnh & Vị trí Vật lý)",
+              "heading": "5.9.3 [SECURITY] [IMPLEMENTATION] Stealth Wake-up Protocol — Metadata Anonymization (Chống Rò rỉ Ngữ cảnh & Vị trí Vật lý)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2500,9 +2505,9 @@
               "subsections": []
             },
             {
-              "id": "594-darknet-signal-plane-ghost-mesh-chống-tấn-công-theo-dõi-phân-tích-lưu-lượng",
+              "id": "594-security-implementation-darknet-signal-plane-ghost-mesh-chống-tấn-công-theo-dõi-phân-tích-lưu-lượng",
               "level": 3,
-              "heading": "5.9.4 Darknet Signal Plane — Ghost Mesh (Chống Tấn công Theo dõi & Phân tích Lưu lượng)",
+              "heading": "5.9.4 [SECURITY] [IMPLEMENTATION] Darknet Signal Plane — Ghost Mesh (Chống Tấn công Theo dõi & Phân tích Lưu lượng)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2524,9 +2529,9 @@
               "subsections": []
             },
             {
-              "id": "510-mesh-anti-spam-dos-resilience",
+              "id": "510-security-implementation-mesh-anti-spam-dos-resilience",
               "level": 3,
-              "heading": "5.10 Mesh Anti-Spam & DoS Resilience",
+              "heading": "5.10 [SECURITY] [IMPLEMENTATION] Mesh Anti-Spam & DoS Resilience",
               "content_blocks": [],
               "subsections": [
                 {
@@ -2828,9 +2833,9 @@
               ]
             },
             {
-              "id": "5101-local-tombstone-vacuum-merged-vector-clock-toàn-vẹn-dag-chống-mất-dữ-liệu",
+              "id": "5101-security-implementation-local-tombstone-vacuum-merged-vector-clock-toàn-vẹn-dag-chống-mất-dữ-liệu",
               "level": 3,
-              "heading": "5.10.1 Local Tombstone Vacuum & Merged Vector Clock (Toàn vẹn DAG & Chống Mất dữ liệu)",
+              "heading": "5.10.1 [SECURITY] [IMPLEMENTATION] Local Tombstone Vacuum & Merged Vector Clock (Toàn vẹn DAG & Chống Mất dữ liệu)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2884,9 +2889,9 @@
               ]
             },
             {
-              "id": "5102-peer-assisted-epoch-re-induction-mls-treekem-chống-mù-mật-mã-sau-đồng-bộ",
+              "id": "5102-security-implementation-peer-assisted-epoch-re-induction-mls-treekem-chống-mù-mật-mã-sau-đồng-bộ",
               "level": 3,
-              "heading": "5.10.2 Peer-Assisted Epoch Re-induction — MLS TreeKEM (Chống Mù Mật mã Sau Đồng bộ)",
+              "heading": "5.10.2 [SECURITY] [IMPLEMENTATION] Peer-Assisted Epoch Re-induction — MLS TreeKEM (Chống Mù Mật mã Sau Đồng bộ)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2908,9 +2913,9 @@
               "subsections": []
             },
             {
-              "id": "511-webrtc-blind-relay-turn",
+              "id": "511-security-implementation-webrtc-blind-relay-turn",
               "level": 3,
-              "heading": "5.11 WebRTC Blind Relay (TURN)",
+              "heading": "5.11 [SECURITY] [IMPLEMENTATION] WebRTC Blind Relay (TURN)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -2925,9 +2930,9 @@
               "subsections": []
             },
             {
-              "id": "54-oob-mesh-ratchet-double-ratchet-vs-data-mule",
+              "id": "54-security-implementation-oob-mesh-ratchet-double-ratchet-vs-data-mule",
               "level": 3,
-              "heading": "5.4 OOB Mesh Ratchet (Double Ratchet vs Data Mule)",
+              "heading": "5.4 [SECURITY] [IMPLEMENTATION] OOB Mesh Ratchet (Double Ratchet vs Data Mule)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -2945,9 +2950,9 @@
               "subsections": []
             },
             {
-              "id": "512-phân-xử-phi-tập-trung-hậu-phân-mảnh-mạng-tie-breaker-hash-election",
+              "id": "512-security-implementation-phân-xử-phi-tập-trung-hậu-phân-mảnh-mạng-tie-breaker-hash-election",
               "level": 3,
-              "heading": "5.12 Phân xử Phi tập trung Hậu phân mảnh mạng (Tie-Breaker Hash Election)",
+              "heading": "5.12 [SECURITY] [IMPLEMENTATION] Phân xử Phi tập trung Hậu phân mảnh mạng (Tie-Breaker Hash Election)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2967,9 +2972,9 @@
               "subsections": []
             },
             {
-              "id": "513-rust-asynchronous-concurrency-architecture-ngăn-chặn-đóng-băng-ui-anr",
+              "id": "513-security-implementation-rust-asynchronous-concurrency-architecture-ngăn-chặn-đóng-băng-ui-anr",
               "level": 3,
-              "heading": "5.13 Rust Asynchronous Concurrency Architecture (Ngăn chặn Đóng băng UI / ANR)",
+              "heading": "5.13 [SECURITY] [IMPLEMENTATION] Rust Asynchronous Concurrency Architecture (Ngăn chặn Đóng băng UI / ANR)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -2990,9 +2995,9 @@
               "subsections": []
             },
             {
-              "id": "514-deterministic-state-convergence-hội-tụ-trạng-thái-toàn-mạng-lưới",
+              "id": "514-security-implementation-deterministic-state-convergence-hội-tụ-trạng-thái-toàn-mạng-lưới",
               "level": 3,
-              "heading": "5.14 Deterministic State Convergence (Hội tụ Trạng thái Toàn mạng lưới)",
+              "heading": "5.14 [SECURITY] [IMPLEMENTATION] Deterministic State Convergence (Hội tụ Trạng thái Toàn mạng lưới)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3013,9 +3018,9 @@
               "subsections": []
             },
             {
-              "id": "515-split-brain-đa-cấp-và-tụt-hậu-epoch-causal-fast-forward-frontier-discovery",
+              "id": "515-security-implementation-split-brain-đa-cấp-và-tụt-hậu-epoch-causal-fast-forward-frontier-discovery",
               "level": 3,
-              "heading": "5.15 Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)",
+              "heading": "5.15 [SECURITY] [IMPLEMENTATION] Split-Brain Đa cấp và Tụt hậu Epoch (Causal Fast-Forward & Frontier Discovery)",
               "content_blocks": [],
               "subsections": [
                 {
@@ -3055,9 +3060,9 @@
               ]
             },
             {
-              "id": "516-phân-nhánh-dữ-liệu-ghost-merge-tie-breaker-v2",
+              "id": "516-security-implementation-phân-nhánh-dữ-liệu-ghost-merge-tie-breaker-v2",
               "level": 3,
-              "heading": "5.16 Phân nhánh Dữ liệu Ghost Merge (Tie-Breaker V2)",
+              "heading": "5.16 [SECURITY] [IMPLEMENTATION] Phân nhánh Dữ liệu Ghost Merge (Tie-Breaker V2)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3078,9 +3083,9 @@
               "subsections": []
             },
             {
-              "id": "517-bảo-toàn-tính-vẹn-toàn-audit-trail-append-only-immutable-hash-chain",
+              "id": "517-security-implementation-bảo-toàn-tính-vẹn-toàn-audit-trail-append-only-immutable-hash-chain",
               "level": 3,
-              "heading": "5.17 Bảo toàn Tính vẹn toàn Audit Trail (Append-Only Immutable Hash Chain)",
+              "heading": "5.17 [SECURITY] [IMPLEMENTATION] Bảo toàn Tính vẹn toàn Audit Trail (Append-Only Immutable Hash Chain)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3103,9 +3108,9 @@
               "subsections": []
             },
             {
-              "id": "518-chống-rò-rỉ-company-key-qua-wasm-sandbox-kiến-trúc-data-diode-iso-27001-a612-a1313",
+              "id": "518-security-implementation-chống-rò-rỉ-company-key-qua-wasm-sandbox-kiến-trúc-data-diode-iso-27001-a612-a1313",
               "level": 3,
-              "heading": "5.18 Chống Rò rỉ `Company_Key` qua WASM Sandbox — Kiến trúc Data Diode (ISO 27001 A.6.1.2 / A.13.1.3)",
+              "heading": "5.18 [SECURITY] [IMPLEMENTATION] Chống Rò rỉ `Company_Key` qua WASM Sandbox — Kiến trúc Data Diode (ISO 27001 A.6.1.2 / A.13.1.3)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3195,9 +3200,9 @@
               ]
             },
             {
-              "id": "519-shadow-dag-protocol-conflict-resolution",
+              "id": "519-security-implementation-shadow-dag-protocol-conflict-resolution",
               "level": 3,
-              "heading": "5.19 Shadow DAG Protocol & Conflict Resolution",
+              "heading": "5.19 [SECURITY] [IMPLEMENTATION] Shadow DAG Protocol & Conflict Resolution",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3214,16 +3219,16 @@
               "subsections": []
             },
             {
-              "id": "520-streaming-cryptography-memory-bounds-large-file-transfer-10gb",
+              "id": "520-security-implementation-streaming-cryptography-memory-bounds-large-file-transfer-10gb",
               "level": 3,
-              "heading": "5.20 Streaming Cryptography & Memory Bounds — Large File Transfer (10GB+)",
+              "heading": "5.20 [SECURITY] [IMPLEMENTATION] Streaming Cryptography & Memory Bounds — Large File Transfer (10GB+)",
               "content_blocks": [],
               "subsections": []
             },
             {
-              "id": "521-adaptive-payload-gating-3-tier-spatial-connectivity-cổng-lọc-dữ-liệu-tương-thích",
+              "id": "521-security-implementation-adaptive-payload-gating-3-tier-spatial-connectivity-cổng-lọc-dữ-liệu-tương-thích",
               "level": 3,
-              "heading": "5.21 Adaptive Payload Gating — 3-Tier Spatial Connectivity (Cổng lọc Dữ liệu Tương thích)",
+              "heading": "5.21 [SECURITY] [IMPLEMENTATION] Adaptive Payload Gating — 3-Tier Spatial Connectivity (Cổng lọc Dữ liệu Tương thích)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3270,9 +3275,9 @@
               ]
             },
             {
-              "id": "522-dynamic-agent-routing-dar-universal-agentic-bridge-qua-wasm",
+              "id": "522-security-implementation-dynamic-agent-routing-dar-universal-agentic-bridge-qua-wasm",
               "level": 3,
-              "heading": "5.22 Dynamic Agent Routing (DAR) — Universal Agentic Bridge qua WASM",
+              "heading": "5.22 [SECURITY] [IMPLEMENTATION] Dynamic Agent Routing (DAR) — Universal Agentic Bridge qua WASM",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3304,9 +3309,9 @@
               ]
             },
             {
-              "id": "523-local-dual-mask-protocol-pii-metadata-sanitization",
+              "id": "523-security-implementation-local-dual-mask-protocol-pii-metadata-sanitization",
               "level": 3,
-              "heading": "5.23 Local Dual-Mask Protocol & PII Metadata Sanitization",
+              "heading": "5.23 [SECURITY] [IMPLEMENTATION] Local Dual-Mask Protocol & PII Metadata Sanitization",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3327,9 +3332,9 @@
               "subsections": []
             },
             {
-              "id": "524-ed25519-backed-manifest-integrity-protocol-emip",
+              "id": "524-security-implementation-ed25519-backed-manifest-integrity-protocol-emip",
               "level": 3,
-              "heading": "5.24 Ed25519-backed Manifest Integrity Protocol (EMIP)",
+              "heading": "5.24 [SECURITY] [IMPLEMENTATION] Ed25519-backed Manifest Integrity Protocol (EMIP)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3350,9 +3355,9 @@
               "subsections": []
             },
             {
-              "id": "525-hardened-spki-pinning-rustls-custom-verifier",
+              "id": "525-security-implementation-hardened-spki-pinning-rustls-custom-verifier",
               "level": 3,
-              "heading": "5.25 Hardened SPKI Pinning & Rustls Custom Verifier",
+              "heading": "5.25 [SECURITY] [IMPLEMENTATION] Hardened SPKI Pinning & Rustls Custom Verifier",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3373,9 +3378,9 @@
               "subsections": []
             },
             {
-              "id": "526-zero-footprint-streaming-egress-zfse-oom-prevention-cho-ai-file-transfer",
+              "id": "526-security-implementation-zero-footprint-streaming-egress-zfse-oom-prevention-cho-ai-file-transfer",
               "level": 3,
-              "heading": "5.26 Zero-Footprint Streaming Egress (ZFSE) — OOM Prevention cho AI File Transfer",
+              "heading": "5.26 [SECURITY] [IMPLEMENTATION] Zero-Footprint Streaming Egress (ZFSE) — OOM Prevention cho AI File Transfer",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3396,9 +3401,9 @@
               "subsections": []
             },
             {
-              "id": "527-edge-native-onnx-embedding-engine-vectorization-tại-biên",
+              "id": "527-security-implementation-edge-native-onnx-embedding-engine-vectorization-tại-biên",
               "level": 3,
-              "heading": "5.27 Edge-Native ONNX Embedding Engine — Vectorization tại Biên",
+              "heading": "5.27 [SECURITY] [IMPLEMENTATION] Edge-Native ONNX Embedding Engine — Vectorization tại Biên",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3419,9 +3424,9 @@
               "subsections": []
             },
             {
-              "id": "528-ephemeral-in-memory-vector-shield-bảo-mật-ram-cho-vector-index",
+              "id": "528-security-implementation-ephemeral-in-memory-vector-shield-bảo-mật-ram-cho-vector-index",
               "level": 3,
-              "heading": "5.28 Ephemeral In-memory Vector Shield — Bảo mật RAM cho Vector Index",
+              "heading": "5.28 [SECURITY] [IMPLEMENTATION] Ephemeral In-memory Vector Shield — Bảo mật RAM cho Vector Index",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3442,9 +3447,9 @@
               "subsections": []
             },
             {
-              "id": "529-tiered-hardware-aware-resource-governance-tharg",
+              "id": "529-security-implementation-tiered-hardware-aware-resource-governance-tharg",
               "level": 3,
-              "heading": "5.29 Tiered Hardware-Aware Resource Governance (THARG)",
+              "heading": "5.29 [SECURITY] [IMPLEMENTATION] Tiered Hardware-Aware Resource Governance (THARG)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3465,9 +3470,9 @@
               "subsections": []
             },
             {
-              "id": "530-opportunistic-background-checkpointing-obc",
+              "id": "530-security-implementation-opportunistic-background-checkpointing-obc",
               "level": 3,
-              "heading": "5.30 Opportunistic Background Checkpointing (OBC)",
+              "heading": "5.30 [SECURITY] [IMPLEMENTATION] Opportunistic Background Checkpointing (OBC)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3488,9 +3493,9 @@
               "subsections": []
             },
             {
-              "id": "531-strict-ast-sanitization-bridge-sasb-anti-xss-từ-ai-response",
+              "id": "531-security-implementation-strict-ast-sanitization-bridge-sasb-anti-xss-từ-ai-response",
               "level": 3,
-              "heading": "5.31 Strict AST Sanitization Bridge (SASB) — Anti-XSS từ AI Response",
+              "heading": "5.31 [SECURITY] [IMPLEMENTATION] Strict AST Sanitization Bridge (SASB) — Anti-XSS từ AI Response",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3511,9 +3516,9 @@
               "subsections": []
             },
             {
-              "id": "532-deterministic-unicode-canonicalization-zero-width-scrubbing",
+              "id": "532-security-implementation-deterministic-unicode-canonicalization-zero-width-scrubbing",
               "level": 3,
-              "heading": "5.32 Deterministic Unicode Canonicalization & Zero-Width Scrubbing",
+              "heading": "5.32 [SECURITY] [IMPLEMENTATION] Deterministic Unicode Canonicalization & Zero-Width Scrubbing",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3534,9 +3539,9 @@
               "subsections": []
             },
             {
-              "id": "533-edge-deterministic-entity-scanner-edes-nhận-diện-thực-thể-cục-bộ",
+              "id": "533-security-implementation-edge-deterministic-entity-scanner-edes-nhận-diện-thực-thể-cục-bộ",
               "level": 3,
-              "heading": "5.33 Edge Deterministic Entity Scanner (EDES) — Nhận diện Thực thể Cục bộ",
+              "heading": "5.33 [SECURITY] [IMPLEMENTATION] Edge Deterministic Entity Scanner (EDES) — Nhận diện Thực thể Cục bộ",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3557,9 +3562,9 @@
               "subsections": []
             },
             {
-              "id": "534-semantic-quarantine-entity-masking-cách-ly-thực-thể-nguy-hiểm",
+              "id": "534-security-implementation-semantic-quarantine-entity-masking-cách-ly-thực-thể-nguy-hiểm",
               "level": 3,
-              "heading": "5.34 Semantic Quarantine & Entity Masking — Cách ly Thực thể Nguy hiểm",
+              "heading": "5.34 [SECURITY] [IMPLEMENTATION] Semantic Quarantine & Entity Masking — Cách ly Thực thể Nguy hiểm",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3580,9 +3585,9 @@
               "subsections": []
             },
             {
-              "id": "535-hierarchical-crypto-shredding-atomic-state-purge-checkpoint-residue-elimination",
+              "id": "535-security-implementation-hierarchical-crypto-shredding-atomic-state-purge-checkpoint-residue-elimination",
               "level": 3,
-              "heading": "5.35 Hierarchical Crypto-Shredding & Atomic State Purge — Checkpoint Residue Elimination",
+              "heading": "5.35 [SECURITY] [IMPLEMENTATION] Hierarchical Crypto-Shredding & Atomic State Purge — Checkpoint Residue Elimination",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3603,9 +3608,9 @@
               "subsections": []
             },
             {
-              "id": "536-stateful-semantic-accumulator-ssa-retroactive-taint-chống-salami-attack",
+              "id": "536-security-implementation-stateful-semantic-accumulator-ssa-retroactive-taint-chống-salami-attack",
               "level": 3,
-              "heading": "5.36 Stateful Semantic Accumulator (SSA) & Retroactive Taint — Chống Salami Attack",
+              "heading": "5.36 [SECURITY] [IMPLEMENTATION] Stateful Semantic Accumulator (SSA) & Retroactive Taint — Chống Salami Attack",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3626,9 +3631,9 @@
               "subsections": []
             },
             {
-              "id": "537-full-context-passthrough-fcp-tunnel-kiến-trúc-unchained-ai",
+              "id": "537-security-implementation-full-context-passthrough-fcp-tunnel-kiến-trúc-unchained-ai",
               "level": 3,
-              "heading": "5.37 Full-Context Passthrough (FCP) Tunnel — Kiến trúc \"Unchained AI\"",
+              "heading": "5.37 [SECURITY] [IMPLEMENTATION] Full-Context Passthrough (FCP) Tunnel — Kiến trúc \"Unchained AI\"",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3723,9 +3728,9 @@
               ]
             },
             {
-              "id": "541-bảo-vệ-wasm-sandbox-chống-escaping-rce",
+              "id": "541-security-implementation-bảo-vệ-wasm-sandbox-chống-escaping-rce",
               "level": 3,
-              "heading": "5.41 Bảo vệ WASM Sandbox & Chống Escaping (RCE)",
+              "heading": "5.41 [SECURITY] [IMPLEMENTATION] Bảo vệ WASM Sandbox & Chống Escaping (RCE)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3747,9 +3752,9 @@
               "subsections": []
             },
             {
-              "id": "543-giải-pháp-time-based-cryptographic-hardening-state-machine-rate-limiting-chống-head-of-line-blocking-downgrade-attack",
+              "id": "543-security-implementation-giải-pháp-time-based-cryptographic-hardening-state-machine-rate-limiting-chống-head-of-line-blocking-downgrade-attack",
               "level": 3,
-              "heading": "5.43 Giải pháp: Time-Based Cryptographic Hardening & State Machine Rate-Limiting (Chống Head-of-Line Blocking & Downgrade Attack)",
+              "heading": "5.43 [SECURITY] [IMPLEMENTATION] Giải pháp: Time-Based Cryptographic Hardening & State Machine Rate-Limiting (Chống Head-of-Line Blocking & Downgrade Attack)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3763,9 +3768,9 @@
               "subsections": []
             },
             {
-              "id": "44-hybrid-pq-kem-kyber768-điểm-neo-lượng-tử",
+              "id": "44-security-architecture-hybrid-pq-kem-kyber768-điểm-neo-lượng-tử",
               "level": 3,
-              "heading": "4.4 Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử",
+              "heading": "4.4 [SECURITY] [ARCHITECTURE] Hybrid PQ-KEM (Kyber768) — Điểm Neo Lượng tử",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3780,9 +3785,9 @@
               "subsections": []
             },
             {
-              "id": "45-threshold-fido2-recovery-quorum-based-recovery",
+              "id": "45-security-architecture-threshold-fido2-recovery-quorum-based-recovery",
               "level": 3,
-              "heading": "4.5 Threshold FIDO2 Recovery (Quorum-based Recovery)",
+              "heading": "4.5 [SECURITY] [ARCHITECTURE] Threshold FIDO2 Recovery (Quorum-based Recovery)",
               "content_blocks": [
                 {
                   "type": "paragraph",
@@ -3801,9 +3806,9 @@
               "subsections": []
             },
             {
-              "id": "46-phân-mảnh-hạ-tầng-chữ-ký-phục-hồi-hybrid-cross-signing-cloud-escrow",
+              "id": "46-security-architecture-phân-mảnh-hạ-tầng-chữ-ký-phục-hồi-hybrid-cross-signing-cloud-escrow",
               "level": 3,
-              "heading": "4.6 Phân mảnh Hạ tầng Chữ ký & Phục hồi (Hybrid Cross-Signing & Cloud Escrow)",
+              "heading": "4.6 [SECURITY] [ARCHITECTURE] Phân mảnh Hạ tầng Chữ ký & Phục hồi (Hybrid Cross-Signing & Cloud Escrow)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3817,9 +3822,9 @@
               "subsections": []
             },
             {
-              "id": "47-bảo-vệ-toàn-vẹn-chống-replay-trong-mạng-mesh-blake3-merkle",
+              "id": "47-security-architecture-bảo-vệ-toàn-vẹn-chống-replay-trong-mạng-mesh-blake3-merkle",
               "level": 3,
-              "heading": "4.7 Bảo vệ Toàn vẹn & Chống Replay trong mạng Mesh (BLAKE3 & Merkle)",
+              "heading": "4.7 [SECURITY] [ARCHITECTURE] Bảo vệ Toàn vẹn & Chống Replay trong mạng Mesh (BLAKE3 & Merkle)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3833,9 +3838,9 @@
               "subsections": []
             },
             {
-              "id": "48-thảm-họa-zero-access-rogue-admin-multi-party-enterprise-escrow-kem",
+              "id": "48-security-architecture-thảm-họa-zero-access-rogue-admin-multi-party-enterprise-escrow-kem",
               "level": 3,
-              "heading": "4.8 Thảm họa \"Zero-Access\" & Rogue Admin (Multi-Party Enterprise Escrow KEM)",
+              "heading": "4.8 [SECURITY] [ARCHITECTURE] Thảm họa \"Zero-Access\" & Rogue Admin (Multi-Party Enterprise Escrow KEM)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3849,9 +3854,9 @@
               "subsections": []
             },
             {
-              "id": "49-giao-thức-đóng-băng-phân-xử-ký-quỹ-e2ee-khóa-thời-gian",
+              "id": "49-security-architecture-giao-thức-đóng-băng-phân-xử-ký-quỹ-e2ee-khóa-thời-gian",
               "level": 3,
-              "heading": "4.9 Giao thức Đóng băng Phân xử Ký quỹ E2EE & Khóa thời gian",
+              "heading": "4.9 [SECURITY] [ARCHITECTURE] Giao thức Đóng băng Phân xử Ký quỹ E2EE & Khóa thời gian",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -3872,9 +3877,9 @@
               "subsections": []
             },
             {
-              "id": "49-tấn-công-memory-dumpextraction-synchronous-zeroize-safe-pipeline-hardware-isolation",
+              "id": "49-security-architecture-tấn-công-memory-dumpextraction-synchronous-zeroize-safe-pipeline-hardware-isolation",
               "level": 3,
-              "heading": "4.9 Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)",
+              "heading": "4.9 [SECURITY] [ARCHITECTURE] Tấn công Memory Dump/Extraction (Synchronous Zeroize Safe Pipeline & Hardware Isolation)",
               "content_blocks": [],
               "subsections": [
                 {
@@ -3920,9 +3925,9 @@
               ]
             },
             {
-              "id": "410-giao-diện-ký-số-vật-lý-hybrid-multi-device-cross-signing-zkp-delegation",
+              "id": "410-security-architecture-giao-diện-ký-số-vật-lý-hybrid-multi-device-cross-signing-zkp-delegation",
               "level": 3,
-              "heading": "4.10 Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)",
+              "heading": "4.10 [SECURITY] [ARCHITECTURE] Giao diện Ký số Vật lý (Hybrid Multi-Device Cross-Signing & ZKP Delegation)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3936,9 +3941,9 @@
               "subsections": []
             },
             {
-              "id": "411-chế-độ-kiosk-ephemeral-session-vault-raii-zeroization",
+              "id": "411-security-architecture-chế-độ-kiosk-ephemeral-session-vault-raii-zeroization",
               "level": 3,
-              "heading": "4.11 Chế độ Kiosk (Ephemeral Session Vault & RAII Zeroization)",
+              "heading": "4.11 [SECURITY] [ARCHITECTURE] Chế độ Kiosk (Ephemeral Session Vault & RAII Zeroization)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3952,9 +3957,9 @@
               "subsections": []
             },
             {
-              "id": "410-ephemeral-session-provisioning-role-based-vault-kiosk-mode",
+              "id": "410-security-architecture-ephemeral-session-provisioning-role-based-vault-kiosk-mode",
               "level": 3,
-              "heading": "4.10 Ephemeral Session Provisioning & Role-Based Vault (Kiosk Mode)",
+              "heading": "4.10 [SECURITY] [ARCHITECTURE] Ephemeral Session Provisioning & Role-Based Vault (Kiosk Mode)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3968,9 +3973,9 @@
               "subsections": []
             },
             {
-              "id": "46-zkp-rate-limiting-bảng-nullifier-voprf-chống-spam-ẩn-danh",
+              "id": "46-security-architecture-zkp-rate-limiting-bảng-nullifier-voprf-chống-spam-ẩn-danh",
               "level": 3,
-              "heading": "4.6 ZKP Rate-Limiting & Bảng Nullifier VOPRF — Chống Spam Ẩn danh",
+              "heading": "4.6 [SECURITY] [ARCHITECTURE] ZKP Rate-Limiting & Bảng Nullifier VOPRF — Chống Spam Ẩn danh",
               "content_blocks": [
                 {
                   "type": "list",
@@ -3985,9 +3990,9 @@
               "subsections": []
             },
             {
-              "id": "411-cryptographic-nullifier-sets-idp-linked-token-revocation",
+              "id": "411-security-architecture-cryptographic-nullifier-sets-idp-linked-token-revocation",
               "level": 3,
-              "heading": "4.11 Cryptographic Nullifier Sets & IdP-Linked Token Revocation",
+              "heading": "4.11 [SECURITY] [ARCHITECTURE] Cryptographic Nullifier Sets & IdP-Linked Token Revocation",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4001,9 +4006,9 @@
               "subsections": []
             },
             {
-              "id": "47-nghịch-lý-mã-nguồn-mở-và-compiler-level-guards",
+              "id": "47-security-architecture-nghịch-lý-mã-nguồn-mở-và-compiler-level-guards",
               "level": 3,
-              "heading": "4.7 Nghịch lý Mã nguồn Mở và Compiler-Level Guards",
+              "heading": "4.7 [SECURITY] [ARCHITECTURE] Nghịch lý Mã nguồn Mở và Compiler-Level Guards",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4051,9 +4056,9 @@
               ]
             },
             {
-              "id": "48-identity-key-escrow-sovereignty-first-key-recovery",
+              "id": "48-security-architecture-identity-key-escrow-sovereignty-first-key-recovery",
               "level": 3,
-              "heading": "4.8 Identity & Key Escrow — Sovereignty-First Key Recovery",
+              "heading": "4.8 [SECURITY] [ARCHITECTURE] Identity & Key Escrow — Sovereignty-First Key Recovery",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4068,9 +4073,9 @@
               "subsections": []
             },
             {
-              "id": "49-searchable-symmetric-encryption-sse-forward-secrecy",
+              "id": "49-security-architecture-searchable-symmetric-encryption-sse-forward-secrecy",
               "level": 3,
-              "heading": "4.9 Searchable Symmetric Encryption (SSE) & Forward Secrecy",
+              "heading": "4.9 [SECURITY] [ARCHITECTURE] Searchable Symmetric Encryption (SSE) & Forward Secrecy",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4120,15 +4125,15 @@
           ]
         },
         {
-          "id": "6-api-secret-management",
+          "id": "6-architecture-implementation-api-secret-management",
           "level": 2,
-          "heading": "6. API Secret Management",
+          "heading": "6. [ARCHITECTURE] [IMPLEMENTATION] API Secret Management",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "61-e2ee-api-secret-vault-cryptographic-binding",
+              "id": "61-architecture-implementation-e2ee-api-secret-vault-cryptographic-binding",
               "level": 3,
-              "heading": "6.1 E2EE API Secret Vault & Cryptographic Binding",
+              "heading": "6.1 [ARCHITECTURE] [IMPLEMENTATION] E2EE API Secret Vault & Cryptographic Binding",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4143,9 +4148,9 @@
               "subsections": []
             },
             {
-              "id": "62-phân-xử-nội-dung-trong-môi-trường-zero-knowledge-blind-dag-store",
+              "id": "62-architecture-implementation-phân-xử-nội-dung-trong-môi-trường-zero-knowledge-blind-dag-store",
               "level": 3,
-              "heading": "6.2 Phân xử Nội dung trong Môi trường Zero-Knowledge (Blind DAG Store)",
+              "heading": "6.2 [ARCHITECTURE] [IMPLEMENTATION] Phân xử Nội dung trong Môi trường Zero-Knowledge (Blind DAG Store)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4159,9 +4164,9 @@
               "subsections": []
             },
             {
-              "id": "63-xung-đột-audit-log-không-nhất-quán-split-brain-resolution",
+              "id": "63-architecture-implementation-xung-đột-audit-log-không-nhất-quán-split-brain-resolution",
               "level": 3,
-              "heading": "6.3 Xung đột Audit Log không nhất quán (Split-Brain Resolution)",
+              "heading": "6.3 [ARCHITECTURE] [IMPLEMENTATION] Xung đột Audit Log không nhất quán (Split-Brain Resolution)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4175,9 +4180,9 @@
               "subsections": []
             },
             {
-              "id": "64-asynchronous-treekem-với-epoch-forking-deterministic-merge-đứt-gãy-mls",
+              "id": "64-architecture-implementation-asynchronous-treekem-với-epoch-forking-deterministic-merge-đứt-gãy-mls",
               "level": 3,
-              "heading": "6.4 Asynchronous TreeKEM với Epoch Forking & Deterministic Merge (Đứt gãy MLS)",
+              "heading": "6.4 [ARCHITECTURE] [IMPLEMENTATION] Asynchronous TreeKEM với Epoch Forking & Deterministic Merge (Đứt gãy MLS)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4192,9 +4197,9 @@
               "subsections": []
             },
             {
-              "id": "65-hiệu-năng-xử-lý-đồ-thị-tại-biên-client-side-in-memory-dag",
+              "id": "65-architecture-implementation-hiệu-năng-xử-lý-đồ-thị-tại-biên-client-side-in-memory-dag",
               "level": 3,
-              "heading": "6.5 Hiệu năng Xử lý Đồ thị tại Biên (Client-Side In-Memory DAG)",
+              "heading": "6.5 [ARCHITECTURE] [IMPLEMENTATION] Hiệu năng Xử lý Đồ thị tại Biên (Client-Side In-Memory DAG)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4210,15 +4215,15 @@
           ]
         },
         {
-          "id": "7-cross-cluster-federation-enterprise-deployment",
+          "id": "7-performance-implementation-cross-cluster-federation-enterprise-deployment",
           "level": 2,
-          "heading": "7. Cross-Cluster Federation & Enterprise Deployment",
+          "heading": "7. [PERFORMANCE] [IMPLEMENTATION] Cross-Cluster Federation & Enterprise Deployment",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "71-cross-cluster-federation-handshake-protocol",
+              "id": "71-performance-implementation-cross-cluster-federation-handshake-protocol",
               "level": 3,
-              "heading": "7.1 Cross-Cluster Federation Handshake Protocol",
+              "heading": "7.1 [PERFORMANCE] [IMPLEMENTATION] Cross-Cluster Federation Handshake Protocol",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4234,9 +4239,9 @@
               "subsections": []
             },
             {
-              "id": "72-federated-opa-policy-engine-circuit-breaker",
+              "id": "72-performance-implementation-federated-opa-policy-engine-circuit-breaker",
               "level": 3,
-              "heading": "7.2 Federated OPA Policy Engine & Circuit Breaker",
+              "heading": "7.2 [PERFORMANCE] [IMPLEMENTATION] Federated OPA Policy Engine & Circuit Breaker",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4250,9 +4255,9 @@
               "subsections": []
             },
             {
-              "id": "73-immutable-infrastructure-as-code-iac-orchestration-b2b-1-touch",
+              "id": "73-performance-implementation-immutable-infrastructure-as-code-iac-orchestration-b2b-1-touch",
               "level": 3,
-              "heading": "7.3 Immutable Infrastructure-as-Code (IaC) Orchestration — B2B 1-Touch",
+              "heading": "7.3 [PERFORMANCE] [IMPLEMENTATION] Immutable Infrastructure-as-Code (IaC) Orchestration — B2B 1-Touch",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4268,9 +4273,9 @@
               "subsections": []
             },
             {
-              "id": "74-secure-workspace-bootstrap-hkms",
+              "id": "74-performance-implementation-secure-workspace-bootstrap-hkms",
               "level": 3,
-              "heading": "7.4 Secure Workspace Bootstrap & HKMS",
+              "heading": "7.4 [PERFORMANCE] [IMPLEMENTATION] Secure Workspace Bootstrap & HKMS",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4285,9 +4290,9 @@
               "subsections": []
             },
             {
-              "id": "75-push-key-rotation-hardware-backed-key-storage",
+              "id": "75-performance-implementation-push-key-rotation-hardware-backed-key-storage",
               "level": 3,
-              "heading": "7.5 Push Key Rotation & Hardware-Backed Key Storage",
+              "heading": "7.5 [PERFORMANCE] [IMPLEMENTATION] Push Key Rotation & Hardware-Backed Key Storage",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4303,15 +4308,15 @@
           ]
         },
         {
-          "id": "8-ai-infrastructure-security-legal-compliance",
+          "id": "8-architecture-implementation-ai-infrastructure-security-legal-compliance",
           "level": 2,
-          "heading": "8. AI Infrastructure Security & Legal Compliance",
+          "heading": "8. [ARCHITECTURE] [IMPLEMENTATION] AI Infrastructure Security & Legal Compliance",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "81-soft-enclave-isolation-ai-worker-security",
+              "id": "81-architecture-implementation-soft-enclave-isolation-ai-worker-security",
               "level": 3,
-              "heading": "8.1 Soft-Enclave Isolation — AI Worker Security",
+              "heading": "8.1 [ARCHITECTURE] [IMPLEMENTATION] Soft-Enclave Isolation — AI Worker Security",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4325,9 +4330,9 @@
               "subsections": []
             },
             {
-              "id": "82-threshold-cryptography-escrow-trích-xuất-pháp-lý-không-backdoor",
+              "id": "82-architecture-implementation-threshold-cryptography-escrow-trích-xuất-pháp-lý-không-backdoor",
               "level": 3,
-              "heading": "8.2 Threshold Cryptography Escrow (Trích xuất Pháp lý Không Backdoor)",
+              "heading": "8.2 [ARCHITECTURE] [IMPLEMENTATION] Threshold Cryptography Escrow (Trích xuất Pháp lý Không Backdoor)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4341,9 +4346,9 @@
               "subsections": []
             },
             {
-              "id": "83-kms-bootstrap-ritual-multi-sig-hardware-fragments",
+              "id": "83-architecture-implementation-kms-bootstrap-ritual-multi-sig-hardware-fragments",
               "level": 3,
-              "heading": "8.3 KMS Bootstrap Ritual & Multi-Sig Hardware Fragments",
+              "heading": "8.3 [ARCHITECTURE] [IMPLEMENTATION] KMS Bootstrap Ritual & Multi-Sig Hardware Fragments",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4357,9 +4362,9 @@
               "subsections": []
             },
             {
-              "id": "84-immutable-audit-log-append-only-hash-chain",
+              "id": "84-architecture-implementation-immutable-audit-log-append-only-hash-chain",
               "level": 3,
-              "heading": "8.4 Immutable Audit Log & Append-Only Hash Chain",
+              "heading": "8.4 [ARCHITECTURE] [IMPLEMENTATION] Immutable Audit Log & Append-Only Hash Chain",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4375,15 +4380,15 @@
           ]
         },
         {
-          "id": "9-lưu-trữ-và-khôi-phục-định-danh-e2ee-cloudprivate-server-sync",
+          "id": "9-performance-implementation-lưu-trữ-và-khôi-phục-định-danh-e2ee-cloudprivate-server-sync",
           "level": 2,
-          "heading": "9. Lưu trữ và Khôi phục Định danh E2EE (Cloud/Private Server Sync)",
+          "heading": "9. [PERFORMANCE] [IMPLEMENTATION] Lưu trữ và Khôi phục Định danh E2EE (Cloud/Private Server Sync)",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "91-đồng-bộ-hóa-dữ-liệu-mã-hóa-e2ee-cloud-backup",
+              "id": "91-performance-implementation-đồng-bộ-hóa-dữ-liệu-mã-hóa-e2ee-cloud-backup",
               "level": 3,
-              "heading": "9.1 Đồng bộ hóa Dữ liệu Mã hóa (E2EE Cloud Backup)",
+              "heading": "9.1 [PERFORMANCE] [IMPLEMENTATION] Đồng bộ hóa Dữ liệu Mã hóa (E2EE Cloud Backup)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -4397,9 +4402,9 @@
               "subsections": []
             },
             {
-              "id": "92-truy-cập-bộ-nhớ-thời-gian-hằng-số-side-channel-timing-attack-memory-dump-defense",
+              "id": "92-performance-implementation-truy-cập-bộ-nhớ-thời-gian-hằng-số-side-channel-timing-attack-memory-dump-defense",
               "level": 3,
-              "heading": "9.2 Truy cập Bộ nhớ Thời gian Hằng số (Side-Channel Timing Attack & Memory Dump Defense)",
+              "heading": "9.2 [PERFORMANCE] [IMPLEMENTATION] Truy cập Bộ nhớ Thời gian Hằng số (Side-Channel Timing Attack & Memory Dump Defense)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4420,9 +4425,9 @@
               "subsections": []
             },
             {
-              "id": "93-lock-free-seqlock-chống-dos-futex-từ-tapp",
+              "id": "93-performance-implementation-lock-free-seqlock-chống-dos-futex-từ-tapp",
               "level": 3,
-              "heading": "9.3 Lock-Free Seqlock (Chống DoS Futex từ .tapp)",
+              "heading": "9.3 [PERFORMANCE] [IMPLEMENTATION] Lock-Free Seqlock (Chống DoS Futex từ .tapp)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4443,9 +4448,9 @@
               "subsections": []
             },
             {
-              "id": "94-generational-seqlock-futex-synchronization-use-after-free-defense",
+              "id": "94-performance-implementation-generational-seqlock-futex-synchronization-use-after-free-defense",
               "level": 3,
-              "heading": "9.4 Generational Seqlock + Futex Synchronization (Use-After-Free Defense)",
+              "heading": "9.4 [PERFORMANCE] [IMPLEMENTATION] Generational Seqlock + Futex Synchronization (Use-After-Free Defense)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4466,9 +4471,9 @@
               "subsections": []
             },
             {
-              "id": "95-gian-lận-logic-giấy-phép-cryptographic-entanglement-o-llvm-obfuscation",
+              "id": "95-performance-implementation-gian-lận-logic-giấy-phép-cryptographic-entanglement-o-llvm-obfuscation",
               "level": 3,
-              "heading": "9.5 Gian lận Logic Giấy phép (Cryptographic Entanglement & O-LLVM Obfuscation)",
+              "heading": "9.5 [PERFORMANCE] [IMPLEMENTATION] Gian lận Logic Giấy phép (Cryptographic Entanglement & O-LLVM Obfuscation)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4489,9 +4494,9 @@
               "subsections": []
             },
             {
-              "id": "96-tấn-công-quay-ngược-thời-gian-monotonic-counter-hardware-backed-validation",
+              "id": "96-performance-implementation-tấn-công-quay-ngược-thời-gian-monotonic-counter-hardware-backed-validation",
               "level": 3,
-              "heading": "9.6 Tấn công Quay ngược Thời gian (Monotonic Counter Hardware-Backed Validation)",
+              "heading": "9.6 [PERFORMANCE] [IMPLEMENTATION] Tấn công Quay ngược Thời gian (Monotonic Counter Hardware-Backed Validation)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4512,9 +4517,9 @@
               "subsections": []
             },
             {
-              "id": "97-khôi-phục-ngoại-tuyến-và-chống-nhân-bản-hsm-sub-ca-anti-cloning",
+              "id": "97-performance-implementation-khôi-phục-ngoại-tuyến-và-chống-nhân-bản-hsm-sub-ca-anti-cloning",
               "level": 3,
-              "heading": "9.7 Khôi phục Ngoại tuyến và Chống Nhân bản (HSM Sub-CA Anti-Cloning)",
+              "heading": "9.7 [PERFORMANCE] [IMPLEMENTATION] Khôi phục Ngoại tuyến và Chống Nhân bản (HSM Sub-CA Anti-Cloning)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4535,9 +4540,9 @@
               "subsections": []
             },
             {
-              "id": "98-tấn-công-freeze-and-restore-tpm2-quote-liveness-challenge",
+              "id": "98-performance-implementation-tấn-công-freeze-and-restore-tpm2-quote-liveness-challenge",
               "level": 3,
-              "heading": "9.8 Tấn công Freeze-and-Restore (TPM2_Quote Liveness Challenge)",
+              "heading": "9.8 [PERFORMANCE] [IMPLEMENTATION] Tấn công Freeze-and-Restore (TPM2_Quote Liveness Challenge)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4558,9 +4563,9 @@
               "subsections": []
             },
             {
-              "id": "99-blind-relay-isolation-bảo-vệ-toàn-vẹn-dữ-liệu-tại-biên",
+              "id": "99-performance-implementation-blind-relay-isolation-bảo-vệ-toàn-vẹn-dữ-liệu-tại-biên",
               "level": 3,
-              "heading": "9.9 Blind Relay Isolation (Bảo vệ Toàn vẹn Dữ liệu tại Biên)",
+              "heading": "9.9 [PERFORMANCE] [IMPLEMENTATION] Blind Relay Isolation (Bảo vệ Toàn vẹn Dữ liệu tại Biên)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4581,9 +4586,9 @@
               "subsections": []
             },
             {
-              "id": "910-giao-thức-bằng-chứng-ém-nhẹm-proof-of-withholding",
+              "id": "910-performance-implementation-giao-thức-bằng-chứng-ém-nhẹm-proof-of-withholding",
               "level": 3,
-              "heading": "9.10 Giao thức Bằng chứng Ém nhẹm (Proof of Withholding)",
+              "heading": "9.10 [PERFORMANCE] [IMPLEMENTATION] Giao thức Bằng chứng Ém nhẹm (Proof of Withholding)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -4602,11 +4607,11 @@
                 },
                 {
                   "type": "paragraph",
-                  "text": "Xem Feature_Spec.md cho App-layer. Xem Function.md cho Product flows."
+                  "text": "Xem → TERA-FEAT cho App-layer. Xem → TERA-FUNC cho Product flows."
                 },
                 {
                   "type": "paragraph",
-                  "text": "Xem Feature_Spec.md cho App-layer. Xem Function.md cho Product flows."
+                  "text": "Xem → TERA-FEAT cho App-layer. Xem → TERA-FUNC cho Product flows."
                 }
               ],
               "subsections": []
@@ -4824,7 +4829,7 @@
                 },
                 {
                   "type": "paragraph",
-                  "text": "Xem Feature_Spec.md cho App-layer. Xem Function.md cho Product flows."
+                  "text": "Xem → TERA-FEAT cho App-layer. Xem → TERA-FUNC cho Product flows."
                 }
               ],
               "subsections": []
@@ -5051,7 +5056,7 @@
                 },
                 {
                   "type": "paragraph",
-                  "text": "Xem Feature_Spec.md cho Client App-layer. Xem Function.md cho Product flows."
+                  "text": "Xem → TERA-FEAT cho Client App-layer. Xem → TERA-FUNC cho Product flows."
                 }
               ],
               "subsections": []
@@ -5587,7 +5592,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Xem Feature_Spec.md cho client implementation. Xem Design.md cho UX states."
+              "text": "Xem → TERA-FEAT cho client implementation. Xem → TERA-DESIGN cho UX states."
             }
           ],
           "subsections": []

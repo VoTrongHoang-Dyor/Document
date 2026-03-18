@@ -8,6 +8,11 @@
       "heading": "Web_Marketplace.md — TeraChat Alpha v0.3.0",
       "content_blocks": [
         {
+          "type": "code",
+          "language": "yaml",
+          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-MKT\"\ntitle:    \"TeraChat — Web Marketplace & Extensions\"\nversion:  \"2.0\"\naudience: \"Platform Engineer, Plugin Developer, Security Auditor\"\npurpose:  \"Đặc tả vòng đời plugin .tapp, sandbox WASM, cơ chế bảo mật (OPA, Egress Circuit Breaker) và quy trình phát hành (Publishing).\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về phát triển tiện ích .tapp, WASM sandbox, Marketplace, cơ chế bảo mật plugin, hoặc quản lý extension.\""
+        },
+        {
           "type": "blockquote",
           "alert_type": "note",
           "lines": [
@@ -15,7 +20,7 @@
             "**Audience:** Platform Engineer · Plugin/App Dev · Security Auditor",
             "**Scope:** `.tapp` Plugin Lifecycle, Signature Verification, OPA Policy Distribution, WASM Runtime Limits",
             "**Last Updated:** 2026-03-11",
-            "**Depends On:** `Core_Spec.md` §5.24 (EMIP Plugin Integrity), `Feature_Spec.md` §8.1 (WASM Sandbox)",
+            "**Depends On:** → TERA-CORE §5.24 (EMIP Plugin Integrity), → TERA-FEAT §8.1 (WASM Sandbox)",
             "**Consumed By:** Admin Console plugin management UI"
           ]
         }
@@ -86,9 +91,9 @@
           "subsections": []
         },
         {
-          "id": "1-decentralized-plugin-provisioning-signature-verification",
+          "id": "1-architecture-plugin-decentralized-plugin-provisioning-signature-verification",
           "level": 2,
-          "heading": "1. Decentralized Plugin Provisioning & Signature Verification",
+          "heading": "1. [ARCHITECTURE] [PLUGIN] Decentralized Plugin Provisioning & Signature Verification",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -100,9 +105,9 @@
           ],
           "subsections": [
             {
-              "id": "11-kiến-trúc-phân-phối-manifest-driven-wasm-distribution",
+              "id": "11-architecture-plugin-kiến-trúc-phân-phối-manifest-driven-wasm-distribution",
               "level": 3,
-              "heading": "1.1 Kiến trúc Phân phối (Manifest-driven WASM Distribution)",
+              "heading": "1.1 [ARCHITECTURE] [PLUGIN] Kiến trúc Phân phối (Manifest-driven WASM Distribution)",
               "content_blocks": [
                 {
                   "type": "list",
@@ -116,9 +121,9 @@
               "subsections": []
             },
             {
-              "id": "12-ed25519-signature-verification",
+              "id": "12-architecture-plugin-ed25519-signature-verification",
               "level": 3,
-              "heading": "1.2 Ed25519 Signature Verification",
+              "heading": "1.2 [ARCHITECTURE] [PLUGIN] Ed25519 Signature Verification",
               "content_blocks": [
                 {
                   "type": "list",
@@ -134,9 +139,9 @@
               "subsections": []
             },
             {
-              "id": "13-opa-policy-injection",
+              "id": "13-architecture-plugin-opa-policy-injection",
               "level": 3,
-              "heading": "1.3 OPA Policy Injection",
+              "heading": "1.3 [ARCHITECTURE] [PLUGIN] OPA Policy Injection",
               "content_blocks": [
                 {
                   "type": "list",
@@ -150,9 +155,9 @@
               "subsections": []
             },
             {
-              "id": "14-publisher-trust-tiers",
+              "id": "14-architecture-plugin-publisher-trust-tiers",
               "level": 3,
-              "heading": "1.4 Publisher Trust Tiers",
+              "heading": "1.4 [ARCHITECTURE] [PLUGIN] Publisher Trust Tiers",
               "content_blocks": [
                 {
                   "type": "table",
@@ -193,9 +198,9 @@
               "subsections": []
             },
             {
-              "id": "15-revocation-emergency-kill-switch",
+              "id": "15-architecture-plugin-revocation-emergency-kill-switch",
               "level": 3,
-              "heading": "1.5 Revocation & Emergency Kill-switch",
+              "heading": "1.5 [ARCHITECTURE] [PLUGIN] Revocation & Emergency Kill-switch",
               "content_blocks": [
                 {
                   "type": "list",
@@ -211,9 +216,9 @@
           ]
         },
         {
-          "id": "2-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration",
+          "id": "2-security-plugin-ngăn-chặn-rò-rỉ-dữ-liệu-qua-ai-extension-wasm-data-exfiltration",
           "level": 2,
-          "heading": "2. Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)",
+          "heading": "2. [SECURITY] [PLUGIN] Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -234,9 +239,9 @@
           "subsections": []
         },
         {
-          "id": "3-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze",
+          "id": "3-performance-plugin-tối-ưu-hiệu-năng-wasm-plugin-cpu-bound-task-freeze",
           "level": 2,
-          "heading": "3. Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)",
+          "heading": "3. [PERFORMANCE] [PLUGIN] Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -257,9 +262,9 @@
           "subsections": []
         },
         {
-          "id": "4-automated-static-scan-security-manifest-audit",
+          "id": "4-security-plugin-automated-static-scan-security-manifest-audit",
           "level": 2,
-          "heading": "4. Automated Static Scan & Security Manifest Audit",
+          "heading": "4. [SECURITY] [PLUGIN] Automated Static Scan & Security Manifest Audit",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -279,9 +284,9 @@
           ],
           "subsections": [
             {
-              "id": "42-heuristics-scanner-engine-emip-immutable-distribution",
+              "id": "42-security-plugin-heuristics-scanner-engine-emip-immutable-distribution",
               "level": 4,
-              "heading": "4.2 Heuristics Scanner Engine & EMIP Immutable Distribution",
+              "heading": "4.2 [SECURITY] [PLUGIN] Heuristics Scanner Engine & EMIP Immutable Distribution",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -304,9 +309,9 @@
           ]
         },
         {
-          "id": "5-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích",
+          "id": "5-security-os-constraint-plugin-mandatory-capability-based-wasm-sandboxing-zero-trust-tiện-ích",
           "level": 2,
-          "heading": "5. Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích",
+          "heading": "5. [SECURITY] [OS-CONSTRAINT] [PLUGIN] Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -401,9 +406,9 @@
           ]
         },
         {
-          "id": "6-dlp-bypass-prevention-wasm-egress-circuit-breaker",
+          "id": "6-security-plugin-dlp-bypass-prevention-wasm-egress-circuit-breaker",
           "level": 2,
-          "heading": "6. DLP Bypass Prevention — WASM Egress Circuit Breaker",
+          "heading": "6. [SECURITY] [PLUGIN] DLP Bypass Prevention — WASM Egress Circuit Breaker",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -443,9 +448,9 @@
           ]
         },
         {
-          "id": "7-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82",
+          "id": "7-security-architecture-plugin-policy-integrity-immutable-cryptographic-opa-artifacts-iso-27001-a82",
           "level": 2,
-          "heading": "7. Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)",
+          "heading": "7. [SECURITY] [ARCHITECTURE] [PLUGIN] Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -457,9 +462,9 @@
           ],
           "subsections": [
             {
-              "id": "71-ed25519-signed-policy-bundles",
+              "id": "71-security-architecture-plugin-ed25519-signed-policy-bundles",
               "level": 3,
-              "heading": "7.1 Ed25519 Signed Policy Bundles",
+              "heading": "7.1 [SECURITY] [ARCHITECTURE] [PLUGIN] Ed25519 Signed Policy Bundles",
               "content_blocks": [
                 {
                   "type": "list",
@@ -473,9 +478,9 @@
               "subsections": []
             },
             {
-              "id": "72-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum",
+              "id": "72-security-architecture-plugin-m-of-n-hardware-backed-policy-consensus-multi-sig-quorum",
               "level": 3,
-              "heading": "7.2 M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)",
+              "heading": "7.2 [SECURITY] [ARCHITECTURE] [PLUGIN] M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)",
               "content_blocks": [
                 {
                   "type": "blockquote",
@@ -499,9 +504,9 @@
           ]
         },
         {
-          "id": "9-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity",
+          "id": "9-architecture-plugin-zero-touch-cli-provisioning-khắc-phục-rủi-ro-kiến-thức-hạ-tầng-deployment-complexity",
           "level": 2,
-          "heading": "9. Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)",
+          "heading": "9. [ARCHITECTURE] [PLUGIN] Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -522,9 +527,9 @@
           "subsections": []
         },
         {
-          "id": "8-static-egress-schema-declaration-manifest-contract-tapp-publisher",
+          "id": "8-implementation-plugin-static-egress-schema-declaration-manifest-contract-tapp-publisher",
           "level": 2,
-          "heading": "8. Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)",
+          "heading": "8. [IMPLEMENTATION] [PLUGIN] Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)",
           "content_blocks": [
             {
               "type": "blockquote",
@@ -536,9 +541,9 @@
           ],
           "subsections": [
             {
-              "id": "81-egress-schema-trong-manifestjson",
+              "id": "81-implementation-plugin-egress-schema-trong-manifestjson",
               "level": 3,
-              "heading": "8.1 Egress Schema trong `manifest.json`",
+              "heading": "8.1 [IMPLEMENTATION] [PLUGIN] Egress Schema trong `manifest.json`",
               "content_blocks": [
                 {
                   "type": "code",
@@ -561,9 +566,9 @@
           ]
         },
         {
-          "id": "9-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag",
+          "id": "9-architecture-plugin-đặc-quyền-hệ-thống-và-giới-hạn-tài-nguyên-teradiag",
           "level": 2,
-          "heading": "9. Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag",
+          "heading": "9. [ARCHITECTURE] [PLUGIN] Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag",
           "content_blocks": [
             {
               "type": "list",

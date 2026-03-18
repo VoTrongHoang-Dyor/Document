@@ -3,9 +3,9 @@
   "generated_at": "2026-02-23",
   "sections": [
     {
-      "id": "terachat-sovereign-communication-for-the-enterprise",
+      "id": "introductionmd-system-gateway",
       "level": 1,
-      "heading": "TeraChat — Sovereign Communication for the Enterprise",
+      "heading": "Introduction.md — System Gateway",
       "content_blocks": [
         {
           "type": "blockquote",
@@ -17,562 +17,204 @@
         },
         {
           "type": "paragraph",
-          "text": "TeraChat không phải công cụ nhắn tin. Đây là tuyên ngôn về chủ quyền số dành cho những tổ chức từ chối đặt bí mật kinh doanh lên server của người khác. Được xây dựng từ lõi Rust thuần túy, mã hóa End-to-End từ thiết bị đầu cuối, hoạt động kể cả khi Internet cắt hoàn toàn — TeraChat là lựa chọn cho chính phủ, quốc phòng, tài chính, và tập đoàn không thể chấp nhận rủi ro."
+          "text": "Chào mừng đến với TeraChat. Đây không đơn thuần là một ứng dụng nhắn tin. Đây là sự khởi đầu của một kỷ nguyên mới về Chủ quyền số (Digital Sovereignty) — một hệ điều hành công tác (Operating System for Work) bất khả xâm phạm dành cho các doanh nghiệp, chính phủ và tổ chức từ chối giao phó sinh mệnh dữ liệu của mình cho các máy chủ bên thứ ba."
         },
         {
-          "type": "blockquote",
-          "alert_type": "note",
-          "lines": [
-            "**Audience:** New Developer Onboarding · Technical Product Manager · System Architect",
-            "**Read Time:** ~15 phút",
-            "**Last Updated:** 2026-03-11 (Updated ISDM & AI Governance)"
-          ]
+          "type": "paragraph",
+          "text": "Tài liệu này là cánh cổng đầu tiên bước vào hệ sinh thái TeraChat. Nó được thiết kế để truyền tải tầm nhìn, các nguyên lý cốt lõi và kiến trúc khái quát định hình nên toàn bộ nền tảng."
         }
       ],
       "subsections": [
         {
-          "id": "1-system-overview",
+          "id": "1-concept-vision-mission",
           "level": 2,
-          "heading": "1. System Overview",
+          "heading": "1. [CONCEPT] Vision & Mission",
           "content_blocks": [
             {
               "type": "paragraph",
-              "text": "TeraChat là Hệ điều hành Công việc (Operating System for Work) dành cho Enterprise và Chính phủ, được xây dựng trên nền tảng kiến trúc Zero-Trust. Lõi hệ thống được phát triển hoàn toàn bằng ngôn ngữ Rust, đóng vai trò \"độc tài\" xử lý 100% nghiệp vụ mã hóa E2EE, đồng bộ dữ liệu và định tuyến mạng, đảm bảo an toàn tuyệt đối và khả năng hoạt động độc lập ngay cả khi hệ thống Internet toàn cầu gặp sự cố."
+              "text": "Nhiệm vụ của chúng tôi là trả lại toàn quyền kiểm soát thông tin cho người sở hữu đích thực của nó."
+            },
+            {
+              "type": "paragraph",
+              "text": "Trong thập kỷ qua, các nền tảng đám mây công cộng đã định hình lại cách thế giới làm việc, nhưng sự tiện lợi đó đi kèm với một cái giá đắt: sự phụ thuộc và việc đánh mất quyền kiểm soát thực sự. Các tổ chức tin tưởng đặt toàn bộ tài sản trí tuệ, chiến lược kinh doanh và thông tin tình báo của mình lên các trung tâm dữ liệu mà họ không thể thấu hiểu hoàn toàn."
+            },
+            {
+              "type": "paragraph",
+              "text": "TeraChat ra đời với một sứ mệnh duy nhất: Xóa bỏ ranh giới của sự phụ thuộc này. Tầm nhìn của chúng tôi là tạo ra thế hệ hạ tầng viễn thông doanh nghiệp đầu tiên trên thế giới mà ở đó, Sự Bảo Mật Được Đảm Bảo Bằng Toán Học, Không Phải Bằng Lời Hứa."
             }
           ],
-          "subsections": [
-            {
-              "id": "11-feature-requirements",
-              "level": 3,
-              "heading": "1.1 Feature Requirements",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Zero-Knowledge: Máy chủ hoạt động như một \"Blind Relay\", chỉ chuyển tiếp các gói tin mã hóa. Máy chủ không giữ khóa giải mã, không biết nội dung thảo luận, danh tính thực của người gửi, hay lịch sử tìm kiếm.",
-                    "End-to-End Encryption (E2EE): Toàn bộ dữ liệu (tin nhắn, gọi thoại, tệp tin) được mã hóa ngay tại thiết bị đầu cuối bằng Company_Key trước khi truyền đi. Dữ liệu không bao giờ tồn tại trên mạng dưới dạng plaintext.",
-                    "Hardware Security: Private Key được bảo vệ bằng phần cứng chuyên dụng (Secure Enclave trên iOS, StrongBox trên Android, TPM 2.0 trên Desktop, YubiKey) và tuyệt đối không bao giờ rời khỏi vi mạch này.",
-                    "Hardware-Backed Self-Sovereign Recovery:",
-                    "🗄️ C-Level nắm giữ quyền tự phục hồi định danh thông qua Admin-approved QR Key Exchange hoặc Recovery Phrase (BIP-39 Mnemonic) mà không cần sự can thiệp của Admin Server hay phần cứng ngoại vi.",
-                    "📱💻 Phần cứng bảo mật này đóng vai trò như một \"Admin bỏ túi\", lưu trữ phân mảnh của Master Key, cho phép Bootstrap lại toàn bộ hệ thống ngay cả khi đang ở môi trường Air-Gapped.",
-                    "Offline Survival: Hệ thống duy trì liên lạc nội bộ thông qua mạng lưới Asymmetric Mesh Đa Nền Tảng khi mạng Internet bị cắt đứt. Kiến trúc Bất đối xứng phân chia vai trò rõ ràng: Desktop/Laptop làm Super Node (Backbone — Store-and-Forward Router, giữ toàn bộ Causal Graph, hoạt động 24/7 background) và Mobile làm Leaf Node (Vệ tinh — chỉ giữ Delta-State Buffer ≤ 50MB, không bị ràng buộc duy trì toàn bộ lịch sử DAG). Thiết bị iOS và Android vẫn chat offline liền mạch qua BLE 5.0, Apple Multipeer Connectivity, và Wi-Fi Direct — trong đó iOS hoạt động như \"Data Mule\": tranh thủ đồng bộ burst khi Foreground, nhận sync_needed ping BLE khi Background.",
-                    "📱💻 Explicit Mesh Opt-in: Survival Mesh KHÔNG tự động kích hoạt. Khi hệ thống phát hiện mất kết nối với Control Plane (Server), Lõi Rust sẽ tạm dừng toàn bộ I/O network. Người dùng phải xác nhận thủ công qua thông báo: \"Khởi động mạng Mesh để duy trì liên lạc\" để hệ thống cấp điện cho module BLE 5.0 / Wi-Fi Direct / Apple Multipeer Connectivity.",
-                    "📱💻🖥️ Dữ liệu cục bộ được mã hóa bằng Device_Key (Secure Enclave/StrongBox) và đồng bộ lên Cloud/Private Server dưới dạng Ciphertext thuần túy. Khôi phục thực hiện qua Biometric-backed Restore hoặc Recovery Phrase (BIP-39) — không phụ thuộc thiết bị phần cứng ngoại vi.",
-                    "☁️ Operating System for Work: \"TeraChat không chỉ là một ứng dụng chat. Nó là một Hệ điều hành Công việc tích hợp cơ chế giải quyết xung đột dữ liệu phi tập trung (Git-like Conflict Resolution). Cho phép các nhóm làm việc cộng tác trên các tài liệu nhạy cảm với độ chính xác tuyệt đối mà không cần tin tưởng vào máy chủ trung tâm.\"",
-                    "☁️ Contextual Consistency (Tính Nhất quán Theo ngữ cảnh): Hệ thống áp dụng chiến lược Nhất quán : Giao tiếp lõi với Chat luôn khả dụng cả Online lẫn Offline. Tuy nhiên, các tính năng Cộng tác cấu trúc sâu (Git-like Document Collaboration) yêu cầu tính toàn vẹn cao sẽ được ủy quyền cho máy chủ trung tâm (VPS) và chỉ hoạt động ở Online Mode.",
-                    "☁️ ISDM (Interactive SLM Dual-Masking) — Trụ cột AI Governance: TeraChat định nghĩa lại AI Governance thông qua giao thức Dual-Masking. Không một LLM bên ngoài nào được chạm vào dữ liệu thô (Plaintext). Mọi tài liệu trước khi đi ra Internet đều bị \"rút ruột\" dữ liệu nhạy cảm (PII) bằng SLM (Small Language Model) cục bộ, bọc trong các Biến giả (Tokens), và chỉ hoàn trả dữ liệu thật tại thiết bị đầu cuối sau khi AI SLM nhận kết quả trả về --> đối chiếu với dữ liệu ban đầu --> đưa ra dữ liệu cuối cùng.",
-                    "💻☁️ Self-Governing Data Objects & Server-Side Gatekeeping: Ứng dụng mô hình bọc chính sách và mã hóa tại nguồn (Event-Sourced Cryptographic Binding), trong đó thiết bị nhận thực thi phân quyền (Memory Guardian) bằng ZeroizeOnDrop. Kết hợp kiểm soát tấn công DoS bằng Token Bucket Rate Limiting (50 req/min) tại Edge Network, trong khi VPS vẫn hoạt động hoàn toàn dưới dạng Blind Relay (Zero-Knowledge)."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "12-triết-lý-mạng-lưới-thích-ứng-adaptive-spatial-network",
-              "level": 3,
-              "heading": "1.2 Triết lý Mạng lưới Thích ứng (Adaptive Spatial Network)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Thay vì một chế độ Mesh chung chung, TeraChat định nghĩa 3 cấp độ tồn tại (3-Tier Spatial Connectivity) để bảo vệ mạch máu thông tin của doanh nghiệp. Lõi Rust tích hợp Network_State_Machine tự động đo lường RSSI, RTT và Protocol để phân loại kết nối tức thì:"
-                },
-                {
-                  "type": "table",
-                  "headers": [
-                    "Tier",
-                    "Kênh truyền",
-                    "Đặc quyền dữ liệu"
-                  ],
-                  "rows": [
-                    [
-                      "**Tier 1 — Online (Unlimited)**",
-                      "TCP/TLS 1.3, WebSocket, WebRTC, S3/MinIO",
-                      "Full Features: Tin nhắn, Voice (Opus 128kbps), Video (AV1/H.265), File 10GB+ qua TeraVault VFS"
-                    ],
-                    [
-                      "**Tier 2 — Offline Near (Tactical Mesh, < 50m)**",
-                      "Wi-Fi Direct (SoftAP), Apple AWDL, BLE 5.0 High-Speed",
-                      "Tin nhắn, File nhẹ (< 10MB PDF/Word). Từ chối Video Stream & File nặng."
-                    ],
-                    [
-                      "**Tier 3 — Offline Far (Survival Mesh, > 50m hoặc nghẽn)**",
-                      "BLE Long Range, Broadcast chập chờn, Store-and-Forward Data Mules",
-                      "CHỈ Text E2EE (Delta CRDT). Payload < 4KB. Từ chối mọi Media."
-                    ]
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**Nguyên tắc cốt lõi:** *Khả năng vật lý quyết định Đặc quyền dữ liệu.* Lõi Rust (Dictator Core) là người gác cổng duy nhất, không cho phép UI hay người dùng bypass giới hạn vật lý của kênh truyền."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Online (Unlimited): Băng thông rộng, mở khóa toàn bộ TeraVault (truyền tệp 10GB).",
-                    "Offline Near (Tactical Mesh): Kết nối P2P cự ly gần bằng Wi-Fi Direct. Cho phép truyền đạt tin nhắn và File tài liệu khẩn cấp (< 10MB).",
-                    "Offline Far (Survival Mesh): Khi khoảng cách quá xa, hệ thống rơi vào trạng thái sinh tồn. Lõi Rust tự động vô hiệu hóa luồng I/O đa phương tiện, dồn 100% năng lượng và băng thông hẹp của BLE Long-Range chỉ để truyền tải Tin nhắn Văn bản mã hóa (E2EE Text)."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "13-feature-scope-out-of-scope",
-              "level": 3,
-              "heading": "1.3 Feature Scope & Out-of-Scope",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "In-Scope",
-                    "Out-of-Scope"
-                  ],
-                  "rows": [
-                    [
-                      "Nhắn tin, Voice/Video E2EE chuẩn MLS (IETF RFC 9420)",
-                      "Lưu trữ dữ liệu plaintext trên dữ liệu Server đám mây"
-                    ],
-                    [
-                      "Cấu trúc mạng P2P Survival Mesh (BLE/Wi-Fi Direct)",
-                      "Định tuyến qua các Public Cloud không kiểm soát"
-                    ],
-                    [
-                      "WASM Sandbox bảo mật cho các ứng dụng nội bộ (`.tapp`)",
-                      "Thực thi mã từ xa (Remote Code Execution) ngoài môi trường WASM"
-                    ],
-                    [
-                      "Lưu trữ ẩn danh (Blind Storage) với MinIO & Erasure Coding",
-                      "Tìm kiếm nội dung nguyên bản (Server-side search) tại máy chủ"
-                    ],
-                    [
-                      "Kiểm soát truy cập liên tổ chức (Federation Bridge & mTLS)",
-                      "Sử dụng Certificate Authority (CA) công cộng cho Federation"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "13-core-terminology",
-              "level": 3,
-              "heading": "1.3 Core Terminology",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Thuật ngữ",
-                    "Định nghĩa"
-                  ],
-                  "rows": [
-                    [
-                      "**.tapp**",
-                      "Tiện ích nghiệp vụ thu nhỏ (Mini-App) gồm bytecode WASM và JSON Schema, chạy cách ly hoàn toàn trên thiết bị. Server không thể can thiệp hay đọc dữ liệu xử lý bên trong."
-                    ],
-                    [
-                      "**Company_Key**",
-                      "Khóa mã hóa cấp doanh nghiệp, sinh tự động trong quá trình Onboarding. Mọi payload đều được mã hóa bằng khóa này trước khi phân bổ lên Cluster."
-                    ],
-                    [
-                      "**Blind Relay**",
-                      "Cơ chế định tuyến nơi máy chủ trung gian chỉ chuyển tiếp gói dữ liệu mã hóa mà không nắm giữ Key giải mã (áp dụng cho Messaging, File, Voice/Video)."
-                    ],
-                    [
-                      "**TreeKEM / MLS**",
-                      "Kiến trúc phân phối khóa dạng cây nhị phân (thuộc chuẩn MLS). Đẩy tốc độ đồng bộ khóa nhóm nhanh gấp $O(\\log n)$ siêu tốc cho quy mô 5000+ người dùng."
-                    ],
-                    [
-                      "**Zero-Byte Stubs**",
-                      "\"Vỏ bọc ảo\" định dạng siêu nhỏ (~5KB) đại diện cho tệp lớn. Giúp giao diện hiển thị ảnh xem trước tức thì mà không cần kéo tệp gốc từ máy chủ, khử hoàn toàn độ trễ I/O."
-                    ],
-                    [
-                      "**Shared Core**",
-                      "Kiến trúc \"Lõi Độc Tài\" dùng chung một bộ mã Rust duy nhất xử lý toàn bộ khóa, mạng, cơ sở dữ liệu cho cả 5 nền tảng (iOS, Android, Windows, macOS, Linux)."
-                    ],
-                    [
-                      "**Survival Mesh**",
-                      "Tính năng tự tạo mạng cục bộ P2P (mạng nhện nhảy cóc) qua Bluetooth cục bộ và Wi-Fi Direct nhằm duy trì giao tiếp khi mạng WAN/Internet đứt gãy."
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "14-high-level-architecture-philosophy",
-              "level": 3,
-              "heading": "1.4 High-Level Architecture Philosophy",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "Triết lý cốt lõi của hệ thống được xây dựng trên sự cân bằng tuyệt đối giữa Bảo mật, Tốc độ, Hiệu năng Pin và Tính toán Phi tập trung:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Chống phân mảnh Hệ điều hành (Rust Dictator Core): Bỏ qua hoàn toàn tư duy phát triển tính năng song song trên các ngôn ngữ native. Mọi logic mạng, Mật mã, E2EE, P2P được gom chung vào một Lõi Rust duy nhất. Lớp UI (Tauri/React Native/Swift/Kotlin) chỉ đóng vai trò là View, gọi Lõi qua FFI Bridge tĩnh hoặc SharedArrayBuffer, tiệt tiêu độ trễ serialization (JSON.stringify).",
-                    "Lõi Tương thích Phần cứng (Hardware-Adaptive Core): Lõi Rust không cứng nhắc mà đóng vai trò như một Symbiote liên tục biến hình theo giới hạn của vi kiến trúc. Trên Desktop/VPS, Lõi tối đa hóa RAM với mlock() và JIT E2EE Cache. Nhưng trên hệ sinh thái Apple khắt khe (iOS Background/Jetsam Limit), Lõi tự động ép kiểu AOT, drop toàn bộ cấu trúc TLS khi App vào nền, và bắt buộc thi hành RAII ZeroizeOnDrop để thay thế mlock(), triệt tiêu hoàn toàn viễn cảnh OOM-Kill.",
-                    "Local-First & Offline-First Data: Ứng dụng luôn đọc dữ liệu từ một cơ sở dữ liệu SQLite FTS5 biên dịch cục bộ bằng WASM/Native C. Mọi thao tác Search, Query, Filter diễn ra không phụ thuộc vào Network. Thao tác trên UI được phản hồi ngay lập tức qua CRDT Optimistic Updates.",
-                    "Sovereign Enclave (Mỗi Thiết bị là một Pháo đài): Dữ liệu được mã hóa trước khi chạm vào SSD. Khi rời thiết bị, dữ liệu luôn là ciphertext. Hạ tầng máy chủ (MinIO/ScyllaDB) hoạt động hoàn toàn Mù (Blind) — chỉ nhìn thấy các Blob ngẫu nhiên và metadata bị xáo trộn.",
-                    "Luồng Dữ liệu Đa tầng (3-Tier Spatial Data Gates): Truyền tải thông minh phân chia theo không gian mạng. Cáp quang/Cloud (Tier 1) hỗ trợ Payload 1GB+, LAN/BLE Mesh (Tier 2) giới hạn 50MB, Ultra-Low Bandwidth/Deep P2P (Tier 3) sử dụng Text-Only LZW Compression. Khả năng vật lý quyết định đặc quyền dữ liệu.",
-                    "Trust-No-One Agentic Tunnels (Zero-Trust BYOA): Tách biệt ranh giới giữa Lõi Rust và Lớp hiển thị UI. Các Agent AI (Custom Code) hoạt động tại Sandbox biên bị cách ly hoàn toàn qua luồng IPC rỗng tệp (Zero-Byte Stubs). Không tồn tại API ẩn danh, không lộ IP, mọi luồng egress bị đóng đinh FFI Protocol.",
-                    "Sự Chấm Dứt của Mã nguồn Kín (Open Source Execution): Nguyên tắc AGPLv3 buộc toàn bộ chuỗi cung ứng Backend và Core App phải phơi bày phương thức thực thi. Tự do sao chép và tự lưu trữ đồng nghĩa với ranh giới quyền lực của Backend biến mất."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "15-the-life-of-a-message-dòng-chảy-dữ-liệu",
-              "level": 3,
-              "heading": "1.5 The Life of a Message (Dòng chảy Dữ liệu)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Khởi tạo và Mã hóa (Thiết bị gửi [A]): Người dùng [A] soạn tin nhắn. Lõi Rust trên máy [A] sử dụng Company_Key và thuật toán cây TreeKEM để mã hóa nội dung E2EE nguyên khối ngay trong vi mạch thiết bị.",
-                    "Định tuyến Ẩn danh (Sealed Sender): Lõi Rust đóng gói bản mã (ciphertext) vào một phong bì dữ liệu, tiếp tục mã hóa danh tính người gửi bằng Public Key của người nhận [B]. Mọi dấu vết danh tính đi ra khỏi máy bị ẩn hoàn toàn (Zero-Knowledge).",
-                    "Trung chuyển Mù (Blind Relay Server): Máy chủ làm nhiệm vụ lưu trữ và phân phối. Giống một trạm bưu điện không quyền bóc thư, hệ thống không giữ Private Key, đẩy nguyên khối gói tin tới hàng chờ (Queue) của thiết bị [B].",
-                    "Nhận và Giải mã (Thiết bị nhận [B]): Thiết bị hạ du [B] kéo gói tin về. Lõi Rust trên máy [B] kích hoạt Private Key (được giữ chặt trong chip TPM/Secure Enclave) để giải thuật Sealed Sender, sau đó bung gói E2EE thành dữ liệu văn bản thuần (plaintext).",
-                    "Vẽ giao diện và Tiêu hủy Ký ức (UI & Crypto-Shredding): Sau khi văn bản được vẽ (Paint) tức thì trên màn hình nhờ cầu nối UI Component, khối khóa giải mã và mọi tàn dư trên RAM bị \"hủy diệt\" (kiến trúc Zeroize — tự đè 0x00). Không một phần mềm Malware nào có thể trích xuất ra (Memory Dumped) khóa gốc."
-                  ]
-                },
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**Biến hình theo phần cứng:** Trên Desktop, cùng luồng tin nhắn này có thể đi qua SharedArrayBuffer/JSI Pointer với `mlock()` RAM chứa `Company_Key`; trên iOS/Android, pipeline logic vẫn giữ nguyên nhưng Core tự động dùng Secure Enclave/StrongBox + `ZeroizeOnDrop` và Native-to-Rust Media/DataSource Bridge để vừa đạt mục tiêu \\<50ms latency, vừa tuân thủ giới hạn Background và W^X của hệ điều hành."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "16-documentation-map",
-              "level": 3,
-              "heading": "1.6 Documentation Map",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Tài liệu",
-                    "Đối tượng độc giả",
-                    "Phạm vi nội dung (Scope)"
-                  ],
-                  "rows": [
-                    [
-                      "**`Introduction.md`**",
-                      "Mọi thành viên",
-                      "Tổng quan về triết lý **\"Lõi Độc Tài\" (Dictator Core)**, kiến trúc Zero-Trust và phân tích dòng chảy dữ liệu (Data Life-cycle) của một tin nhắn từ lúc khởi tạo đến khi tiêu hủy."
-                    ],
-                    [
-                      "**`TechSpec.md`**",
-                      "Lead Dev, Architects",
-                      "**\"Kinh thánh\" kỹ thuật.** Định nghĩa các nguyên tắc thiết kế bất biến, cơ chế giải quyết xung đột (Conflict Resolution) và kiến trúc hạ tầng lưu trữ phân tầng (Tiered Storage)."
-                    ],
-                    [
-                      "**`Feature_Spec.md`**",
-                      "App Dev (Mobile/Desktop)",
-                      "Chi tiết thực thi tầng **Data Plane**, cơ chế giao tiếp IPC tốc độ cao (**JSI/FFI**), tối ưu hóa Local Storage qua SQLite WAL và quy trình tích hợp sâu vào Native OS."
-                    ],
-                    [
-                      "**`Core_Spec.md`**",
-                      "DevOps, Security Eng.",
-                      "Hạ tầng Backend, quản lý hệ thống khóa **HKMS**, giao thức bảo mật MLS, vận hành mạng lưới sinh tồn (**Survival Mesh**) và bảo mật phần cứng Enclave (TEE)."
-                    ],
-                    [
-                      "**`Function.md`**",
-                      "Product Owner, Devs",
-                      "Mô tả chi tiết luồng nghiệp vụ (User/Admin flows), các cơ chế tích hợp AI qua lớp bảo vệ **ISDM (Interactive SLM Dual-Masking)** và giao thức liên kết tổ chức (Federation)."
-                    ],
-                    [
-                      "**`BusinessPlan.md`**",
-                      "Stakeholders, Sales",
-                      "Mô hình kinh doanh đột phá **\"Zero Bandwidth Cost\"**, chiến lược mã nguồn mở có kiểm soát (Open-Core) và lộ trình chiếm lĩnh thị trường (Go-to-Market)."
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
+          "subsections": []
         },
         {
-          "id": "mục-mới-terachat-ecosystem-architecture-overview",
+          "id": "2-concept-why-terachat-exists",
           "level": 2,
-          "heading": "Mục Mới: TeraChat Ecosystem Architecture Overview",
-          "content_blocks": [],
-          "subsections": [
+          "heading": "2. [CONCEPT] Why TeraChat Exists",
+          "content_blocks": [
             {
-              "id": "tổng-quan-kiến-trúc-hệ-sinh-thái-terachat",
-              "level": 3,
-              "heading": "Tổng quan Kiến trúc Hệ sinh thái TeraChat",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "TeraChat được xây dựng trên 4 trụ cột kiến trúc cốt lõi:"
-                }
-              ],
-              "subsections": [
-                {
-                  "id": "1-shared-rust-core-lợi-thế-cạnh-tranh-kỹ-thuật",
-                  "level": 4,
-                  "heading": "1. Shared Rust Core – Lợi thế Cạnh tranh Kỹ thuật",
-                  "content_blocks": [
-                    {
-                      "type": "blockquote",
-                      "alert_type": "note",
-                      "lines": [
-                        "**\"Ứng dụng lõi Rust thống nhất bảo đảm hiệu năng tối đa và tính bảo mật đồng nhất từ Desktop đến Mobile\"**"
-                      ]
-                    },
-                    {
-                      "type": "list",
-                      "data": [
-                        "Triết lý: Toàn bộ logic nặng và nhạy cảm (E2EE encryption, P2P protocol, Database cục bộ, AI SLM) chỉ viết một lần duy nhất bằng Rust. Cross-compile sang mọi nền tảng.",
-                        "Lợi ích: Cập nhật bảo mật sửa ở 1 nơi duy nhất (Rust Core), không bao giờ sai lệch logic giữa platfrom.",
-                        "Binding: uniffi-rs tự động sinh Swift/Kotlin bindings an toàn. Protobuf cho IPC chuẩn hóa."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "2-terachat-ecosystem-mở-nhưng-an-toàn-tuyệt-đối",
-                  "level": 4,
-                  "heading": "2. TeraChat Ecosystem – Mở nhưng An toàn Tuyệt đối",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        ".tapp (TeraChat App): Tiện ích doanh nghiệp có thể mở rộng được xây dựng xung quanh TeraChat, chạy trong WASM Sandbox cô lập hoàn toàn.",
-                        "Control Plane (Host): Lõi Rust kiểm soát mọi tài nguyên hệ thống, mạng, mật mã. .tapp không bao giờ có thể \"nhúng tay\" vào lõi.",
-                        "Data Plane (Sandbox): .tapp thực thi trong môi trường cách ly hoặc tối đa hóa bảo mật, không có quyền truy cập trực tiếp Network/Filesystem/Memory của Host.",
-                        "Secure Host Proxy: Mọi network request từ .tapp phải qua \"chốt chặn Zero Trust\", kiểm tra DID, Whitelist URL và AI SLM Payload Inspection trước khi được phép ra ngoài."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "3-dual-state-network-sovereign-messenger",
-                  "level": 4,
-                  "heading": "3. Dual-State Network – Sovereign Messenger",
-                  "content_blocks": [
-                    {
-                      "type": "table",
-                      "headers": [
-                        "State",
-                        "Điều kiện",
-                        "Cơ chế Mạng",
-                        "UI Theme"
-                      ],
-                      "rows": [
-                        [
-                          "**Online (Default)**",
-                          "Có Internet/VPN",
-                          "TCP/IP → VPS Doanh nghiệp (gRPC/WebSocket + mTLS)",
-                          "Frosted Glass sáng"
-                        ],
-                        [
-                          "**Emergency Mesh**",
-                          "Mất Internet >30s",
-                          "BLE 5.0 + Wi-Fi Direct. Store-and-Forward Gossip.",
-                          "Dark/Cyberpunk"
-                        ]
-                      ]
-                    },
-                    {
-                      "type": "list",
-                      "data": [
-                        "Không phụ thuộc Internet: TeraChat tiếp tục hoạt động trong vùng không có mạng qua BLE/Wi-Fi Direct Mesh.",
-                        "Asymmetric Bitchat: Desktop = Heavy Relay Node (Backbone). Mobile = Light Node. Phân cấp theo năng lực phần cứng.",
-                        "Border Node: Thiết bị có đồng thời Internet + BLE tự động làm cầu nối giữa 2 thế giới."
-                      ]
-                    }
-                  ],
-                  "subsections": []
-                },
-                {
-                  "id": "4-zero-trust-security-layered-defense",
-                  "level": 4,
-                  "heading": "4. Zero Trust Security – Layered Defense",
-                  "content_blocks": [
-                    {
-                      "type": "list",
-                      "data": [
-                        "Hardware Root of Trust: TEE (Secure Enclave/ARM TrustZone) lưu giữ Master Key. App Attestation kiểm tra Binary chưa bị sửa đổi mỗi lần khởi động.",
-                        "E2EE Double Ratchet + Epoch ZKP: Forward Secrecy tuyệt đối. Zero \"Ratchet Break\". Epoch-based architecture chống mất đồng bộ phiên dài hạn.",
-                        "M-of-N Threshold Kill-Switch: Root Key phân mảnh 7 shards (5/7 ngưỡng). DKG Proactive Refresh tự chữa lành mạng lưới hàng năm.",
-                        "TOMBSTONE + Cryptographic Erasure: Nhân sự nghỉ việc → GDPR-compliant data destruction tự động lan truyền qua Gossip Protocol."
-                      ]
-                    },
-                    {
-                      "type": "paragraph",
-                      "text": "Chi tiết kỹ thuật: xem Core_Spec.md. Chi tiết tính năng: xem Feature_Spec.md. Thiết kế UI/UX: xem Design.md."
-                    }
-                  ],
-                  "subsections": []
-                }
+              "type": "paragraph",
+              "text": "Ngành công nghiệp viễn thông doanh nghiệp hiện nay được xây dựng trên một nền tảng thiếu sự tin cậy:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Mọi tương tác đều đi qua máy chủ bên thứ ba, vi phạm nguyên tắc bảo mật thông tin và tạo ra lỗ hổng bẩm sinh cho gián điệp công nghiệp.",
+                "Công việc bị đình trệ hoàn toàn khi hệ thống mạng trung tâm gặp sự cố. Sự phụ thuộc vào Internet đang làm tê liệt khả năng làm việc trong môi trường thực địa nhạy cảm, vùng sâu vùng xa hoặc các tình huống khủng hoảng.",
+                "Hệ thống quy định tuân thủ lưu trữ (ISO 27001, SOC2, Luật An ninh mạng) ngày càng nghiêm ngặt nhưng cấu trúc đám mây truyền thống không thể đáp ứng tiêu chuẩn."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "TeraChat tồn tại để xóa bỏ \"điểm đứt gãy duy nhất\" (Single Point of Failure). Chúng tôi thiết kế lại toàn bộ luồng giao tiếp theo phương thức Zero-Knowledge, nơi nhà cung cấp dịch vụ trở nên mù lòa vĩnh viễn trước dữ liệu của khách hàng, đồng thời duy trì khả năng sinh tồn tuyệt đối trong môi trường Offline (→ TERA-CORE §[Mạng lưới Sinh tồn])."
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "3-rule-core-principles",
+          "level": 2,
+          "heading": "3. [RULE] Core Principles",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Hệ thống được thiết kế xung quanh 4 nguyên lý bất di bất dịch:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Zero-Knowledge Architecture: Máy chủ của chúng tôi hoạt động theo mô hình máy chủ mù (Blind Relay). Hệ thống chỉ thực hiện việc định tuyến các gói tin đã mã hóa. Chúng tối hoàn toàn không nắm giữ khóa giải mã, không biết danh tính thực của người dùng, và không có khả năng đọc được nội dung thảo luận (→ TERA-CORE).",
+                "End-to-End Encryption (E2EE): Toàn bộ vòng đời của dữ liệu – từ văn bản, tệp tin đến các cuộc gọi thoại và video – được mã hóa và giải mã ngay tại thiết bị vật lý của người dùng. Dữ liệu không bao giờ tồn tại dưới dạng bản rõ (plaintext) trên không gian mạng.",
+                "Offline Survival Capability: Quyền kết nối không phụ thuộc vào Internet. Ngay cả khi hạ tầng mạng quốc gia hoặc toàn cầu sụp đổ, hệ thống vẫn duy trì sống sót bằng cách tự động kết nối các thiết bị thông qua mạng lưới vô tuyến cục bộ, tạo ra một mạng sinh tồn độc lập cho doanh nghiệp (Survival Mesh).",
+                "Zero-Trust System Design: Hệ thống không bao giờ tin tưởng bất kỳ ai, thiết bị hay kết nối nào, kể cả ở môi trường nội bộ. Mọi quyền truy cập, mọi luồng giao tiếp ra khỏi thiết bị đều bị chất vấn, đóng đinh bởi bộ xử lý bảo mật trước khi được cấp phép thực thi."
               ]
             }
-          ]
+          ],
+          "subsections": []
         },
         {
-          "id": "mục-mới-platform-matrix-architecture-clarifications",
+          "id": "4-architecture-high-level-architecture",
           "level": 2,
-          "heading": "Mục Mới: Platform Matrix & Architecture Clarifications",
-          "content_blocks": [],
-          "subsections": [
+          "heading": "4. [ARCHITECTURE] High-Level Architecture",
+          "content_blocks": [
             {
-              "id": "platform-support-matrix-updated",
-              "level": 3,
-              "heading": "Platform Support Matrix (Updated)",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Platform",
-                    "Status",
-                    "Package Format",
-                    "Mesh Role"
-                  ],
-                  "rows": [
-                    [
-                      "macOS (Intel + Apple Silicon)",
-                      "✅ GA",
-                      ".dmg, .pkg",
-                      "Super Node / Relay"
-                    ],
-                    [
-                      "Windows x64",
-                      "✅ GA",
-                      ".exe, MSIX",
-                      "Super Node / Relay"
-                    ],
-                    [
-                      "**Windows ARM64**",
-                      "✅ GA",
-                      ".exe, MSIX",
-                      "Super Node / Relay"
-                    ],
-                    [
-                      "Linux x64",
-                      "✅ GA",
-                      ".deb, .rpm, AppImage",
-                      "Super Node / Relay / Server"
-                    ],
-                    [
-                      "**Linux ARM64**",
-                      "✅ GA",
-                      ".deb, .rpm",
-                      "Server deployment"
-                    ],
-                    [
-                      "iOS",
-                      "✅ GA",
-                      "App Store / MDM",
-                      "Leaf Node"
-                    ],
-                    [
-                      "Android",
-                      "✅ GA",
-                      "Play Store / APK",
-                      "Leaf / Super Node"
-                    ],
-                    [
-                      "**Huawei HarmonyOS**",
-                      "🔵 Beta",
-                      "AppGallery",
-                      "Leaf Node"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
+              "type": "paragraph",
+              "text": "TeraChat là sự hội tụ giữa khoa học mật mã và kỹ thuật máy tính phân tán. Các thành phần nền móng định hình nên kiến trúc này bao gồm:"
             },
             {
-              "id": "offline-survival-3-cấp-độ",
-              "level": 3,
-              "heading": "Offline Survival – 3 Cấp Độ",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "TeraChat Offline Survival hoạt động ở 3 cấp độ rõ ràng:"
-                },
-                {
-                  "type": "table",
-                  "headers": [
-                    "Cấp độ",
-                    "Điều kiện",
-                    "Năng lực"
-                  ],
-                  "rows": [
-                    [
-                      "**Cấp 1 (Full Mesh)**",
-                      "Desktop/Laptop làm Super Node, BLE hoặc Wi-Fi Direct",
-                      "Đầy đủ: text, file (tóm tắt), voice (nếu bandwidth đủ), CRDT full merge"
-                    ],
-                    [
-                      "**Cấp 2 (Partial Mesh)**",
-                      "Mix Desktop + Mobile, Desktop làm mediator",
-                      "Text + file summary, CRDT với Conflict Marker"
-                    ],
-                    [
-                      "**Cấp 3 (Mobile-Only SOS)**",
-                      "Chỉ iOS Leaf Nodes, không có Desktop",
-                      "Text SOS only (Tactical Relay), Append-Only CRDT, không đảm bảo full consistency"
-                    ]
-                  ]
-                },
-                {
-                  "type": "paragraph",
-                  "text": "Cấp 3 không đảm bảo collaboration đầy đủ — chỉ đảm bảo tin nhắn đến nơi."
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "zero-knowledge-retention-clarification",
-              "level": 3,
-              "heading": "Zero-Knowledge Retention (Clarification)",
-              "content_blocks": [
-                {
-                  "type": "paragraph",
-                  "text": "TeraChat không phải \"Zero-Retention\" theo nghĩa server không giữ gì. Cam kết chính xác:"
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "Zero-Knowledge Retention: Server giữ ciphertext đã mã hóa (cold_state.db) nhưng không có key để đọc nội dung. Key chỉ tồn tại trên client.",
-                    "Client-Controlled TTL: Enterprise tự configure VPS cold storage TTL (7 ngày → không giới hạn).",
-                    "Compliance Retention: Banking/Gov có thể giữ audit log 7 năm, encrypted at rest, key ở client."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "lợi-thế-kỹ-thuật-cốt-lõi",
-              "level": 3,
-              "heading": "Lợi thế Kỹ thuật Cốt lõi",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Shared Rust Core: Logic bảo mật, mesh protocol, CRDT viết một lần, cross-compile sang tất cả platform.",
-                    "Flutter Unified Mobile: iOS + Android + Huawei từ 1 Dart codebase qua Dart FFI → Rust C ABI.",
-                    "Tauri Desktop: Web tech UI + Rust backend, native performance.",
-                    "WASM Behavioral Parity: wasm3 (iOS) và wasmtime (Android/Desktop) đảm bảo output identical qua CI gate."
-                  ]
-                }
-              ],
-              "subsections": []
+              "type": "list",
+              "data": [
+                "Shared Rust Core: Một lõi xử lý duy nhất xuyên nền tảng, đảm đương 100% nghiệp vụ mạng, mật mã học nhằm đồng nhất tuyệt đối nguyên tắc an toàn (→ TERA-CORE).",
+                "Client-Side Cryptography: Chìa khóa bảo mật được sinh ra, quản lý và sử dụng bên trong các vi mạch an toàn của thiết bị cực đoan phần cứng, loại trừ nguy cơ giải mã từ xa.",
+                "Blind Relay Servers: Cơ sở hạ tầng trung chuyển dữ liệu mù loà làm nhiệm vụ lưu trữ, trung chuyển nhưng không có chìa khóa, xóa bỏ quyền lực đọc hiểu từ nền tảng máy chủ đám mây.",
+                "Survival Mesh Networking: Kiến trúc kết nối mạng ngang hàng sinh tồn (P2P), cho phép tạo chuỗi mạng không dây độc lập và tự chữa lành.",
+                "Tiered Connectivity Model: Chiến lược thích ứng thông minh tự đo lường tình trạng băng thông từ Internet quốc tế tới Bluetooth tầm xa để quyết định luồng dữ liệu truyền tải tối ưu."
+              ]
             }
-          ]
+          ],
+          "subsections": []
+        },
+        {
+          "id": "5-concept-core-capabilities",
+          "level": 2,
+          "heading": "5. [CONCEPT] Core Capabilities",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Những năng lực then chốt mà nền tảng mang lại cho một tổ chức quy mô lớn:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Secure messaging & Voice/video: Nhắn tin, gọi video/âm thanh nhóm an toàn tuyệt đỉnh chống nghe lén.",
+                "Offline collaboration: Khả năng chat và chia sẻ tài liệu ngang hàng (P2P) khi các hệ thống truyền thống mất kết nối.",
+                "AI privacy protection: Lõi kiến trúc làm sạch ẩn danh thực hiện quét và tự động loại bỏ mọi dữ liệu định danh cấu trúc/thông tin nhạy cảm của doanh nghiệp trước khi giao tiếp AI.",
+                "Cross-organization federation: Thiết lập các \"đường hầm liên kết ngầm\" cho phép Tổng công ty lớn và nhiều cơ quan, chi nhánh con hoạt động ở từng Private Cloud riêng biệt nhưng vẫn an toàn trao đổi (→ TERA-FUNC).",
+                "Extension ecosystem (.tapp): Môi trường cách ly để tích hợp an toàn các tiện ích nghiệp vụ nội bộ (Zalo Office, Quản lý kho, Quản lý tài liệu). Kích hoạt tiềm năng khổng lồ từ thị trường công cụ quản trị B2B (→ TERA-MKT)."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "6-rule-system-terminology",
+          "level": 2,
+          "heading": "6. [RULE] System Terminology",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Sự thống nhất về khái niệm là cơ sở cho các kiến trúc vĩ đại."
+            },
+            {
+              "type": "list",
+              "data": [
+                ".tapp: Tiện ích nghiệp vụ siêu nhỏ chạy cách ly an toàn trên thiết bị bảo mật.",
+                "Company_Key: Khóa cấp doanh nghiệp/tổ chức, mã hóa mọi lưu lượng dữ liệu trước khi đi qua đám mây.",
+                "Blind Relay: Các máy chủ trung gian chuyển dữ liệu mà không nắm giữ quyền giải mã.",
+                "TreeKEM / MLS: Phương thức quản trị khóa nhóm mã hóa tối tân, mở rộng được cho cả 5.000 tham dự viên trong một nhóm chat an toàn.",
+                "Survival Mesh: Mạng lưới giao tiếp tự thiết lập giúp duy trì kết nối Offline.",
+                "Shared Rust Core: Trái tim mật mã xử lý mọi giao dịch bảo mật cốt lõi chung cho mọi thiết bị."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "7-rule-product-scope",
+          "level": 2,
+          "heading": "7. [RULE] Product Scope",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "In Scope (Trong Phạm vi Thực thi)"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Môi trường truyền thông an toàn tuyệt đối cấp độ tổ chức.",
+                "Cơ sở hạ tầng trung chuyển Zero-knowledge.",
+                "Khả năng sinh tồn đồng bộ nhóm khi vắng bóng nền tảng mạng Internet.",
+                "Chống chia cắt thông tin giữa các thực thể liên minh tổ chức (Federation)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Out of Scope (Ngoài Phạm vi Cung cấp)"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Lưu trữ thông tin văn bản thuần (plaintext) trên đám mây quốc gia.",
+                "Nền tảng làm việc chia sẻ bắt buộc dựa dẫm vào kết nối Cloud trung tâm.",
+                "Can thiệp kiểm duyệt tự động dựa trên phân tích từ vựng đối thoại tại máy chủ."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "8-rule-documentation-reading-map",
+          "level": 2,
+          "heading": "8. [RULE] Documentation Reading Map",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Cánh cổng này sẽ dẫn dắt từng chuyên môn tìm đến tài liệu lõi của mình:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Developers (Lập trình ứng dụng Client): Xin mời đọc Feature_Spec.md (→ TERA-FEAT).",
+                "System Architects (Kiến trúc sư hệ thống khối Cloud & Mạng lưới Rust): Xin mời đọc Core_Spec.md (→ TERA-CORE).",
+                "Product Managers (Giám đốc sản phẩm chức năng phân quyền nhóm): Xin mời đọc Function.md (→ TERA-FUNC).",
+                "Designers (Thiết kế hệ thống giao diện đặc chủng): Xin mời đọc Design.md (→ TERA-DESIGN).",
+                "Platform Ecosystem Builders (Phát triển hệ sinh thái thị trường ứng dụng Sandbox .tapp): Xin mời đọc Web_Marketplace.md (→ TERA-MKT)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "TeraChat — Trao lại chủ quyền số cho người tiên phong."
+            }
+          ],
+          "subsections": []
         }
       ]
     }

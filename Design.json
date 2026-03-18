@@ -8,6 +8,11 @@
       "heading": "Design.md — TeraChat Alpha v0.3.0",
       "content_blocks": [
         {
+          "type": "code",
+          "language": "yaml",
+          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-DESIGN\"\ntitle:    \"TeraChat — Product Requirements Document (Design)\"\nversion:  \"2.0\"\naudience: \"Designer, Frontend Developer, Product Manager\"\npurpose:  \"Đặc tả hệ thống thiết kế UI/UX Glassmorphism, component library, UI state machine và animation specs.\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về UI design, Glassmorphism, animation, components, hoặc các trạng thái (states) của UI.\""
+        },
+        {
           "type": "blockquote",
           "alert_type": "note",
           "lines": [
@@ -16,7 +21,7 @@
             "**Scope:** Glassmorphism Design System · Component Library · Screen Flows · Animation Specs · Security State Visualization · Survival Mesh HUD",
             "**Platform:** Desktop 🖥️ · Laptop 💻 · Mobile 📱",
             "**Last Updated:** 2026-03-15",
-            "**Depends On:** `Feature_Spec.md` (IPC signals triggering UI state), `Function.md` (User flows), `Core_Spec.md` (Rust Crypto Core)",
+            "**Depends On:** → TERA-FEAT (IPC signals triggering UI state), → TERA-FUNC (User flows), → TERA-CORE (Rust Crypto Core)",
             "**Consumed By:** React Native / Tauri frontend implementation"
           ]
         }
@@ -207,9 +212,9 @@
       ]
     },
     {
-      "id": "1-design-philosophy",
+      "id": "1-design-philosophy-concept-ui",
       "level": 1,
-      "heading": "§1 Design Philosophy",
+      "heading": "§1 Design Philosophy [CONCEPT] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -236,9 +241,9 @@
       "subsections": []
     },
     {
-      "id": "2-architecture-mapping",
+      "id": "2-architecture-mapping-architecture-ui",
       "level": 1,
-      "heading": "§2 Architecture Mapping",
+      "heading": "§2 Architecture Mapping [ARCHITECTURE] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -257,9 +262,9 @@
       "subsections": []
     },
     {
-      "id": "3-control-plane-vs-data-plane-visualization",
+      "id": "3-control-plane-vs-data-plane-visualization-architecture-ui",
       "level": 1,
-      "heading": "§3 Control Plane vs Data Plane Visualization",
+      "heading": "§3 Control Plane vs Data Plane Visualization [ARCHITECTURE] [UI]",
       "content_blocks": [
         {
           "type": "table",
@@ -299,9 +304,9 @@
       ]
     },
     {
-      "id": "4-adaptive-glassmorphism-state-machine",
+      "id": "4-adaptive-glassmorphism-state-machine-ui",
       "level": 1,
-      "heading": "§4 Adaptive Glassmorphism State Machine",
+      "heading": "§4 Adaptive Glassmorphism State Machine [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -350,9 +355,9 @@
       ]
     },
     {
-      "id": "5-survival-mesh-hud",
+      "id": "5-survival-mesh-hud-ui",
       "level": 1,
-      "heading": "§5 Survival Mesh HUD",
+      "heading": "§5 Survival Mesh HUD [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -381,9 +386,9 @@
       ]
     },
     {
-      "id": "6-messaging-layout",
+      "id": "6-messaging-layout-ui",
       "level": 1,
-      "heading": "§6 Messaging Layout",
+      "heading": "§6 Messaging Layout [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -407,9 +412,9 @@
       "subsections": []
     },
     {
-      "id": "7-security-event-animation",
+      "id": "7-security-event-animation-security-ui",
       "level": 1,
-      "heading": "§7 Security Event Animation",
+      "heading": "§7 Security Event Animation [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -494,9 +499,9 @@
       ]
     },
     {
-      "id": "8-memory-zeroization-overlay",
+      "id": "8-memory-zeroization-overlay-security-ui",
       "level": 1,
-      "heading": "§8 Memory Zeroization Overlay",
+      "heading": "§8 Memory Zeroization Overlay [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -529,9 +534,9 @@
       "subsections": []
     },
     {
-      "id": "9-byzantine-fault-indicator",
+      "id": "9-byzantine-fault-indicator-security-ui",
       "level": 1,
-      "heading": "§9 Byzantine Fault Indicator",
+      "heading": "§9 Byzantine Fault Indicator [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -555,9 +560,9 @@
       "subsections": []
     },
     {
-      "id": "10-failure-containment-protocol-fcp",
+      "id": "10-failure-containment-protocol-fcp-security-ui",
       "level": 1,
-      "heading": "§10 Failure Containment Protocol (FCP)",
+      "heading": "§10 Failure Containment Protocol (FCP) [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -581,9 +586,9 @@
       "subsections": []
     },
     {
-      "id": "11-sealed-session-view",
+      "id": "11-sealed-session-view-security-ui",
       "level": 1,
-      "heading": "§11 Sealed Session View",
+      "heading": "§11 Sealed Session View [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -607,9 +612,9 @@
       "subsections": []
     },
     {
-      "id": "12-memory-pressure-feedback",
+      "id": "12-memory-pressure-feedback-ui-performance",
       "level": 1,
-      "heading": "§12 Memory Pressure Feedback",
+      "heading": "§12 Memory Pressure Feedback [UI] [PERFORMANCE]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -646,9 +651,9 @@
       "subsections": []
     },
     {
-      "id": "13-e2ee-state-indicator",
+      "id": "13-e2ee-state-indicator-security-ui",
       "level": 1,
-      "heading": "§13 E2EE State Indicator",
+      "heading": "§13 E2EE State Indicator [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -672,9 +677,9 @@
       "subsections": []
     },
     {
-      "id": "14-did-identity-visualization",
+      "id": "14-did-identity-visualization-security-ui",
       "level": 1,
-      "heading": "§14 DID Identity Visualization",
+      "heading": "§14 DID Identity Visualization [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -698,9 +703,9 @@
       "subsections": []
     },
     {
-      "id": "15-ai-mode-indicator",
+      "id": "15-ai-mode-indicator-ui",
       "level": 1,
-      "heading": "§15 AI Mode Indicator",
+      "heading": "§15 AI Mode Indicator [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -724,9 +729,9 @@
       "subsections": []
     },
     {
-      "id": "16-wasm-sandbox-app-view-tapp",
+      "id": "16-wasm-sandbox-app-view-tapp-plugin-ui",
       "level": 1,
-      "heading": "§16 WASM Sandbox App View (.tapp)",
+      "heading": "§16 WASM Sandbox App View (.tapp) [PLUGIN] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -750,9 +755,9 @@
       "subsections": []
     },
     {
-      "id": "17-ipc-signal-mapping",
+      "id": "17-ipc-signal-mapping-implementation-ui",
       "level": 1,
-      "heading": "§17 IPC Signal Mapping",
+      "heading": "§17 IPC Signal Mapping [IMPLEMENTATION] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -795,9 +800,9 @@
       "subsections": []
     },
     {
-      "id": "18-latency-visualization",
+      "id": "18-latency-visualization-performance-ui",
       "level": 1,
-      "heading": "§18 Latency Visualization",
+      "heading": "§18 Latency Visualization [PERFORMANCE] [UI]",
       "content_blocks": [
         {
           "type": "code",
@@ -836,9 +841,9 @@
       "subsections": []
     },
     {
-      "id": "19-throughput-indicator",
+      "id": "19-throughput-indicator-performance-ui",
       "level": 1,
-      "heading": "§19 Throughput Indicator",
+      "heading": "§19 Throughput Indicator [PERFORMANCE] [UI]",
       "content_blocks": [
         {
           "type": "code",
@@ -849,9 +854,9 @@
       "subsections": []
     },
     {
-      "id": "20-attack-surface-awareness",
+      "id": "20-attack-surface-awareness-security-ui",
       "level": 1,
-      "heading": "§20 Attack Surface Awareness",
+      "heading": "§20 Attack Surface Awareness [SECURITY] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -866,9 +871,9 @@
       "subsections": []
     },
     {
-      "id": "21-desktop-layout-",
+      "id": "21-desktop-layout-platform-ui",
       "level": 1,
-      "heading": "§21 Desktop Layout 🖥️",
+      "heading": "§21 Desktop Layout 🖥️ [PLATFORM] [UI]",
       "content_blocks": [
         {
           "type": "code",
@@ -879,9 +884,9 @@
       "subsections": []
     },
     {
-      "id": "22-mobile-layout-",
+      "id": "22-mobile-layout-platform-ui",
       "level": 1,
-      "heading": "§22 Mobile Layout 📱",
+      "heading": "§22 Mobile Layout 📱 [PLATFORM] [UI]",
       "content_blocks": [
         {
           "type": "code",
@@ -896,9 +901,9 @@
       "subsections": []
     },
     {
-      "id": "23-laptop-layout-",
+      "id": "23-laptop-layout-platform-ui",
       "level": 1,
-      "heading": "§23 Laptop Layout 💻",
+      "heading": "§23 Laptop Layout 💻 [PLATFORM] [UI]",
       "content_blocks": [
         {
           "type": "paragraph",
@@ -908,9 +913,9 @@
       "subsections": []
     },
     {
-      "id": "24-animation-timing",
+      "id": "24-animation-timing-ui",
       "level": 1,
-      "heading": "§24 Animation Timing",
+      "heading": "§24 Animation Timing [UI]",
       "content_blocks": [
         {
           "type": "table",
@@ -1129,9 +1134,9 @@
       ],
       "subsections": [
         {
-          "id": "mục-mới-glassmorphism-wasm-states-network-topology-ux",
+          "id": "mục-mới-glassmorphism-wasm-states-network-topology-ux-ui-plugin",
           "level": 2,
-          "heading": "Mục Mới: Glassmorphism WASM States & Network Topology UX",
+          "heading": "Mục Mới: Glassmorphism WASM States & Network Topology UX [UI] [PLUGIN]",
           "content_blocks": [],
           "subsections": [
             {
@@ -1368,9 +1373,9 @@
           ]
         },
         {
-          "id": "mục-mới-gpu-capability-tiers-huawei-breakpoints-xpc-recovery-states",
+          "id": "mục-mới-gpu-capability-tiers-huawei-breakpoints-xpc-recovery-states-ui-platform",
           "level": 2,
-          "heading": "Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States",
+          "heading": "Mục Mới: GPU Capability Tiers, Huawei Breakpoints & XPC Recovery States [UI] [PLATFORM]",
           "content_blocks": [],
           "subsections": [
             {
