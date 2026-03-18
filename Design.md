@@ -12,7 +12,6 @@ ai_routing_hint: |
   "AI mở file này khi người dùng hỏi về UI design, Glassmorphism, animation, components, hoặc các trạng thái (states) của UI."
 ```
 
-
 > **Status:** `ACTIVE — Design Reference`
 > **Audience:** UX/UI Designer · Frontend Engineer · Product Manager · Security Architect
 > **Scope:** Glassmorphism Design System · Component Library · Screen Flows · Animation Specs · Security State Visualization · Survival Mesh HUD
@@ -633,7 +632,6 @@ Displayed in **top status bar**.
 
 ---
 
-
 ---
 
 ## Mục Mới: Glassmorphism WASM States & Network Topology UX [UI] [PLUGIN]
@@ -653,16 +651,16 @@ Displayed in **top status bar**.
 
 ### DESIGN-WASM-02: IPC & Trust Hub UI
 
-- 💻🖥️ **Glass Bridge Animation:** Khi `.tapp` CRM yêu cầu share sang `.tapp` Kế toán, một cầu nối thủy tinh xuất hiện nối giữa 2 Glass Card + Modal xác nhận người dùng.
-- 💻🖥️ **Trust Hub (Online Mode):** Giao diện Glassmorphism. Các luồng dữ liệu được cấp phép tự động hiện dưới dạng Bio-lines phát sáng mờ nối giữa các Glass Card. Kéo thả → Revoke Trust.
-- 📱 **Auto-save Bio-dot:** Khi `.tapp` lưu transient state, chấm sáng sinh học nhỏ chớp tắt nhẹ ở góc phải Glass Card.
+* 💻🖥️ **Glass Bridge Animation:** Khi `.tapp` CRM yêu cầu share sang `.tapp` Kế toán, một cầu nối thủy tinh xuất hiện nối giữa 2 Glass Card + Modal xác nhận người dùng.
+* 💻🖥️ **Trust Hub (Online Mode):** Giao diện Glassmorphism. Các luồng dữ liệu được cấp phép tự động hiện dưới dạng Bio-lines phát sáng mờ nối giữa các Glass Card. Kéo thả → Revoke Trust.
+* 📱 **Auto-save Bio-dot:** Khi `.tapp` lưu transient state, chấm sáng sinh học nhỏ chớp tắt nhẹ ở góc phải Glass Card.
 
 ### DESIGN-WASM-03: AI SLM Visual Feedback
 
-- 💻📱 **AI Core Glow (Online Mode):** Khi SLM đang chạy, Control Bar hiện luồng huỳnh quang chạy dọc mép kính mờ.
-- 💻📱 **Typing Effect:** Glass Card của `.tapp` nhận Token SLM có hiệu ứng "gợn sóng sinh học" nhỏ khi từng từ được stream về.
-- 📱 **KV-Cache Loading:** Crystalline Progress Bar mỏng ở cạnh dưới Glass Card trong ~0.2s.
-- 📱 **Mesh/Survival:** Tất cả hiệu ứng AI tắt hoàn toàn.
+* 💻📱 **AI Core Glow (Online Mode):** Khi SLM đang chạy, Control Bar hiện luồng huỳnh quang chạy dọc mép kính mờ.
+* 💻📱 **Typing Effect:** Glass Card của `.tapp` nhận Token SLM có hiệu ứng "gợn sóng sinh học" nhỏ khi từng từ được stream về.
+* 📱 **KV-Cache Loading:** Crystalline Progress Bar mỏng ở cạnh dưới Glass Card trong ~0.2s.
+* 📱 **Mesh/Survival:** Tất cả hiệu ứng AI tắt hoàn toàn.
 
 ### DESIGN-WASM-04: Network Topology Diagram
 
@@ -719,24 +717,23 @@ Displayed in **top status bar**.
 
 ### DESIGN-WASM-07: Video Call Security UX
 
-- 💻📱 **Insta-Connect:** Khi nhấn gọi, Frosted Glass Ring bao Avatar người nhận sáng rực Xanh Neon ngay lập tức (Pre-warmed ICE Pool). Không có màn hình "Đang kết nối..." chờ đợi.
-- 💻 **P2P Live Indicator:** Orbiting Glow viền gradient chạy vòng quanh Glass Card khi WebRTC active.
-- 💻 **Hardware Security Badge:** Biểu tượng Chip lục giác màu Xanh lục ở góc trên phải màn hình Video Call ("Hardware Secured Shield").
-- 💻📱 **mDNS Masking:** Mục "IP LAN" trong Settings bị Frosted Blur → "Được bảo vệ bởi mDNS Masking".
+* 💻📱 **Insta-Connect:** Khi nhấn gọi, Frosted Glass Ring bao Avatar người nhận sáng rực Xanh Neon ngay lập tức (Pre-warmed ICE Pool). Không có màn hình "Đang kết nối..." chờ đợi.
+* 💻 **P2P Live Indicator:** Orbiting Glow viền gradient chạy vòng quanh Glass Card khi WebRTC active.
+* 💻 **Hardware Security Badge:** Biểu tượng Chip lục giác màu Xanh lục ở góc trên phải màn hình Video Call ("Hardware Secured Shield").
+* 💻📱 **mDNS Masking:** Mục "IP LAN" trong Settings bị Frosted Blur → "Được bảo vệ bởi mDNS Masking".
 
 ### DESIGN-WASM-08: Admin DKG Control Panel
 
-- 🗄️ **Dark Glassmorphism Command Center:** 7 trụ tinh thể đại diện 7 node DKG. Bio-lines Cryptographic chạy đan chéo khi SMPC đang diễn ra.
-- 🗄️ **DKG Refresh Ritual:** Các đường sinh học xác thực → "Self-healing Network" hoàn tất.
-- 🗄️ **BFT Emergency:** Node phá hoại → Shattered Glass animation → Đẩy ra khỏi Topology Graph. `FORCED_KEY_ROTATION_SUCCESS` hiện lên.
-- 🗄️ **KILL_DIRECTIVE Pending:** "Pending Signatures: 2/5" → đủ 5 → lệnh phát đi.
+* 🗄️ **Dark Glassmorphism Command Center:** 7 trụ tinh thể đại diện 7 node DKG. Bio-lines Cryptographic chạy đan chéo khi SMPC đang diễn ra.
+* 🗄️ **DKG Refresh Ritual:** Các đường sinh học xác thực → "Self-healing Network" hoàn tất.
+* 🗄️ **BFT Emergency:** Node phá hoại → Shattered Glass animation → Đẩy ra khỏi Topology Graph. `FORCED_KEY_ROTATION_SUCCESS` hiện lên.
+* 🗄️ **KILL_DIRECTIVE Pending:** "Pending Signatures: 2/5" → đủ 5 → lệnh phát đi.
 
 ### DESIGN-WASM-09: Cryptographic Erasure UI
 
-- 💻🖥️ **TOMBSTONE Animation (Online/Desktop):** Bong bóng chat của A: kính rạn nứt từ từ → Dust Particle Effect bay mất. Để lại Panel kính viền đỏ sẫm: "Dữ liệu đã được tiêu hủy vĩnh viễn theo Quyền Lãng quên (GDPR Compliance)."
-- 📱 **Mesh Silent Erasure:** Xóa khóa âm thầm. Không render, tiết kiệm RAM/pin.
-- 💻📱 **Rolling Key Eviction UI:** Khi Lease Renewal thành công, viền Glass Card Chat lóe Cyan Sweep 0.2s. Biểu tượng khóa: "Khóa phiên đang được bảo vệ (Cập nhật 2 phút trước)".
-
+* 💻🖥️ **TOMBSTONE Animation (Online/Desktop):** Bong bóng chat của A: kính rạn nứt từ từ → Dust Particle Effect bay mất. Để lại Panel kính viền đỏ sẫm: "Dữ liệu đã được tiêu hủy vĩnh viễn theo Quyền Lãng quên (GDPR Compliance)."
+* 📱 **Mesh Silent Erasure:** Xóa khóa âm thầm. Không render, tiết kiệm RAM/pin.
+* 💻📱 **Rolling Key Eviction UI:** Khi Lease Renewal thành công, viền Glass Card Chat lóe Cyan Sweep 0.2s. Biểu tượng khóa: "Khóa phiên đang được bảo vệ (Cập nhật 2 phút trước)".
 
 ---
 
@@ -773,26 +770,26 @@ Rust Core detect WebView2 GPU caps lúc init → emit `GpuCapability(has_backdro
 
 ### DESIGN-GPU-03: XPC Crash Recovery UI State
 
-- 💻 **macOS:** Khi XPC Worker crash giữa Smart Approval → hiển thị modal:
-  - *"Phiên ký bị gián đoạn. Vui lòng ký lại."*
-  - Nút primary: "Ký lại" | Nút secondary: "Bỏ qua"
-  - Glass Modal viền cam (Warning Indicator)
+* 💻 **macOS:** Khi XPC Worker crash giữa Smart Approval → hiển thị modal:
+  * *"Phiên ký bị gián đoạn. Vui lòng ký lại."*
+  * Nút primary: "Ký lại" | Nút secondary: "Bỏ qua"
+  * Glass Modal viền cam (Warning Indicator)
 
 ### DESIGN-GPU-04: Huawei HarmonyOS Breakpoints
 
-- 📱 **Breakpoint Huawei:** Tuân thủ HarmonyOS Design Language (tương tự Material 3 nhưng có adaptation riêng). Padding mặc định 16dp, đỉnh status bar theo HarmonyOS spec.
-- 📱 **Glassmorphism trên Huawei:** wasmtime JIT có sẵn → Tier A full Glass.
-- 📱 **Font hệ thống:** HarmonyOS Sans (fallback: system-ui).
+* 📱 **Breakpoint Huawei:** Tuân thủ HarmonyOS Design Language (tương tự Material 3 nhưng có adaptation riêng). Padding mặc định 16dp, đỉnh status bar theo HarmonyOS spec.
+* 📱 **Glassmorphism trên Huawei:** wasmtime JIT có sẵn → Tier A full Glass.
+* 📱 **Font hệ thống:** HarmonyOS Sans (fallback: system-ui).
 
 ### DESIGN-GPU-05: Conflict Resolution UI
 
-- 💻📱🖥️ **Online Conflict (Shadow DAG):** Modal Glassmorphism hiện 2 cột: "Phiên bản của [Bạn]" và "Phiên bản của [Đồng nghiệp]". Toolbar merge: "Giữ của tôi", "Giữ của họ", "Gộp thủ công".
-- 📱💻 **Mesh Conflict Marker:** Badge ⚠️ trên document với tooltip "Mâu thuẫn phát hiện — sẽ được giải quyết khi có kết nối đầy đủ".
-- 🚫 **Không bao giờ silent LWW** trên document `content_type = CONTRACT | POLICY | APPROVAL`.
+* 💻📱🖥️ **Online Conflict (Shadow DAG):** Modal Glassmorphism hiện 2 cột: "Phiên bản của [Bạn]" và "Phiên bản của [Đồng nghiệp]". Toolbar merge: "Giữ của tôi", "Giữ của họ", "Gộp thủ công".
+* 📱💻 **Mesh Conflict Marker:** Badge ⚠️ trên document với tooltip "Mâu thuẫn phát hiện — sẽ được giải quyết khi có kết nối đầy đủ".
+* 🚫 **Không bao giờ silent LWW** trên document `content_type = CONTRACT | POLICY | APPROVAL`.
 
 ### DESIGN-GPU-06: AES-NI Performance Warning
 
-- 📱💻 **Software Crypto Warning:** Trong Settings > Bảo mật, chip không có AES-NI → badge nhỏ: *"Chế độ mã hóa phần mềm — hiệu suất thấp hơn. Nâng cấp thiết bị để cải thiện."*
+* 📱💻 **Software Crypto Warning:** Trong Settings > Bảo mật, chip không có AES-NI → badge nhỏ: *"Chế độ mã hóa phần mềm — hiệu suất thấp hơn. Nâng cấp thiết bị để cải thiện."*
 
 ### DESIGN-GPU-07: License Graceful Degradation UI
 
