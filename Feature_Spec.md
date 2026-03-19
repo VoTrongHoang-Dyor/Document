@@ -3,7 +3,7 @@
 # DOCUMENT IDENTITY
 id:        "TERA-FEAT"
 title:     "TeraChat — Feature Technical Specification"
-version:  "0.2.6"
+version:  "0.3.0"
 status:    "ACTIVE — Implementation Reference"
 date:      "2026-03-18"
 audience:  "Frontend Engineer, Mobile Engineer, Desktop Engineer, Product Engineer"
@@ -1417,7 +1417,65 @@ Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
 
 #### INFRA-01.2 ONNX Inference Offload Protocol
 
-📱 Mobile phát `OnnxOffloadRequest` (E2EE) đến Desktop Super Node:
+📱 Mobile phát `OnnxOffloadRequest` (E2EE) đến Desktop Super Node khi cần inference:
+
+**Điều kiện kích hoạt offload:**
+
+| Trigger | Hành động |
+|---|---|
+| Model tier yêu cầu "base" (74MB) và RAM mobile ≤ 3GB | Bắt buộc offload |
+| Battery mobile < 30% | Bắt buộc offload |
+| Thermal state = Critical (iOS: `.serious` / Android: `THERMAL_STATUS_SEVERE`) | Bắt buộc offload |
+| Model tier "tiny" nhưng CPU utilization > 80% sustained 10s | Khuyến nghị offload |
+
+**Offload Protocol Flow:**
+
+```text
+📱 Mobile → [ONNX_OFFLOAD_REQUEST]
+  {
+    request_id: Uuid,
+    sanitized_prompt: SanitizedPrompt,   // PII đã redact — KHÔNG gửi raw text
+    model_tier: "base" | "tiny",
+    ttl_ms: 5000,
+    requester_did: DeviceId,
+    hmac: HMAC-BLAKE3(Company_Key, request_id || sanitized_prompt)
+  }
+  │ Transport: E2EE CRDT_Event (nonce rotation per request)
+  ▼
+💻 Desktop Super Node
+  1. Verify HMAC-BLAKE3 — reject nếu mismatch
+  2. Check OPA Policy: requester_did có AI quota còn lại không?
+  3. Run ONNX inference trong isolated process (không share RAM với Rust Core)
+  4. Phản hồi [ONNX_OFFLOAD_RESPONSE]:
+     {
+       request_id: Uuid,         // Echo — match với request
+       ast_nodes: Vec<ASTNode>,  // Sanitized output — không có raw LLM text
+       tokens_used: u32,
+       latency_ms: u32
+     }
+  │ Transport: E2EE CRDT_Event về đúng requester_did
+  ▼
+📱 Mobile nhận response
+  1. Verify request_id khớp với pending request — reject nếu stale
+  2. Deliver Vec<ASTNode> đến .tapp hoặc AI context
+  3. Decrement AI quota: tokens_used
+  4. ZeroizeOnDrop trên SanitizedPrompt sau khi response nhận được
+```
+
+**Failure Handling:**
+
+- Desktop không online / không trong Mesh: fall back to Tiny model local.
+- TTL 5000ms hết mà không có response: emit `CoreSignal::ComponentFault { component: "ai_offload", severity: Warning }`. UI hiển thị "AI đang xử lý chậm — đang thử lại..." Retry 1 lần với TTL 3000ms. Sau đó: fall back Tiny local.
+- HMAC mismatch trên Desktop: log `OFFLOAD_HMAC_VIOLATION { requester_did }` vào Audit Log. Không phản hồi request.
+- ONNX worker crash trên Desktop: `catch_unwind` tại worker entry. Emit ComponentFault. Mobile nhận timeout sau TTL.
+
+**Constraints:**
+
+- `SanitizedPrompt` là newtype — construction bắt buộc qua PII redaction pass (Micro-NER). Không thể truyền raw string.
+- Desktop ONNX process: RAM ceiling 150MB. Nếu vượt: OOM-kill worker, trả về `OFFLOAD_OOM_ERROR`.
+- Không có persistent connection giữa Mobile và Desktop cho offload — mỗi request là độc lập CRDT_Event.
+
+---
 
 ### INFRA-02: [IMPLEMENTATION] Blob Storage Client
 
@@ -1427,12 +1485,179 @@ Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
 
 #### INFRA-02.1 File Upload Flow (Revised)
 
+**Nguyên tắc:** Client không bao giờ có direct credentials đến R2/B2/MinIO. Mọi upload/download đi qua presigned URL từ TeraRelay. Zero-Knowledge được bảo toàn vì relay ký URL mà không thấy nội dung.
+
+**Upload Flow (Chunked, E2EE):**
+
+```text
+[UI] File bytes → UICommand::SendMedia { file_bytes, recipient_did }
+  │
+  ▼
+[Rust Core]
+  1. Split file thành 2MB chunks: [chunk_0, chunk_1, ..., chunk_N]
+  2. Với mỗi chunk_i:
+     a. ChunkKey_i = HKDF(Epoch_Key, "chunk" || cas_hash || i)
+     b. ciphertext_i = AES-256-GCM(ChunkKey_i, chunk_i, nonce_i)
+        - nonce_i = derive_message_nonce(sender_data_secret, reuse_guard, seq=i)
+     c. ZeroizeOnDrop: ChunkKey_i và chunk_i plaintext
+  3. cas_hash = BLAKE3(file_bytes)  ← tính trước khi encrypt
+  4. Request presigned URL từ TeraRelay:
+     PUT /v1/presign
+     { cas_hash: hex, chunk_count: N+1, content_type: "application/octet-stream" }
+     → Response: [presigned_url_0, ..., presigned_url_N] (TTL 15 phút mỗi URL)
+  5. Upload mỗi ciphertext_i lên presigned_url_i (parallel, max 3 concurrent)
+  6. Sau khi tất cả chunks uploaded:
+     Tạo CRDT_Event { content_type: MediaStub, payload: ZeroByteStub }
+     ZeroByteStub = { name, cas_hash, chunk_count, encrypted_thumbnail, storage_ref }
+  7. Append CRDT_Event vào hot_dag.db → broadcast qua E2EE channel
+```
+
+**Download Flow (On-Demand, Streaming):**
+
+```text
+[UI] User tap on ZeroByteStub → UICommand::RequestMedia { cas_hash }
+  │
+  ▼
+[Rust Core]
+  1. Request presigned download URLs:
+     GET /v1/presign/download
+     { cas_hash: hex, chunk_count: N+1 }
+     → Response: [download_url_0, ..., download_url_N] (TTL 5 phút)
+  2. Với mỗi chunk_i (sequential để preserve stream order):
+     a. Download ciphertext_i từ download_url_i
+     b. ChunkKey_i = HKDF(Epoch_Key, "chunk" || cas_hash || i)
+     c. plaintext_i = AES-256-GCM decrypt(ChunkKey_i, ciphertext_i)
+     d. tera_buf_acquire → write plaintext_i đến 2MB RingBuffer
+     e. Emit CoreSignal::StateChanged → UI render chunk
+     f. ZeroizeOnDrop: ChunkKey_i và plaintext_i sau render frame
+  3. Sau khi tất cả chunks: emit CoreSignal::MediaComplete { cas_hash }
+```
+
+**Deduplication (Content-Addressed Storage):**
+
+- Server lưu file theo `cas_hash` → identical files chỉ upload 1 lần.
+- Trước khi upload: HEAD request kiểm tra `cas_hash` đã tồn tại chưa.
+- Nếu tồn tại: bỏ qua upload, chỉ tạo `ZeroByteStub` mới tham chiếu cùng `cas_hash`.
+
+**Constraints:**
+
+- Presigned URL TTL: 15 phút (upload), 5 phút (download). Hết TTL: request URL mới.
+- Max concurrent chunks upload: 3 (tránh saturate bandwidth trên mobile).
+- Chunk size: 2MB fixed. File < 2MB: 1 chunk duy nhất.
+- TeraRelay không lưu presigned URL — stateless generation dựa trên HMAC-signed payload.
+
+**Failure Handling:**
+
+- Upload chunk thất bại: retry tối đa 3 lần với exponential backoff (1s, 2s, 4s). Sau 3 lần: `MEDIA_UPLOAD_FAILED`, notify UI.
+- Download interrupted mid-way: Hydration_Checkpoint ghi `{ cas_hash, last_chunk_index }` vào `hot_dag.db`. Resume từ checkpoint khi user tap lại.
+- Presigned URL expired mid-upload: request URL mới cho chunk đang pending. Các chunks đã upload giữ nguyên.
+
+---
+
 ### INFRA-03: [IMPLEMENTATION] TeraRelay Health & Self-Healing
 
 > Single-binary deployment means no cluster coordination.
 > Self-healing must happen within the binary itself.
 
 #### INFRA-03.1 In-Process Watchdog
+
+**Nguyên tắc:** Single-binary deployment không có cluster coordinator. Self-healing phải xảy ra trong binary. Systemd là last-resort, không phải primary recovery mechanism.
+
+**Watchdog Architecture:**
+
+```rust
+pub struct InProcessWatchdog {
+    component_health: HashMap<ComponentId, ComponentHealth>,
+    last_heartbeat:   HashMap<ComponentId, Instant>,
+    restart_counts:   HashMap<ComponentId, u32>,
+    alert_tx:         mpsc::Sender<WatchdogAlert>,
+}
+
+pub struct ComponentHealth {
+    status:            HealthStatus,   // Healthy | Degraded | Failed
+    last_error:        Option<String>,
+    restart_count_1h:  u32,
+}
+
+/// Được gọi mỗi 1 giây bởi dedicated Tokio task
+pub async fn watchdog_tick(watchdog: Arc<Mutex<InProcessWatchdog>>) {
+    let now = Instant::now();
+    for (component_id, last_hb) in &watchdog.last_heartbeat {
+        let elapsed = now.duration_since(*last_hb);
+        // Threshold: 10 giây không có heartbeat → component considered failed
+        if elapsed > Duration::from_secs(10) {
+            watchdog.mark_failed(component_id);
+            watchdog.schedule_restart(component_id, Duration::from_secs(1)).await;
+        }
+    }
+}
+```
+
+**Component Heartbeat Registration:**
+
+| Component | Heartbeat interval | Max silence threshold | Restart policy |
+|---|---|---|---|
+| WAL staging consumer | 2s | 10s | Restart after 1s delay |
+| Pub/sub fanout | 2s | 10s | Restart after 1s delay |
+| BLE beacon scanner | 5s | 20s | Restart after 2s delay |
+| ALPN probe task | 10s | 30s | Restart after 5s delay |
+| AI worker process | 5s | 15s | Restart after 2s delay; max 3/hour |
+
+**Restart Budget (Circuit Breaker):**
+
+```rust
+pub fn schedule_restart(&mut self, component_id: &ComponentId, delay: Duration) {
+    let count_1h = self.restart_counts.entry(*component_id).or_insert(0);
+    if *count_1h >= 5 {
+        // Circuit breaker: 5 restarts trong 1 giờ → mark permanently degraded
+        self.component_health.insert(*component_id, ComponentHealth {
+            status: HealthStatus::Degraded,
+            last_error: Some("Restart budget exceeded (5/hour)".to_string()),
+            restart_count_1h: *count_1h,
+        });
+        // Alert Admin Console — không tắt daemon
+        self.alert_tx.send(WatchdogAlert::CircuitBreakerTripped {
+            component: *component_id,
+            restart_count: *count_1h,
+        }).ok();
+        return;
+    }
+    *count_1h += 1;
+    tokio::spawn(async move {
+        tokio::time::sleep(delay).await;
+        restart_component(component_id).await;
+    });
+}
+```
+
+**Prometheus Metrics (Zero-Knowledge):**
+
+```
+terachat_watchdog_restarts_total{component="wal_staging"} 2
+terachat_watchdog_circuit_breaker_trips_total{component="ai_worker"} 1
+terachat_component_health{component="ble_scanner", status="healthy"} 1
+```
+
+Không có user ID, message content, hay session data trong metrics.
+
+**SIGTERM Handling (Graceful Shutdown):**
+
+```rust
+tokio::signal::ctrl_c().await?;
+// 1. Stop accepting new connections
+// 2. Signal all components via watchdog to flush
+watchdog.initiate_shutdown().await;
+// 3. WAL checkpoint (30s timeout)
+let _ = timeout(Duration::from_secs(30),
+    db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+).await;
+// 4. Exit unconditionally
+process::exit(0);
+```
+
+Systemd `TimeoutStopSec = 35` — 5 giây margin sau 30 giây checkpoint.
+
+---
 
 ### PLATFORM-19: One-Touch Relay Deployment
 
@@ -1457,7 +1682,81 @@ Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
 
 #### OBSERVE-01.1 [IMPLEMENTATION] Mobile Metrics Push
 
-📱 **OTLP Push khi online:**
+**Nguyên tắc thiết kế:** Mobile không expose scrape endpoint (firewall/NAT issues). Push aggregate metrics qua OTLP HTTP khi online. Buffer locally khi offline. Không có user-correlated data trong bất kỳ metric nào.
+
+**Metric Types (Privacy-Safe):**
+
+```rust
+pub struct ClientMetricBatch {
+    /// Anonymized device class — không có device ID hay user ID
+    device_class:   DeviceClass,   // Mobile | Desktop | Server
+    platform:       PlatformKind,  // iOS | Android | macOS | Windows | Linux
+    app_version:    SemVer,
+
+    /// Performance metrics (aggregate, không có per-message data)
+    mls_encrypt_p50_ms:      u32,
+    mls_encrypt_p99_ms:      u32,
+    ipc_buf_acquire_p50_us:  u32,
+    ipc_buf_acquire_p99_us:  u32,
+    dag_append_p50_ms:       u32,
+    dag_merge_events_per_s:  u32,
+
+    /// Reliability metrics
+    wasm_sandbox_crashes:    u32,
+    nse_circuit_breaker_trips: u32,
+    push_key_version_mismatches: u32,
+    alpn_fallback_count:     u32,   // Số lần phải fallback từ QUIC → gRPC → WSS
+
+    /// Health indicators
+    wal_size_mb:             u32,   // Bucket: 0-10, 10-50, 50-100, 100+
+    available_ram_mb:        u32,   // Bucket: 0-100, 100-500, 500-1000, 1000+
+    battery_pct:             u8,    // Bucket: 0-20, 20-40, 40-60, 60-80, 80-100
+
+    /// Timestamps (no user correlation)
+    collection_period_start: u64,   // Unix epoch, second precision
+    collection_period_end:   u64,
+}
+```
+
+**Push Flow:**
+
+```text
+Mỗi 15 phút (hoặc khi app foreground sau offline):
+  1. Aggregate metrics từ AtomicCounters trong Rust Core
+  2. Serialize → OTLP protobuf
+  3. KHÔNG gửi nếu battery < 15% (tiết kiệm power)
+  4. Gửi qua HTTPS POST /v1/metrics (mTLS — same relay connection)
+     Nếu online: gửi ngay
+     Nếu offline: append vào metrics_buffer.db (max 48h, 500KB)
+  5. Server nhận, ghi vào Prometheus remote write endpoint
+  6. ZeroizeOnDrop: xóa batch sau khi ACK nhận được
+```
+
+**Crash Reporter (Privacy-Safe):**
+
+```rust
+pub struct CrashReport {
+    crash_id:       Uuid,           // Random UUID v4 — không liên kết với user
+    platform:       PlatformKind,
+    app_version:    SemVer,
+    component:      &'static str,   // "wasm_sandbox" | "mls_engine" | "mesh_transport"
+    panic_type:     &'static str,   // Panic type string, không có backtrace nếu có PII
+    stack_hash:     [u8; 8],        // BLAKE3[0:8] của stripped stacktrace
+    os_version:     String,
+    timestamp_utc:  u64,
+}
+```
+
+Crash report KHÔNG bao gồm: user ID, device ID, message content, file paths có username, full stacktrace (chỉ hash).
+
+**Retention và Privacy:**
+
+- Metrics server: data retention 30 ngày, sau đó auto-delete.
+- Không có cross-device correlation trong bất kỳ query nào.
+- Mọi `device_class`, `platform` được bucket để ngăn re-identification.
+- Admin có thể opt-out metrics hoàn toàn qua OPA Policy: `{ "telemetry.enabled": false }`.
+
+---
 
 ### OBSERVE-02: [IMPLEMENTATION] DAG Merge Progress UI
 
@@ -1466,6 +1765,73 @@ Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
 ---
 
 #### OBSERVE-02.1 [IMPLEMENTATION] IPC Signal Spec
+
+**Mục tiêu:** Khi DAG merge > 500 events (sau partition dài), user không được thấy black screen. Progress phải visible và có thể interrupted.
+
+**IPC Signal Contract:**
+
+```rust
+/// Emitted mỗi 200ms khi DAG merge backlog > 500 events.
+/// Dừng emit sau khi merge hoàn tất.
+CoreSignal::DagMergeProgress {
+    completed: u64,       // Events đã merge
+    total:     u64,       // Tổng events cần merge
+    // Derived: percentage = completed * 100 / total
+    // Derived: eta_seconds = (total - completed) / current_rate
+}
+```
+
+**Mobile ANR Prevention — Time-Slicing:**
+
+```rust
+pub async fn merge_dag_timesliced(
+    events: Vec<CrdtEvent>,
+    progress_tx: mpsc::Sender<MergeProgress>,
+) {
+    const BATCH_SIZE: usize = 100;
+    let total = events.len() as u64;
+    let mut completed: u64 = 0;
+
+    for batch in events.chunks(BATCH_SIZE) {
+        // Process batch — O(batch_size * log n) HLC sort
+        merge_batch(batch).await;
+        completed += batch.len() as u64;
+
+        // Yield để UI event loop có 1-2ms để process user input
+        tokio::task::yield_now().await;
+
+        // Emit progress mỗi 200ms (kiểm tra timer, không phải mỗi batch)
+        if should_emit_progress() {
+            progress_tx.send(MergeProgress { completed, total }).ok();
+        }
+    }
+    // Final signal: merge hoàn tất
+    progress_tx.send(MergeProgress { completed: total, total }).ok();
+}
+```
+
+**UI Behavior khi nhận DagMergeProgress:**
+
+```text
+completed / total < 1.0:
+  → Hiển thị Progress Banner (non-blocking, không modal):
+    "⟳ Đồng bộ tin nhắn trong lúc mất mạng... [████░░░░] 62%"
+  → Chat vẫn scrollable nhưng disable Send button
+  → ETA hiển thị nếu total > 1000: "~45 giây còn lại"
+
+completed / total == 1.0:
+  → Banner tự dismiss sau 1.5 giây
+  → Enable Send button
+  → CoreSignal::StateChanged { table: "messages" } sẽ trigger UI refresh
+```
+
+**Desktop (không có ANR risk):**
+
+- Rayon parallel thread pool — merge toàn bộ trong background Tokio task.
+- Emit `DagMergeProgress` mỗi 200ms (same signal, cùng UI behavior).
+- Không có time-slicing — Desktop merge hoàn tất nhanh hơn Mobile 10-20x.
+
+---
 
 ### PLATFORM-17: [IMPLEMENTATION] Dart FFI Memory Contract
 
@@ -1492,6 +1858,108 @@ GC release → WARNING metric + log. Không silent.
 
 #### PLATFORM-17.2 Implementation
 
+**Dart FFI `TeraSecureBuffer` Wrapper:**
+
+```dart
+/// Mandatory wrapper cho mọi Rust buffer transfer trên Android/Huawei.
+/// Direct .toPointer() ngoài wrapper này → CI lint error (BLOCKER).
+class TeraSecureBuffer {
+  final int _token;
+  bool _released = false;
+
+  TeraSecureBuffer._(this._token);
+
+  /// Factory: acquire token từ Rust Core
+  static Future<TeraSecureBuffer> acquire(int operationId) async {
+    final token = await _teraFfi.tera_buf_acquire(operationId);
+    if (token == 0) throw const TeraBufferError('acquire failed — token=0');
+    return TeraSecureBuffer._(token);
+  }
+
+  /// Primary release path — PHẢI gọi trong finally block
+  void releaseNow() {
+    if (_released) return;
+    _teraFfi.tera_buf_release(_token);
+    _released = true;
+  }
+
+  /// GC Finalizer: safety net — không phải primary path
+  @override
+  void finalize() {
+    if (!_released) {
+      // Log WARNING metric — GC release là code smell
+      MetricsCollector.increment('ffi.gc_finalizer_release.count');
+      _logger.warning('TeraSecureBuffer $token released by GC finalizer — explicit releaseNow() missing');
+      _teraFfi.tera_buf_release(_token);
+    }
+  }
+}
+
+/// Helper: bắt buộc sử dụng để access buffer content
+Future<T> useInTransaction<T>(
+    int operationId,
+    Future<T> Function(Pointer<Uint8> data, int length) fn,
+) async {
+  final buf = await TeraSecureBuffer.acquire(operationId);
+  try {
+    final ptr = _teraFfi.tera_buf_get_pointer(buf._token);
+    final len = _teraFfi.tera_buf_get_length(buf._token);
+    return await fn(ptr, len);
+  } finally {
+    buf.releaseNow();  // Guaranteed execution
+  }
+}
+```
+
+**CI Clippy Lint (Rust side) — FFI-01 Enforcement:**
+
+```rust
+// custom_lints/src/ffi_token_lint.rs
+// Từ chối mọi pub extern "C" function return Vec<u8>, *const u8, *mut u8
+// mà không đi qua tera_buf_acquire protocol.
+#[clippy::msrv = "1.75.0"]
+fn check_fn_return_type(cx: &LateContext, fn_id: DefId) {
+    if is_pub_extern_c(fn_id) {
+        if returns_raw_ptr_or_vec(cx, fn_id) && !uses_token_protocol(cx, fn_id) {
+            cx.span_error(
+                fn_span(fn_id),
+                "FFI-01 VIOLATION: pub extern \"C\" function returns raw pointer/Vec. \
+                 Use tera_buf_acquire/tera_buf_release token protocol. \
+                 See TERA-FEAT §10.1 SEC-02 and TERA-CORE §4.3."
+            );
+        }
+    }
+}
+```
+
+**NativeFinalizer Registration (Android/Huawei):**
+
+```dart
+// Trong TeraSecureBuffer constructor — NativeFinalizer là safety net
+final _finalizer = NativeFinalizer(
+    _teraFfi.tera_buf_release_ptr.cast(), // Native callback pointer
+);
+
+TeraSecureBuffer._(this._token) {
+    // Attach finalizer — GC sẽ gọi tera_buf_release nếu explicit release bị quên
+    _finalizer.attach(this, Pointer.fromAddress(_token), detach: this);
+}
+```
+
+**Dart Lint Rule (analysis_options.yaml):**
+
+```yaml
+analyzer:
+  plugins:
+    - tera_dart_lints
+linter:
+  rules:
+    - tera_avoid_direct_ffi_pointer  # Block direct .toPointer() ngoài useInTransaction
+    - tera_require_secure_buffer     # Require TeraSecureBuffer cho tera_buf_acquire calls
+```
+
+---
+
 ### PLATFORM-18: [SECURITY] [IMPLEMENTATION] ONNX Model Integrity
 
 > **Áp dụng cho:** §5.27 Edge ONNX, §8.19 EICB, §5.33 EDES, §9.3 Dual-Mask.
@@ -1500,6 +1968,103 @@ GC release → WARNING metric + log. Không silent.
 ---
 
 #### PLATFORM-18.1 Verification Flow
+
+**Áp dụng cho:** Mọi ONNX model load trong F-10 (AI/SLM). Không có exception.
+
+**Model Manifest (bundled với app):**
+
+```json
+{
+  "models": [
+    {
+      "name": "micro_ner",
+      "tier": "tiny",
+      "file": "micro_ner.onnx",
+      "blake3": "a3f2e1d4c5b6a7e8f9d0c1b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2",
+      "size_bytes": 987654,
+      "min_available_ram_mb": 12
+    },
+    {
+      "name": "whisper_tiny",
+      "tier": "tiny",
+      "file": "whisper_tiny.mlmodelc",
+      "blake3": "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5",
+      "size_bytes": 39000000,
+      "min_available_ram_mb": 100
+    }
+  ],
+  "manifest_signature": "Ed25519:TeraChat_Marketplace_CA_Key:XXXXXXXX"
+}
+```
+
+**`OnnxModelLoader.load_verified()` Flow:**
+
+```rust
+pub fn load_verified(
+    model_name: &str,
+    manifest: &ModelManifest,
+) -> Result<OrtSession, ModelLoadError> {
+    // Step 1: Lookup model spec trong manifest
+    let spec = manifest.find(model_name)
+        .ok_or(ModelLoadError::NotInManifest)?;
+
+    // Step 2: Verify manifest signature (Ed25519, TeraChat CA)
+    verify_ed25519(&manifest.manifest_signature, &TeraChat_CA_PublicKey)?;
+
+    // Step 3: Check available RAM trước khi load
+    let available_mb = sysinfo::available_memory_mb();
+    if available_mb < spec.min_available_ram_mb as u64 {
+        return Err(ModelLoadError::InsufficientRam {
+            required: spec.min_available_ram_mb,
+            available: available_mb as u32,
+        });
+    }
+
+    // Step 4: Load file bytes
+    let model_bytes = load_bundled_asset(&spec.file)?;
+
+    // Step 5: Verify BLAKE3 hash
+    let actual_hash = blake3::hash(&model_bytes);
+    if actual_hash.as_bytes() != spec.blake3.as_bytes() {
+        // Log ke Audit Log — tampering detected
+        log_audit(AuditEvent::ModelIntegrityViolation {
+            model_name: model_name.to_string(),
+            expected_hash: spec.blake3.clone(),
+            actual_hash: hex::encode(actual_hash.as_bytes()),
+        });
+        return Err(ModelLoadError::HashMismatch);
+    }
+
+    // Step 6: Initialize ORT session trong isolated arena
+    let session = ort::Session::builder()
+        .with_memory_pattern(true)
+        .with_parallel_execution(false)    // Không share thread pool với Rust Core
+        .build_from_bytes(&model_bytes)?;
+
+    // Step 7: ZeroizeOnDrop trên model_bytes sau khi ORT internalize
+    drop(Zeroizing::new(model_bytes));
+
+    Ok(session)
+}
+```
+
+**Platform-Specific Paths:**
+
+| Platform | Model format | Loader |
+|---|---|---|
+| 📱 iOS | CoreML `.mlmodelc` | `CoreML::load_compiled_model()` |
+| 📱 Android | ONNX `.onnx` | `OnnxRuntime::Session::new()` |
+| 📱 Huawei | HiAI `.om` hoặc ONNX | `HiAI::load()` với fallback ONNX |
+| 💻 macOS | CoreML `.mlmodelc` | `CoreML::load_compiled_model()` |
+| 🖥️ Win/Linux | ONNX `.onnx` | `OnnxRuntime::Session::new()` |
+
+**Failure Handling:**
+
+- `HashMismatch`: terminate AI worker, emit `CoreSignal::ComponentFault { severity: Critical }`. UI: "Tập tin AI bị lỗi — đang tắt tính năng AI tạm thời." AI feature disabled cho phiên đó.
+- `InsufficientRam`: log `ONNX_RAM_DENIED { model, required, available }`. Chọn tier thấp hơn nếu có. Nếu không: AI feature unavailable cho phiên đó.
+- `NotInManifest`: BLOCKER — model không được phép chạy. Terminate AI worker.
+
+---
 
 ### PLATFORM-19: [IMPLEMENTATION] TeraEdge Client Integration
 
@@ -1510,7 +2075,68 @@ GC release → WARNING metric + log. Không silent.
 
 #### PLATFORM-19.1 Super Node Discovery Priority
 
-📱 Khi Mobile cần ONNX inference, thứ tự ưu tiên:
+📱 Khi Mobile cần ONNX inference, thứ tự ưu tiên (được enforce bởi Rust Core):
+
+```rust
+pub async fn resolve_inference_backend(
+    model_tier: ModelTier,
+    memory_arbiter: &MemoryArbiter,
+) -> InferenceBackend {
+    // Priority 1: TeraEdge Desktop trên cùng LAN (< 5ms latency)
+    if let Some(edge) = discover_local_desktop_edge().await {
+        if edge.onnx_available && edge.latency_ms < 50 {
+            return InferenceBackend::RemoteDesktop(edge);
+        }
+    }
+
+    // Priority 2: Local model nếu RAM đủ và battery > 30%
+    let battery = platform_battery_pct();
+    let available_ram = memory_arbiter.available_for(ComponentId::AiWorker);
+    let required_ram = model_tier.required_ram_mb();
+    if available_ram >= required_ram && battery > 30 {
+        return InferenceBackend::Local;
+    }
+
+    // Priority 3: VPS Enclave (cloud, cần Internet)
+    if is_internet_available() {
+        return InferenceBackend::VpsEnclave;
+    }
+
+    // Priority 4: Downgrade model tier và thử lại local
+    if model_tier != ModelTier::Tiny {
+        return resolve_inference_backend(ModelTier::Tiny, memory_arbiter).await;
+    }
+
+    // No backend available
+    InferenceBackend::Unavailable
+}
+```
+
+**Discovery Protocol (Local Desktop):**
+
+```text
+Mobile phát mDNS query: _terachat-edge._tcp.local
+  │
+  ↓ (100ms timeout)
+Desktop Super Node respond:
+  {
+    node_id: NodeId,
+    onnx_available: bool,
+    model_tiers: ["tiny", "base"],
+    current_load_pct: u8,   // 0-100
+    latency_hint_ms: u32,   // Round-trip time estimate
+  }
+  │ Signed bằng Desktop DeviceIdentityKey
+  ↓
+Mobile verify signature → connect nếu load < 80% và latency < 50ms
+```
+
+**Fallback khi Desktop quá tải:**
+
+- Desktop `current_load_pct > 80%`: Mobile tự động downgrade sang Local Tiny hoặc VPS.
+- Desktop mất kết nối mid-inference: retry 1 lần với 3s timeout. Nếu thất bại: VPS Enclave hoặc Local Tiny.
+
+---
 
 ### INFRA-04: [IMPLEMENTATION] Canary Deployment Strategy
 
@@ -1521,6 +2147,135 @@ GC release → WARNING metric + log. Không silent.
 
 #### INFRA-04.1 Traffic Splitting via DNS
 
+**Nguyên tắc:** Không có Kubernetes, không có service mesh. DNS-based traffic splitting + per-tenant feature flags.
+
+**DNS Traffic Splitting (GeoDNS):**
+
+```text
+relay.terachat.com
+  ├── 95% → relay-stable.terachat.com  (current stable version)
+  └── 5%  → relay-canary.terachat.com  (new version under validation)
+```
+
+Clients không biết họ đang trên stable hay canary — cùng TLS cert, cùng API surface.
+
+**Canary Promotion Gate (automated):**
+
+```yaml
+# ops/canary-policy.yaml
+canary_validation:
+  initial_traffic_pct: 5
+  promotion_steps: [5, 25, 50, 100]
+  promotion_interval_hours: 2     # Mỗi 2 giờ nếu tất cả gates pass
+  
+  auto_rollback_triggers:
+    - metric: "relay_error_rate_5xx"
+      threshold: "> 0.5%"
+      window_minutes: 5
+    - metric: "wasm_sandbox_crashes_total_rate"
+      threshold: "> 0.1/min"
+      window_minutes: 5
+    - metric: "dag_merge_duration_p99_ms"
+      threshold: "> 2000"
+      window_minutes: 10
+    - metric: "client_reported_crash_rate"     # Từ OBSERVE-01 client metrics
+      threshold: "> 0.2%"
+      window_minutes: 15
+  
+  required_gates:
+    - name: "WasmParity CI gate passed"
+      source: "ci_result"
+    - name: "SBOM signature verified"
+      source: "ops/sbom-verification.sh"
+    - name: "Security scan clean"
+      source: "trivy_result"
+```
+
+**Per-Tenant Feature Flags (Emergency Override):**
+
+```rust
+// Admin Console → OPA Policy → pushed down đến clients
+{
+  "feature_flags": {
+    "canary_opt_out": true,         // Force stable version cho tenant này
+    "ai_inference_enabled": false,  // Disable AI cho specific compliance requirement
+    "mesh_mode_enabled": true,
+    "max_file_size_mb": 100
+  }
+}
+```
+
+**Rollback Procedure (< 5 phút):**
+
+```bash
+# 1. Automated trigger: canary-controller phát hiện threshold breach
+# 2. DNS weight reset: canary → 0%, stable → 100%
+tera-ops dns set-weight --target relay-canary --weight 0
+tera-ops dns set-weight --target relay-stable --weight 100
+
+# 3. Alert: gửi PagerDuty incident + Slack notification
+# 4. Log rollback event với timestamp và triggering metric
+```
+
+---
+
+# ops/canary-policy.yaml
+canary_validation:
+  initial_traffic_pct: 5
+  promotion_steps: [5, 25, 50, 100]
+  promotion_interval_hours: 2     # Mỗi 2 giờ nếu tất cả gates pass
+  
+  auto_rollback_triggers:
+    - metric: "relay_error_rate_5xx"
+      threshold: "> 0.5%"
+      window_minutes: 5
+    - metric: "wasm_sandbox_crashes_total_rate"
+      threshold: "> 0.1/min"
+      window_minutes: 5
+    - metric: "dag_merge_duration_p99_ms"
+      threshold: "> 2000"
+      window_minutes: 10
+    - metric: "client_reported_crash_rate"     # Từ OBSERVE-01 client metrics
+      threshold: "> 0.2%"
+      window_minutes: 15
+  
+  required_gates:
+    - name: "WasmParity CI gate passed"
+      source: "ci_result"
+    - name: "SBOM signature verified"
+      source: "ops/sbom-verification.sh"
+    - name: "Security scan clean"
+      source: "trivy_result"
+```
+
+**Per-Tenant Feature Flags (Emergency Override):**
+
+```rust
+// Admin Console → OPA Policy → pushed down đến clients
+{
+  "feature_flags": {
+    "canary_opt_out": true,         // Force stable version cho tenant này
+    "ai_inference_enabled": false,  // Disable AI cho specific compliance requirement
+    "mesh_mode_enabled": true,
+    "max_file_size_mb": 100
+  }
+}
+```
+
+**Rollback Procedure (< 5 phút):**
+
+```bash
+# 1. Automated trigger: canary-controller phát hiện threshold breach
+# 2. DNS weight reset: canary → 0%, stable → 100%
+tera-ops dns set-weight --target relay-canary --weight 0
+tera-ops dns set-weight --target relay-stable --weight 100
+
+# 3. Alert: gửi PagerDuty incident + Slack notification
+# 4. Log rollback event với timestamp và triggering metric
+```
+
+---
+
 ### INFRA-05: [IMPLEMENTATION] SBOM & Reproducible Builds
 
 > Enterprise/Gov customers yêu cầu SBOM cho compliance audit.
@@ -1530,6 +2285,175 @@ GC release → WARNING metric + log. Không silent.
 
 #### INFRA-05.1 SBOM Generation
 
+**SBOM (Software Bill of Materials) — Yêu cầu cho Enterprise/Gov:**
+
+```bash
+# CI pipeline: generate SBOM sau mỗi build
+cargo cyclonedx --format json --output terachat-sbom.json
+
+# Ký SBOM bằng TeraChat Release Key
+cosign sign-blob \
+    --key release-key.pem \
+    --output-signature terachat-sbom.json.sig \
+    terachat-sbom.json
+
+# Upload cả SBOM và signature lên GitHub Release Assets
+```
+
+**SBOM Content (CycloneDX 1.5 format):**
+
+```json
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "name": "terachat-core",
+      "version": "1.0.0",
+      "type": "library",
+      "supplier": { "name": "TeraChat Inc." }
+    },
+    "tools": [{ "name": "cargo-cyclonedx", "version": "0.3.x" }]
+  },
+  "components": [
+    {
+      "name": "ring",
+      "version": "0.17.x",
+      "purl": "pkg:cargo/ring@0.17.x",
+      "licenses": [{ "expression": "ISC AND OpenSSL" }],
+      "hashes": [{ "alg": "SHA-256", "content": "..." }]
+    }
+  ]
+}
+```
+
+**Reproducible Builds:**
+
+```dockerfile
+# Dockerfile.build — hermetic build environment
+FROM rust:1.75.0-slim-bookworm AS builder
+# Pin ALL system packages to exact versions
+RUN apt-get install -y --no-install-recommends \
+    libclang-dev=1:15.0-56 \
+    pkg-config=1.8.1-1
+# Rust toolchain pinned via rust-toolchain.toml
+# cargo build với SOURCE_DATE_EPOCH để deterministic timestamps
+ENV SOURCE_DATE_EPOCH=1700000000
+RUN cargo build --release --locked
+```
+
+```toml
+# rust-toolchain.toml — pinned in repository root
+[toolchain]
+channel = "1.75.0"
+components = ["rustfmt", "clippy"]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin"
+]
+```
+
+**Verification (Customer-Side):**
+
+```bash
+# Customer verify binary khớp với SBOM-claimed hash
+cosign verify-blob \
+    --key https://releases.terachat.com/cosign-pub.pem \
+    --signature terachat-sbom.json.sig \
+    terachat-sbom.json
+
+# Verify binary hash khớp với SBOM component hash
+sha256sum terachat-relay-linux-x64 | grep $(jq -r '.metadata.component.hashes[0].content' terachat-sbom.json)
+```
+
+---
+
+# CI pipeline: generate SBOM sau mỗi build
+cargo cyclonedx --format json --output terachat-sbom.json
+
+# Ký SBOM bằng TeraChat Release Key
+cosign sign-blob \
+    --key release-key.pem \
+    --output-signature terachat-sbom.json.sig \
+    terachat-sbom.json
+
+# Upload cả SBOM và signature lên GitHub Release Assets
+```
+
+**SBOM Content (CycloneDX 1.5 format):**
+
+```json
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "name": "terachat-core",
+      "version": "1.0.0",
+      "type": "library",
+      "supplier": { "name": "TeraChat Inc." }
+    },
+    "tools": [{ "name": "cargo-cyclonedx", "version": "0.3.x" }]
+  },
+  "components": [
+    {
+      "name": "ring",
+      "version": "0.17.x",
+      "purl": "pkg:cargo/ring@0.17.x",
+      "licenses": [{ "expression": "ISC AND OpenSSL" }],
+      "hashes": [{ "alg": "SHA-256", "content": "..." }]
+    }
+  ]
+}
+```
+
+**Reproducible Builds:**
+
+```dockerfile
+# Dockerfile.build — hermetic build environment
+FROM rust:1.75.0-slim-bookworm AS builder
+# Pin ALL system packages to exact versions
+RUN apt-get install -y --no-install-recommends \
+    libclang-dev=1:15.0-56 \
+    pkg-config=1.8.1-1
+# Rust toolchain pinned via rust-toolchain.toml
+# cargo build với SOURCE_DATE_EPOCH để deterministic timestamps
+ENV SOURCE_DATE_EPOCH=1700000000
+RUN cargo build --release --locked
+```
+
+```toml
+# rust-toolchain.toml — pinned in repository root
+[toolchain]
+channel = "1.75.0"
+components = ["rustfmt", "clippy"]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin"
+]
+```
+
+**Verification (Customer-Side):**
+
+```bash
+# Customer verify binary khớp với SBOM-claimed hash
+cosign verify-blob \
+    --key https://releases.terachat.com/cosign-pub.pem \
+    --signature terachat-sbom.json.sig \
+    terachat-sbom.json
+
+# Verify binary hash khớp với SBOM component hash
+sha256sum terachat-relay-linux-x64 | grep $(jq -r '.metadata.component.hashes[0].content' terachat-sbom.json)
+```
+
+---
+
 ### CICD-01: [IMPLEMENTATION] CI/CD Pipeline Requirements
 
 > Danh sách gates bắt buộc — tất cả phải pass trước khi merge vào main.
@@ -1537,6 +2461,121 @@ GC release → WARNING metric + log. Không silent.
 ---
 
 #### CICD-01.1 Required Gates
+
+Tất cả gates dưới đây phải pass trước khi merge vào `main`. Bất kỳ gate nào fail = **BLOCKER**.
+
+**Security Gates:**
+
+```yaml
+security_gates:
+  - name: "FFI-01: No raw pointer in pub extern C"
+    command: "cargo clippy -- -D tera_ffi_raw_pointer"
+    blocker: true
+
+  - name: "KEY-02: ZeroizeOnDrop verification"
+    command: "cargo miri test --test zeroize_verification"
+    blocker: true
+
+  - name: "Dependency audit (RUSTSEC)"
+    command: "cargo audit --deny warnings"
+    blocker: true
+
+  - name: "Trivy container scan (CRITICAL CVE = fail)"
+    command: "trivy image --exit-code 1 --severity CRITICAL terachat-relay:latest"
+    blocker: true
+
+  - name: "Secret scan (GitLeaks)"
+    command: "gitleaks detect --source . --exit-code 1"
+    blocker: true
+```
+
+**Correctness Gates:**
+
+```yaml
+correctness_gates:
+  - name: "Unit tests (all platforms)"
+    command: "cargo nextest run --all-features"
+    blocker: true
+
+  - name: "WasmParity CI gate (wasm3 vs wasmtime, delta ≤ 20ms)"
+    command: "cargo test --test wasm_parity -- --timeout 60"
+    blocker: true
+    description: |
+      Executes the same .tapp workload on wasm3 (iOS path) and wasmtime (Desktop path).
+      Fails if: (1) output AST differs, (2) execution time delta > 20ms on reference hardware,
+      (3) memory usage delta > 5MB.
+
+  - name: "Inbound deduplication contract (CRDT)"
+    command: "cargo test --test crdt_dedup_contract"
+    blocker: true
+    description: |
+      Relay restart with 1000 in-flight STAGED events.
+      Verify: zero duplicate messages in recipient view,
+      zero UNIQUE constraint violations in hot_dag.db.
+
+  - name: "MLS epoch rotation SLA (≤1s for 100 members)"
+    command: "cargo bench --bench mls_epoch_rotation -- --sample-size 10"
+    blocker: false   # Non-blocking: regression tracked, not blocking merge
+    threshold_ms: 1000
+```
+
+**Build & Signing Gates:**
+
+```yaml
+build_gates:
+  - name: "Reproducible build verification"
+    command: "ops/verify-reproducible-build.sh"
+    blocker: true
+    description: |
+      Build twice with identical SOURCE_DATE_EPOCH.
+      SHA-256 of both binaries must be identical.
+      Fails on any non-determinism.
+
+  - name: "SBOM generation and signing"
+    command: "ops/generate-sbom.sh && cosign sign-blob ..."
+    blocker: true
+
+  - name: "iOS: fastlane match cert validation"
+    command: "bundle exec fastlane match nuke --type development --dry-run"
+    blocker: false
+    platforms: [ios]
+
+  - name: "Windows: EV Code Signing (DigiCert KeyLocker)"
+    command: "signtool verify /pa terachat-setup.exe"
+    blocker: true
+    platforms: [windows]
+
+  - name: "Linux: GPG signature on .deb/.rpm"
+    command: "dpkg-sig --verify terachat_*.deb"
+    blocker: true
+    platforms: [linux]
+
+  - name: "AppImage: Cosign verification"
+    command: "cosign verify-blob --key terachat-root.pub terachat-*.AppImage"
+    blocker: true
+    platforms: [linux_appimage]
+```
+
+**Performance Budget Gates:**
+
+```yaml
+performance_gates:
+  - name: "IPC buffer acquire P99 < 100µs"
+    command: "cargo bench --bench ipc_bridge"
+    threshold_p99_us: 100
+    blocker: false   # Regression alert, not blocking
+
+  - name: "AES-256-GCM throughput regression (< 10% drop)"
+    command: "cargo bench --bench crypto_throughput"
+    blocker: false
+
+  - name: "hot_dag.db append P99 < 10ms"
+    command: "cargo bench --bench dag_append"
+    threshold_p99_ms: 10
+    blocker: false
+```
+
+---
 
 ### INFRA-06: [TEST] [IMPLEMENTATION] Automated Chaos Engineering
 
@@ -1546,6 +2585,187 @@ GC release → WARNING metric + log. Không silent.
 ---
 
 #### INFRA-06.1 Chaos Test Framework
+
+**Mục tiêu:** 28 scenarios trong TestMatrix.md phải chạy automated trong CI (staging environment), không chỉ manual runbook. Gov/Military tier: phải pass tất cả 28 trước contract ký.
+
+**Framework Architecture:**
+
+```rust
+// chaos/src/lib.rs
+pub struct ChaosScenario {
+    pub id:            &'static str,       // e.g. "SC-01"
+    pub name:          &'static str,
+    pub fault_inject:  Box<dyn FaultInjector>,
+    pub expected:      ExpectedBehavior,
+    pub timeout_s:     u32,
+    pub platforms:     Vec<PlatformKind>,
+}
+
+pub trait FaultInjector: Send + Sync {
+    async fn inject(&self, env: &TestEnvironment) -> Result<(), ChaosError>;
+    async fn cleanup(&self, env: &TestEnvironment);
+}
+
+pub struct ExpectedBehavior {
+    pub max_data_loss_events:  u32,     // 0 = zero data loss required
+    pub max_recovery_time_s:   u32,
+    pub min_mesh_nodes_active: u32,
+    pub ui_degraded_ok:        bool,    // Nếu false: UI phải fully functional
+}
+```
+
+**Core Chaos Scenarios (subset — 8 của 28):**
+
+```rust
+// SC-01: Network partition + rejoin
+ChaosScenario {
+    id: "SC-01",
+    name: "Network partition 30 minutes then rejoin",
+    fault_inject: Box::new(NetworkPartitionInjector {
+        duration_s: 1800,
+        partition_type: PartitionType::AllNodes,
+    }),
+    expected: ExpectedBehavior {
+        max_data_loss_events: 0,
+        max_recovery_time_s: 120,
+        min_mesh_nodes_active: 2,
+        ui_degraded_ok: true,  // Mesh mode UI là acceptable
+    },
+    timeout_s: 2100,
+    platforms: vec![iOS, Android, Desktop],
+}
+
+// SC-02: iOS Tactical Relay TTL expiry — tất cả desktop offline
+ChaosScenario {
+    id: "SC-02",
+    name: "EMDP: Desktop offline, iOS-only mesh, TTL expiry at T+60min",
+    fault_inject: Box::new(EmdpTtlExpiryInjector {
+        desktop_offline: true,
+        ios_node_count: 2,
+        run_to_expiry: true,
+    }),
+    expected: ExpectedBehavior {
+        max_data_loss_events: 0,    // Buffered messages không được mất
+        max_recovery_time_s: 30,    // Sau khi desktop reconnect
+        min_mesh_nodes_active: 2,
+        ui_degraded_ok: true,
+    },
+    timeout_s: 4200,
+    platforms: vec![iOS],
+}
+
+// SC-03: Relay restart với 1000 STAGED events
+ChaosScenario {
+    id: "SC-03",
+    name: "Relay restart: 1000 in-flight STAGED events",
+    fault_inject: Box::new(RelayRestartInjector {
+        staged_events_count: 1000,
+        restart_type: RestartType::SIGKILL,  // Hard kill — không graceful
+    }),
+    expected: ExpectedBehavior {
+        max_data_loss_events: 0,    // WAL staging guarantee: zero loss
+        max_recovery_time_s: 60,
+        min_mesh_nodes_active: 0,   // Online-only scenario
+        ui_degraded_ok: false,      // UI phải fully recover
+    },
+    timeout_s: 300,
+    platforms: vec![Server],
+}
+
+// SC-06: Dead Man Switch lockout trong active CallKit session
+ChaosScenario {
+    id: "SC-06",
+    name: "Dead Man Switch fires during active CallKit voice call",
+    fault_inject: Box::new(DeadManSwitchInjector {
+        during_active_call: true,
+        grace_hours: 0,   // Immediate lockout
+    }),
+    expected: ExpectedBehavior {
+        // Core_Spec §5.1: lockout deferred until call ends
+        max_data_loss_events: 0,
+        max_recovery_time_s: 10,    // 10s sau khi call kết thúc
+        min_mesh_nodes_active: 0,
+        ui_degraded_ok: false,
+    },
+    timeout_s: 180,
+    platforms: vec![iOS],
+}
+```
+
+**CI Integration (staging environment):**
+
+```yaml
+# .github/workflows/chaos-tests.yml
+name: Chaos Engineering Suite
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Hàng ngày lúc 2:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      scenario_filter:
+        description: 'Run specific scenario (e.g. SC-01) or "all"'
+        default: 'all'
+
+jobs:
+  chaos-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Start staging environment (docker-compose)
+        run: docker-compose -f ops/chaos/docker-compose.staging.yml up -d
+
+      - name: Run chaos suite
+        run: |
+          cargo run --bin chaos-runner -- \
+            --scenario ${{ inputs.scenario_filter || 'all' }} \
+            --parallel 4 \
+            --report-format junit \
+            --output chaos-results.xml
+
+      - name: Publish results
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaos-results
+          path: chaos-results.xml
+```
+
+---
+
+# .github/workflows/chaos-tests.yml
+name: Chaos Engineering Suite
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Hàng ngày lúc 2:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      scenario_filter:
+        description: 'Run specific scenario (e.g. SC-01) or "all"'
+        default: 'all'
+
+jobs:
+  chaos-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Start staging environment (docker-compose)
+        run: docker-compose -f ops/chaos/docker-compose.staging.yml up -d
+
+      - name: Run chaos suite
+        run: |
+          cargo run --bin chaos-runner -- \
+            --scenario ${{ inputs.scenario_filter || 'all' }} \
+            --parallel 4 \
+            --report-format junit \
+            --output chaos-results.xml
+
+      - name: Publish results
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaos-results
+          path: chaos-results.xml
+```
+
+---
 
 ## 5. FEATURE ↔ CORE MAPPING (CRITICAL)
 
