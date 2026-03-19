@@ -4,7 +4,7 @@
 # DOCUMENT IDENTITY
 id:       "TERA-TEST"
 title:    "TeraChat — Chaos Engineering & Test Matrix"
-version:  "2.0"
+version:  "0.2.6"
 audience: "QA Engineer, Security Engineer, Product Manager"
 purpose:  "Đặc tả kịch bản kiểm thử (Test Matrix), đặc biệt là Chaos Engineering với các kịch bản hỏng hóc kết hợp (combined-failure scenarios) trước khi go-live."
 

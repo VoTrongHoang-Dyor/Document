@@ -4,7 +4,7 @@
 # DOCUMENT IDENTITY
 id:       "TERA-MKT"
 title:    "TeraChat — Web Marketplace & Extensions"
-version:  "2.0"
+version:  "0.2.6"
 audience: "Platform Engineer, Plugin Developer, Security Auditor"
 purpose:  "Đặc tả vòng đời plugin .tapp, sandbox WASM, cơ chế bảo mật (OPA, Egress Circuit Breaker) và quy trình phát hành (Publishing)."
 
@@ -26,10 +26,10 @@ ai_routing_hint: |
 
 | Version | Date | Change Summary |
 | ------- | ---------- | ---------------------------------------------------------------------------- |
-| v0.3.5 | 2026-03-13 | (Section Deprecated: Decentralized SLA & Centralized Reports removed); §4.2 Heuristics Scanner |
-| v0.3.0 | 2026-03-11 | Add §4 Automated Static Scan & Security Manifest Audit; Publisher Trust Tier table |
-| v0.2.9 | 2026-03-05 | Add §3 WASM Sandbox resource limits (CPU 10%, RAM 64MB cap); egress rate limiting |
-| v0.2.8 | 2026-03-03 | Initial spec: §1 Decentralized Provisioning; §2 Ed25519 Signature flow; §3 OPA injection |
+| 0.2.6 | 2026-03-13 | (Section Deprecated: Decentralized SLA & Centralized Reports removed); §4.2 Heuristics Scanner |
+| 0.2.3 | 2026-03-11 | Add §4 Automated Static Scan & Security Manifest Audit; Publisher Trust Tier table |
+| 0.2.1 | 2026-03-05 | Add §3 WASM Sandbox resource limits (CPU 10%, RAM 64MB cap); egress rate limiting |
+| 0.1.1 | 2026-03-03 | Initial spec: §1 Decentralized Provisioning; §2 Ed25519 Signature flow; §3 OPA injection |
 
 ---
 

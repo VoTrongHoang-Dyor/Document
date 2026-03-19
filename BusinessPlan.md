@@ -4,7 +4,7 @@
 # DOCUMENT IDENTITY
 id:       "TERA-BIZ"
 title:    "TeraChat — Business Plan & GTM Strategy"
-version:  "2.0"
+version:  "0.2.6"
 audience: "Investor, Executive, Sales, System Architect"
 purpose:  "Đặc tả mô hình kinh doanh, chiến lược Go-To-Market, định vị sản phẩm và chiến lược cấp phép (Licensing)."
 

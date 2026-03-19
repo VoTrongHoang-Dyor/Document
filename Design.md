@@ -4,7 +4,7 @@
 # DOCUMENT IDENTITY
 id:       "TERA-DESIGN"
 title:    "TeraChat — Product Requirements Document (Design)"
-version:  "2.0"
+version:  "0.2.6"
 audience: "Designer, Frontend Developer, Product Manager"
 purpose:  "Đặc tả hệ thống thiết kế UI/UX Glassmorphism, component library, UI state machine và animation specs."
 
@@ -26,10 +26,10 @@ ai_routing_hint: |
 
 | Version | Date       | Change Summary                                                                      |
 | ------- | ---------- | ----------------------------------------------------------------------------------- |
-| v0.3.5  | 2026-03-13 | Add §37 Adaptive Glassmorphism State Machine & Survival HUD                         |
-| v0.3.0  | 2026-03-11 | Add §30–36 Memory pressure UI · Byzantine fault indicators · Crypto-Shred animation |
-| v0.2.9  | 2026-03-05 | Add §28 Self-Destruct Visualization · §29 Memory Zeroization overlay                |
-| v0.2.8  | 2026-03-04 | Add §25 Magnetic Collapse animation · §26 FCP Red Border overlay                    |
+| 0.2.6  | 2026-03-13 | Add §37 Adaptive Glassmorphism State Machine & Survival HUD                         |
+| 0.2.3  | 2026-03-11 | Add §30–36 Memory pressure UI · Byzantine fault indicators · Crypto-Shred animation |
+| 0.2.1  | 2026-03-05 | Add §28 Self-Destruct Visualization · §29 Memory Zeroization overlay                |
+| 0.1.1  | 2026-03-04 | Add §25 Magnetic Collapse animation · §26 FCP Red Border overlay                    |
 | v0.2.0  | 2026-02-18 | Initial Glassmorphism UI system                                                     |
 
 ---

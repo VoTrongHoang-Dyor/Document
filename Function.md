@@ -2,7 +2,7 @@
 # DOCUMENT IDENTITY
 id:       "TERA-FUNC"
 title:    "TeraChat — Function & Capability Blueprint"
-version:  "0.2.5"
+version:  "0.2.6"
 audience: "Product Manager, CEO, Sales Engineer, Customer Success, Developer, Investor"
 purpose:  "Strategic product reference: full functional architecture, system capabilities,
            component interactions, and core value propositions of TeraChat."
@@ -516,7 +516,7 @@ SCIM offboarding → mTLS vô hiệu < 30s tự động
 
 ```yaml
 # CHANGELOG
-- version: "3.0"
+- version:  "0.2.6"
   date: "2026-03-19"
   changes:
     - "Complete rewrite from CEO/CTO perspective — removed low-level technical noise"

@@ -2,7 +2,7 @@
 # DOCUMENT IDENTITY
 id:       "TERA-INTRO"
 title:    "Introduction — System Gateway"
-version:  "1.0"
+version:  "0.2.6"
 audience: "New Team Member, System Architect, Product Manager, Investor / Executive"
 purpose:  "Giải thích tại sao hệ thống tồn tại, kiến trúc tổng thể, thuật ngữ chung và bản đồ định tuyến tài liệu."
 
