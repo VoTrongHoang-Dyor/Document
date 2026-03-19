@@ -1,928 +1,1126 @@
-Đã có đủ toàn bộ context. Tổng hợp prompt thuần túy cho IDE AI.Đây là toàn bộ prompt thuần túy — copy trực tiếp vào IDE AI của bạn:
+
+# 📄 PATCHES FOR `Core_Spec.md`
 
 ---
 
-```
-CONTEXT: TeraChat project documentation update.
-Decision made: wasm3 Interpreter (Giải pháp C) is the chosen WASM runtime strategy
-to replace wasmtime JIT for iOS and macOS, resolving the Hardened Runtime / W^X conflict.
-Do NOT use XPC process isolation or AOT-only approach.
+```markdown
+## [SECTION: §5.3 Message Layer Security — UPDATE: Nonce Derivation]
 
-TASK: Apply the following technical specification additions and modifications
-across 8 documentation files. Each file section below is self-contained.
-Insert content at the indicated anchor points. Do not remove existing content
-unless the instruction explicitly says "REPLACE" or "REMOVE".
+### Problem
+`Base_Nonce` referenced in AES-256-GCM construction (`nonce = Base_Nonce XOR chunk_seq_number`)
+is never defined. If implementation uses a static or weakly-derived value, nonce reuse under
+the same `Epoch_Key` breaks GCM authentication tag integrity, collapsing the entire E2EE model.
 
-════════════════════════════════════════════════════════════════
-FILE 1 — Introduction.md
-════════════════════════════════════════════════════════════════
+### Root Cause
+MLS RFC 9420 §5.4.9 defines nonce derivation from `sender_data_secret` and `reuse_guard`.
+The spec omitted this derivation chain, leaving `Base_Nonce` as an undefined symbol.
 
-TARGET SECTION: Platform Support Matrix (wherever iOS/macOS runtime is described)
+### Solution (Implementation-Level)
 
-ADD the following row/note to the platform capability table:
+Replace the nonce construction note in §5.3 with:
 
-| Platform   | WASM Runtime   | JIT | W^X Compliant | Dynamic .tapp Load |
-|------------|---------------|-----|----------------|--------------------|
-| iOS        | wasm3 (C)     | ✗   | ✅ Yes          | ✅ Yes              |
-| macOS      | wasm3 (C)     | ✗   | ✅ Yes          | ✅ Yes              |
-| Android    | wasmtime JIT  | ✅  | N/A            | ✅ Yes              |
-| Huawei     | wasmtime JIT  | ✅  | N/A            | AOT bundle only    |
-| Windows    | wasmtime JIT  | ✅  | N/A            | ✅ Yes              |
-| Linux      | wasmtime JIT  | ✅  | N/A            | ✅ Yes              |
-
-ADD this note under or near the WASM runtime description:
-
-TeraChat uses a Dual-Engine WASM strategy. On iOS and macOS, the wasm3
-pure interpreter is used to guarantee 100% compliance with Apple W^X
-(Write XOR Execute) policy and macOS Notarization / Hardened Runtime
-requirements. No JIT page is ever allocated on these platforms.
-On all other platforms, wasmtime with Cranelift JIT backend is used for
-maximum throughput. Both engines produce semantically identical output —
-validated by the WasmParity CI gate. Latency delta on wasm3: +15–20ms
-per .tapp call, which is acceptable for enterprise collaboration UX.
-
-════════════════════════════════════════════════════════════════
-FILE 2 — Core_Spec.md
-════════════════════════════════════════════════════════════════
-
-TARGET SECTION: §Dual-Engine WASM Compilation (or wherever the WASM runtime
-engine selection is described — search for "wasmtime" or "W^X" or "iOS JIT")
-
-REPLACE the existing iOS WASM engine decision block with:
-
-### wasm3 Interpreter — Primary iOS/macOS WASM Runtime
-
-#### Decision Record
-Platform: iOS, macOS
-Chosen engine: wasm3 (C implementation, ~10 KB binary footprint)
-Reason: wasm3 is a pure stack-based interpreter. It never allocates
-RWX (Read-Write-Execute) pages. All .wasm bytecode is read as data,
-not compiled into native code at runtime. This is the only engine
-that passes Apple App Store Review Rule 2.5.2 and macOS Notarization
-Hardened Runtime checks without requiring the allow-jit entitlement.
-
-Engine routing at compile time:
+**Nonce derivation (MLS RFC 9420 §5.4.9 compliant):**
 
 ```rust
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-fn create_wasm_engine() -> TeraWasmEngine {
-    TeraWasmEngine::Wasm3(wasm3::Environment::new())
-}
-
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-fn create_wasm_engine() -> TeraWasmEngine {
-    let mut config = wasmtime::Config::new();
-    config.cranelift_nan_canonicalization(true);
-    config.wasm_relaxed_simd(false);
-    TeraWasmEngine::Wasmtime(wasmtime::Engine::new(&config).unwrap())
+/// Per-message nonce — derived, never random, never hardcoded.
+pub fn derive_message_nonce(
+    sender_data_secret: &[u8; 32],  // from current MLS Epoch_Key material
+    reuse_guard:        &[u8; 4],   // 4 random bytes from CSPRNG; embedded in MLSCiphertext header
+    seq_number:         u64,        // chunk_seq_number for chunked media; 0 for single messages
+) -> [u8; 12] {
+    // Step 1: derive base nonce via HKDF-SHA256
+    let base_nonce = hkdf_sha256(
+        ikm:  sender_data_secret,
+        info: b"nonce",
+        length: 12,
+    );
+    // Step 2: XOR with reuse_guard (left-padded to 12 bytes) to prevent cross-epoch reuse
+    let guarded = xor_12(base_nonce, pad_left_4(reuse_guard));
+    // Step 3: XOR with chunk_seq_number (right-aligned u64 in 12-byte field)
+    xor_12(guarded, seq_u64_to_12(seq_number))
 }
 ```
 
-The #[cfg] gate is evaluated at compile time. No runtime branch exists.
-iOS/macOS builds contain zero wasmtime or Cranelift code. Binary size
-impact: wasm3 adds ~10 KB vs wasmtime which adds ~3–5 MB.
+**Rules enforced by `mls_engine.rs`:**
 
-#### wasm3 Memory Model
+- `reuse_guard` MUST be generated by `ring::rand::SystemRandom` per message. Never reused.
+- `sender_data_secret` MUST be rotated on every MLS Epoch rotation. Stale epoch key = reject.
+- For chunked media (F-09): `seq_number` increments per 2 MB chunk. `reuse_guard` is shared
+  across all chunks of the same file transfer (bound to `cas_hash`).
+- `base_nonce` MUST NOT be persisted to disk. Derived fresh from `sender_data_secret` on each use.
+- CI: property-based test (proptest) MUST verify no two (reuse_guard, seq_number) pairs produce
+  the same 12-byte nonce under the same `sender_data_secret`. Block merge on failure.
 
-wasm3 operates with a fixed linear memory region allocated once at
-module instantiation. The interpreter walks bytecode in a tight
-eval loop — no page permission changes occur during execution.
+**Impact on §0.2 MLS Session Objects:**
 
-Memory layout for each .tapp instance on iOS/macOS:
+Add to `KeyPackage` object table:
 
-  [wasm3 linear memory region]
-    Size: configurable, default 4 MB, max 16 MB per instance
-    Permissions: PROT_READ | PROT_WRITE only (never PROT_EXEC)
-    Allocation: mmap(MAP_ANONYMOUS | MAP_PRIVATE)
-    Post-execution: madvise(MADV_NOCORE) + explicit zeroize via
-                    ZeroizeOnDrop before munmap
+| Object | Type | Storage Location | Lifecycle | Spec Ref |
+|---|---|---|---|---|
+| `Sender_Data_Secret` | HKDF-SHA256 output | RAM, `ZeroizeOnDrop` | Per MLS Epoch; zeroized on rotation | §5.3 |
 
-#### Host Function ABI — wasm3 Binding
+### Impact
 
-wasm3 exposes host functions via its C API. The Rust binding must
-wrap each host function using the wasm3 extern "C" calling convention:
+- **Security:** Eliminates AES-GCM nonce reuse risk. Brings implementation into strict RFC 9420
+  compliance. Forward secrecy is preserved because `sender_data_secret` rotates with Epoch_Key.
+- **Reliability:** Deterministic nonce derivation allows server-side replay verification.
+- **No latency impact:** HKDF-SHA256 derivation < 1 µs on AES-NI hardware.
+
+### Reference
+
+- REF: Core_Spec.md §5.3 (Epoch rotation, skip keys)
+- REF: Core_Spec.md §0.2 (MLS Session Objects — add Sender_Data_Secret)
+- REF: Feature_Spec.md §F-01 (Send flow — step 3)
+- REF: Feature_Spec.md §F-09 (ChunkKey nonce — same derivation applies)
+- External: IETF RFC 9420 §5.4.9
+
+```
+
+---
+
+```markdown
+## [SECTION: §3.6 — ADD: AI / SLM Infrastructure Module]
+
+### Problem
+`Feature_Spec.md §F-10` maps AI integration to `REF: TERA-CORE §3.6`, which does not exist
+in Core_Spec.md. This is an orphan reference. `SessionVault` and `Micro-NER` have no canonical
+definition, no struct schema, and no security constraints in Core. Any implementation will be
+architecturally unconstrained.
+
+### Root Cause
+§3 (Platform Segmentation) was extended to §3.5 for signing APIs but §3.6 was omitted when
+AI integration was added to TERA-FEAT. The Core anchor is missing.
+
+### Solution (Implementation-Level)
+
+Insert as new §3.6 in the Platform Segmentation section, after §3.5:
+
+---
+
+### 3.6 AI / SLM Infrastructure
+
+**Process isolation:** AI inference runs in a dedicated OS process (`terachat-ai-worker`),
+separate from Rust Core. Crash of the AI worker MUST NOT propagate to Core. `catch_unwind`
+boundary enforced at worker entry (§4.4).
+
+**Module map:**
+
+```text
+infra/ai_worker.rs
+  § Responsibilities: ONNX/CoreML inference orchestration, Micro-NER PII pipeline,
+                      SessionVault lifecycle, KV-Cache management, quota enforcement
+  § Interfaces:
+      run_inference(prompt: SanitizedPrompt) -> Result<Vec<ASTNode>, AiError>
+      redact_pii(text: &str) -> (RedactedText, AliasMap)
+      restore_pii(response: &str, alias_map: AliasMap) -> String
+  § Dependencies: crypto/zeroize.rs (SessionVault), ffi/ipc_bridge.rs (CoreSignal),
+                  infra/metrics.rs (quota counters)
+```
+
+**`SessionVault` struct (canonical definition):**
 
 ```rust
-// wasm3 host function registration pattern
-extern "C" fn tera_log_host(
-    runtime: *mut wasm3::ffi::IM3Runtime,
-    _ctx: *mut wasm3::ffi::IM3ImportContext,
-    _sp: *mut u64,
-    _mem: *mut core::ffi::c_void,
-) -> *const core::ffi::c_void {
-    // read args from stack pointer _sp
-    // never allocate on heap inside this function
-    // never call back into WASM from here (no re-entrancy)
-    core::ptr::null()
+/// Holds PII alias map during a single LLM request-response cycle.
+/// ZeroizeOnDrop clears alias map within 100 ms of response delivery.
+#[derive(ZeroizeOnDrop)]
+pub struct SessionVault {
+    alias_map: HashMap<String, String>,  // { "[REDACTED_EMAIL_1]" → "real@email.com" }
+    created_at: Instant,
 }
 
-// Registration
-runtime.link_function("env", "tera_log", "v(ii)", tera_log_host)?;
+impl SessionVault {
+    /// Alias map MUST be dropped before any UI render frame.
+    /// On drop: HashMap contents are overwritten with 0x00 via ZeroizeOnDrop.
+    pub fn restore_and_drop(self, response: &str) -> String { ... }
+}
 ```
 
-ABI signature string format: wasm3 uses a compact type string.
-  i = i32, I = i64, f = f32, F = f64, v = void, *= pointer (i32 offset)
-  Example: "i(*i)" = fn(ptr: i32, len: i32) -> i32
+**Micro-NER module (PII detection):**
 
-All TeraChat host functions exposed to wasm3 MUST be registered
-in `tera_wasm3_host_registry.rs` before any module is instantiated.
-No dynamic host function registration is permitted after init.
+- Runtime: ONNX model, < 1 MB compiled size. Loaded by `MemoryArbiter` at AI worker startup.
+- Input: raw user prompt string.
+- Output: `Vec<PiiSpan { start: usize, end: usize, kind: PiiKind }>`.
+- `PiiKind`: `Name | Phone | Email | NationalId | BankAccount | Address`.
+- Hard ceiling: 8 MB total RAM for ONNX allocator (custom allocator returns `AllocError` on overflow).
+- On `AllocError`: fall back to regex-only detection (lower recall, no crash).
 
-#### Host Functions Whitelist (wasm3 scope — iOS/macOS)
-
-The following host functions are available to .tapp on iOS/macOS via wasm3.
-No others. Attempts to import unlisted functions cause module load failure.
-
-  terachat::send_message(payload_ptr: i32, payload_len: i32) -> i32
-  terachat::get_user_identity(out_ptr: i32, out_len: i32) -> i32
-  terachat::request_egress(endpoint_id: i32, body_ptr: i32, body_len: i32) -> i32
-  terachat::log_audit(msg_ptr: i32, msg_len: i32) -> void
-  terachat::get_timestamp_ms() -> i64
-  terachat::memory_alloc(size: i32) -> i32
-  terachat::memory_free(ptr: i32, size: i32) -> void
-
-wasi:sockets, wasi:filesystem, wasi:io are stripped from the module
-at publish time via wasm-opt --strip-producers. Any module importing
-these namespaces is rejected by TeraChat Marketplace signing gate.
-
-#### Performance Envelope — wasm3 vs wasmtime
-
-| Metric                     | wasm3 (iOS/macOS) | wasmtime JIT (Android/Desktop) |
-|----------------------------|-------------------|-------------------------------|
-| Cold start (module load)   | ~2–5 ms           | ~8–20 ms (JIT compile)        |
-| Warm call latency          | +15–20 ms overhead| <1 ms                         |
-| Throughput (compute-heavy) | ~50–80 MB/s       | ~400–500 MB/s                 |
-| Binary footprint           | ~10 KB            | ~3–5 MB                       |
-| W^X compliant              | ✅ Always          | ✗ Requires allow-jit           |
-| Notarizable (macOS)        | ✅ Yes             | ✗ Without XPC isolation        |
-
-Acceptable use case: .tapp plugins performing UI logic, form submission,
-lightweight data transformation, chat command processing.
-NOT acceptable: .tapp performing cryptographic bulk operations, real-time
-media encoding, or compute-intensive ML inference. Those operations must
-call into Rust Core via host functions, not run in WASM.
-
-#### wasm3 Security Posture
-
-wasm3 does not perform JIT. The attack surface difference vs wasmtime:
-
-  ELIMINATED by wasm3:
-    - JIT spray attacks (no executable pages generated)
-    - ROP gadget injection into JIT cache
-    - WASM sandbox escape via Cranelift code generation bugs
-    - allow-jit entitlement requirement (eliminates W^X hole in process)
-
-  STILL PRESENT (mitigated by existing sandbox layers):
-    - Linear memory out-of-bounds read (mitigated by wasm3 bounds checks)
-    - Host function abuse (mitigated by whitelist + OPA policy)
-    - Denial of service via infinite loop (mitigated by instruction quota)
-
-Instruction quota enforcement:
-wasm3 supports a metered execution mode. TeraChat sets a hard instruction
-budget per .tapp call:
+**AI quota enforcement (server-side validated):**
 
 ```rust
-const WASM3_INSTRUCTION_BUDGET: u64 = 10_000_000; // 10M ops per call
-runtime.set_instruction_limit(WASM3_INSTRUCTION_BUDGET);
-```
-
-If a .tapp exceeds the budget, wasm3 returns Err(InstructionLimitReached).
-Rust Core catches this, kills the instance, logs TAPP_TIMEOUT to Audit Trail,
-and returns a graceful error to the UI. No crash, no hang.
-
-#### WasmParity CI Gate — Behavioral Equivalence
-
-wasm3 is the REFERENCE runtime. wasmtime is the OPTIMIZED runtime.
-CI must verify both produce identical output for the same input:
-
-```
-// WasmParity test structure
-for each test_vector in tapp_test_suite:
-  result_wasm3    = run_with_wasm3(module, test_vector.input)
-  result_wasmtime = run_with_wasmtime(module, test_vector.input)
-  assert_eq!(result_wasm3, result_wasmtime,
-    "WasmParity FAIL: semantic divergence detected")
-  assert!(
-    (latency_wasmtime - latency_wasm3).abs() <= 20ms,
-    "WasmParity WARN: latency delta exceeds acceptable threshold"
-  )
-```
-
-Failure blocks merge to main. Latency delta > 20 ms is a warning, not a block,
-because wasm3 is expected to be slower — the test is about semantic identity.
-
-════════════════════════════════════════════════════════════════
-FILE 3 — Feature_Spec.md
-════════════════════════════════════════════════════════════════
-
-TARGET SECTION: §6.19 (W^X Rào cản Chính sách) or the section describing
-WASM interpreter vs JIT selection on iOS. Also update §PLATFORM-02.
-
-REPLACE the current §6.19 content with:
-
-### §6.19 W^X Compliance — wasm3 Interpreter Strategy (iOS/macOS)
-
-DECISION: TeraChat uses wasm3 pure interpreter on iOS and macOS.
-This is the canonical solution for W^X compliance. No XPC worker process,
-no AOT-only pipeline. Dynamic .tapp loading is supported at runtime.
-
-#### Runtime Selection — Compile-Time Gate
-
-```rust
-// In: terachat-core/src/wasm/engine.rs
-
-pub enum TeraWasmEngine {
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    Wasm3(wasm3::Environment),
-
-    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-    Wasmtime(wasmtime::Engine),
+pub struct AiQuota {
+    tokens_used_this_hour: AtomicU64,
+    limit:                 u64,              // 10_000 consumer; u64::MAX enterprise
+    reset_at:              Instant,
 }
 
-impl TeraWasmEngine {
-    pub fn new() -> Self {
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
-        { TeraWasmEngine::Wasm3(wasm3::Environment::new()) }
+// Quota check MUST occur inside Rust Core before dispatching to AI worker.
+// UI never has direct access to quota state.
+```
 
-        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-        {
-            let mut cfg = wasmtime::Config::new();
-            cfg.cranelift_nan_canonicalization(true);
-            cfg.wasm_relaxed_simd(false);
-            TeraWasmEngine::Wasmtime(wasmtime::Engine::new(&cfg).unwrap())
+**Platform-specific runtime selection:**
+
+| Platform | Runtime | Max model size | Notes |
+|---|---|---|---|
+| 📱 iOS | CoreML (`.mlmodelc`) | 74 MB (Base), 39 MB (Tiny) | W^X: no dynamic WASM AI modules |
+| 📱 Android | ONNX Runtime | 39 MB (Tiny) if RAM > 100 MB | HiAI fallback on Huawei |
+| 📱 Huawei | HiAI / ONNX | 39 MB (Tiny) | AOT bundled only |
+| 💻 macOS | ONNX / CoreML | 74 MB (Base) | XPC Worker isolation |
+| 🖥️ Windows/Linux | ONNX Runtime | 74 MB (Base) | CPU inference; GPU optional |
+
+**Security constraints:**
+
+- AI worker has NO access to `hot_dag.db` or `cold_state.db` directly.
+  All context is passed as sanitized `SanitizedPrompt` from Rust Core.
+- `SanitizedPrompt` is a newtype wrapping `String` — construction requires PII redaction pass.
+- LLM response delivered to `.tapp` as `Vec<ASTNode>` only. Raw HTML/Markdown rejected by AST Sanitizer.
+- `SessionVault` MUST be dropped before `CoreSignal::StateChanged` is emitted.
+
+### Impact
+
+- **Technical debt:** Eliminates orphan reference. F-10 now has a stable Core anchor.
+- **Security:** `SessionVault` has a canonical ZeroizeOnDrop definition. Prevents PII leak.
+- **Cross-platform:** Platform runtime selection matrix is now governed by Core, not FEAT.
+
+### Reference
+
+- REF: Core_Spec.md §3.3 (MemoryArbiter, RAM budget)
+- REF: Core_Spec.md §4.4 (catch_unwind boundary at AI worker entry)
+- REF: Core_Spec.md §4.1 (module map — add infra/ai_worker.rs)
+- REF: Feature_Spec.md §F-10 (AI / SLM Integration — fix orphan §3.6 reference)
+
+```
+
+---
+
+```markdown
+## [SECTION: §5.1 HKMS — UPDATE: Dead Man Switch TPM Reset Recovery]
+
+### Problem
+Dead Man Switch logic: `if device_counter < server_counter → reject + Self-Destruct`.
+TPM factory reset (RMA, enterprise re-imaging, mainboard replacement) resets the hardware
+counter to 0. With `server_counter` at a high value, a legitimately re-issued device triggers
+false Self-Destruct on first reconnect, with no recovery path.
+
+### Root Cause
+The spec defines the counter comparison and Self-Destruct but omits the recovery path for
+hardware-bound counter loss, which is a predictable enterprise operational event.
+
+### Solution (Implementation-Level)
+
+Append to the Dead Man Switch section in §5.1:
+
+**TPM Counter Reset Recovery (Admin-Initiated Ceremony):**
+
+Trigger conditions for counter desynchronization:
+- Device RMA (hardware replacement).
+- Enterprise re-imaging that resets TPM.
+- Migration to a new device without BIP-39 mnemonic flow.
+
+**Recovery protocol:**
+
+```text
+Precondition: Admin authenticates on a separate trusted device (biometric + Shamir quorum not
+              required — standard Admin mTLS cert sufficient).
+
+Step 1: Admin opens CISO Console → Device Management → [Target Device] → "Reset Counter Sync".
+Step 2: Server sets a one-time `counter_reset_token { device_id, nonce, expires_at: now()+3600 }`.
+        Token is Ed25519-signed by Admin's DeviceIdentityKey. Stored in PostgreSQL, single-use.
+Step 3: Target device, on next connection attempt, detects `counter_mismatch` rejection.
+        Core emits `CoreSignal::DeadManWarning { hours_remaining: 0 }` with reason `COUNTER_MISMATCH`.
+        UI presents: "Device identity requires Admin re-authorization. Contact your Administrator."
+Step 4: Admin sends `counter_reset_token` out-of-band to user (secure channel, e.g. another app).
+Step 5: User enters token on device. Core verifies Ed25519 signature against Admin's public key.
+Step 6: On valid token:
+          a. Server resets `last_valid_counter` to current device TPM counter value.
+          b. `counter_reset_token` marked `used = true` in PostgreSQL (idempotent; replay-safe).
+          c. Device re-enrolls normally.
+          d. Audit Log records: { event: "COUNTER_RESET", device_id, admin_did, timestamp }.
+Step 7: On invalid/expired token: reject silently. Audit Log records failed attempt.
+```
+
+**Hard constraints:**
+
+- `counter_reset_token` is single-use. Replay → silent reject + Audit Log entry.
+- TTL: 1 hour. Expired token → reject. Admin must issue new token.
+- Admin cannot reset counter for their own device (self-signing prohibited). Requires a second Admin.
+- Maximum 3 counter resets per device per 30-day window (prevents abuse). 4th attempt → CISO alert.
+- This recovery path does NOT bypass Self-Destruct if it has already executed. Self-Destruct is
+  irreversible by design.
+
+**Audit Log entry (mandatory):**
+
+```rust
+AuditLogEntry {
+    event_type: EventType::CounterReset,
+    target_device_id: DeviceId,
+    authorized_by_admin_did: DeviceId,
+    token_nonce: [u8; 32],
+    hlc: HLCTimestamp,
+    signature: Ed25519Signature,  // signed by Admin's DeviceIdentityKey
+}
+```
+
+**Runbook reference:** `ops/counter-reset-ceremony.md` (must be created).
+
+### Impact
+
+- **Reliability:** Eliminates false Self-Destruct on enterprise re-imaging. RTO from hardware failure
+  reduced from "device permanently bricked" to "< 1 hour with Admin involvement".
+- **Security:** Token is single-use, time-limited, Admin-signed, and audit-logged.
+  Attack surface is equivalent to existing Admin-Approved QR Recovery (§F-12).
+- **No architectural change:** Counter comparison logic unchanged. Only adds an out-of-band
+  re-sync path that the server accepts before comparison.
+
+### Reference
+
+- REF: Core_Spec.md §5.1 (Dead Man Switch, counter logic)
+- REF: Core_Spec.md §9.5 (Audit Log — PostgreSQL)
+- REF: Feature_Spec.md §F-12 (Identity — Admin-Approved Recovery pattern)
+- REF: Feature_Spec.md §F-13 (Admin Console — device management surface)
+
+```
+
+---
+
+```markdown
+## [SECTION: §9.2 Lightweight Micro-Core Relay — UPDATE: Parallel ALPN Probing]
+
+### Problem
+Current ALPN negotiation is strictly serial: QUIC (50 ms timeout) → gRPC → WSS.
+Worst-case fallback path takes up to 150 ms before reaching WSS. On enterprise networks
+where UDP is blocked, every cold connection incurs the full 50 ms QUIC probe penalty
+before attempting TCP — even when the network is known to block UDP.
+
+### Root Cause
+Serial probing design is conservative but suboptimal. QUIC and gRPC can be probed
+concurrently without conflict because they use different transport protocols (UDP vs TCP).
+
+### Solution (Implementation-Level)
+
+Replace the serial ALPN flow with a parallel-first strategy:
+
+**Revised ALPN Negotiation (target: < 50 ms end-to-end):**
+
+```rust
+pub async fn negotiate_alpn(profile: &NetworkProfile) -> AlpnResult {
+    // Fast path: known strict-compliance network (learned or Admin-forced)
+    if profile.strict_compliance {
+        return try_grpc().await;
+    }
+
+    // Parallel probe: QUIC and gRPC simultaneously
+    let quic_fut  = timeout(Duration::from_millis(50), try_quic());
+    let grpc_fut  = timeout(Duration::from_millis(80), try_grpc());
+
+    tokio::select! {
+        Ok(Ok(conn)) = quic_fut => AlpnResult::QUIC(conn),    // QUIC wins if within 50 ms
+        Ok(Ok(conn)) = grpc_fut => AlpnResult::GRPC(conn),    // gRPC wins if QUIC drops
+        _ => {
+            // Both failed: sequential WSS (last resort, no parallel candidate)
+            match timeout(Duration::from_millis(120), try_wss()).await {
+                Ok(Ok(conn)) => AlpnResult::WSS(conn),
+                _            => AlpnResult::MeshMode,
+            }
         }
     }
 }
 ```
 
-#### Module Lifecycle on wasm3 (iOS/macOS)
+**Timing guarantees:**
 
-Step 1 — Load:
-  wasm3 receives raw .wasm bytes (never a .cwasm or pre-compiled artifact)
-  wasm3 parses the module synchronously, ~2–5 ms for typical .tapp size
-  No executable pages are allocated during this step
+| Scenario | Serial (old) | Parallel (new) | Delta |
+|---|---|---|---|
+| QUIC available | 50 ms | 50 ms | 0 ms |
+| QUIC blocked, gRPC ok | 50 + 80 = 130 ms | 80 ms | -50 ms |
+| QUIC + gRPC blocked, WSS ok | 50 + 80 + 120 = 250 ms | 80 + 120 = 200 ms | -50 ms |
+| All blocked → Mesh | 250 ms | 200 ms | -50 ms |
 
-Step 2 — Link host functions:
-  Rust Core calls link_function() for each entry in the whitelist
-  Any import not in the whitelist → module rejected, error logged
+**Connection deduplication:** If both QUIC and gRPC succeed simultaneously (race condition),
+keep the lower-RTT connection. Abort the other with `connection.close()`. Log winner to
+`NetworkProfile` for future probe decisions.
 
-Step 3 — Instantiate:
-  Linear memory allocated: mmap(size, PROT_READ | PROT_WRITE)
-  No PROT_EXEC flag — this is the W^X compliance guarantee
+**`NetworkProfile` update:** Add field `preferred_alpn: Option<AlpnTier>`. On 3 consecutive
+successful QUIC connections: set `preferred_alpn = Some(QUIC)`. On next probe, try QUIC first
+with a 100 ms timeout (more generous) before parallel-probing gRPC.
 
-Step 4 — Execute:
-  Rust Core calls the exported function by name
-  wasm3 walks bytecode in interpreter loop
-  Instruction budget counter decrements per opcode
-  If counter reaches 0 → InstructionLimitReached error
+**Strict Compliance Mode unchanged:** Admin-forced mode skips all UDP probes. No change.
 
-Step 5 — Teardown:
-  ZeroizeOnDrop wipes linear memory region
-  madvise(MADV_NOCORE) applied before munmap
-  Host function handles invalidated
-  All tokens released back to Rust Core buffer pool
+### Impact
 
-#### Memory Constraints per .tapp Instance (iOS/macOS)
+- **Latency:** 50 ms reduction on networks that block UDP. 0 ms regression on QUIC-capable networks.
+- **Throughput:** Faster reconnect after Mesh Mode recovery or network switch.
+- **No security impact:** mTLS authentication is per-connection; parallel probes each authenticate independently.
 
-  Linear memory initial size: 1 MB (configurable in manifest.json)
-  Linear memory max size: 16 MB hard ceiling
-  Stack depth: max 512 frames (wasm3 default, enforced)
-  Instruction budget: 10,000,000 ops per call (configurable per .tapp tier)
-  Heap allocation via host function: max 4 MB total per session
+### Reference
 
-These limits are enforced by wasm3 runtime, not by OS. They cannot be
-exceeded regardless of what the .tapp bytecode attempts.
+- REF: Core_Spec.md §9.2 (ALPN negotiation, Strict Compliance Mode, NetworkProfile)
+- REF: Feature_Spec.md §F-14 (Adaptive Network Management — behavior update required)
 
-#### Dart FFI Integration for wasm3 (Flutter / iOS)
-
-wasm3 exposes a C API. Flutter communicates with Rust Core via Dart FFI.
-The integration chain on iOS:
-
-  Flutter UI (Dart)
-    → Dart FFI call → Rust Core (C ABI)
-      → TeraWasmEngine::Wasm3 → wasm3 C library
-        → .tapp bytecode execution
-      ← wasm3 returns result to Rust Core
-    ← Rust Core serializes to Protobuf → Dart FFI callback
-  Flutter UI renders result
-
-wasm3 is called synchronously within the Rust Core worker thread.
-It does NOT run on the Flutter main isolate. All wasm3 calls go through
-a dedicated tokio task with its own stack — no blocking of UI thread.
-
-Dart FFI binding pattern:
-
-```dart
-// tera_wasm_bridge.dart
-typedef RunTappNative = Int32 Function(
-  Pointer<Uint8> wasmBytes,
-  Int32 wasmLen,
-  Pointer<Uint8> inputBytes,
-  Int32 inputLen,
-  Pointer<Uint8> outputBuf,
-  Int32 outputBufLen,
-);
-
-final TeraRunTapp runTapp = dylib
-    .lookup<NativeFunction<RunTappNative>>('tera_run_tapp_wasm3')
-    .asFunction();
 ```
 
-All buffers passed to runTapp MUST be wrapped in TeraSecureBuffer
-and released via explicit releaseNow() or useInTransaction().
-Never rely on Dart GC as the sole release mechanism.
+---
 
-UPDATE §PLATFORM-02 to read:
+```markdown
+## [SECTION: §9.3 WAL Staging — UPDATE: Client-Side Deduplication]
 
-### PLATFORM-02: WASM Behavioral Parity Test Suite
+### Problem
+At-least-once delivery via `wal_staging.db` replay on relay restart guarantees no message loss
+but does not prevent duplicate delivery to the recipient client. A restarted relay replays all
+`STAGED` entries into the pub/sub channel. Recipients process the same `CRDT_Event` twice,
+producing duplicate messages visible in UI.
 
-WasmParity CI gate: runs identical test vectors on wasm3 (iOS/macOS)
-and wasmtime (Android/Desktop/Linux/Windows).
+### Root Cause
+The DAG append model (§7.1) is idempotent by UUID (`CrdtEvent.id: Uuid v7`) but deduplication
+at the inbound processing boundary is not explicitly mandated. Clients may append duplicate
+events to `hot_dag.db` if inbound dedup is not enforced.
 
-Rule: Output mismatch → BLOCK merge. Latency delta ≤ 20 ms is acceptable
-(wasm3 is expected to be slower). Semantic output must be IDENTICAL.
+### Solution (Implementation-Level)
 
-Canonical definition:
-  wasm3      = REFERENCE runtime (correctness authority)
-  wasmtime   = OPTIMIZED runtime (performance authority)
+Add the following deduplication rule to §9.3 and enforce it in `crdt/dag.rs`:
 
-If they diverge on output, wasm3 wins. The .tapp is considered broken
-on wasmtime, not on wasm3. Publisher must fix to match wasm3 output.
-
-════════════════════════════════════════════════════════════════
-FILE 4 — Design.md
-════════════════════════════════════════════════════════════════
-
-TARGET SECTION: §IPC Signal Mapping (§17) or wherever runtime-to-UI
-signal flows are documented. Also add to §16 WASM Sandbox App View.
-
-ADD to §16 WASM Sandbox App View:
-
-#### .tapp Runtime Indicator — wasm3 Mode
-
-When a .tapp is executing under wasm3 interpreter (iOS/macOS),
-the sandbox badge displayed in UI must show:
-
-  Light mode (Online):  "Sandbox: Interpreter Mode"  — color: #24A1DE (info)
-  Dark mode (Mesh):     "Sandbox: Interpreter Mode"  — color: #378ADD
-
-This badge distinguishes from wasmtime JIT runtime on other platforms.
-No visual penalty or warning — interpreter mode is the intended,
-secure baseline on Apple platforms.
-
-If instruction budget is exceeded (InstructionLimitReached):
-
-  UI displays:  "App timed out — restarting sandbox"
-  Color:        Warning amber (#F59E0B)
-  Action:       Auto-restart sandbox, log to Audit Trail, notify user
-
-ADD to §17 IPC Signal Mapping table:
-
-| Signal                      | UI Response                                |
-|-----------------------------|--------------------------------------------|
-| wasm3_budget_exceeded       | show amber warning, sandbox restart banner |
-| wasm3_module_load_ok        | silent — no UI change needed               |
-| wasm3_host_link_rejected    | show "App permission denied" error card    |
-| wasm3_memory_limit_hit      | show "App used too much memory" error card |
-
-ADD new section §GPU Capability Fallback Matrix (after §4 or at end):
-
-### §GPU Capability Fallback Matrix (Glassmorphism Tiers)
-
-Rust Core detects WebView2/WKWebView GPU compositing capability at startup
-and emits GpuCapabilityLevel(tier) via IPC. UI renders accordingly.
-
-| Tier | Condition                                    | Visual                                    |
-|------|----------------------------------------------|-------------------------------------------|
-| A    | GPU hardware compositing confirmed           | Full Glassmorphism: blur 20px, opacity 0.08|
-| B    | Software compositing only                   | Glass Lite: blur 8px, opacity 0.85        |
-| C    | No compositing (Intel UHD 620, old drivers) | Flat + brand accent border, #24A1DE stroke|
-
-Tier C must still be identifiably TeraChat. Designer must approve Tier C
-spec before production release. Tier C is NOT an error state — it is a
-valid rendering path for enterprise Windows fleet with legacy GPU drivers.
-
-Detection logic (Rust Core, run once at app startup):
+**Inbound deduplication contract (mandatory — enforced by `dag.rs`):**
 
 ```rust
-pub fn detect_gpu_capability() -> GpuCapabilityTier {
-    #[cfg(target_os = "windows")]
-    {
-        // Query WebView2 GPU info via ICoreWebView2Environment
-        // If hardware_acceleration_disabled → Tier::C
-        // If software_rendering_only → Tier::B
-        // Else → Tier::A
+/// Called on every inbound CrdtEvent, both Online and Mesh paths.
+pub fn append_event(db: &Connection, event: &CrdtEvent) -> Result<AppendResult> {
+    // Deduplication check: O(1) lookup by primary key
+    if db.exists("SELECT 1 FROM crdt_events WHERE id = ?", [event.id])? {
+        // Idempotent: silently discard duplicate. Do NOT return error.
+        // Do NOT emit CoreSignal::StateChanged for duplicates.
+        return Ok(AppendResult::Duplicate);
     }
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    { GpuCapabilityTier::A } // Metal always available
-    #[cfg(target_os = "linux")]
-    { detect_linux_compositing_tier() }
+
+    // Proceed with normal signature verification and WAL append
+    verify_signature(event)?;
+    db.execute("INSERT INTO crdt_events ...", event)?;
+    Ok(AppendResult::Inserted)
 }
+
+pub enum AppendResult { Inserted, Duplicate }
 ```
 
-════════════════════════════════════════════════════════════════
-FILE 5 — BusinessPlan.md
-════════════════════════════════════════════════════════════════
+**Rules:**
 
-TARGET SECTION: §Technical Architecture Summary for Investors, or
-§Platform Strategy, or wherever Apple platform distribution is discussed.
+- `crdt_events.id` MUST have a `UNIQUE` constraint in the SQLite schema. Enforced at DB level
+  as a secondary guard independent of application-layer dedup.
+- `AppendResult::Duplicate` is NOT logged to the error log. It is a normal operational outcome
+  during relay restart recovery. Log only to `TRACE` level for debugging.
+- `CoreSignal::StateChanged` MUST NOT be emitted for `AppendResult::Duplicate`.
+  Prevents UI rerender on duplicate events.
+- CI: chaos test scenario (TERA-TEST) MUST include relay restart with 1,000 in-flight STAGED
+  events and verify: (a) zero duplicate messages in recipient UI, (b) zero `UNIQUE` constraint
+  violations in SQLite error log.
 
-ADD under Apple platform / iOS distribution strategy:
+**`hot_dag.db` schema update (mandatory):**
 
-#### WASM Runtime Strategy — Competitive Advantage Note
-
-TeraChat's choice of wasm3 interpreter for iOS and macOS eliminates
-a critical technical barrier that affects competing enterprise messaging
-platforms: the inability to support dynamic plugin loading on iOS while
-remaining App Store compliant.
-
-Competing approaches require either:
-  (a) Static app bundles with no dynamic plugins (poor extensibility), or
-  (b) XPC process isolation with allow-jit entitlement (complex, higher
-      attack surface, requires additional provisioning profiles)
-
-TeraChat's wasm3 approach delivers:
-
-- Full dynamic .tapp marketplace on iOS — no recompile required
-- App Store compliant — no special entitlement needed
-- Smaller binary: wasm3 adds ~10 KB vs wasmtime ~3–5 MB
-- Hardened security posture: no W^X hole, no allow-jit in main process
-
-Performance trade-off: +15–20 ms latency per .tapp call on iOS/macOS.
-This is acceptable for enterprise collaboration workflows. Real-time
-compute-intensive operations (media encoding, bulk cryptography) are
-routed to Rust Core native code, not executed in WASM.
-
-ADD to §Signing Pipeline Strategy (create if missing):
-
-#### Code Signing & Notarization Pipeline
-
-iOS / macOS:
-
-- Apple Developer Program membership required (annual)
-- Provisioning profile: App Store distribution, no allow-jit entitlement
-- Notarization: automated in CI via xcrun notarytool
-- Entitlements file must NOT contain: com.apple.security.cs.allow-jit
-- wasm3 build: link libwasm3.a statically, strip debug symbols in Release
-
-Windows:
-
-- EV Code Signing Certificate (DigiCert or Sectigo)
-- Signing in CI via Cloud HSM (DigiCert KeyLocker recommended)
-    Cost: ~$500/year — required to suppress SmartScreen warnings
-- MSIX packaging for enterprise MDM deployment
-- ARM64 target: aarch64-pc-windows-msvc must be added to build matrix
-
-Linux:
-
-- GPG signed .deb (Ubuntu 20.04+) and .rpm (RHEL 8+) packages
-- AppImage with cosign signature as portable fallback
-- NO Flatpak — conflicts with memfd_create and seccomp-bpf
-
-════════════════════════════════════════════════════════════════
-FILE 6 — TestMatrix.md
-════════════════════════════════════════════════════════════════
-
-TARGET SECTION: After the existing 7 combined-failure scenarios (SC-01..SC-07).
-
-ADD the following new scenarios:
-
-| Scenario | Condition                                              | Expected behavior                                         |
-|----------|--------------------------------------------------------|-----------------------------------------------------------|
-| SC-08    | wasm3 instruction budget exceeded mid-execution        | Err(InstructionLimitReached) → sandbox restart → user notified, no crash |
-| SC-09    | wasm3 linear memory limit hit (alloc > 16 MB attempt) | Err(MemoryAccessOutOfBounds) → .tapp killed → error card shown |
-| SC-10    | wasm3 host function import not in whitelist            | Module load rejected → Marketplace flag raised → user sees "App permission denied" |
-| SC-11    | WasmParity CI: wasm3 output != wasmtime output         | CI gate BLOCKS merge → .tapp author notified of divergence |
-| SC-12    | iOS .tapp cold load under Jetsam memory pressure       | wasm3 instantiation deferred, queued, retried after pressure clears |
-| SC-13    | Windows ARM64 + WebView2 + SharedArrayBuffer           | SAB availability detected at init → IPC Tier selected correctly (Tier 1/2/3) |
-| SC-14    | GPU Tier C (no compositing) + .tapp rendering          | Flat UI renders correctly, .tapp sandbox badge visible, no glass crash |
-| SC-15    | wasm3 module with f64 non-deterministic opcode         | wasmparser static scan rejects module at Marketplace upload |
-
-ADD to the CI/CD requirements section (create if missing):
-
-#### WasmParity Gate — CI Requirement
-
-Every .tapp submitted to Marketplace MUST pass WasmParity gate before
-signing. The gate runs in CI on the TeraChat build farm:
-
-  Inputs:  .wasm module, canonical test vector set (JSON)
-  Step 1:  Run module with wasm3 on aarch64-apple-darwin
-  Step 2:  Run module with wasmtime on x86_64-unknown-linux-gnu
-  Step 3:  Compare outputs byte-for-byte
-  Pass:    Outputs identical AND latency_wasm3 - latency_wasmtime ≤ 20ms
-  Fail:    Output mismatch → BLOCK signing → notify publisher
-
-Publishers must fix divergence before resubmitting. The wasm3 result
-is authoritative. If wasmtime diverges, it is the publisher's
-responsibility to ensure deterministic behavior.
-
-════════════════════════════════════════════════════════════════
-FILE 7 — Web_Marketplace.md
-════════════════════════════════════════════════════════════════
-
-TARGET SECTION: §MARKETPLACE-02 WASM Security Scanning, or §Publisher
-requirements, or wherever .tapp submission guidelines are documented.
-
-ADD new section §MARKETPLACE-05: iOS/macOS Runtime Compatibility Requirements
-
-### MARKETPLACE-05: iOS/macOS wasm3 Runtime Compatibility Requirements
-
-All .tapp packages submitted to TeraChat Marketplace MUST be compatible
-with wasm3 interpreter. wasmtime-only features are NOT permitted.
-
-#### Forbidden WASM features (wasm3 does not support)
-
-- SIMD (wasm32-simd128): NOT supported by wasm3
-    → Use scalar fallbacks. wasmparser static scan rejects SIMD opcodes.
-- Threads (shared memory + atomics): NOT supported by wasm3
-    → Single-threaded .tapp only. Concurrency via Rust Core host calls.
-- Multi-memory: NOT supported by wasm3
-    → Single linear memory per module.
-- Exception handling (try/catch WASM proposal): NOT supported by wasm3
-    → Use return-code error handling pattern.
-- Tail calls: NOT supported by wasm3
-    → Refactor recursive patterns to iterative.
-- Reference types (externref, funcref): PARTIAL support in wasm3
-    → Avoid externref in cross-platform .tapp. funcref is allowed.
-
-#### Required .tapp manifest fields for iOS/macOS
-
-```json
-{
-  "id": "com.example.mytapp",
-  "version": "1.0.0",
-  "host_api_version": "1.0.0",
-  "min_host_api_version": "1.0.0",
-  "max_host_api_version": "2.0.0",
-  "wasm3_compatible": true,
-  "wasm_features": {
-    "simd": false,
-    "threads": false,
-    "multi_memory": false,
-    "exceptions": false
-  },
-  "memory": {
-    "initial_pages": 16,
-    "max_pages": 256
-  },
-  "instruction_budget": 10000000,
-  "execution_profile": "interactive"
-}
+```sql
+CREATE TABLE crdt_events (
+    id           BLOB PRIMARY KEY,  -- UUID v7; UNIQUE enforced by PRIMARY KEY
+    parents      BLOB NOT NULL,
+    hlc_wall_ms  INTEGER NOT NULL,
+    hlc_logical  INTEGER NOT NULL,
+    hlc_node_id  BLOB NOT NULL,
+    author_did   BLOB NOT NULL,
+    payload      BLOB NOT NULL,
+    signature    BLOB NOT NULL,
+    content_type INTEGER NOT NULL
+) STRICT;
+-- PRIMARY KEY implies UNIQUE; no separate index needed.
 ```
 
-`wasm3_compatible: true` is REQUIRED for any .tapp targeting iOS/macOS.
-If false or absent, the .tapp is rejected from Apple-targeted distribution
-channels at the Marketplace signing gate.
+### Impact
 
-#### Static Analysis Gate — wasm3 Compatibility Scan
+- **Reliability:** Zero duplicate messages after relay restart. Idempotent inbound path.
+- **Correctness:** `CoreSignal::StateChanged` emission is now tied exclusively to new state.
+- **Performance:** O(1) dedup check via B-Tree PRIMARY KEY lookup. No full table scan.
+- **No behavioral change** during normal operation (no relay restart, no duplicate delivery).
 
-Before signing, Marketplace backend runs:
+### Reference
 
-  wasm-opt --detect-features {module.wasm}
-
-Expected output for wasm3-compatible module:
-
-- NO simd128
-- NO threads
-- NO multi-memory
-- NO exceptions
-
-Any forbidden feature detected → submission rejected.
-Publisher receives automated report with specific opcode locations.
-
-ADD to Host API Versioning section (create §MARKETPLACE-06 if missing):
-
-### MARKETPLACE-06: Host Function ABI Versioning Contract
-
-Every .tapp manifest must declare API version compatibility range:
-
-  host_api_version:      The version this .tapp was built against
-  min_host_api_version:  Oldest TeraChat Core version this .tapp runs on
-  max_host_api_version:  Newest TeraChat Core version guaranteed compatible
-
-TeraChat Core publishes Host API Changelog following semantic versioning:
-
-- MAJOR version bump = breaking change (function removed or signature changed)
-- MINOR version bump = additive only (new function added)
-- PATCH version bump = bug fix, no API change
-
-A .tapp is REJECTED at load time if TeraChat Core version is outside
-[min_host_api_version, max_host_api_version].
-
-Breaking changes in Host API are announced minimum 6 months before
-major version release. Publishers have 6 months to migrate.
-
-════════════════════════════════════════════════════════════════
-FILE 8 — Function.md
-════════════════════════════════════════════════════════════════
-
-TARGET SECTION: Wherever .tapp lifecycle, plugin install flow, or
-WASM sandbox user-facing flows are described.
-
-ADD user-facing flow: .tapp Install and Runtime on iOS
-
-#### User Flow: Installing and Running a .tapp on iOS
-
-Step 1 — User opens TeraChat Marketplace tab
-Step 2 — Browses .tapp catalog. iOS-compatible badge visible on each .tapp
-          that has wasm3_compatible: true in manifest.
-Step 3 — User taps Install
-Step 4 — TeraChat downloads .wasm bundle (typically 10–500 KB)
-Step 5 — Marketplace BLAKE3 hash verified against signed manifest
-Step 6 — DID signature of publisher verified
-Step 7 — wasm3 module parsed and linked (2–5 ms) — no JIT, no delay
-Step 8 — .tapp appears in user's plugin tray immediately
-Step 9 — User taps .tapp to open
-Step 10 — wasm3 instantiates fresh linear memory region
-Step 11 — .tapp executes — sandbox badge shows "Interpreter Mode"
-Step 12 — User interaction sends data via host functions to Rust Core
-Step 13 — Rust Core processes, returns result via host function callback
-Step 14 — .tapp renders result in its UI region
-Step 15 — User closes .tapp
-Step 16 — ZeroizeOnDrop wipes linear memory, session state purged
-
-Error paths:
-
-- WASM module rejected (forbidden features): user sees "This app is not
-    compatible with your device" — clear, actionable message.
-- Instruction budget exceeded: user sees "App timed out, restarting" —
-    auto-recovery, no data loss.
-- Memory limit hit: user sees "App used too much memory, closed" —
-    sandbox killed cleanly, Rust Core unaffected.
-
-ADD note about performance expectation on iOS:
-
-Note for UX writers and PM: .tapp calls on iOS take ~15–20 ms longer than
-on Android or Desktop due to wasm3 interpreter overhead. This is by design
-and is the cost of Apple W^X compliance. For interactive UI .tapp plugins,
-this overhead is imperceptible (single-digit frame budget on 60 fps).
-For compute-heavy tasks, .tapp should delegate to Rust Core host functions
-rather than running in wasm3 loop.
-
-════════════════════════════════════════════════════════════════
-SUMMARY OF CHANGES — for AI to confirm before applying
-════════════════════════════════════════════════════════════════
-
-Introduction.md  — ADD platform matrix row, ADD wasm3 dual-engine note
-Core_Spec.md     — REPLACE iOS WASM engine block with full wasm3 spec:
-                   engine routing, memory model, host function ABI,
-                   whitelist, performance table, security posture,
-                   instruction quota, WasmParity CI gate definition
-Feature_Spec.md  — REPLACE §6.19, UPDATE §PLATFORM-02 with wasm3
-                   as reference runtime definition, ADD Dart FFI pattern
-Design.md        — ADD wasm3 runtime badge, ADD IPC signals for wasm3
-                   events, ADD GPU Capability Fallback Matrix (Tier A/B/C)
-BusinessPlan.md  — ADD competitive advantage note for wasm3 strategy,
-                   ADD Signing Pipeline section
-TestMatrix.md    — ADD SC-08 through SC-15, ADD WasmParity CI gate spec
-Web_Marketplace.md — ADD MARKETPLACE-05 wasm3 compatibility requirements,
-                   forbidden features list, manifest schema, static scan gate,
-                   ADD MARKETPLACE-06 Host ABI versioning contract
-Function.md      — ADD iOS .tapp install/run user flow with error paths,
-                   ADD UX performance expectation note
-
-════════════════════════════════════════════════════════════════
-CONSTRAINTS FOR AI APPLYING THESE CHANGES
-════════════════════════════════════════════════════════════════
-
-1. Do NOT introduce wasmtime references into iOS or macOS sections.
-   wasm3 is the ONLY engine for those platforms.
-
-2. Do NOT add XPC process isolation patterns. That was Giải pháp B,
-   which was NOT selected. Remove any existing XPC-for-WASM-JIT
-   references if found.
-
-3. Do NOT change Android, Windows, Linux, or Huawei WASM engine selection.
-   Those platforms continue to use wasmtime with Cranelift JIT.
-
-4. Preserve all existing content not explicitly targeted by this prompt.
-   This is an additive update except where REPLACE is specified.
-
-5. Maintain the existing document structure, heading levels, and
-   formatting conventions of each file.
-
-6. All Rust code blocks use 2021 edition syntax.
-   All Dart code blocks use Dart 3.x null-safe syntax.
-
-7. The wasm3 Rust crate assumed: wasm3 = "0.4" (or latest compatible).
-   Import: use wasm3::{Environment, Module, Runtime};
+- REF: Core_Spec.md §9.3 (WAL Staging, at-least-once delivery)
+- REF: Core_Spec.md §7.1 (DAG structure, hot_dag.db, CRDT_Event schema)
+- REF: Core_Spec.md §12.5 FLT-02 (WAL staging replay on restart)
+- REF: Feature_Spec.md §F-01 (Inbound message flow — dedup at receipt)
+- REF: Feature_Spec.md §F-03 (IPC Bridge — StateChanged emission rules)
 
 ```
 
 ---
-=========================================
-Câu trả lời của bạn **hoàn toàn chính xác về mặt kiến trúc** và thực ra còn sâu hơn hai lựa chọn ban đầu tôi đặt ra. Để phân tích triệt để:
 
----
+```markdown
+## [SECTION: §5.2 Hardware Root of Trust — UPDATE: PIN Counter Biometric Gate]
 
-## ✅ Đánh giá: Native Crypto Offloading — Kiến trúc Đúng Đắn
+### Problem
+`Failed_PIN_Attempts` counter is "encrypted with `Device_Key`" but the read/write access
+control for the counter itself is not specified. On a jailbroken device, an attacker with
+filesystem access can restore a backup of the counter file, resetting failed attempts to 0
+and bypassing the 5-attempt ceiling on PIN brute force.
 
-### Tại sao đây là giải pháp tốt nhất trong cả 3
+### Root Cause
+The spec describes what the counter contains and what happens on 5th failure, but does not
+specify the OS-level access control protecting counter reads and writes.
 
-Câu hỏi ban đầu có một **false premise** ẩn bên trong: nó ngầm giả định rằng `.tapp` *nên* thực hiện cryptographic operations bên trong WASM. Bạn đã phát hiện ra premise sai đó và phá vỡ nó hoàn toàn.
+### Solution (Implementation-Level)
 
-Đây không phải là "compromise" giữa hai lựa chọn — đây là **redesign tầng trách nhiệm**. So sánh trực tiếp:
+Append to §5.2, after the Cryptographic Self-Destruct section:
 
-| Tiêu chí | Per-profile budget | Progressive quota + OPA | Native Crypto Offloading |
+**`Failed_PIN_Attempts` Counter — Access Control (mandatory):**
+
+| Platform | Storage Location | Read Access Control | Write Access Control |
 |---|---|---|---|
-| SHA-256 1MB latency | ~200ms (wasm3) | ~200ms + OPA round-trip | <1ms (ring crate, SIMD) |
-| WASM instruction cost | 12M ops | 12M ops | ~100 ops (pointer pass) |
-| Attack surface | Crypto logic exposed in WASM bytecode | Same | Crypto logic **never** in WASM |
-| Implementation complexity | Thấp | Cao (OPA state machine) | Trung bình (Crypto ABI chuẩn hóa) |
-| `.tapp` bytecode reverse-engineerable? | Có — thuật toán lộ | Có | Không — logic trong Rust binary |
-| Consistent across wasm3/wasmtime | ✅ | ✅ | ✅ — kernel gọi trực tiếp |
+| 📱 iOS | Keychain, `kSecAttrAccessible = kSecAttrAccessibleWhenUnlockedThisDeviceOnly` | Main App process only; `kSecAttrAccessGroup` restricted | Requires `LAContext` biometric evaluation before write |
+| 📱 Android | `EncryptedSharedPreferences` backed by StrongBox | App UID only | `BiometricPrompt` authentication required before write |
+| 📱 Huawei | HMS SafetyDetect + EncryptedPreferences | App process only | HMS Biometric gate required |
+| 💻 macOS | Keychain, `kSecAttrAccessControl` with `kSecAccessControlBiometryCurrentSet` | Main process + daemon only | SEP biometric before write |
+| 🖥️ Windows | DPAPI with `CRYPTPROTECT_LOCAL_MACHINE = false` | Current user only | Windows Hello PIN or biometric |
+| 🖥️ Linux | TPM 2.0 NV Index with PCR policy sealing | `terachat` user UID only | TPM PCR policy (boot chain validation) |
 
-**Native Crypto Offloading thắng trên mọi tiêu chí ngoại trừ implementation effort**, và effort đó là one-time cost có payoff vĩnh cửu.
-
----
-
-### Phân tích kỹ thuật đầy đủ — 3 lớp
-
-**Lớp 1 — Tại sao đây là đúng về mặt bảo mật**
-
-Trong threat model của TeraChat, WASM sandbox là môi trường **không tin cậy**. `.tapp` bytecode có thể bị reverse-engineer, patch, hoặc là malicious code từ publisher xấu. Nếu SHA-256, BLAKE3, hay bất kỳ crypto primitive nào chạy trong WASM:
-
-- Attacker có thể modify bytecode để skip hash verification
-- Attacker có thể substitute BLAKE3 bằng identity function (trả về input trực tiếp)
-- Crypto logic bị exposed trong bytecode — bất kỳ static analyzer nào cũng đọc được
-
-Khi crypto chạy trong Rust Core qua host function, WASM chỉ thấy: "Tôi gọi `terachat_crypto_blake3(ptr, len)` và nhận `[u8; 32]` về." Nó không biết gì về implementation. Không thể tamper. Không thể substitute.
-
-**Lớp 2 — Tại sao đây là đúng về mặt hiệu năng**
-
-`ring` crate trên iOS/ARM64 dùng NEON SIMD cho SHA-256 và BLAKE3. Throughput:
-
-| Operation | wasm3 interpreter | Rust native (ring) | Ratio |
-|---|---|---|---|
-| SHA-256 (1MB) | ~180–220ms | ~1.2ms | ~150–180x faster |
-| BLAKE3 (1MB) | ~150–200ms | ~0.3ms | ~500–600x faster |
-| AES-256-GCM (1MB) | ~400ms | ~0.8ms | ~500x faster |
-
-Đây không phải là tối ưu hóa nhỏ. Đây là difference giữa "unusable" và "imperceptible".
-
-**Lớp 3 — Tại sao đây là đúng về mặt kiến trúc**
-
-`Core_Spec.md CONTRACT` đã có rule: *"Mọi cryptographic operation phải dùng thư viện `ring` hoặc `RustCrypto` — không implement crypto tự làm."* Native Crypto Offloading là cách **enforce rule này tại tầng host function boundary** — không chỉ là guideline, mà là constraint bất khả vi phạm vì WASM sandbox không có access đến `ring`.
-
----
-
-### Thiết kế Crypto Host ABI — Chi tiết Implementation
-
-Đây là phần bạn xác định cần chuẩn hóa. Đề xuất thiết kế đầy đủ:
+**Tamper detection (mandatory):**
 
 ```rust
-// terachat-core/src/wasm/host/crypto_abi.rs
-// Toàn bộ Crypto Host API — đây là boundary duy nhất
-// WASM có thể gọi vào crypto primitives
-
-/// Namespace: terachat_crypto::*
-/// wasm3 ABI string: xem comment mỗi function
-
-/// BLAKE3 hash
-/// wasm3 sig: "i(*ii)" = fn(data_ptr, data_len, out_ptr[32]) -> i32
-pub extern "C" fn host_blake3(
-    data_ptr: i32, data_len: i32,
-    out_ptr: i32,             // caller-allocated 32-byte buffer
-    mem: &mut WasmLinearMemory,
-) -> i32 {
-    let data = mem.read_slice(data_ptr, data_len)?;
-    let hash = blake3::hash(data);           // ring/blake3, SIMD-optimized
-    mem.write_slice(out_ptr, hash.as_bytes());
-    0 // success
+/// Counter value is authenticated — tamper causes Self-Destruct.
+pub struct PinAttemptCounter {
+    value:  u8,               // 0..=5; anything above 5 treated as 5
+    mac:    [u8; 32],         // HMAC-BLAKE3(Device_Key, value || device_id || "pin-counter-v1")
 }
 
-/// SHA-256 hash  
-/// wasm3 sig: "i(*ii)" = fn(data_ptr, data_len, out_ptr[32]) -> i32
-pub extern "C" fn host_sha256(
-    data_ptr: i32, data_len: i32,
-    out_ptr: i32,
-    mem: &mut WasmLinearMemory,
-) -> i32 {
-    use ring::digest;
-    let data = mem.read_slice(data_ptr, data_len)?;
-    let digest = digest::digest(&digest::SHA256, data);
-    mem.write_slice(out_ptr, digest.as_ref());
-    0
-}
-
-/// Ed25519 verify (không sign — .tapp không được giữ private key)
-/// wasm3 sig: "i(*i*i*i)" = fn(msg_ptr, msg_len, sig_ptr[64], pub_ptr[32]) -> i32
-pub extern "C" fn host_ed25519_verify(
-    msg_ptr: i32, msg_len: i32,
-    sig_ptr: i32,   // 64 bytes
-    pub_ptr: i32,   // 32 bytes
-    mem: &WasmLinearMemory,
-) -> i32 {
-    use ring::signature;
-    let msg = mem.read_slice(msg_ptr, msg_len)?;
-    let sig = mem.read_slice(sig_ptr, 64)?;
-    let pub_key = mem.read_slice(pub_ptr, 32)?;
-    
-    let pub_key = signature::UnparsedPublicKey::new(
-        &signature::ED25519, pub_key
-    );
-    match pub_key.verify(msg, sig) {
-        Ok(_)  => 0,   // valid
-        Err(_) => -1,  // invalid
+pub fn read_counter(device_key: &DeviceKey) -> Result<u8, PinCounterError> {
+    let stored = platform_secure_read(COUNTER_KEY)?;
+    let expected_mac = hmac_blake3(device_key, &[stored.value, device_id, PIN_COUNTER_DOMAIN]);
+    if stored.mac != expected_mac {
+        // MAC mismatch: counter corrupted or tampered.
+        // Treat as 5 failures. Log COUNTER_TAMPERED. Initiate Self-Destruct.
+        log_audit(AuditEvent::PinCounterTampered);
+        trigger_self_destruct();
+        return Err(PinCounterError::Tampered);
     }
+    Ok(stored.value)
 }
 
-/// HMAC-SHA256 (cho .tapp tự verify data integrity — không dùng cho session keys)
-/// wasm3 sig: "i(*i*ii)" = fn(key_ptr, key_len, data_ptr, data_len, out_ptr[32]) -> i32
-pub extern "C" fn host_hmac_sha256(
-    key_ptr: i32, key_len: i32,
-    data_ptr: i32, data_len: i32,
-    out_ptr: i32,
-    mem: &mut WasmLinearMemory,
-) -> i32 {
-    use ring::hmac;
-    let key_bytes = mem.read_slice(key_ptr, key_len)?;
-    let data = mem.read_slice(data_ptr, data_len)?;
-    
-    let key = hmac::Key::new(hmac::HMAC_SHA256, key_bytes);
-    let tag = hmac::sign(&key, data);
-    mem.write_slice(out_ptr, tag.as_ref());
-    0
+pub fn write_counter(device_key: &DeviceKey, new_value: u8) -> Result<()> {
+    // Biometric gate MUST be cleared before this call (enforced by call site).
+    let mac = hmac_blake3(device_key, &[new_value, device_id, PIN_COUNTER_DOMAIN]);
+    platform_secure_write(COUNTER_KEY, PinAttemptCounter { value: new_value, mac })?;
+    Ok(())
 }
-
-// ============================================================
-// KHÔNG expose — .tapp KHÔNG được gọi các operations này:
-// - AES-256-GCM encrypt/decrypt      (Company_Key không rời Rust Core)
-// - Ed25519 sign                      (DeviceIdentityKey không rời Secure Enclave)
-// - X25519 key exchange               (Session key negotiation là Core responsibility)
-// - MLS epoch operations              (TreeKEM không accessible từ WASM)
-// - Keychain read                     (Hardware-bound keys never exported)
-// ============================================================
 ```
 
-**Điểm quan trọng trong thiết kế ABI này:**
+**Backup exclusion (mandatory):**
 
-`.tapp` chỉ được verify, không được sign. Chỉ được hash dữ liệu của chính nó, không được access session keys. Đây là Principle of Least Privilege áp dụng tại host function boundary — một số operations quan trọng bị hardblock bằng cách không expose host function tương ứng, dù WASM có muốn gọi cũng không có endpoint.
+- iOS: counter Keychain item MUST use `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`.
+  This flag prevents iCloud Keychain sync and iTunes backup inclusion.
+- Android: `EncryptedSharedPreferences` backing file MUST be excluded from `auto-backup`
+  via `android:allowBackup="false"` on the SharedPreferences provider, or explicit
+  `backup_rules.xml` exclusion.
+- Restoring a device backup MUST reset the counter to 0 via a counter integrity re-validation
+  step on first unlock post-restore. This is acceptable (new device, legitimate user).
+
+### Impact
+
+- **Security:** Eliminates jailbreak backup-restore bypass of PIN brute force protection.
+  Counter tampering now triggers Self-Destruct rather than silent success.
+- **Reliability:** MAC check catches filesystem corruption and distinguishes it from
+  active tampering. Both result in Self-Destruct, which is the correct safe-fail behavior.
+
+### Reference
+
+- REF: Core_Spec.md §5.1 (Cryptographic Self-Destruct, 5-attempt ceiling)
+- REF: Core_Spec.md §5.2 (Dual-Wrapped KEK, Biometric binding)
+- REF: Core_Spec.md §12.1 KEY-01 (keys never leave hardware boundary)
+- REF: Feature_Spec.md §F-11c (Biometric Screen Lock, PIN fallback)
+
+```
 
 ---
 
-### Điểm cần bổ sung vào nhận định của bạn
+```markdown
+## [SECTION: §9.6 Operational Metrics — ADD: §9.7 Distributed Tracing]
 
-Nhận định của bạn chính xác nhưng có một **edge case** cần xử lý: khi `.tapp` cần hash dữ liệu nhạy cảm của user (ví dụ: hash một document trước khi sign), host function `host_blake3` sẽ nhận raw data từ WASM linear memory. Cần có một quyết định thiết kế rõ ràng:
+### Problem
+Prometheus metrics provide aggregate system health but no cross-service latency visibility.
+When a message delivery SLA breach occurs, the 30-second metric delay (§OBS-02) plus the
+absence of request-scoped trace IDs makes it impossible to correlate: client send → relay
+receive → pub/sub fanout → recipient deliver. MTTR for production incidents is structurally
+elevated.
 
-**Vấn đề:** `.tapp` gọi `host_blake3(user_doc_ptr, len, out_ptr)`. Rust Core đọc `user_doc_ptr` từ WASM linear memory. Điều này có nghĩa Rust Core tiếp xúc với data mà `.tapp` đang xử lý — không phải E2EE-protected data, nhưng vẫn là user data.
+### Root Cause
+No distributed tracing layer defined. Observability is metrics-only (counter/gauge/histogram).
+No span correlation between client, relay, and database layers.
 
-**Giải pháp:** Host function crypto chỉ operate trên **data trong WASM linear memory của chính instance đó**, không được đọc từ `hot_dag.db` hay Keychain. Rust Core enforce giới hạn này bằng cách chỉ accept `(ptr, len)` trong bounds của linear memory region đã allocated cho instance đó. Out-of-bounds read → reject + terminate.
+### Solution (Implementation-Level)
+
+Add §9.7 immediately after §9.6:
 
 ---
 
-### Prompt bổ sung cho IDE AI — Update các file
+### 9.7 Distributed Tracing (OpenTelemetry)
+
+**Scope:** Server-side only (relay daemon, PostgreSQL query spans, MinIO upload spans).
+Client-side tracing is out of scope — it would require transmitting trace IDs to the server,
+creating a potential timing correlation vector that conflicts with §1.4 Zero-Knowledge guarantee.
+
+**Privacy constraint (mandatory):**
+- Trace IDs MUST be random (`uuid::Uuid::new_v4()`). Never derived from user ID, device ID,
+  message ID, or any content-correlated value.
+- Span attributes MUST NOT contain: `user_id`, `device_id`, `recipient_id`, `message_content`,
+  `cas_hash`, or any value that could identify a user or message.
+- Permitted span attributes: `relay_zone`, `alpn_tier`, `db_operation`, `wasm_module_id` (opaque),
+  `mls_group_size_bucket` (bucketed to 1–10, 11–100, 101–1000, 1001+).
+
+**Implementation (OpenTelemetry Rust SDK):**
+
+```rust
+// Cargo.toml additions (relay binary only):
+// opentelemetry = { version = "0.22", features = ["rt-tokio"] }
+// opentelemetry-otlp = { version = "0.15", features = ["grpc-tonic"] }
+// tracing-opentelemetry = "0.23"
+
+// Tracer initialization (relay startup):
+pub fn init_tracer(config: &RelayConfig) -> TracerProvider {
+    opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint(&config.otlp_endpoint)  // e.g. "http://otel-collector:4317"
+        )
+        .with_trace_config(
+            opentelemetry_sdk::trace::Config::default()
+                .with_sampler(Sampler::TraceIdRatioBased(0.1))  // 10% sampling; configurable
+                .with_id_generator(RandomIdGenerator::default())
+        )
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?
+}
+```
+
+**Mandatory trace points:**
+
+| Span Name | Attributes | Parent |
+|---|---|---|
+| `relay.message.receive` | `alpn_tier`, `payload_bytes` | — (root) |
+| `relay.wal.stage` | `wal_queue_depth` | `relay.message.receive` |
+| `relay.pubsub.fanout` | `fanout_recipients_bucket` | `relay.wal.stage` |
+| `relay.mls.epoch_rotation` | `group_size_bucket`, `rotation_trigger` | — (root) |
+| `db.postgres.query` | `db_operation` (SELECT/INSERT/UPDATE) | nearest parent |
+| `minio.upload` | `chunk_index`, `chunk_size_bytes` | nearest parent |
+
+**Collector and export:**
+
+- OTel Collector deployed as sidecar on relay VPS (no external network egress required).
+- Export to Grafana Tempo (self-hosted) or any OTLP-compatible backend.
+- `otlp_endpoint` configured via environment variable `TERA_OTEL_ENDPOINT`. If unset: tracing disabled (not a startup error).
+- Sampling rate: 10% default; configurable via `TERA_OTEL_SAMPLE_RATE` (0.0–1.0). Set to 1.0 during incident response.
+
+**Metric delay interaction:**
+Traces are NOT subject to the 30-second Prometheus delay (§OBS-02). Trace data does not
+contain user-correlated timing information because trace IDs are random and span attributes
+are scrubbed. The 30-second delay rule applies only to Prometheus counters/gauges/histograms.
+
+**New implementation contract rule (add to §12.6):**
+
+- [x] **OBS-04** — Relay daemon MUST initialize OTel tracer at startup if `TERA_OTEL_ENDPOINT`
+  is set. If endpoint is unreachable: log warning, continue without tracing. MUST NOT crash.
+- [x] **OBS-05** — All OTel span attributes MUST pass `privacy_attribute_check()` at compile
+  time via a custom procedural macro that rejects any attribute key in the blocklist
+  (`user_id`, `device_id`, `message_id`, `recipient_id`, `content`, `cas_hash`).
+
+### Impact
+
+- **Operational:** MTTR for P1/P0 relay incidents reduced ~50–60% (request-scoped debugging
+  replaces log grep across multiple services).
+- **Security:** Zero user-correlated data in traces. Privacy constraint is enforced at compile
+  time, not by policy.
+- **No latency impact:** Async OTel batch exporter; < 0.1 ms per span on relay hot path.
+
+### Reference
+
+- REF: Core_Spec.md §9.6 (Prometheus metrics, OBS-01/02/03)
+- REF: Core_Spec.md §12.6 (Observability Rules — add OBS-04, OBS-05)
+- REF: Feature_Spec.md §F-13 (Admin Console — expose trace sampling toggle in CISO Console)
 
 ```
-ADDENDUM to previous wasm3 update prompt.
 
-DECISION: Adopt Native Crypto Offloading pattern.
-.tapp WASM code MUST NOT implement cryptographic algorithms.
-All crypto operations are delegated to Rust Core via host functions.
-INSTRUCTION_BUDGET remains 10,000,000 ops — this is now sufficient
-because crypto workloads never consume WASM instructions.
+---
 
-ADD to Core_Spec.md §wasm3 Host Functions Whitelist:
+```markdown
+## [SECTION: §7.1 DAG Structure — UPDATE: Metadata Privacy Threat Model Boundary]
 
-Crypto Host ABI (terachat_crypto namespace):
-  terachat_crypto::blake3(data_ptr, data_len, out_ptr[32]) -> i32
-  terachat_crypto::sha256(data_ptr, data_len, out_ptr[32]) -> i32
-  terachat_crypto::hmac_sha256(key_ptr, key_len, data_ptr, data_len, out_ptr[32]) -> i32
-  terachat_crypto::ed25519_verify(msg_ptr, msg_len, sig_ptr[64], pub_ptr[32]) -> i32
-  terachat_crypto::constant_time_eq(a_ptr, b_ptr, len) -> i32
+### Problem
+`hot_dag.db` stores CRDT event metadata in plaintext: `author_did` (Ed25519 public key hash),
+`HLC_Timestamp`, `content_type` (Message | Edit | Delete | GroupOp), and `parents: Vec<Uuid>`
+(causal graph). On a physically seized or forensically imaged device, this metadata enables
+social graph reconstruction and communication frequency analysis without decrypting any payload.
+The §1.4 Zero-Knowledge guarantee is stated for the server; its boundary at the device level is
+undefined.
 
-EXPLICITLY NOT exposed (hard-blocked — no host function registered):
-  AES-256-GCM encrypt/decrypt
-  Ed25519 sign
-  X25519 key exchange
-  MLS epoch operations
-  Any function that would expose Company_Key or Session_Key to WASM
+### Root Cause
+The spec correctly claims Zero-Knowledge at the server (blind relay). The threat model does not
+define what is guaranteed at the device level in an adversarial physical access scenario.
 
-ADD to Web_Marketplace.md §MARKETPLACE-05:
+### Solution (Implementation-Level)
 
-Static analysis gate MUST detect and REJECT any .tapp that contains
-WASM implementations of: SHA-2, SHA-3, AES, ChaCha20, BLAKE2/3,
-Curve25519, Ed25519, RSA, or any other cryptographic primitive.
-Detection method: wasmparser opcode analysis looking for
-characteristic bit-manipulation patterns of crypto algorithms.
-Rejection message: "Use terachat_crypto host functions instead of
-implementing cryptographic algorithms in WASM bytecode."
+Append to §7.1 after the Storage Layer table:
 
-ADD to Feature_Spec.md CONTRACT section:
+**Device-Level Metadata Privacy — Threat Model Boundary (mandatory documentation):**
 
-".tapp MUST NOT implement cryptographic hash functions, ciphers,
-or signature algorithms in WASM bytecode. All crypto operations
-MUST be delegated to Rust Core via terachat_crypto host functions.
-Violation detected at: Marketplace static scan (publish-time)
-and runtime opcode monitoring (execution-time)."
+This section explicitly defines what is and is not protected at the device level.
 
-ADD to TestMatrix.md:
+**Protected (encrypted):**
+- `payload` field: AES-256-GCM ciphertext, key = `Epoch_Key` in RAM. Server and filesystem
+  adversary cannot read message content.
+- `cold_state.db`: fully encrypted with SQLCipher AES-256 (key = Secure Enclave-derived).
 
-SC-16: .tapp attempts SHA-256 in WASM bytecode
-       Expected: Marketplace static scan REJECTS at upload
-SC-17: .tapp calls terachat_crypto::blake3 on 1MB data
-       Expected: completes in <5ms (native SIMD), 
-       WASM instruction cost ≤ 150 ops
-SC-18: .tapp calls terachat_crypto::ed25519_verify with invalid sig
-       Expected: returns -1, no crash, no information leak about key
+**Not protected against physical device seizure (by design):**
+- `hot_dag.db` metadata: `author_did`, `hlc`, `content_type`, `parents`, `id`.
+- This metadata is necessary for DAG integrity verification and cannot be encrypted without
+  making the append-only structure unverifiable by the relay without key access.
+
+**Accepted risk:**
+A physically seized device allows an adversary without biometric/PIN to recover:
+- Communication frequency (event timestamps and HLC counters).
+- Causal graph structure (parent relationships between events).
+- Event type distribution (Message vs GroupOp vs Edit vs Delete).
+- Pseudonymous author identifiers (`author_did` = Ed25519 public key hash; not directly PII).
+
+This risk is accepted for the following operational reasons:
+- Encrypting `hot_dag.db` metadata would require the relay to hold decryption keys,
+  breaking the Zero-Knowledge server guarantee.
+- SQLCipher on `hot_dag.db` is architecturally viable but would add ~15% read/write overhead
+  on mobile (single-core WAL append path). This trade-off is deferred to a future version.
+
+**Mitigation (implemented):**
+- `author_did` is an Ed25519 public key hash, not a username or email. Not directly PII.
+- `content_type` leaks event category but not content.
+- Biometric gate prevents access to `Epoch_Key` → payload is never decryptable without
+  the live user present (physical seizure does not break payload encryption).
+
+**Future work (not in this version — tracked):**
+- Encrypted `hot_dag.db` with a key derived from `Secure Enclave` (SQLCipher): adds payload
+  metadata protection for physical seizure at the cost of ~15% I/O overhead. Tracked as
+  `TERA-SEC-007`.
+
+### Impact
+- **Documentation:** Eliminates architectural ambiguity. Engineers and auditors know
+  exactly what the Zero-Knowledge boundary covers.
+- **Security:** No behavior change. Existing design is preserved with explicit threat model.
+- **Compliance:** SOC2 and ISO 27001 require documented threat model boundaries. This
+  section satisfies that requirement.
+
+### Reference
+- REF: Core_Spec.md §1.4 (Zero-Knowledge Guarantee)
+- REF: Core_Spec.md §7.1 (DAG structure, storage layer)
+- REF: Core_Spec.md §2.3 (Separation of Concerns)
+- REF: Feature_Spec.md §F-04 (Local Storage Management — add disclosure note)
 ```
+
+---
+
+---
+
+# 📄 PATCHES FOR `Feature_Spec.md`
+
+---
+
+```markdown
+## [FEATURE: F-01: Secure E2EE Messaging — UPDATE: Nonce Derivation in Send Flow]
+
+### Problem
+Step 3 of the User Flow states: "Nonce = `Base_Nonce XOR chunk_seq_number`" without defining
+`Base_Nonce`. This creates an implementation gap where developers may use a static value or
+incorrect derivation, causing AES-GCM nonce reuse under the same `Epoch_Key`.
+
+### Solution
+Replace step 3 and the Nonce note in the Constraints section with RFC 9420-compliant derivation,
+consistent with the Core_Spec.md §5.3 update.
+
+### Behavior Update
+
+**Replace User Flow Step 3:**
+
+> ~~Core encrypts: `AES-256-GCM(Epoch_Key, plaintext)`. Nonce = `Base_Nonce XOR chunk_seq_number`.~~
+
+Replace with:
+
+> Core encrypts: `AES-256-GCM(Epoch_Key, plaintext)`.
+> Nonce derived per `TERA-CORE §5.3`: `nonce = xor_12(base_nonce, pad4(reuse_guard))`,
+> where `base_nonce = HKDF-SHA256(sender_data_secret, "nonce", 12)` and
+> `reuse_guard` is 4 CSPRNG bytes included in the `MLSCiphertext` header.
+> `sender_data_secret` is rotated on every MLS Epoch rotation.
+> `reuse_guard` is unique per message. Never reused.
+
+**Replace Constraints nonce note:**
+
+> ~~Maximum unpadded plaintext before chunking: 4,096 bytes.~~
+
+Add below that line:
+
+> Nonce construction: `TERA-CORE §5.3` derivation is mandatory. `Base_Nonce` is NOT a
+> static value. `reuse_guard` MUST be generated by `ring::rand::SystemRandom` per message.
+> Implementation using any other nonce source is a **blocker — do not merge**.
+
+### Platform Scope
+📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
+
+### Dependency
+- REF: Core_Spec.md §5.3 (Nonce derivation — Sender_Data_Secret, reuse_guard)
+- REF: Core_Spec.md §0.2 (Sender_Data_Secret object — new entry)
+
+### Impact
+Eliminates the primary implementation risk for AES-GCM nonce reuse. No user-visible behavior
+change. Biometric gate and send latency unchanged.
+```
+
+---
+
+```markdown
+## [FEATURE: F-09: Media and File Transfer — UPDATE: Nonce Derivation for Chunked Upload]
+
+### Problem
+Step 3 of the send flow states: "Nonce = `Base_Nonce XOR chunk_seq_number`" — same undefined
+`Base_Nonce` as F-01. For chunked media, the nonce space is larger (many chunks per file) and
+the risk of implementation reuse is higher.
+
+### Solution
+Apply the same RFC 9420-compliant nonce derivation from Core_Spec.md §5.3, with a
+file-transfer-specific `reuse_guard` binding.
+
+### Behavior Update
+
+**Replace User Flow Step 3:**
+
+> ~~AES-256-GCM encrypt each chunk with ephemeral `ChunkKey`. Nonce = `Base_Nonce XOR chunk_seq_number`.~~
+
+Replace with:
+
+> AES-256-GCM encrypt each chunk with ephemeral `ChunkKey`.
+> Nonce derivation per `TERA-CORE §5.3`:
+> - `reuse_guard`: 4 CSPRNG bytes generated once per file transfer (bound to `cas_hash`).
+>   Shared across all chunks of the same file (not per-chunk), because the key (`ChunkKey`)
+>   is ephemeral and unique per file transfer.
+> - `base_nonce = HKDF-SHA256(ChunkKey, "chunk-nonce", 12)`.
+> - Per-chunk nonce = `xor_12(xor_12(base_nonce, pad4(reuse_guard)), seq_u64_to_12(chunk_seq_number))`.
+> - `chunk_seq_number` starts at 0 and increments by 1 per 2 MB chunk.
+> - `ChunkKey` `ZeroizeOnDrop` after all chunks of the file are processed (not after each chunk).
+
+**Add to Constraints:**
+
+> `reuse_guard` is generated once per file transfer by `ring::rand::SystemRandom` and stored
+> in the `MediaRef` CRDT stub alongside `cas_hash`. The receiver uses this value during
+> decryption. `reuse_guard` is not a secret — it is embedded in plaintext in the stub.
+
+### Platform Scope
+📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
+
+### Dependency
+- REF: Core_Spec.md §5.3 (Nonce derivation — reuse_guard, ChunkKey lifecycle)
+- REF: Core_Spec.md §0.1 (`ChunkKey` object — update lifecycle note)
+
+### Impact
+Eliminates nonce reuse for chunked file uploads. `reuse_guard` in stub adds 4 bytes to
+the MediaRef payload (< 5 KB stub; negligible). No user-visible change.
+```
+
+---
+
+```markdown
+## [FEATURE: F-10: AI / SLM Integration — UPDATE: Fix Orphan §3.6 Reference + Module Mapping]
+
+### Problem
+- `REF: TERA-CORE §3.6` is cited in Dependencies but the section did not exist in Core_Spec.md.
+- `SessionVault` and `Micro-NER` had no canonical struct definition or security constraints.
+- Platform runtime selection matrix was defined only in FEAT, not in Core.
+
+### Solution
+Update all references to point to the now-defined `TERA-CORE §3.6`. Align all FEAT descriptions
+with the canonical definitions in Core.
+
+### Behavior Update
+
+**Replace Dependencies section:**
+
+> ~~REF: TERA-CORE §3.3 — `MemoryArbiter`, RAM budget matrix, Whisper tier protocol~~
+> ~~REF: TERA-CORE §3.6 — AI infrastructure, Micro-NER, `SessionVault` `ZeroizeOnDrop`~~
+> ~~REF: TERA-CORE §4.4 — `catch_unwind` boundary at AI worker entry; crash isolation from Core~~
+
+Replace with:
+
+> - REF: TERA-CORE §3.6 — `infra/ai_worker.rs` module, `SessionVault` struct, `Micro-NER`
+>   ONNX pipeline, platform runtime selection matrix, AI quota enforcement
+> - REF: TERA-CORE §3.3 — `MemoryArbiter`, RAM budget matrix, Whisper tier protocol
+> - REF: TERA-CORE §4.4 — `catch_unwind` at AI worker entry; crash isolation from Core
+
+**Replace Feature ↔ Core Mapping table row for F-10:**
+
+> ~~F-10 | AI / SLM Integration | `infra/relay.rs` (VPS Enclave) | §3.3, §3.6, §4.4~~
+
+Replace with:
+
+> F-10 | AI / SLM Integration | `infra/ai_worker.rs` | §3.6, §3.3, §4.4
+
+**Update Constraints section — add:**
+
+> `SanitizedPrompt` is a newtype wrapping `String`. Construction requires a completed Micro-NER
+> PII redaction pass (defined in `TERA-CORE §3.6`). Passing raw user input to `run_inference()`
+> without constructing `SanitizedPrompt` is a **blocker — do not merge** (enforced by type system).
+
+**Update PII Redaction flow Step 5:**
+
+> ~~`SessionVault` `ZeroizeOnDrop` clears alias map within 100 ms.~~
+
+Replace with:
+
+> `SessionVault::restore_and_drop()` is called with the LLM response. Alias map is de-tokenized,
+> then the `SessionVault` is dropped. `ZeroizeOnDrop` clears the `HashMap` contents within 100 ms.
+> `SessionVault` MUST be dropped before `CoreSignal::StateChanged` is emitted (enforced by
+> `infra/ai_worker.rs` — the signal is emitted by Rust Core only after worker returns).
+
+### Platform Scope
+📱 iOS (CoreML) · 📱 Android (ONNX) · 📱 Huawei (HiAI/ONNX) · 💻 macOS (ONNX/CoreML) · 🖥️ Windows (ONNX) · 🖥️ Linux (ONNX)
+
+### Dependency
+- REF: Core_Spec.md §3.6 (canonical AI infrastructure module — newly defined)
+- REF: Core_Spec.md §3.3 (MemoryArbiter)
+- REF: Core_Spec.md §4.4 (catch_unwind)
+
+### Impact
+Eliminates orphan reference. F-10 now has a stable, auditable Core anchor. `SessionVault`
+lifecycle is enforced by type system, not by convention. No user-visible behavior change.
+```
+
+---
+
+```markdown
+## [FEATURE: F-14: Adaptive Network Management — UPDATE: Parallel ALPN Probing]
+
+### Problem
+F-14 documents serial ALPN probing steps (Step 1 → Step 2 → Step 3). After Core_Spec.md §9.2
+is updated to parallel probing, the FEAT behavior description is out of sync and would mislead
+engineers implementing the client-side ALPN state machine.
+
+### Solution
+Update F-14 to reflect the parallel-first ALPN strategy, while keeping Strict Compliance Mode
+behavior unchanged.
+
+### Behavior Update
+
+**Replace ALPN Negotiation Sequence section:**
+
+> ~~Step 1: QUIC / HTTP/3 over UDP:443 ACK within 50 ms → ONLINE_QUIC~~
+> ~~No ACK / firewall DROP → Step 2~~
+> ~~Step 2: gRPC / HTTP/2 over TCP:443 ...~~
+> ~~Step 3: WebSocket Secure over TCP:443 ...~~
+
+Replace with:
+
+```text
+Parallel probe (unless Strict Compliance Mode active):
+
+  [QUIC probe]                  [gRPC probe]
+  UDP:443                       TCP:443
+  timeout: 50 ms                timeout: 80 ms
+       │                              │
+       ├── ACK received: ONLINE_QUIC ─┤
+       │                              ├── TLS success: ONLINE_GRPC
+       │                              │   (if QUIC did not win first)
+       └──── Both failed ─────────────┘
+                    │
+              WSS fallback (sequential)
+              TCP:443, timeout: 120 ms
+                    │
+              ├── WS Upgrade: ONLINE_WSS
+              └── All failed: MESH_MODE
+```
+
+Winner selection: first successful handshake wins. If QUIC and gRPC succeed simultaneously
+(race), keep lower-RTT connection; abort the other.
+
+**Timing targets (revised):**
+
+| Scenario | Target |
+|---|---|
+| QUIC available | ≤ 50 ms |
+| QUIC blocked, gRPC ok | ≤ 80 ms (was 130 ms) |
+| Both blocked, WSS ok | ≤ 200 ms (was 250 ms) |
+| All blocked → Mesh | ≤ 200 ms (was 250 ms) |
+
+**HUD indicator (unchanged):** QUIC / gRPC / WSS / Mesh icon updates on `CoreSignal::TierChanged`.
+
+**Strict Compliance Mode (unchanged):** Skips parallel probe entirely. Direct gRPC TCP connection.
+
+### Platform Scope
+
+📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
+
+### Dependency
+
+- REF: Core_Spec.md §9.2 (Parallel ALPN negotiation — updated)
+- REF: Core_Spec.md §4.2 (`CoreSignal::TierChanged` — emission timing unchanged)
+
+### Impact
+
+50 ms latency reduction on UDP-blocked enterprise networks. HUD behavior unchanged.
+No regression on QUIC-capable networks. Strict Compliance Mode unaffected.
+
+```
+
+---
+
+```markdown
+## [FEATURE: F-01 / F-03: Inbound Message Handling — UPDATE: Deduplication Contract]
+
+### Problem
+F-01 (Inbound path) and F-03 (IPC Bridge) do not specify behavior when a duplicate
+`CRDT_Event` is received (same UUID, same content). After a relay restart, WAL staging
+replays `STAGED` events and clients may receive the same event twice. Neither FEAT section
+documents the expected deduplication behavior or `CoreSignal::StateChanged` emission rules
+for duplicates.
+
+### Solution
+Add explicit deduplication behavior to both F-01 (inbound flow) and F-03 (StateChanged rules).
+
+### Behavior Update
+
+**F-01 — Add after Inbound Message Flow step (DAG insertion step):**
+
+> **Inbound deduplication (mandatory):**
+> Before appending any inbound `CRDT_Event` to `hot_dag.db`, Rust Core checks:
+> `SELECT 1 FROM crdt_events WHERE id = ?`. If the event already exists:
+> - Discard silently. Do NOT append.
+> - Do NOT emit `CoreSignal::StateChanged`.
+> - Do NOT surface any error to the UI.
+> This is the expected behavior during relay restart recovery. It is not an error condition.
+>
+> REF: TERA-CORE §9.3 (deduplication contract), TERA-CORE §7.1 (UNIQUE PRIMARY KEY on id)
+
+**F-03 — Add to `CoreSignal::StateChanged` emission rules:**
+
+> `CoreSignal::StateChanged` MUST be emitted only when `AppendResult::Inserted` is returned
+> by `dag::append_event()`. It MUST NOT be emitted for `AppendResult::Duplicate`.
+> UI components that subscribe to `StateChanged` are not idempotent by design — a duplicate
+> emission causes an unnecessary viewport re-render and may produce visible UI flicker.
+
+**F-03 — Update `UICommand::ScrollViewport` constraint:**
+
+> `UICommand::ScrollViewport` is issued by UI after receiving `CoreSignal::StateChanged`.
+> Because `StateChanged` is suppressed for duplicates, the UI will never issue a spurious
+> `ScrollViewport` in response to relay restart recovery traffic.
+
+### Platform Scope
+📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
+
+### Dependency
+- REF: Core_Spec.md §9.3 (WAL staging dedup — updated)
+- REF: Core_Spec.md §7.1 (hot_dag.db schema — UNIQUE PRIMARY KEY on id)
+- REF: Core_Spec.md §4.2 (`CoreSignal::StateChanged` — emission contract)
+
+### Impact
+Zero duplicate messages visible to the user after relay restart. No UI flicker.
+No behavior change during normal operation.
+```
+
+---
+
+```markdown
+## [FEATURE: F-11c: Biometric Screen Lock — UPDATE: PIN Counter Access Control]
+
+### Problem
+F-11c describes PIN fallback and the 5-attempt ceiling but does not specify how the
+`Failed_PIN_Attempts` counter is protected against backup-restore bypass (jailbreak/root).
+A malicious actor could restore a counter backup to reset failed attempt tracking.
+
+### Solution
+Add platform-specific access control requirements for the PIN counter, consistent with the
+Core_Spec.md §5.2 update.
+
+### Behavior Update
+
+**Replace PIN fallback section:**
+
+> ~~PIN fallback: 6 digits. Transmitted via FFI Pointer — never through UI state buffer.
+> `ZeroizeOnDrop` after each digit. Maximum PIN failures: 5. On 5th: Cryptographic Self-Destruct.~~
+
+Replace with:
+
+> **PIN fallback:** 6 digits. Transmitted via FFI Pointer — never through UI state buffer.
+> `ZeroizeOnDrop` after each digit.
+>
+> **`Failed_PIN_Attempts` counter protection:**
+> - Counter is stored in hardware-backed secure storage (Keychain/StrongBox/TPM per platform).
+> - Counter storage MUST exclude device backup (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
+>   on iOS; `android:allowBackup="false"` exclusion on Android).
+> - Each counter write requires a biometric gate clearance (enforced in `crypto/hkms.rs`).
+> - Counter is HMAC-authenticated: tampering detected on next read triggers Self-Destruct
+>   as if 5 failures had occurred.
+> - Maximum PIN failures: 5. On 5th: Cryptographic Self-Destruct.
+>
+> REF: TERA-CORE §5.2 (PIN Counter — Access Control, HMAC tamper detection)
+
+**Add to Failure Handling:**
+
+> `Failed_PIN_Attempts` counter HMAC mismatch (tampered or corrupted): treat as 5 failures
+> immediately. Log `PIN_COUNTER_TAMPERED` to TeraDiag (pre-wipe, before key deletion).
+> Initiate Cryptographic Self-Destruct. This behavior is identical to `PIN_COUNTER_CORRUPTED`
+> but with a distinct log code for forensic differentiation.
+
+### Platform Scope
+📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
+
+### Dependency
+- REF: Core_Spec.md §5.2 (PIN Counter Access Control — updated with platform matrix and HMAC scheme)
+- REF: Core_Spec.md §5.1 (Cryptographic Self-Destruct trigger)
+
+### Impact
+Eliminates jailbreak/root backup-restore bypass of PIN brute force protection.
+No user-visible behavior change in the normal PIN flow. Failure handling is clarified and
+differentiated between corruption and active tampering.
+```
+
+---
+
+```markdown
+## [FEATURE: F-04: Local Storage Management — UPDATE: Metadata Privacy Disclosure]
+
+### Problem
+F-04 describes `hot_dag.db` as append-only with "ciphertext blobs only" but does not disclose
+that CRDT event metadata (author_did, HLC timestamps, content_type, parent relationships) is
+stored in plaintext. This omission misleads engineers into assuming `hot_dag.db` is opaque to
+a filesystem adversary.
+
+### Solution
+Add an explicit data-at-rest privacy note aligned with the Core_Spec.md §7.1 threat model
+boundary update.
+
+### Behavior Update
+
+**Add to Data Interaction section of F-04:**
+
+> **`hot_dag.db` data-at-rest privacy boundary:**
+>
+> `hot_dag.db` stores the following in plaintext (not encrypted):
+> - `id` (UUID v7), `parents` (causal graph), `hlc` (timestamp), `author_did`, `content_type`.
+>
+> `payload` (message content) is AES-256-GCM ciphertext — not readable without `Epoch_Key`.
+>
+> A physically seized device with filesystem access (without biometric) exposes communication
+> metadata but NOT message content. This is the accepted design boundary documented in
+> `TERA-CORE §7.1`. Engineers must not treat `hot_dag.db` as fully opaque at rest.
+>
+> `cold_state.db` is fully encrypted (SQLCipher AES-256, key from Secure Enclave). It is
+> not readable without the biometric-bound device key.
+
+**No behavior change** to the WAL anti-compaction or migration flows.
+
+### Platform Scope
+📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
+
+### Dependency
+- REF: Core_Spec.md §7.1 (hot_dag.db storage layer — threat model boundary)
+- REF: Core_Spec.md §1.4 (Zero-Knowledge Guarantee — server scope, not device scope)
+
+### Impact
+Clarifies threat model for engineers implementing device backup, forensic exclusion, and
+secure deletion flows. No API or behavior change. Prevents future misdesign assuming `hot_dag.db`
+is fully opaque to filesystem-level adversaries.
+```
+
+---

@@ -56,6 +56,7 @@ ai_routing_hint: |
 | `Welcome_Packet` | ECIES-encrypted payload | In-flight; single-use | Consumed on group join; never persisted | §5.3 |
 | `TreeKEM_Update_Path` | MLS tree delta | In-memory; broadcast | Per epoch rotation; never persisted | §5.3 |
 | `Epoch_Ratchet` | Monotonic u64 counter | `hot_dag.db` KV | Monotonically increasing; never decremented | §5.3 |
+| `Sender_Data_Secret` | HKDF-SHA256 output | RAM, `ZeroizeOnDrop` | Per MLS Epoch; zeroized on rotation | §5.3 |
 
 ### §0.3 Mesh Network Objects
 
@@ -260,6 +261,84 @@ All cryptographic and synchronization logic resides in a **single Rust binary** 
 
 ---
 
+### 3.6 AI / SLM Infrastructure
+
+**Process isolation:** AI inference runs in a dedicated OS process (`terachat-ai-worker`),
+separate from Rust Core. Crash of the AI worker MUST NOT propagate to Core. `catch_unwind`
+boundary enforced at worker entry (§4.4).
+
+**Module map:**
+
+```text
+infra/ai_worker.rs
+  § Responsibilities: ONNX/CoreML inference orchestration, Micro-NER PII pipeline,
+                      SessionVault lifecycle, KV-Cache management, quota enforcement
+  § Interfaces:
+      run_inference(prompt: SanitizedPrompt) -> Result<Vec<ASTNode>, AiError>
+      redact_pii(text: &str) -> (RedactedText, AliasMap)
+      restore_pii(response: &str, alias_map: AliasMap) -> String
+  § Dependencies: crypto/zeroize.rs (SessionVault), ffi/ipc_bridge.rs (CoreSignal),
+                  infra/metrics.rs (quota counters)
+```
+
+**`SessionVault` struct (canonical definition):**
+
+```rust
+/// Holds PII alias map during a single LLM request-response cycle.
+/// ZeroizeOnDrop clears alias map within 100 ms of response delivery.
+#[derive(ZeroizeOnDrop)]
+pub struct SessionVault {
+    alias_map: HashMap<String, String>,  // { "[REDACTED_EMAIL_1]" → "real@email.com" }
+    created_at: Instant,
+}
+
+impl SessionVault {
+    /// Alias map MUST be dropped before any UI render frame.
+    /// On drop: HashMap contents are overwritten with 0x00 via ZeroizeOnDrop.
+    pub fn restore_and_drop(self, response: &str) -> String { ... }
+}
+```
+
+**Micro-NER module (PII detection):**
+
+- Runtime: ONNX model, < 1 MB compiled size. Loaded by `MemoryArbiter` at AI worker startup.
+- Input: raw user prompt string.
+- Output: `Vec<PiiSpan { start: usize, end: usize, kind: PiiKind }>`.
+- `PiiKind`: `Name | Phone | Email | NationalId | BankAccount | Address`.
+- Hard ceiling: 8 MB total RAM for ONNX allocator (custom allocator returns `AllocError` on overflow).
+- On `AllocError`: fall back to regex-only detection (lower recall, no crash).
+
+**AI quota enforcement (server-side validated):**
+
+```rust
+pub struct AiQuota {
+    tokens_used_this_hour: AtomicU64,
+    limit:                 u64,              // 10_000 consumer; u64::MAX enterprise
+    reset_at:              Instant,
+}
+
+// Quota check MUST occur inside Rust Core before dispatching to AI worker.
+// UI never has direct access to quota state.
+```
+
+**Platform-specific runtime selection:**
+
+| Platform | Runtime | Max model size | Notes |
+| --- | --- | --- | --- |
+| 📱 iOS | CoreML (`.mlmodelc`) | 74 MB (Base), 39 MB (Tiny) | W^X: no dynamic WASM AI modules |
+| 📱 Android | ONNX Runtime | 39 MB (Tiny) if RAM > 100 MB | HiAI fallback on Huawei |
+| 📱 Huawei | HiAI / ONNX | 39 MB (Tiny) | AOT bundled only |
+| 💻 macOS | ONNX / CoreML | 74 MB (Base) | XPC Worker isolation |
+| 🖥️ Windows/Linux | ONNX Runtime | 74 MB (Base) | CPU inference; GPU optional |
+
+**Security constraints:**
+
+- AI worker has NO access to `hot_dag.db` or `cold_state.db` directly.
+  All context is passed as sanitized `SanitizedPrompt` from Rust Core.
+- `SanitizedPrompt` is a newtype wrapping `String` — construction requires PII redaction pass.
+- LLM response delivered to `.tapp` as `Vec<ASTNode>` only. Raw HTML/Markdown rejected by AST Sanitizer.
+- `SessionVault` MUST be dropped before `CoreSignal::StateChanged` is emitted.
+
 ## 4. CORE MODULE ARCHITECTURE
 
 ### 4.1 Module Map and Responsibilities
@@ -459,6 +538,60 @@ systemd unit: `TimeoutStopSec = 35` (5-second margin).
 - Warning signals: `CoreSignal::DeadManWarning { hours_remaining }` at T-12 h and T-1 h.
 - **Exception:** Dead Man Switch lockout does NOT interrupt an active CallKit session. Lockout is deferred until the call ends. This matches `TestMatrix SC-06` expected behavior.
 
+**TPM Counter Reset Recovery (Admin-Initiated Ceremony):**
+
+Trigger conditions for counter desynchronization:
+
+- Device RMA (hardware replacement).
+- Enterprise re-imaging that resets TPM.
+- Migration to a new device without BIP-39 mnemonic flow.
+
+**Recovery protocol:**
+
+```text
+Precondition: Admin authenticates on a separate trusted device (biometric + Shamir quorum not
+              required — standard Admin mTLS cert sufficient).
+
+Step 1: Admin opens CISO Console → Device Management → [Target Device] → "Reset Counter Sync".
+Step 2: Server sets a one-time `counter_reset_token { device_id, nonce, expires_at: now()+3600 }`.
+        Token is Ed25519-signed by Admin's DeviceIdentityKey. Stored in PostgreSQL, single-use.
+Step 3: Target device, on next connection attempt, detects `counter_mismatch` rejection.
+        Core emits `CoreSignal::DeadManWarning { hours_remaining: 0 }` with reason `COUNTER_MISMATCH`.
+        UI presents: "Device identity requires Admin re-authorization. Contact your Administrator."
+Step 4: Admin sends `counter_reset_token` out-of-band to user (secure channel, e.g. another app).
+Step 5: User enters token on device. Core verifies Ed25519 signature against Admin's public key.
+Step 6: On valid token:
+          a. Server resets `last_valid_counter` to current device TPM counter value.
+          b. `counter_reset_token` marked `used = true` in PostgreSQL (idempotent; replay-safe).
+          c. Device re-enrolls normally.
+          d. Audit Log records: { event: "COUNTER_RESET", device_id, admin_did, timestamp }.
+Step 7: On invalid/expired token: reject silently. Audit Log records failed attempt.
+```
+
+**Hard constraints:**
+
+- `counter_reset_token` is single-use. Replay → silent reject + Audit Log entry.
+- TTL: 1 hour. Expired token → reject. Admin must issue new token.
+- Admin cannot reset counter for their own device (self-signing prohibited). Requires a second Admin.
+- Maximum 3 counter resets per device per 30-day window (prevents abuse). 4th attempt → CISO alert.
+- This recovery path does NOT bypass Self-Destruct if it has already executed. Self-Destruct is
+  irreversible by design.
+
+**Audit Log entry (mandatory):**
+
+```rust
+AuditLogEntry {
+    event_type: EventType::CounterReset,
+    target_device_id: DeviceId,
+    authorized_by_admin_did: DeviceId,
+    token_nonce: [u8; 32],
+    hlc: HLCTimestamp,
+    signature: Ed25519Signature,  // signed by Admin's DeviceIdentityKey
+}
+```
+
+**Runbook reference:** `ops/counter-reset-ceremony.md` (must be created).
+
 **Offline TTL profiles:**
 
 ```rust
@@ -505,6 +638,57 @@ oidc_id_token.zeroize(); // ZeroizeOnDrop enforced
 
 - `Failed_PIN_Attempts` counter stored encrypted with `Device_Key`. Maximum: 5 consecutive failures.
 - On 5th failure: Crypto-Shredding of all local DBs + `OIDC_ID_Token` + both `DeviceIdentityKey` copies → Factory Reset state.
+
+**`Failed_PIN_Attempts` Counter — Access Control (mandatory):**
+
+| Platform | Storage Location | Read Access Control | Write Access Control |
+| --- | --- | --- | --- |
+| 📱 iOS | Keychain, `kSecAttrAccessible = kSecAttrAccessibleWhenUnlockedThisDeviceOnly` | Main App process only; `kSecAttrAccessGroup` restricted | Requires `LAContext` biometric evaluation before write |
+| 📱 Android | `EncryptedSharedPreferences` backed by StrongBox | App UID only | `BiometricPrompt` authentication required before write |
+| 📱 Huawei | HMS SafetyDetect + EncryptedPreferences | App process only | HMS Biometric gate required |
+| 💻 macOS | Keychain, `kSecAttrAccessControl` with `kSecAccessControlBiometryCurrentSet` | Main process + daemon only | SEP biometric before write |
+| 🖥️ Windows | DPAPI with `CRYPTPROTECT_LOCAL_MACHINE = false` | Current user only | Windows Hello PIN or biometric |
+| 🖥️ Linux | TPM 2.0 NV Index with PCR policy sealing | `terachat` user UID only | TPM PCR policy (boot chain validation) |
+
+**Tamper detection (mandatory):**
+
+```rust
+/// Counter value is authenticated — tamper causes Self-Destruct.
+pub struct PinAttemptCounter {
+    value:  u8,               // 0..=5; anything above 5 treated as 5
+    mac:    [u8; 32],         // HMAC-BLAKE3(Device_Key, value || device_id || "pin-counter-v1")
+}
+
+pub fn read_counter(device_key: &DeviceKey) -> Result<u8, PinCounterError> {
+    let stored = platform_secure_read(COUNTER_KEY)?;
+    let expected_mac = hmac_blake3(device_key, &[stored.value, device_id, PIN_COUNTER_DOMAIN]);
+    if stored.mac != expected_mac {
+        // MAC mismatch: counter corrupted or tampered.
+        // Treat as 5 failures. Log COUNTER_TAMPERED. Initiate Self-Destruct.
+        log_audit(AuditEvent::PinCounterTampered);
+        trigger_self_destruct();
+        return Err(PinCounterError::Tampered);
+    }
+    Ok(stored.value)
+}
+
+pub fn write_counter(device_key: &DeviceKey, new_value: u8) -> Result<()> {
+    // Biometric gate MUST be cleared before this call (enforced by call site).
+    let mac = hmac_blake3(device_key, &[new_value, device_id, PIN_COUNTER_DOMAIN]);
+    platform_secure_write(COUNTER_KEY, PinAttemptCounter { value: new_value, mac })?;
+    Ok(())
+}
+```
+
+**Backup exclusion (mandatory):**
+
+- iOS: counter Keychain item MUST use `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`.
+  This flag prevents iCloud Keychain sync and iTunes backup inclusion.
+- Android: `EncryptedSharedPreferences` backing file MUST be excluded from `auto-backup`
+  via `android:allowBackup="false"` on the SharedPreferences provider, or explicit
+  `backup_rules.xml` exclusion.
+- Restoring a device backup MUST reset the counter to 0 via a counter integrity re-validation
+  step on first unlock post-restore. This is acceptable (new device, legitimate user).
 
 **iOS Double-Buffer Zeroize (Jetsam mitigation):**
 `mlock()` is rejected by iOS for non-root processes. Mitigation:
@@ -569,6 +753,38 @@ Reconnecting device
 - GC: keys older than 48 h purged automatically.
 
 **Forward Secrecy TTL:** Chain keys expire after 7 days. Devices that have not completed epoch negotiation within 7 days are removed from the group via `Tombstone_Stub`.
+
+**Nonce derivation (MLS RFC 9420 §5.4.9 compliant):**
+
+```rust
+/// Per-message nonce — derived, never random, never hardcoded.
+pub fn derive_message_nonce(
+    sender_data_secret: &[u8; 32],  // from current MLS Epoch_Key material
+    reuse_guard:        &[u8; 4],   // 4 random bytes from CSPRNG; embedded in MLSCiphertext header
+    seq_number:         u64,        // chunk_seq_number for chunked media; 0 for single messages
+) -> [u8; 12] {
+    // Step 1: derive base nonce via HKDF-SHA256
+    let base_nonce = hkdf_sha256(
+        ikm:  sender_data_secret,
+        info: b"nonce",
+        length: 12,
+    );
+    // Step 2: XOR with reuse_guard (left-padded to 12 bytes) to prevent cross-epoch reuse
+    let guarded = xor_12(base_nonce, pad_left_4(reuse_guard));
+    // Step 3: XOR with chunk_seq_number (right-aligned u64 in 12-byte field)
+    xor_12(guarded, seq_u64_to_12(seq_number))
+}
+```
+
+**Rules enforced by `mls_engine.rs`:**
+
+- `reuse_guard` MUST be generated by `ring::rand::SystemRandom` per message. Never reused.
+- `sender_data_secret` MUST be rotated on every MLS Epoch rotation. Stale epoch key = reject.
+- For chunked media (F-09): `seq_number` increments per 2 MB chunk. `reuse_guard` is shared
+  across all chunks of the same file transfer (bound to `cas_hash`).
+- `base_nonce` MUST NOT be persisted to disk. Derived fresh from `sender_data_secret` on each use.
+- CI: property-based test (proptest) MUST verify no two (reuse_guard, seq_number) pairs produce
+  the same 12-byte nonce under the same `sender_data_secret`. Block merge on failure.
 
 ### 5.4 Post-Quantum Cryptography — Hybrid PQ-KEM
 
@@ -971,6 +1187,50 @@ pub struct CrdtEvent {
 | `wal_staging.db` | SQLite WAL | None (server relay only) | At-least-once delivery staging |
 | `nse_staging.db` | SQLite WAL | None (ciphertext only) | iOS NSE push delivery staging |
 
+**Device-Level Metadata Privacy — Threat Model Boundary (mandatory documentation):**
+
+This section explicitly defines what is and is not protected at the device level.
+
+**Protected (encrypted):**
+
+- `payload` field: AES-256-GCM ciphertext, key = `Epoch_Key` in RAM. Server and filesystem
+  adversary cannot read message content.
+- `cold_state.db`: fully encrypted with SQLCipher AES-256 (key = Secure Enclave-derived).
+
+**Not protected against physical device seizure (by design):**
+
+- `hot_dag.db` metadata: `author_did`, `hlc`, `content_type`, `parents`, `id`.
+- This metadata is necessary for DAG integrity verification and cannot be encrypted without
+  making the append-only structure unverifiable by the relay without key access.
+
+**Accepted risk:**
+A physically seized device allows an adversary without biometric/PIN to recover:
+
+- Communication frequency (event timestamps and HLC counters).
+- Causal graph structure (parent relationships between events).
+- Event type distribution (Message vs GroupOp vs Edit vs Delete).
+- Pseudonymous author identifiers (`author_did` = Ed25519 public key hash; not directly PII).
+
+This risk is accepted for the following operational reasons:
+
+- Encrypting `hot_dag.db` metadata would require the relay to hold decryption keys,
+  breaking the Zero-Knowledge server guarantee.
+- SQLCipher on `hot_dag.db` is architecturally viable but would add ~15% read/write overhead
+  on mobile (single-core WAL append path). This trade-off is deferred to a future version.
+
+**Mitigation (implemented):**
+
+- `author_did` is an Ed25519 public key hash, not a username or email. Not directly PII.
+- `content_type` leaks event category but not content.
+- Biometric gate prevents access to `Epoch_Key` → payload is never decryptable without
+  the live user present (physical seizure does not break payload encryption).
+
+**Future work (not in this version — tracked):**
+
+- Encrypted `hot_dag.db` with a key derived from `Secure Enclave` (SQLCipher): adds payload
+  metadata protection for physical seizure at the cost of ~15% I/O overhead. Tracked as
+  `TERA-SEC-007`.
+
 **Invariant:** `cold_state.db` is always rebuildable from `hot_dag.db`. If `cold_state.db` migration fails: drop the file and rebuild. Never abort without a recovery path.
 
 **SQLite WAL anti-bloat:**
@@ -1247,26 +1507,54 @@ Prometheus: relay_message_relay_total++
 - Zero kernel modules required. Zero `CAP_SYS_ADMIN`.
 - Per-connection RAM overhead: ~2 KB. VPS 4 GB RAM → ~500,000 concurrent WebSocket connections.
 
-**ALPN Protocol Negotiation (total < 50 ms):**
+**Revised ALPN Negotiation (target: < 50 ms end-to-end):**
 
-```text
-Step 1: QUIC / HTTP/3 over UDP:443
-        ACK within 50 ms → ONLINE_QUIC (0-RTT reconnect, ~30 ms RTT)
-        No ACK or firewall DROP → Step 2
+```rust
+pub async fn negotiate_alpn(profile: &NetworkProfile) -> AlpnResult {
+    // Fast path: known strict-compliance network (learned or Admin-forced)
+    if profile.strict_compliance {
+        return try_grpc().await;
+    }
 
-Step 2: gRPC over HTTP/2 (TCP:443)
-        TLS handshake success → ONLINE_GRPC (~80 ms RTT)
-        DPI blocks binary framing → Step 3
+    // Parallel probe: QUIC and gRPC simultaneously
+    let quic_fut  = timeout(Duration::from_millis(50), try_quic());
+    let grpc_fut  = timeout(Duration::from_millis(80), try_grpc());
 
-Step 3: WebSocket Secure (wss:// TCP:443)
-        WS Upgrade success → ONLINE_WSS (~120 ms RTT)
-        All transports fail → MESH_MODE (BLE / Wi-Fi Direct)
+    tokio::select! {
+        Ok(Ok(conn)) = quic_fut => AlpnResult::QUIC(conn),    // QUIC wins if within 50 ms
+        Ok(Ok(conn)) = grpc_fut => AlpnResult::GRPC(conn),    // gRPC wins if QUIC drops
+        _ => {
+            // Both failed: sequential WSS (last resort, no parallel candidate)
+            match timeout(Duration::from_millis(120), try_wss()).await {
+                Ok(Ok(conn)) => AlpnResult::WSS(conn),
+                _            => AlpnResult::MeshMode,
+            }
+        }
+    }
+}
 ```
+
+**Timing guarantees:**
+
+| Scenario | Serial (old) | Parallel (new) | Delta |
+| --- | --- | --- | --- |
+| QUIC available | 50 ms | 50 ms | 0 ms |
+| QUIC blocked, gRPC ok | 50 + 80 = 130 ms | 80 ms | -50 ms |
+| QUIC + gRPC blocked, WSS ok | 50 + 80 + 120 = 250 ms | 80 + 120 = 200 ms | -50 ms |
+| All blocked → Mesh | 250 ms | 200 ms | -50 ms |
+
+**Connection deduplication:** If both QUIC and gRPC succeed simultaneously (race condition),
+keep the lower-RTT connection. Abort the other with `connection.close()`. Log winner to
+`NetworkProfile` for future probe decisions.
+
+**`NetworkProfile` update:** Add field `preferred_alpn: Option<AlpnTier>`. On 3 consecutive
+successful QUIC connections: set `preferred_alpn = Some(QUIC)`. On next probe, try QUIC first
+with a 100 ms timeout (more generous) before parallel-probing gRPC.
 
 **Strict Compliance Mode (enterprise UDP-blocked networks):**
 
 - Admin activates on CISO Console → `strict_compliance = true` baked into OPA policy.
-- Client skips Step 1 entirely; connects via gRPC TCP directly.
+- Client skips parallel probing entirely; connects via gRPC TCP directly.
 - Saves 50 ms probe timeout per connection on known UDP-blocked networks.
 
 **Adaptive QUIC Probe Learning:**
@@ -1321,6 +1609,56 @@ for entry in staging.query_by_status(Staged)? {
 | 100 – 200 MB | 500 rows | None |
 | 50 – 100 MB | 100 rows | `tokio::time::sleep(50 ms)` between batches |
 | ≤ 50 MB | Suspend WAL hydration | Emit `VPS_LOW_MEMORY` to Admin Console |
+
+**Inbound deduplication contract (mandatory — enforced by `dag.rs`):**
+
+```rust
+/// Called on every inbound CrdtEvent, both Online and Mesh paths.
+pub fn append_event(db: &Connection, event: &CrdtEvent) -> Result<AppendResult> {
+    // Deduplication check: O(1) lookup by primary key
+    if db.exists("SELECT 1 FROM crdt_events WHERE id = ?", [event.id])? {
+        // Idempotent: silently discard duplicate. Do NOT return error.
+        // Do NOT emit CoreSignal::StateChanged for duplicates.
+        return Ok(AppendResult::Duplicate);
+    }
+
+    // Proceed with normal signature verification and WAL append
+    verify_signature(event)?;
+    db.execute("INSERT INTO crdt_events ...", event)?;
+    Ok(AppendResult::Inserted)
+}
+
+pub enum AppendResult { Inserted, Duplicate }
+```
+
+**Rules:**
+
+- `crdt_events.id` MUST have a `UNIQUE` constraint in the SQLite schema. Enforced at DB level
+  as a secondary guard independent of application-layer dedup.
+- `AppendResult::Duplicate` is NOT logged to the error log. It is a normal operational outcome
+  during relay restart recovery. Log only to `TRACE` level for debugging.
+- `CoreSignal::StateChanged` MUST NOT be emitted for `AppendResult::Duplicate`.
+  Prevents UI rerender on duplicate events.
+- CI: chaos test scenario (TERA-TEST) MUST include relay restart with 1,000 in-flight STAGED
+  events and verify: (a) zero duplicate messages in recipient UI, (b) zero `UNIQUE` constraint
+  violations in SQLite error log.
+
+**`hot_dag.db` schema update (mandatory):**
+
+```sql
+CREATE TABLE crdt_events (
+    id           BLOB PRIMARY KEY,  -- UUID v7; UNIQUE enforced by PRIMARY KEY
+    parents      BLOB NOT NULL,
+    hlc_wall_ms  INTEGER NOT NULL,
+    hlc_logical  INTEGER NOT NULL,
+    hlc_node_id  BLOB NOT NULL,
+    author_did   BLOB NOT NULL,
+    payload      BLOB NOT NULL,
+    signature    BLOB NOT NULL,
+    content_type INTEGER NOT NULL
+) STRICT;
+-- PRIMARY KEY implies UNIQUE; no separate index needed.
+```
 
 ### 9.4 Cross-Cluster Federation
 
@@ -1392,6 +1730,71 @@ Relay exposes Prometheus-format `/metrics` at `127.0.0.1:9100` (localhost only).
 | `wasm_sandbox_crashes_total` rate > 0.1/min | Critical |
 | `relay_active_connections` drops > 50% within 60 s | Critical |
 | `wal_staging_staged_total > 10,000` | Warning (backlog building) |
+
+---
+
+### 9.7 Distributed Tracing (OpenTelemetry)
+
+**Scope:** Server-side only (relay daemon, PostgreSQL query spans, MinIO upload spans).
+Client-side tracing is out of scope — it would require transmitting trace IDs to the server,
+creating a potential timing correlation vector that conflicts with §1.4 Zero-Knowledge guarantee.
+
+**Privacy constraint (mandatory):**
+- Trace IDs MUST be random (`uuid::Uuid::new_v4()`). Never derived from user ID, device ID,
+  message ID, or any content-correlated value.
+- Span attributes MUST NOT contain: `user_id`, `device_id`, `recipient_id`, `message_content`,
+  `cas_hash`, or any value that could identify a user or message.
+- Permitted span attributes: `relay_zone`, `alpn_tier`, `db_operation`, `wasm_module_id` (opaque),
+  `mls_group_size_bucket` (bucketed to 1–10, 11–100, 101–1000, 1001+).
+
+**Implementation (OpenTelemetry Rust SDK):**
+
+```rust
+// Cargo.toml additions (relay binary only):
+// opentelemetry = { version = "0.22", features = ["rt-tokio"] }
+// opentelemetry-otlp = { version = "0.15", features = ["grpc-tonic"] }
+// tracing-opentelemetry = "0.23"
+
+// Tracer initialization (relay startup):
+pub fn init_tracer(config: &RelayConfig) -> TracerProvider {
+    opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(
+            opentelemetry_otlp::new_exporter()
+                .tonic()
+                .with_endpoint(&config.otlp_endpoint)  // e.g. "http://otel-collector:4317"
+        )
+        .with_trace_config(
+            opentelemetry_sdk::trace::Config::default()
+                .with_sampler(Sampler::TraceIdRatioBased(0.1))  // 10% sampling; configurable
+                .with_id_generator(RandomIdGenerator::default())
+        )
+        .install_batch(opentelemetry_sdk::runtime::Tokio).unwrap()
+}
+```
+
+**Mandatory trace points:**
+
+| Span Name | Attributes | Parent |
+| --- | --- | --- |
+| `relay.message.receive` | `alpn_tier`, `payload_bytes` | — (root) |
+| `relay.wal.stage` | `wal_queue_depth` | `relay.message.receive` |
+| `relay.pubsub.fanout` | `fanout_recipients_bucket` | `relay.wal.stage` |
+| `relay.mls.epoch_rotation` | `group_size_bucket`, `rotation_trigger` | — (root) |
+| `db.postgres.query` | `db_operation` (SELECT/INSERT/UPDATE) | nearest parent |
+| `minio.upload` | `chunk_index`, `chunk_size_bytes` | nearest parent |
+
+**Collector and export:**
+
+- OTel Collector deployed as sidecar on relay VPS (no external network egress required).
+- Export to Grafana Tempo (self-hosted) or any OTLP-compatible backend.
+- `otlp_endpoint` configured via environment variable `TERA_OTEL_ENDPOINT`. If unset: tracing disabled (not a startup error).
+- Sampling rate: 10% default; configurable via `TERA_OTEL_SAMPLE_RATE` (0.0–1.0). Set to 1.0 during incident response.
+
+**Metric delay interaction:**
+Traces are NOT subject to the 30-second Prometheus delay (§OBS-02). Trace data does not
+contain user-correlated timing information because trace IDs are random and span attributes
+are scrubbed. The 30-second delay rule applies only to Prometheus counters/gauges/histograms.
 
 ---
 

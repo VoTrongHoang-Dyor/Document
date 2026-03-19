@@ -327,7 +327,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "┌─────────────────────────────────────────────────────────────────────┐\n│                          CLIENT LAYER                               │\n│                                                                     │\n│  📱 iOS    📱 Android    📱 Huawei    💻 macOS    🖥️ Win/Linux      │\n│  ┌─────────────────────────────────────────────────────────────┐   │\n│  │                    Rust Core (shared binary)                 │   │\n│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │   │\n│  │  │  MLS / E2EE  │  │     Mesh     │  │  CRDT / DAG  │      │   │\n│  │  │    Engine    │  │  Transport   │  │     Sync     │      │   │\n│  │  └──────────────┘  └──────────────┘  └──────────────┘      │   │\n│  │         ↑ ZeroizeOnDrop boundary enforced at all exits ↑    │   │\n│  └─────────────────────────────────────────────────────────────┘   │\n└──────────────────────────────┬──────────────────────────────────────┘\n                               │ TLS 1.3 + mTLS (all channels)\n┌──────────────────────────────▼──────────────────────────────────────┐\n│                          SERVER LAYER                               │\n│                                                                     │\n│  ☁️ VPS Relay Cluster                │  🗄️ Bare-metal HSM Node      │\n│  ┌──────────────────────────────┐   │  ┌──────────────────────┐   │\n│  │  Rust Blind Relay Daemon     │   │  │  HSM FIPS 140-3 L3   │   │\n│  │  Tokio + io_uring            │   │  │  KMS Bootstrap       │   │\n│  │  SQLite WAL (relay state)    │   │  │  Shamir M-of-N       │   │\n│  │  Redis / NATS JetStream      │   │  │  PostgreSQL Primary   │   │\n│  │  HA TURN Array               │   │  │  MinIO Blind Storage  │   │\n│  └──────────────────────────────┘   │  └──────────────────────┘   │\n└─────────────────────────────────────────────────────────────────────┘"
             }
           ],
@@ -915,7 +915,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "terachat-core/\n├── crypto/\n│   ├── hkms.rs            § Responsibilities: Master Key lifecycle, KEK derivation, workspace init\n│   │                      § Interfaces: init_workspace(), derive_kek(), remote_wipe()\n│   │                      § Dependencies: ring crate, Secure Enclave / TPM FFI\n│   ├── mls_engine.rs      § Responsibilities: MLS RFC 9420 state machine, TreeKEM, epoch rotation\n│   │                      § Interfaces: create_group(), add_member(), remove_member(), encrypt(), decrypt()\n│   │                      § Dependencies: hkms.rs, ring crate\n│   ├── pq_kem.rs          § Responsibilities: ML-KEM-768 + X25519 hybrid, CNSA 2.0 compliance\n│   │                      § Interfaces: hybrid_keygen(), hybrid_encap(), hybrid_decap()\n│   │                      § Dependencies: ring crate, RustCrypto ml-kem crate\n│   ├── push_ratchet.rs    § Responsibilities: OOB push key chain, NSE/FCM key versioning\n│   │                      § Interfaces: derive_push_key(epoch), rotate_push_key()\n│   │                      § Dependencies: hkms.rs\n│   └── zeroize.rs         § Responsibilities: ZeroizeOnDrop wrappers, Miri-verifiable patterns\n│                          § Interfaces: SecureBuffer<T>, SecureArena\n│                          § Dependencies: zeroize crate\n├── mesh/\n│   ├── transport.rs       § Responsibilities: MeshTransport trait definition; platform-agnostic routing\n│   │                      § Interfaces: send(), recv_stream(), discover_peers()\n│   │                      § Dependencies: None (trait only; implementations in host layer)\n│   ├── ble_beacon.rs      § Responsibilities: Stealth beacon construction, HMAC-BLAKE3 encoding\n│   │                      § Interfaces: build_beacon(), verify_beacon()\n│   │                      § Dependencies: ring crate, transport.rs\n│   ├── duty_cycle.rs      § Responsibilities: BLE power management, TDM slot scheduling\n│   │                      § Interfaces: start_duty_cycle(), set_standby_mode()\n│   │                      § Dependencies: transport.rs\n│   ├── election.rs        § Responsibilities: BLAKE3 Dictator election, EMDP Tactical Relay selection\n│   │                      § Interfaces: elect_dictator(), elect_tactical_relay()\n│   │                      § Dependencies: crdt/hlc.rs\n│   ├── emdp.rs            § Responsibilities: Emergency Mobile Dictator Protocol, key escrow\n│   │                      § Interfaces: build_escrow(), transfer_escrow(), extend_ttl()\n│   │                      § Dependencies: crypto/pq_kem.rs, election.rs\n│   └── anti_spam.rs       § Responsibilities: PoW challenges, Byzantine quarantine, Shun propagation\n│                          § Interfaces: verify_pow(), quarantine_node(), broadcast_shun()\n│                          § Dependencies: transport.rs, crdt/dag.rs\n├── crdt/\n│   ├── dag.rs             § Responsibilities: Append-only DAG, event validation, Ed25519 verification\n│   │                      § Interfaces: append_event(), get_event(), get_parents()\n│   │                      § Dependencies: crypto/hkms.rs, hlc.rs\n│   ├── hlc.rs             § Responsibilities: Hybrid Logical Clock, total ordering, causality\n│   │                      § Interfaces: new_timestamp(), update_on_receive(), compare()\n│   │                      § Dependencies: None\n│   ├── reconcile.rs       § Responsibilities: Split-brain merge, Gossip frontier exchange\n│   │                      § Interfaces: merge_partitions(), exchange_frontier(), resolve_conflict()\n│   │                      § Dependencies: dag.rs, hlc.rs, mesh/election.rs\n│   └── snapshot.rs        § Responsibilities: Materialized snapshot export, recovery bootstrap\n│                          § Interfaces: export_snapshot(), apply_snapshot(), verify_cas()\n│                          § Dependencies: dag.rs\n├── infra/\n│   ├── relay.rs           § Responsibilities: Blind Relay daemon, ciphertext routing, MPSC dispatch\n│   │                      § Interfaces: start_relay(), handle_connection(), dispatch_message()\n│   │                      § Dependencies: wal_staging.rs, metrics.rs\n│   ├── wal_staging.rs     § Responsibilities: At-least-once delivery guarantee, staging lifecycle\n│   │                      § Interfaces: stage_event(), commit_event(), replay_staged()\n│   │                      § Dependencies: SQLite (rusqlite crate)\n│   ├── metrics.rs         § Responsibilities: Prometheus /metrics endpoint, zero-knowledge counters\n│   │                      § Interfaces: increment(), observe(), export()\n│   │                      § Dependencies: prometheus crate\n│   └── federation.rs      § Responsibilities: Cross-cluster mTLS bridge, schema version negotiation\n│                          § Interfaces: handshake(), forward_message(), reject_incompatible()\n│                          § Dependencies: relay.rs\n└── ffi/\n    ├── token_protocol.rs  § Responsibilities: tera_buf_acquire / tera_buf_release token lifecycle\n    │                      § Interfaces: tera_buf_acquire(u64) -> u64, tera_buf_release(u64)\n    │                      § Dependencies: crypto/zeroize.rs\n    └── ipc_bridge.rs      § Responsibilities: Control/Data plane signal emission, command receipt\n                           § Interfaces: emit_signal(), recv_command()\n                           § Dependencies: All Core modules (read-only signal emission)"
             }
           ],
@@ -1046,7 +1046,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "[Master Key] ─── HSM PKCS#11 / TPM 2.0 / Secure Enclave (never leaves chip)\n      │\n      └──► [KEK — Key Encryption Key] ─── decrypted in RAM, ZeroizeOnDrop\n                 │\n                 └──► [DEK — Data Encryption Key] ─── per-content encryption\n                            │\n                            └──► DB rows / File chunks / Channel keys / Push keys"
             },
             {
@@ -1253,7 +1253,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Reconnecting device\n  │  WAKEUP_BEACON (BLE, signed by DeviceIdentityKey in SEP)\n  ▼\nOnline peer\n  │  Verify signature against Enterprise_CA + Shun List\n  │  If on Shun List → reject; require Admin re-provision\n  ▼\n  │  Re-Add_Member MLS proposal (no server required)\n  │  Commit → Welcome_Packet (ECIES/Curve25519 encrypted for reconnecting device)\n  ▼\nReconnecting device\n  │  Decrypt Welcome_Packet using own private key\n  │  Verify sender certificate against Enterprise_CA\n  ▼\n  Epoch key restored; device rejoins group"
             },
             {
@@ -1286,7 +1286,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Final_Session_Key = HKDF-SHA256(\n    ikm:  X25519_Shared_Secret || ML-KEM-768_Shared_Secret,\n    info: \"terachat-session-v1\",\n    length: 32\n)"
             },
             {
@@ -1366,7 +1366,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "NSE receives push payload\n  │  Read push_key_version from payload header\n  ├── version matches keychain → decrypt inline → display notification\n  └── version mismatch →\n        cache raw ciphertext to nse_staging.db\n        set main_app_decrypt_needed = true in Shared Keychain\n        send content-available:1 wake signal\n        Main App wakes → rotates key → decrypts staged payload → clears staging"
             },
             {
@@ -1572,7 +1572,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Offset  Size  Field\n0       4 B   timestamp_slot_5min (little-endian u32)\n4       8 B   HMAC-BLAKE3(Mesh_PSK_daily, root_hash || timestamp_slot_5min)[0:8]\n12      11 B  encrypted_delta_hint (AES-128-SIV with ephemeral session key)\n23      8 B   padding (zero-fill)"
             },
             {
@@ -1581,7 +1581,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Mesh_PSK_daily = HKDF-SHA256(Company_Key, \"mesh-beacon\" || date_utc || cluster_id)"
             },
             {
@@ -1630,7 +1630,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "NWPathMonitor detects bridge interface (Hotspot indicator) + no AWDL interface\n  │\n  ▼\nSwift adapter → FFI → tera_awdl_unavailable(reason: AWDLUnavailableReason)\n  │\n  ▼\nRust Core:\n  1. Downgrade mesh tier: Wi-Fi Direct → BLE only (Tier 3)\n  2. Emit CoreSignal::TierChanged { new_tier: BleOnly, reason: HotspotConflict }\n  3. Queue voice packets with TTL:\n     - Default: 30 s\n     - CallKit session active: 90 s\n  4. After TTL expiry with no AWDL recovery: drop voice, notify user"
             },
             {
@@ -1725,7 +1725,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Node violates signature verification > 3 times within 10 s\n  │\n  ▼\nReporter constructs ProofBundle:\n  {raw_packet, hlc_timestamp, violator_id, Ed25519_sig_by_reporter_DeviceKey}\n\nRequires: minimum 2 independent ProofBundles from different reporters\n  │\n  ▼\nEnterprise CA signs Shun Record:\n  {Node_ID, Ed25519_Sig_by_Enterprise_CA, TTL: 30 min}\n\nGossip broadcast to all Mesh nodes\n  │\n  ▼\nEach receiver:\n  1. Verify Enterprise CA signature (unsigned Shun Records dropped — prevents false-flag)\n  2. If valid: BLE disconnect + routing entry deletion\n  3. Node cannot rejoin until Admin revokes Shun Record"
             },
             {
@@ -1793,7 +1793,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "At T-10 min:\n  Tactical Relay broadcasts EMDP_TTL_EXTENSION_REQUEST (BLE, signed by DeviceIdentityKey)\n    │\n    ▼\n  Peer with battery_pct > 30% accepts → sends EMDP_TTL_ACCEPT\n    │\n    ▼\n  Original Relay:\n    1. Serialize CRDT buffer (max 1 MB)\n    2. Encrypt via ECIES/Curve25519 with accepting peer's public key\n    3. Transfer over BLE Data Plane\n    4. Revert to Leaf Node\n    │\n    ▼\n  New Tactical Relay assumes role; TTL resets to 60 min"
             },
             {
@@ -1979,7 +1979,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Step 1: Gossip — each node broadcasts Hash_Frontier { vector_clock, root_hash }\n  │\n  ▼\nStep 2: Identify winner — highest Hash_Frontier = most recent causal state\n  │\n  ▼\nStep 3: Elected Dictator executes O(N log N) HLC merge via Rayon thread pool\n        (Desktop only; Mobile receives Materialized_Snapshot from Dictator)\n  │\n  ▼\nStep 4: LWW conflict resolution via HLC for concurrent edits:\n        - ContentType::Message     → siblings preserved; UI shows conflict indicator\n        - ContentType::CONTRACT |\n          ContentType::POLICY |\n          ContentType::APPROVAL    → both preserved; UI requires explicit user resolution\n        - ContentType::GroupOp     → HLC LWW; later operation wins\n  │\n  ▼\nStep 5: Dictator broadcasts Materialized_Snapshot\n        Leaf Nodes apply in O(1) via INSERT OR REPLACE transaction\n  │\n  ▼\nStep 6: TreeKEM Merge Commit → Epoch N+2 Update_Path → new Epoch_Key for all members\n  │\n  ▼\nStep 7: Multi-epoch RAM (forked epoch keys held during partition) released via ZeroizeOnDrop"
             },
             {
@@ -2038,7 +2038,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "User input (text / media bytes)\n  │  UICommand::SendMessage { recipient_did, plaintext }\n  ▼\nRust Core — HKMS lookup → Company_Key\n  │\n  ▼\nMLS Encrypt:\n  EncryptedPayload = AES-256-GCM(Epoch_Key, plaintext)\n  nonce = Base_Nonce XOR chunk_seq_number  // guarantees nonce uniqueness\n  │\n  ▼\nCRDT_Event construction:\n  { id: Uuid::v7(), parents: [last_event_id], hlc: current_hlc(),\n    author_did, payload: EncryptedPayload, content_type: Message }\n  │\n  ▼\nEd25519 signature via DeviceIdentityKey (Secure Enclave — biometric required)\n  │\n  ▼\nAppend to hot_dag.db WAL  ← (event is durable before network dispatch)\n  │\n  ├── Online path:\n  │     TLS 1.3 + mTLS → VPS Relay → WAL Staging → Pub/Sub fanout\n  │\n  └── Offline path:\n        BLE Control Plane → Mesh Store-and-Forward"
             },
             {
@@ -2055,7 +2055,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "VPS Relay / Mesh peer delivers { destination_device_id, ciphertext_blob, timestamp }\n  │  TLS 1.3 verification\n  ▼\nRust Core — CRDT_Event.signature verified via sender's DeviceIdentityKey\n  │  Reject conditions: invalid signature | sender on Shun List\n  ▼\nMLS Decrypt: EncryptedPayload → Plaintext using Epoch_Key\n  │  Epoch_Key held in RAM ZeroizeOnDrop struct\n  ▼\nDAG insertion: hot_dag.db WAL append (Ed25519 signature stored with event)\n  │\n  ▼\ncold_state.db materialized view update (INSERT OR REPLACE)\n  │\n  ▼\nCoreSignal::StateChanged { table, version } → UI pulls viewport snapshot (20 messages)\n  │\n  ▼\nPlaintext ZeroizeOnDrop immediately after render frame"
             }
           ],
@@ -2068,7 +2068,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "APNs delivers push payload (ciphertext)\n  │  NSE extension wakes; RAM ≤ 20 MB enforced\n  ▼\nStatic Memory Arena 10 MB — pre-allocated at NSE startup\n  │\n  ▼\nRead Push_Key_current from Shared Keychain (group.com.terachat.nse)\n  │  Check push_key_version vs payload header version\n  ├── Match → AES-256-GCM decrypt in arena → OS notification display\n  └── Mismatch →\n        cache raw ciphertext to nse_staging.db\n        set main_app_decrypt_needed=true in Shared Keychain\n        send content-available:1 wake signal\n          │\n          ▼\n        Main App wakes → rotates key → decrypts nse_staging.db entry → clears staging\n  │\n  ▼\nZeroizeOnDrop: clears arena contents and Push_Key from NSE memory"
             }
           ],
@@ -2081,7 +2081,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Client sends TLS 1.3 + mTLS authenticated request\n  │  Relay extracts only: { destination_device_id, ciphertext_blob, timestamp }\n  │  Relay has zero access to: plaintext | sender identity | content\n  ▼\nWAL Staging:\n  INSERT INTO wal_staging (event_id, payload, status='STAGED')\n  │  Durable before MPSC enqueue\n  ▼\nTokio MPSC channel → Redis / NATS JetStream pub/sub\n  │\n  ▼\nOn confirmed delivery acknowledgment:\n  UPDATE wal_staging SET status='COMMITTED' WHERE event_id = ?\n  │\n  ▼\nPrometheus: relay_message_relay_total++"
             },
             {
@@ -2106,7 +2106,7 @@
           "content_blocks": [
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "[Global Edge / GeoDNS Routing]\n         │\n         ├──► [Zone 1: Enterprise Relay Cluster — Dedicated VPS]\n         │       ├─ Single-Binary Rust Daemon (Relay)\n         │       ├─ SQLite WAL (relay state, local SSD)\n         │       ├─ PostgreSQL (workspace metadata, SCIM, audit logs)\n         │       └─ Redis / NATS JetStream (pub/sub fanout)\n         │\n         ├──► [Zone 2: Federation Bridge]\n         │       ├─ mTLS Mutual Auth (internal PKI — no public CA)\n         │       ├─ Sealed Sender Protocol\n         │       └─ dag_schema_version negotiation\n         │\n         └──► [Zone 0: Bare-metal HSM Anchor]\n                 ├─ HSM FIPS 140-3 Level 3 (PKCS#11)\n                 ├─ KMS Bootstrap + Shamir ceremony\n                 ├─ PostgreSQL Primary (streaming replication to VPS replicas)\n                 └─ MinIO Blind Storage (Erasure Coding EC+4, 3–5 nodes)"
             },
             {
@@ -2170,7 +2170,7 @@
             },
             {
               "type": "code",
-              "language": "",
+              "language": "text",
               "code": "Step 1: QUIC / HTTP/3 over UDP:443\n        ACK within 50 ms → ONLINE_QUIC (0-RTT reconnect, ~30 ms RTT)\n        No ACK or firewall DROP → Step 2\n\nStep 2: gRPC over HTTP/2 (TCP:443)\n        TLS handshake success → ONLINE_GRPC (~80 ms RTT)\n        DPI blocks binary framing → Step 3\n\nStep 3: WebSocket Secure (wss:// TCP:443)\n        WS Upgrade success → ONLINE_WSS (~120 ms RTT)\n        All transports fail → MESH_MODE (BLE / Wi-Fi Direct)"
             },
             {
@@ -2979,27 +2979,27 @@
           ],
           "rows": [
             [
-              "**2.0**",
+              "0.2.5",
               "2026-03-18",
               "Complete rewrite from scratch. Unified §0–§13 structure with stable anchors. Zero duplicate section numbering. All CHANGELOG entries populated. Rules section replaced with `[ ]` checklist using unique rule IDs (KEY-01, NET-01, etc.). Platform Behavior Matrices added (§3.1–§3.5). AI routing hint with explicit positive/negative routing directives. Incorporated all decisions from architecture sessions: EMDP Key Escrow (§6.7), Adaptive WAL batch sizing (§9.3), Component Fault Isolation with `panic='unwind'` mandate (§4.4), Relay WAL Staging at-least-once delivery (§9.3), Prometheus Zero-Knowledge metrics (§9.6), WasmParity CI gate requirement (§11.4), Configurable Dead Man Switch grace period (§5.1), Batched TreeKEM Update_Path delivery (§5.3), XPC Transaction Journal with retry policy (§11.1), iOS Double-Buffer Zeroize (§5.2), Adaptive QUIC Probe Learning (§9.2), Federation schema version negotiation (§9.4), Mobile DAG merge time-slicing (§7.3)."
             ],
             [
-              "0.3.6",
+              "0.2.1",
               "2026-03-13",
               "Deprecated: eBPF/XDP, Hardware TEE (SGX/SEV), `mlock()` pinning, Envoy Sidecar — removed for VPS compatibility. Added: §3.5 Micro-Core Relay, §4.6 Soft-Enclave WASM Isolation (ChaCha8 + ZeroizeOnDrop), §3.4.2 SQLite OOM Prevention."
             ],
             [
-              "0.3.0",
+              "0.1.5",
               "2026-03-11",
               "Removed ODES/Blind Shard. Added E2EE Cloud Backup (§9.1). Simplified Mesh Gossip: iBeacon + Gossip Broadcast (removed 3D-A* routing)."
             ],
             [
-              "0.2.9",
+              "0.1.3",
               "2026-03-05",
               "Added Hierarchical Crypto-Shredding (§5.35), SSA Retroactive Taint (§5.36), Anti-Snapshot TPM 2.0 Monotonic Counter."
             ],
             [
-              "0.2.8",
+              "0.1.1",
               "2026-03-04",
               "Added Constant-time Memory Access (§9.2), EMIP Plugin Integrity (§5.24), TeraVault VFS (§6.13)."
             ]

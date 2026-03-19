@@ -3,778 +3,3860 @@
   "generated_at": "2026-02-23",
   "sections": [
     {
-      "id": "feature-specmd-terachat-client-specification",
-      "level": 1,
-      "heading": "Feature_Spec.md — TeraChat Client Specification",
+      "id": "0-data-object-catalog-client-side",
+      "level": 2,
+      "heading": "§0 — DATA OBJECT CATALOG (Client-Side)",
       "content_blocks": [
         {
           "type": "blockquote",
           "alert_type": "note",
           "lines": [
-            "**Status:** `ACTIVE — Main Implementation Reference`",
-            "**Audience:** Mobile Dev (iOS/Android) · Desktop Dev (Tauri) · WASM Integrator",
-            "**Scope:** Client Data Plane, IPC Bridge, Local Storage, Native OS Hooks, WASM Ecosystem.",
-            "**Depends On:** `Core_Spec.md` (Cryptography, MLS, Mesh State Machine)",
-            "**Consumed By:** `Design.md` (UI Triggers), `Web_Marketplace.md`"
+            "Read this section before implementing any client component.",
+            "Every object is an independent data unit with a defined schema, lifecycle, and security",
+            "constraint. Operations in §4–§6 act on these objects — not on raw platform APIs.",
+            "Internal cryptographic object definitions are in TERA-CORE §0."
           ]
         }
       ],
       "subsections": [
         {
-          "id": "changelog",
-          "level": 2,
-          "heading": "CHANGELOG",
-          "content_blocks": [],
+          "id": "01-local-storage-objects",
+          "level": 3,
+          "heading": "§0.1 Local Storage Objects",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Object",
+                "Type",
+                "Storage",
+                "Lifecycle",
+                "Core Ref"
+              ],
+              "rows": [
+                [
+                  "`cold_state.db`",
+                  "SQLite, SQLCipher AES-256",
+                  "Disk, permanent",
+                  "Until Remote Wipe or Crypto-Shredding",
+                  "TERA-CORE §7.1"
+                ],
+                [
+                  "`cold_state_shadow.db`",
+                  "SQLite, transient",
+                  "Disk, temporary",
+                  "Created on Hydration batch; deleted after atomic rename",
+                  "TERA-CORE §7.1"
+                ],
+                [
+                  "`hot_dag.db`",
+                  "SQLite WAL",
+                  "Disk, permanent",
+                  "Append-only; cleaned via VACUUM",
+                  "TERA-CORE §7.1"
+                ],
+                [
+                  "`nse_staging.db`",
+                  "SQLite WAL, iOS NSE only",
+                  "Disk",
+                  "Per push payload; cleared after Main App decryption",
+                  "TERA-CORE §5.5"
+                ],
+                [
+                  "`wal_staging.db`",
+                  "SQLite WAL, relay only",
+                  "Disk",
+                  "Per event; cleared on `Committed` status",
+                  "TERA-CORE §9.3"
+                ],
+                [
+                  "`NetworkProfile`",
+                  "SQLite row",
+                  "Local config DB",
+                  "Per network identifier; updated on probe result",
+                  "TERA-CORE §9.2"
+                ],
+                [
+                  "`TappTransientState`",
+                  "`sled` LSM-Tree rows",
+                  "RAM + disk, per DID",
+                  "Per `.tapp` session; AES-256-GCM encrypted",
+                  "TERA-FEAT §F-07"
+                ]
+              ]
+            }
+          ],
           "subsections": []
         },
         {
-          "id": "rules-implementation",
-          "level": 2,
-          "heading": "Rules Implementation",
+          "id": "02-in-memory-ephemeral-objects",
+          "level": 3,
+          "heading": "§0.2 In-Memory Ephemeral Objects",
           "content_blocks": [
             {
-              "type": "paragraph",
-              "text": "Rule 1 — JSI/FFI bridge không được expose raw pointer sang JS/WASM layer."
-            },
-            {
-              "type": "paragraph",
-              "text": "Chỉ được pass serialized message qua IPC channel. Raw pointer sang JS hoặc WASM là hard blocker. Cụ thể hơn: FFI endpoint không được return Vec<u8>, const u8, haymut u8 trực tiếp. Phải đi qua token protocol tera_buf_acquire → u64 opaque → tera_buf_release. Rule này ngăn GC NativeFinalizer race condition và unauthorized memory access từ WASM layer."
-            },
-            {
-              "type": "paragraph",
-              "text": "Rule 2 — cold_state.db phải được SQLCipher mã hóa với key derive từ Secure Enclave."
-            },
-            {
-              "type": "paragraph",
-              "text": "Không hardcode encryption key. Key phải được derive từ Hardware Root of Trust, không phải từ user password hay fixed salt. Nếu cold_state.db migration fail, rebuild từ hot_dag.db là safety net bắt buộc — không abort, không data loss."
-            },
-            {
-              "type": "paragraph",
-              "text": "Rule 3 — Background Notification Extension phải giới hạn RAM ≤ 20MB."
-            },
-            {
-              "type": "paragraph",
-              "text": "iOS NSE và Android FCM Service đều phải có Circuit Breaker. Nếu memory usage vượt 20MB, process phải tự terminate gracefully, không để OS kill. Static Memory Arena 10MB pattern được recommend cho NSE. Ghost Push skeleton pattern cho oversized payloads. Rule này prevent OOM-Kill trong NSE/FCM context — crash ở đây là notification loss."
-            },
-            {
-              "type": "paragraph",
-              "text": "Rule 4 — Mọi WASM .tapp phải run trong Sandbox với PROT_READ-only shared memory."
-            },
-            {
-              "type": "paragraph",
-              "text": "WASM không được write vào DAG buffer. Sandbox phải có Guard Pages. Mọi write ra ngoài sandbox boundary phải trigger SIGSEGV trap và panic ngay lập tức. Đây là isolation guarantee cho untrusted third-party code."
-            },
-            {
-              "type": "paragraph",
-              "text": "Rule 5 — Clipboard operation phải đi qua Protected Clipboard Bridge."
-            },
-            {
-              "type": "paragraph",
-              "text": "Không được gọi OS clipboard API trực tiếp. Bridge phải detect display server (Wayland vs X11 trên Linux) và chọn đúng backend: wl-clipboard cho Wayland native, xclip/xsel cho X11. iOS phải dùng UIPasteboard qua bridge. Rule này prevent clipboard snooping bởi malicious apps."
-            },
-            {
-              "type": "paragraph",
-              "text": "Rule 6 — ZeroizeOnDrop bắt buộc cho mọi struct giữ plaintext."
-            },
-            {
-              "type": "paragraph",
-              "text": "Verify bằng Miri test — không chỉ code review. Rule này là client-side enforcement của Core_Spec Rule 2, với yêu cầu CI verification cụ thể hơn."
+              "type": "table",
+              "headers": [
+                "Object",
+                "Type",
+                "Location",
+                "Lifecycle",
+                "Core Ref"
+              ],
+              "rows": [
+                [
+                  "`Decrypted_Chunk`",
+                  "`[u8]` plaintext",
+                  "RAM, `ZeroizeOnDrop`",
+                  "Single 2 MB chunk; zeroed after render frame",
+                  "TERA-CORE §5.3"
+                ],
+                [
+                  "`ViewportCursor`",
+                  "`{top_id: Uuid, bottom_id: Uuid}`",
+                  "RAM",
+                  "Duration of scroll session",
+                  "TERA-FEAT §F-03"
+                ],
+                [
+                  "`RingBuffer_2MB`",
+                  "Circular fixed buffer",
+                  "User RAM",
+                  "Reused across media stream sessions",
+                  "TERA-FEAT §F-09"
+                ],
+                [
+                  "`KVCacheSlot`",
+                  "LZ4-compressed LLM context",
+                  "RAM",
+                  "Per `.tapp` session; LZ4-compressed when inactive",
+                  "TERA-FEAT §F-10"
+                ],
+                [
+                  "`MemoryArbiter`",
+                  "`{allocations: HashMap<ComponentId, usize>}`",
+                  "RAM",
+                  "Process lifetime; enforces RAM budget matrix",
+                  "TERA-CORE §3.3"
+                ]
+              ]
             }
           ],
           "subsections": []
         },
         {
-          "id": "0-concept-architecture-data-object-catalog-client-side",
-          "level": 2,
-          "heading": "0. [CONCEPT] [ARCHITECTURE] Data Object Catalog (Client-Side)",
-          "content_blocks": [],
-          "subsections": [
-            {
-              "id": "01-local-storage-objects",
-              "level": 3,
-              "heading": "0.1 Local Storage Objects",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Object",
-                    "Kiểu",
-                    "Nơi lưu",
-                    "Vòng đời"
-                  ],
-                  "rows": [
-                    [
-                      "`cold_state.db`",
-                      "SQLite (SQLCipher)",
-                      "Disk — permanent",
-                      "Tồn tại cho đến khi nhận lệnh Crypto-Shred"
-                    ],
-                    [
-                      "`cold_state_shadow.db`",
-                      "SQLite (temp)",
-                      "Disk — transient",
-                      "Tạo khi Hydration batch, xóa sau POSIX rename"
-                    ],
-                    [
-                      "`hot_dag.db`",
-                      "SQLite WAL",
-                      "Disk — permanent",
-                      "Monotonic append-only, dọn rác qua VACUUM"
-                    ],
-                    [
-                      "`Hydration_Checkpoint`",
-                      "`{Snapshot_CAS, chunk_idx}`",
-                      "`hot_dag.db` KV",
-                      "Overwritten per chunk flush"
-                    ],
-                    [
-                      "`Merged_Vector_Clock`",
-                      "`Map<Node, Counter>`",
-                      "`hot_dag.db`",
-                      "Update sau mỗi thao tác DAG merge"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "02-ui-rendering-presentation-objects",
-              "level": 3,
-              "heading": "0.2 UI Rendering & Presentation Objects",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Object",
-                    "Kiểu",
-                    "Nơi lưu",
-                    "Vòng đời"
-                  ],
-                  "rows": [
-                    [
-                      "`Zero_Byte_Stub`",
-                      "`{entity_id, blur_hash}`",
-                      "RAM / `cold_state.db`",
-                      "Render tức thời, thay thế khi tải xong Plaintext"
-                    ],
-                    [
-                      "`Blur_hash_Thumbnail`",
-                      "Chuỗi 30-50 bytes",
-                      "`cold_state.db`",
-                      "Chuẩn bị từ lúc gửi tin nhắn"
-                    ],
-                    [
-                      "`Viewport_Cursor`",
-                      "`{top_msg, bottom_msg}`",
-                      "RAM (ephemeral)",
-                      "Sống theo phiên cuộn màn hình (Scroll session)"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "03-secure-ephemeral-memory-objects",
-              "level": 3,
-              "heading": "0.3 Secure Ephemeral Memory Objects",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Object",
-                    "Kiểu",
-                    "Nơi lưu",
-                    "Vòng đời"
-                  ],
-                  "rows": [
-                    [
-                      "`Decrypted_Chunk_2MB`",
-                      "Nguyên trạng byte (Plaintext)",
-                      "RAM — `ZeroizeOnDrop`",
-                      "1 chu kỳ giải mã Chunk, sau đó bị đè `0x00`"
-                    ],
-                    [
-                      "`Ephemeral_Buffer`",
-                      "mmap `PROT_READ`",
-                      "Virtual memory",
-                      "Phiên WASM Sandbox chạy nền"
-                    ],
-                    [
-                      "`Ring_Buffer_2MB`",
-                      "Circular Buffer tĩnh",
-                      "User RAM",
-                      "Tái sử dụng để truyền Media Stream siêu tốc"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "04-ipc-sync-signal-objects",
-              "level": 3,
-              "heading": "0.4 IPC & Sync Signal Objects",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Object",
-                    "Kiểu",
-                    "Nơi lưu",
-                    "Vòng đời"
-                  ],
-                  "rows": [
-                    [
-                      "`Control_Plane_Signal`",
-                      "Protobuf (≤ 50 bytes)",
-                      "Dart FFI / JSI",
-                      "Bắn một-chiều (Fire-and-forget)"
-                    ],
-                    [
-                      "`Data_Plane_Payload`",
-                      "Nguyên trạng phân khối",
-                      "SharedArrayBuffer / FFI",
-                      "Xóa khi kết thúc Transfer"
-                    ],
-                    [
-                      "`Snapshot_CAS_UUID`",
-                      "UUID v4",
-                      "`hot_dag.db`",
-                      "Điểm neo version của Local Snapshot"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "1-architecture-implementation-client-data-plane-ipc-bridge",
-          "level": 2,
-          "heading": "1. [ARCHITECTURE] [IMPLEMENTATION] Client Data Plane & IPC Bridge",
+          "id": "03-ipc-signal-and-command-objects",
+          "level": 3,
+          "heading": "§0.3 IPC Signal and Command Objects",
           "content_blocks": [
             {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Tổ chức luồng giao tiếp chéo giữa Rust Core Headless và Native Frontend. Hướng tới nguyên lý Zero-Copy và chia rẽ Control/Data Plane."
+              "type": "table",
+              "headers": [
+                "Object",
+                "Type",
+                "Transport",
+                "Lifecycle",
+                "Core Ref"
+              ],
+              "rows": [
+                [
+                  "`CoreSignal`",
+                  "Typed Rust enum",
+                  "FFI signal channel",
+                  "Unidirectional Core → UI; no response expected",
+                  "TERA-CORE §4.2"
+                ],
+                [
+                  "`UICommand`",
+                  "Typed Rust enum",
+                  "FFI command channel",
+                  "Consumed once by Core; no replay",
+                  "TERA-CORE §4.2"
+                ],
+                [
+                  "`DataPlane_Payload`",
+                  "Raw bytes",
+                  "SAB ring buffer / JSI pointer / Dart FFI",
+                  "Held until `tera_buf_release(token)` called",
+                  "TERA-CORE §4.3"
+                ],
+                [
+                  "`FfiToken`",
+                  "Opaque `u64`",
+                  "FFI return value",
+                  "Valid until `tera_buf_release` called",
+                  "TERA-CORE §4.3"
+                ]
               ]
             }
           ],
-          "subsections": [
-            {
-              "id": "11-app-size-optimization-link-time-optimization",
-              "level": 3,
-              "heading": "1.1 App Size Optimization & Link-Time Optimization",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Core Biên dịch Tĩnh: Build file Rust văng cờ tối ưu dung lượng opt-level = 'z', bật LTO (lto = true), panic = 'abort'. Gọt sạch khối lượng từ ~30MB xuống < 4MB.",
-                    "📱 Yêu cầu Strip Symbols (loại bỏ symbol dò lỗi) khi Build Release ra file .ipa hoặc .apk."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "12-performance-dual-plane-isolation",
-              "level": 3,
-              "heading": "1.2 [PERFORMANCE] Dual-Plane Isolation",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Control Plane: Trao đổi các mệnh lệnh, Metadata nhỏ (Protobuf < 50 bytes) như sự kiện gõ phím, Cổng kết nối MQTT. Luồng này chạy liên tục nhưng siêu nhẹ.",
-                    "📱💻 Data Plane: Luồng chở File, Video 4K, Vector Embedding. Tuyệt đối không nhồi chung đường Control Plane dồn vào JSON/Base64. Nó đi qua Buffer Zero-Copy riêng."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "13-platform-ipc-zero-copy-transport-matrix",
-              "level": 3,
-              "heading": "1.3 [PLATFORM] IPC Zero-Copy Transport Matrix",
-              "content_blocks": [
-                {
-                  "type": "table",
-                  "headers": [
-                    "Nền Tảng",
-                    "Lõi Giao Tiếp Data Plane",
-                    "Throughput (Trung bình)",
-                    "Mô tả"
-                  ],
-                  "rows": [
-                    [
-                      "📱 **iOS**",
-                      "`C++ JSI Shared Pointer`",
-                      "~400 MB/s",
-                      "Không đi qua WebView Bridge, bypass luồng JS"
-                    ],
-                    [
-                      "📱 **Android**",
-                      "`Dart FFI TypedData`",
-                      "~400 MB/s",
-                      "Ký gửi thẳng vào RAM ảo máy"
-                    ],
-                    [
-                      "💻 **Tauri (Desktop)**",
-                      "`SharedArrayBuffer`",
-                      "~500 MB/s",
-                      "COOP+COEP Mode, dùng vòng Ring Buffer cực lớn"
-                    ]
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "14-unidirectional-state-sync",
-              "level": 3,
-              "heading": "1.4 Unidirectional State Sync",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "💻📱 Lõi Rust không chủ động đẩy (push) chuỗi String dài thòng lọng lên Native UI. Thay vào đó, nó bắn tín hiệu mồi (Control Signal) MERGE_COMPLETE.",
-                    "Native UI nhận lệnh, chủ động kéo (pull) ngược lại dữ liệu theo kiểu Window Viewport (Chỉ bốc 20 tin nhắn đang hiển thị). Chống nghẽn RAM do JSON serialization."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "15-crash-safe-checkpoint-memory-budget-protocol",
-              "level": 3,
-              "heading": "1.5 Crash-Safe Checkpoint (Memory Budget Protocol)",
-              "content_blocks": [
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**OS Constraints:** Ứng dụng di động hay bị giết oan (OOM-Kill, Jetsam)."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 Memory Pinning (iOS Jetsam): iOS từ chối mlock(). Sống sót bằng cách gom bộ nhớ vào kCFAllocatorMallocZone và bắn madvise(MADV_NOCORE) tránh RAM dump ra file crash.",
-                    "📱 Sự kiện Chặn đứng: App lắng nghe OS System Hook (applicationWillTerminate trên iOS, onTrimMemory trên Android). Tức thời gọi terachat_core_flush_io() dập WAL SQLite ghi ra ổ cứng trước khi nổ bùm đóng App chết nguồn. Toàn trình dưới 50ms.",
-                    "📱 RAM Circuit Breaker (CHOKE): Tự động cắt cầu IPC và ngừng nạp Event Buffer khi RAM nền vượt hạn ngạch 8MB trên iOS NSE. Tránh thảm họa Jetsam OOM-Kill triệt để."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
+          "subsections": []
         },
         {
-          "id": "2-architecture-implementation-local-storage-sqlite-wal-compact",
-          "level": 2,
-          "heading": "2. [ARCHITECTURE] [IMPLEMENTATION] Local Storage & SQLite WAL Compact",
+          "id": "04-push-and-notification-objects",
+          "level": 3,
+          "heading": "§0.4 Push and Notification Objects",
           "content_blocks": [
             {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Tổ chức lưu trữ trên máy người dùng, bảo vệ tuổi thọ SSD/Flash, và duy trì lịch sử bất biến."
+              "type": "table",
+              "headers": [
+                "Object",
+                "Type",
+                "Storage",
+                "Lifecycle",
+                "Core Ref"
+              ],
+              "rows": [
+                [
+                  "`Push_Key_N`",
+                  "AES-256-GCM symmetric key",
+                  "Secure Enclave (iOS) / StrongBox (Android)",
+                  "Rotated after each MLS Epoch rotation",
+                  "TERA-CORE §5.5"
+                ],
+                [
+                  "`PushKeyVersion`",
+                  "`u32`",
+                  "Shared Keychain (iOS) / StrongBox metadata",
+                  "Incremented on each rotation",
+                  "TERA-CORE §5.5"
+                ],
+                [
+                  "`NSE_StagedCiphertext`",
+                  "Raw ciphertext bytes",
+                  "`nse_staging.db`",
+                  "Cleared after successful Main App decryption",
+                  "TERA-CORE §5.5"
+                ]
               ]
             }
           ],
-          "subsections": [
-            {
-              "id": "21-kiến-trúc-cơ-sở-dữ-liệu",
-              "level": 3,
-              "heading": "2.1 Kiến trúc Cơ sở Dữ liệu",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 hot_dag.db: DB nhật ký mạng DAG CRDT (Append-Only). Cắm WAL mode. Cấu hình tắt fsync() ngặt nghèo liên tục để gánh Event nhỏ.",
-                    "📱💻 cold_state.db: Cơ sở SQLite đóng băng (đã merge phẳng), mã hóa bằng SQLCipher AES-256. Dùng làm View bảng cho UI đọc siêu nhanh.",
-                    "📱💻 tapp_egress.db: Bể đệm biệt lập (Isolated Queue) dành riêng cho luồng mạng đi ra của các App con (WASM .tapp), bảo hộ Lõi Data chính."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "22-foreground-opportunistic-vacuum-chống-phình-wal",
-              "level": 3,
-              "heading": "2.2 Foreground Opportunistic VACUUM (Chống Phình WAL)",
-              "content_blocks": [
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**Bài toán:** WAL file SQLite bị phù to quá mức do tần suất Append Event nhắn tin theo nhóm."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Khi nhận thấy File WAL hot_dag.db-wal nảy lên quá 50MB (Mobile) / 200MB (Desktop) $\\rightarrow$ Cần dọn rác.",
-                    "Tiêu chuẩn Kích hoạt: Nhận diện 2 yếu tố: App đang bật Foreground + Thiết bị đang cắm sạc (Pin > 60%).",
-                    "Thực thi Zero-Downtime: Gọi lệnh ngầm SQLite VACUUM INTO 'hot_dag_tmp.db', gom rác sang bản nháp, sau đó đổi tên cực nhanh bằng chuẩn nguyên tử POSIX Rename (rename()). Không đóng băng Lõi đọc/ghi hiện tại của thiết bị. Khống chế việc ăn mòn NAND Flash."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
+          "subsections": []
         },
         {
-          "id": "3-architecture-implementation-hydration-sync-shadow-paging",
-          "level": 2,
-          "heading": "3. [ARCHITECTURE] [IMPLEMENTATION] Hydration & Sync (Shadow Paging)",
+          "id": "05-wasm-plugin-objects",
+          "level": 3,
+          "heading": "§0.5 WASM Plugin Objects",
           "content_blocks": [
             {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Dưỡng phục Dữ liệu bị thâm hụt sau khi ngủ dậy từ lưới mạng chập chờn hoặc cài lại máy (Zombie Sync)."
+              "type": "table",
+              "headers": [
+                "Object",
+                "Type",
+                "Storage",
+                "Lifecycle",
+                "Core Ref"
+              ],
+              "rows": [
+                [
+                  "`DelegationToken`",
+                  "`{source_did, target_did, permissions, expires_at, signature}`",
+                  "RAM + `hot_dag.db`",
+                  "TTL 30 days; revocable by Admin at any time",
+                  "TERA-FEAT §F-08"
+                ],
+                [
+                  "`EgressNetworkRequest`",
+                  "Protobuf",
+                  "In-flight",
+                  "Single request; sanitized by Host Proxy",
+                  "TERA-CORE §4.1"
+                ],
+                [
+                  "`XpcJournalEntry`",
+                  "`{tx_id: Uuid, status: Pending\\",
+                  "Verified\\",
+                  "Committed}`",
+                  "`hot_dag.db`",
+                  "Per XPC transaction; cleared on Committed",
+                  "TERA-FEAT §F-07"
+                ]
               ]
             }
           ],
-          "subsections": [
-            {
-              "id": "31-shadow-paging-snapshot-rebuild",
-              "level": 3,
-              "heading": "3.1 Shadow Paging Snapshot Rebuild",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Thay vì Update trực tiếp lên Data đang làm việc (Gây gián đoạn màn hình đang chat), Lõi lưới tiến hành kéo Chunk lịch sử 2MB/s về.",
-                    "Nạp khối đó vào cold_state_shadow.db tĩnh lặng ở luồng chìm (Background).",
-                    "Sau khi xác nhận Merkle Tree Hash trùng khớp, thực hiện Tráo đổi Database (Atomic Switch). UI tự động chớp Reload nhẹ 50ms. Nếu Tải bị gãy nửa đường (Rớt mạng), shadow.db tự bị xóa rác, DB chính không hấn gì."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "32-asymmetric-payload-pruning-mobile",
-              "level": 3,
-              "heading": "3.2 Asymmetric Payload Pruning (Mobile)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 Mobile Device không đóng vai trò nòng cốt (như Desktop). Quá trình Cắt Tỉa (Pruning) sẽ chém bỏ bớt các nhánh CRDT thừa / cũ sau 7 ngày, chỉ nhận cục Squash State phẳng phiu. Thiết bị Desktop/VPS (Super Node) gánh 100% History DAG thay cho điện thoại kéo RAM."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "4-architecture-implementation-wasm-ecosystem-tapp-lifecycle",
-          "level": 2,
-          "heading": "4. [ARCHITECTURE] [IMPLEMENTATION] WASM Ecosystem & .tapp Lifecycle",
-          "content_blocks": [
-            {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Trình thông dịch Tiện ích con (.tapp) chạy ở biên (Edge). Gắn liền với Triết lý: Không tin tưởng code bên thứ ba, cấm tuyệt đối System Call."
-              ]
-            }
-          ],
-          "subsections": [
-            {
-              "id": "41-kiến-trúc-3-tầng-phân-phối-thực-thi",
-              "level": 3,
-              "heading": "4.1 Kiến trúc 3 Tầng Phân phối & Thực thi",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "Tầng 1 (Marketplace): Web Marketplace lưu danh mục .tapp đã được ký duyệt (Ed25519 bằng TeraChat Enterprise CA). Admin nhấn \"Install\".",
-                    "☁️🗄️ Tầng 2 (Bơm qua Mesh): VPS Control Plane nhận lệnh tải WASM Bytecode về Cluster, sau đó phân phối xuống thiết bị qua mạng Mesh (CRDT Event Log).",
-                    "$> \\text{VPS KHÔNG chạy logic .tapp, chỉ cấp một bảng SQL Tùy chọn (Blind Storage) để lưu dữ liệu mã hóa mù.}$",
-                    "Tầng 3 (Thực thi thiết bị): App Mobile/Desktop kéo WASM về. UI Sandbox thực thi 100% logic bằng CPU thiết bị. Không bao giờ lộ Plaintext cho VPS."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "42-lách-chính-sách-wx-trên-ios-interpreter-mode",
-              "level": 3,
-              "heading": "4.2 Lách chính sách W^X trên iOS (Interpreter Mode)",
-              "content_blocks": [
-                {
-                  "type": "blockquote",
-                  "alert_type": "note",
-                  "lines": [
-                    "**OS Constraint:** iOS áp đặt chính sách `W^X` (Write XOR Execute) cực kỳ hà khắc. Việc JIT (vừa ghi bytecode vào RAM vừa chạy) sẽ dẫn tới Crash App lập tức."
-                  ]
-                },
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 Quy chuẩn Interpreter: iOS buộc phải dùng WASM Interpreter (Thông dịch tuyến tính) thay vì JIT. Payload WASM hoạt động như một khối Dữ liệu tĩnh (Data Array) đi qua máy trạng thái ảo mà không phát sinh mã máy động.",
-                    "📱💻 JSI Memory Isolation: Sử dụng JSI HostObject để chia cách hoàn toàn Vùng nhớ Dữ liệu (Data Heap) và Vùng thực thi tiến trình (Text Segment)."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "43-opa-policy-lưới-phòng-thủ-outbound-egress-firewall",
-              "level": 3,
-              "heading": "4.3 OPA Policy & Lưới phòng thủ Outbound (Egress Firewall)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Lõi Rust thiết lập rào chắn Host Bindings. Mã WASM không bao giờ được phép thọc thẳng vào Network Socket của thiết bị. Mọi luồng API Call fetch() từ trong WASM phải đi qua Rust.",
-                    "📱💻 TLS Certificate Pinning (HPKP): Loại bỏ domain text whitelist. OPA Policy chứa chuỗi tls_pin: \"sha256/abc123...\". Khi WASM gọi API ra ngoài mạng, Rust extract Server TLS Public Key đối chiếu. Mismatch $\\rightarrow$ Kết liễu kết nối $0\\text{ms}$.",
-                    "📱💻 Byte-Quota Enforcement: Rust chặn mọi lệnh Egress nếu khối lượng byte xuất bến vượt quá hạn mức (payload_bytes > 4096), phòng chống tấn công Data Steganography tẩu tán nhạy cảm."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "5-security-implementation-security-features-dlp-data-loss-prevention",
-          "level": 2,
-          "heading": "5. [SECURITY] [IMPLEMENTATION] Security Features & DLP (Data Loss Prevention)",
-          "content_blocks": [
-            {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Các biện pháp chống rò rỉ tại bề mặt thiết bị (Edge Detection) ngay cả khi máy bị chiếm quyền hệ điều hành. Thuộc nhóm quy tắc cứng (Hard-Rule Zero-Tolerance)."
-              ]
-            }
-          ],
-          "subsections": [
-            {
-              "id": "51-ram-pinning-phân-rã-bộ-nhớ-zeroizeondrop",
-              "level": 3,
-              "heading": "5.1 RAM Pinning & Phân rã Bộ nhớ (ZeroizeOnDrop)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "💻🖥️ Chống Swap RAM: Trên Desktop/Laptop (Windows/macOS), các vùng nhớ chứa Master Key, Session Key, Decrypted Payload bắt buộc được khóa tĩnh (VirtualLock() / mlock()). HĐH không được phép Swap các vùng RAM này xuống Ổ cứng (Pagefile/Swapfile), ngăn Forensic trích xuất.",
-                    "📱 Cấm mlock() trên Mobile: iOS/Android cấm mlock(), vi phạm sẽ bị Jetsam-Kill. Thay vào đó, áp dụng mẫu thiết kế Rust ZeroizeOnDrop (RAII). Ngay khoảnh khắc biến Plaintext đi ra khỏi Scope vòng đời hàm, vùng nhớ Heap đó bị nhồi mảng 0x00, đè nát nội dung kể cả khi chưa bị Garbage Collector dọn dẹp."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "52-màn-che-cửa-số-hệ-điều-hành-screen-leakage-protection",
-              "level": 3,
-              "heading": "5.2 Màn che Cửa số Hệ điều hành (Screen Leakage Protection)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 iOS (Hardware-level Blur): Đăng ký System Hook UIScreen.capturedDidChangeNotification. Hệ thống giám sát AirPlay, Screen Record, Cắm cáp HDMI. Bất kỳ khi nào cờ isCaptured == true nảy lên, Rust lập tức nảy Event SecurityEvent::ScreenCapture. UI che toàn bộ App bằng UIBlurEffect(.dark).",
-                    "📱 Android (Kernel Surface Gate): Định nghĩa cờ WindowManager.LayoutParams.FLAG_SECURE ngay tầng khai sinh Activity.onCreate(). Việc này thọc sâu vào Kernel Surface Compositor, mọi nỗ lực chụp màn hình trả về ảnh đen ngòm.",
-                    "📱💻 Smart Clipboard Controller: Hook API OS Clipboard. Khi người dùng Copy nội dung từ Chat TeraChat, văn bản sẽ bị chèn ẩn Marker RTLO. Mọi luồng Paste văng ra ngoài App khác (Notes, Zalo, Browser) đều bị module Rust đánh trượt, ném về chuỗi rỗng."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "53-biometric-screen-lock-cryptographic-pin-fallback",
-              "level": 3,
-              "heading": "5.3 Biometric Screen Lock & Cryptographic PIN Fallback",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Tôn trọng Hardware Root-of-Trust (Secure Enclave / StrongBox / TPM). Mọi I/O trỏ tới SQLite sẽ bị chặn đứng (Block) nếu cờ Trạng thái Sinh trắc học chưa nhả xanh (kSecAccessControlBiometryCurrentSet).",
-                    "📱💻 Bàn phím PIN dự phòng áp dụng RAM Zeroization ngay sau mỗi ký tự gõ. Không log phím, không lưu mảng Char array ở tầng UI Framework."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "6-ui-implementation-ui-components-render-flow",
-          "level": 2,
-          "heading": "6. [UI] [IMPLEMENTATION] UI Components & Render Flow",
-          "content_blocks": [
-            {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Trải nghiệm phản hồi người dùng siêu tốc, duy trì cơ cấu Glassmorphism 60FPS-120FPS mà không gây cháy máy."
-              ]
-            }
-          ],
-          "subsections": [
-            {
-              "id": "61-viewport-culling-fast-scroll-120hz",
-              "level": 3,
-              "heading": "6.1 Viewport Culling & Fast-Scroll 120Hz",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Cản trở quá tải IPC Bridge khi người dùng cuộn (Scroll) tốc độ siêu biên. Áp dụng cơ chế Lazy UI Sync kết hợp Off-screen Rendering Culling (Bẩm sinh của FlatList / SliverList).",
-                    "Giao diện loại bỏ (Unmount) toàn bộ các mảng Text/Row trôi qua khỏi tầm nhìn. Nhấn chìm lệnh gọi FFI giải mã cục bộ. Đi kèm tín hiệu hủy tác vụ terachat_cancel_task(Message_ID)."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "62-ảo-ảnh-thị-giác-metadata-first-virtual-rendering",
-              "level": 3,
-              "heading": "6.2 Ảo ảnh Thị giác (Metadata-First Virtual Rendering)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻🖥️ Khi File ảnh hoặc Video 4K (Dung lượng 2GB) được gửi xuống máy, UI không đứng đợi tải. Lõi Rust bóc tách Metadata siêu nhẹ (Zero-Byte Stubs < 500 bytes) + Chuỗi đồ họa Blur-hash (50 bytes).",
-                    "Lớp Render nóng (Hot Render) phát lớp mờ thị giác ngay tại nhịp $0\\text{ms}$. Lớp File nhị phân đi đường ngầm giải mã ở Background và \"Tráo đổi bóng\" (Fade-in) khi sẵn sàng."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "63-radar-pulse-báo-hiệu-luồng-offline",
-              "level": 3,
-              "heading": "6.3 Radar Pulse & Báo hiệu Luồng Offline",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 Visual Mesh Indication: Khi đứt cáp Internet, hạ tầng P2P Mesh nhậm chức. UI dưới đáy sinh hiệu ứng Radar Pulse quét màu tối (#0F172A).",
-                    "Báo hiệu minh bạch cho người dùng (Executive / System Admin) hiểu rằng lưu lượng dồn ngang (Peer-to-Peer) thay vì luồng dọc (Client-to-Server)."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "7-architecture-implementation-storage-e2ee-media-flow",
-          "level": 2,
-          "heading": "7. [ARCHITECTURE] [IMPLEMENTATION] Storage & E2EE Media Flow",
-          "content_blocks": [
-            {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Trải nghiệm truyền tải Media 4K và luồng file Khổng lồ qua khe hẹp di động (Bypass HTTP cục bộ)."
-              ]
-            }
-          ],
-          "subsections": [
-            {
-              "id": "71-native-media-datasource-bridge-no-local-http",
-              "level": 3,
-              "heading": "7.1 Native Media DataSource Bridge (No Local HTTP)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱 Quy tắc cứng: Mobile bắt buộc không được dùng Local HTTP Request 127.0.0.1 để stream video, vì OS sẽ chém chết Socket lúc App chạy nền.",
-                    "📱 iOS (AVAssetResourceLoaderDelegate): Yêu cầu từ Video Player được gọi qua FFI terachat_media_read(offset, length) chọc thẳng vào Ring Buffer 2MB của Rust. Đọc byte giải mã trên RAM, trả về NSData.",
-                    "📱 Android (MediaDataSource): ExoPlayer ánh xạ readAt() qua FFI để rải byte từ Rust vào ByteBuffer Dart/Native."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "72-chunked-compression-deduplication",
-              "level": 3,
-              "heading": "7.2 Chunked Compression & Deduplication",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "💻🖥️ Thực thi thuật toán Salted MLE (Convergent Encryption). File được băm CAS_Hash = HMAC-SHA256(Static_Dedup_Key, file_content). Hỗ trợ triệt tiêu lưu trữ trùng lặp (Deduplication) lên tới 80% đối với các file công ty dùng chung, mà vẫn bảo toàn E2EE.",
-                    "📱💻 Cắt gọt khung hình trước khi mã hóa (Pre-Encryption Compression). File JPEG/HEIC được nén giảm 30-80% băng thông tải lên ngay tại thiết bị gốc (Bypass bằng nhãn 100% HD)."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
-        },
-        {
-          "id": "8-architecture-implementation-open-agent-protocol-oap-ai-gateway",
-          "level": 2,
-          "heading": "8. [ARCHITECTURE] [IMPLEMENTATION] Open-Agent Protocol (OAP) & AI Gateway",
-          "content_blocks": [
-            {
-              "type": "blockquote",
-              "alert_type": "note",
-              "lines": [
-                "**Phạm vi:** Giao diện cho .tapp tương tác với Mô hình ngôn ngữ (LLM) nội hạt hoặc Đám mây, ẩn danh hóa dữ liệu toàn phần (PII Redaction)."
-              ]
-            }
-          ],
-          "subsections": [
-            {
-              "id": "81-stream-direct-open-agent-protocol-sd-oap",
-              "level": 3,
-              "heading": "8.1 Stream-Direct Open-Agent Protocol (SD-OAP)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 API terachat.network.stream_file_to_agent cho phép .tapp ném file trực tiếp cho AI qua Lõi Rust TLS socket. File được Rust kéo từng cục 2MB (Chunk) từ VFS, giải mã On-the-fly và đẩy rớt vào TLS HTTP/2 Stream. Không tồn tại quá trình nuốt trọn 1GB vào RAM."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "82-interactive-slm-dual-masking-isdm",
-              "level": 3,
-              "heading": "8.2 Interactive SLM Dual-Masking (ISDM)",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Lõi Rust vận hành NER (Phân tích thực thể) thu nhỏ (ví dụ ONNX/CoreML) ngay tại thiết bị để tước đoạt PII (Tên, SDT, Email) và thay bằng Alias: [REDACTED_PHONE_1].",
-                    "☁️ LLM đám mây xử lý logic, trả kết quả về biên máy tính. Lõi Rust hoán đổi Alias (De-tokenization) trở lại chuỗi thật, sau đó triệt tiêu bảng tra cứu bằng lệnh ZeroizeOnDrop trong vòng 100ms. Không bao giờ rời khỏi thiết bị."
-                  ]
-                }
-              ],
-              "subsections": []
-            },
-            {
-              "id": "83-tainted-agent-llm-iron-dome",
-              "level": 3,
-              "heading": "8.3 Tainted Agent & LLM Iron Dome",
-              "content_blocks": [
-                {
-                  "type": "list",
-                  "data": [
-                    "📱💻 Lõi Rust bảo chứng cấu trúc trả về bằng kiểu tham số tĩnh Vec<ASTNode> (AST Sanitizer). Cấm các tệp HTML nội tuyến hoặc chèn Markdown theo dõi (External Image Pixel Tracking).",
-                    "Nếu phát hiện AI phản hồi dính độc (Prompt Injection/XSS), gán cờ TAINTED. Buộc App tạm đình chỉ phiên bản .tapp đó nếu số lần rò rỉ vượt quá 3 lần."
-                  ]
-                }
-              ],
-              "subsections": []
-            }
-          ]
+          "subsections": []
         }
       ]
+    },
+    {
+      "id": "1-feature-overview",
+      "level": 2,
+      "heading": "1. FEATURE OVERVIEW",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "11-scope",
+          "level": 3,
+          "heading": "1.1 Scope",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "This document specifies all client-side and system-level features of TeraChat across five platform environments. Every feature definition includes: supported platforms, user flow, dependency mapping to Core_Spec.md (TERA-CORE), data interactions, constraints, and failure handling."
+            },
+            {
+              "type": "paragraph",
+              "text": "Feature categories:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Category",
+                "Features",
+                "Section"
+              ],
+              "rows": [
+                [
+                  "Secure Messaging",
+                  "E2EE send/receive, push notification",
+                  "F-01, F-02"
+                ],
+                [
+                  "IPC and State",
+                  "Bridge, synchronization, memory management",
+                  "F-03, F-15"
+                ],
+                [
+                  "Local Storage",
+                  "Two-tier SQLite, schema migration, hydration",
+                  "F-04"
+                ],
+                [
+                  "Survival Mesh",
+                  "BLE/Wi-Fi Direct, EMDP, role management",
+                  "F-05"
+                ],
+                [
+                  "Voice and Video",
+                  "WebRTC, CallKit, TURN failover",
+                  "F-06"
+                ],
+                [
+                  "WASM Plugins",
+                  "`.tapp` lifecycle, sandbox, XPC recovery",
+                  "F-07"
+                ],
+                [
+                  "Plugin IPC",
+                  "Delegation Tokens, inter-`.tapp` sharing",
+                  "F-08"
+                ],
+                [
+                  "Media Transfer",
+                  "Chunked upload, deduplication, streaming",
+                  "F-09"
+                ],
+                [
+                  "AI / SLM",
+                  "Local inference, PII redaction, cloud routing",
+                  "F-10"
+                ],
+                [
+                  "Device Security",
+                  "Screen protection, clipboard, wipe",
+                  "F-11"
+                ],
+                [
+                  "Identity",
+                  "Enrollment, recovery, geofencing",
+                  "F-12"
+                ],
+                [
+                  "Admin Controls",
+                  "Policy, SCIM, audit, license",
+                  "F-13"
+                ],
+                [
+                  "Network Management",
+                  "ALPN, probe learning, fallback",
+                  "F-14"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Out-of-scope for this document:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "MLS cryptographic internals → TERA-CORE §5",
+                "CRDT merge algorithms → TERA-CORE §7",
+                "Server relay infrastructure → TERA-CORE §9",
+                "UI animations and glassmorphism → TERA-DESIGN",
+                "Plugin publishing and Marketplace review → TERA-MKT",
+                "Chaos engineering test scenarios → TERA-TEST"
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "12-platform-environment-summary",
+          "level": 3,
+          "heading": "1.2 Platform Environment Summary",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Environment",
+                "WASM Runtime",
+                "UI Framework",
+                "Key Constraints"
+              ],
+              "rows": [
+                [
+                  "📱 iOS",
+                  "`wasm3` (no JIT)",
+                  "Swift + Dart FFI → Rust Core",
+                  "W^X, NSE ≤ 20 MB, background 30 s, Leaf Node only"
+                ],
+                [
+                  "📱 Android",
+                  "`wasmtime` JIT",
+                  "Kotlin + Dart FFI → Rust Core",
+                  "Android 14 battery buckets, StrongBox not universal"
+                ],
+                [
+                  "📱 Huawei",
+                  "`wasmtime` JIT",
+                  "ArkTS + Dart FFI → Rust Core",
+                  "HMS Push Kit, no dynamic WASM, CRL ≤ 4 h lag"
+                ],
+                [
+                  "💻 macOS",
+                  "`wasmtime` (XPC Worker)",
+                  "Swift + Tauri → Rust Core",
+                  "XPC isolation, AWDL conflicts, SEP key binding"
+                ],
+                [
+                  "🖥️ Windows",
+                  "`wasmtime` JIT",
+                  "Tauri → Rust Core",
+                  "TPM 2.0, WFP, EV Code Sign via Cloud HSM"
+                ],
+                [
+                  "🖥️ Linux",
+                  "`wasmtime` JIT",
+                  "Tauri → Rust Core",
+                  "AppArmor/SELinux MAC, seccomp-bpf, .deb/.rpm only"
+                ],
+                [
+                  "🗄️ Bare-metal",
+                  "N/A (server)",
+                  "Rust daemon",
+                  "HSM PKCS#11, PostgreSQL primary, Shamir quorum"
+                ],
+                [
+                  "☁️ VPS",
+                  "N/A (server)",
+                  "Rust daemon + Tokio",
+                  "512 MB RAM min, no kernel modules, no eBPF client-side"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "2-design-principles",
+      "level": 2,
+      "heading": "2. DESIGN PRINCIPLES",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "21-feature-design-invariants",
+          "level": 3,
+          "heading": "2.1 Feature Design Invariants",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "ID",
+                "Invariant",
+                "Enforcement"
+              ],
+              "rows": [
+                [
+                  "FD-01",
+                  "Every feature maps to exactly one or more Core modules in TERA-CORE",
+                  "§5 mapping table; orphan features are blockers"
+                ],
+                [
+                  "FD-02",
+                  "UI layer holds no crypto keys and no business state",
+                  "Rust Core is single source of truth; UI is pure renderer"
+                ],
+                [
+                  "FD-03",
+                  "Platform-specific code lives in host adapters (Swift/Kotlin), never in Rust Core",
+                  "`MeshTransport` trait pattern enforces the separation line"
+                ],
+                [
+                  "FD-04",
+                  "No feature bypasses the FFI token protocol",
+                  "`tera_buf_acquire` / `tera_buf_release` on all buffer transfers"
+                ],
+                [
+                  "FD-05",
+                  "Every plaintext buffer uses `ZeroizeOnDrop`",
+                  "Verified by `cargo miri test` in CI; no exceptions"
+                ],
+                [
+                  "FD-06",
+                  "Feature degradation is graceful and explicit",
+                  "Every feature has a defined Failure Handling clause; silent failures are blockers"
+                ],
+                [
+                  "FD-07",
+                  "Mesh/Survival mode has a strict, closed feature set",
+                  "Only text messaging and BLE control signals; list in §8.2 is exhaustive"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "22-ipc-bridge-architecture",
+          "level": 3,
+          "heading": "2.2 IPC Bridge Architecture",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Data Plane transport selection and throughput:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Platform",
+                "Transport",
+                "API",
+                "Throughput"
+              ],
+              "rows": [
+                [
+                  "📱 iOS",
+                  "C++ JSI Shared Memory Pointer",
+                  "`UniquePtr` + token protocol",
+                  "~400 MB/s"
+                ],
+                [
+                  "📱 Android",
+                  "Dart FFI TypedData",
+                  "Zero-copy into C ABI",
+                  "~400 MB/s"
+                ],
+                [
+                  "📱 Huawei",
+                  "Dart FFI TypedData",
+                  "Zero-copy into C ABI",
+                  "~400 MB/s"
+                ],
+                [
+                  "💻 macOS",
+                  "SharedArrayBuffer ring buffer",
+                  "COOP+COEP headers required",
+                  "~500 MB/s"
+                ],
+                [
+                  "🖥️ Windows",
+                  "SAB Tier 1 → Named Pipe fallback",
+                  "Auto-selected at runtime",
+                  "~500 / ~200 MB/s"
+                ],
+                [
+                  "🖥️ Linux",
+                  "SAB Tier 1 → Named Pipe → stdin fallback",
+                  "Auto-selected at runtime",
+                  "~500 / ~200 / ~50 MB/s"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Desktop Tauri IPC Tier Ladder (automatic, no configuration):"
+            },
+            {
+              "type": "code",
+              "language": "text",
+              "code": "Tier 1: SharedArrayBuffer (COOP+COEP verified)      → ~500 MB/s\nTier 2: Named Pipe (Windows; or SAB unavailable)    → ~200 MB/s\nTier 3: Protobuf over stdin (last resort)           → ~50 MB/s"
+            },
+            {
+              "type": "paragraph",
+              "text": "Rust Core detects SAB availability at init and selects the highest tier. UI is unaware of tier. Tier selection is written to the audit trail."
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "23-unidirectional-state-flow-contract",
+          "level": 3,
+          "heading": "2.3 Unidirectional State Flow Contract",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "State flows in exactly one direction: Rust Core → UI. The UI never writes state to Core."
+            },
+            {
+              "type": "code",
+              "language": "text",
+              "code": "Core mutation (e.g., new CRDT_Event appended to hot_dag.db)\n  │  emit CoreSignal::StateChanged { table: \"messages\", version: u64 }\n  ▼\nUI receives signal\n  │  send UICommand::ScrollViewport { top_message_id, bottom_message_id }\n  ▼\nCore:\n  1. Fetch viewport snapshot from cold_state.db (20 messages)\n  2. tera_buf_acquire(operation_id) → opaque u64 token\n  3. Write decrypted snapshot to Data Plane buffer\n  ▼\nUI:\n  1. Read buffer using token reference\n  2. Render viewport\n  3. tera_buf_release(token) → Core ZeroizeOnDrop when ref_count == 0"
+            },
+            {
+              "type": "paragraph",
+              "text": "UI never holds decrypted payloads beyond the render frame. Violation is a blocker."
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "3-platform-segmentation",
+      "level": 2,
+      "heading": "3. PLATFORM SEGMENTATION",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "31-feature-availability-matrix",
+          "level": 3,
+          "heading": "3.1 Feature Availability Matrix",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Feature",
+                "📱 iOS",
+                "📱 Android",
+                "📱 Huawei",
+                "💻 macOS",
+                "🖥️ Win",
+                "🖥️ Linux",
+                "🗄️ BM",
+                "☁️ VPS"
+              ],
+              "rows": [
+                [
+                  "F-01: E2EE Messaging",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "relay"
+                ],
+                [
+                  "F-02: Push Notifications",
+                  "APNs/NSE",
+                  "FCM",
+                  "HMS",
+                  "APNs daemon",
+                  "WNS",
+                  "daemon",
+                  "N/A",
+                  "relay"
+                ],
+                [
+                  "F-03: IPC Bridge",
+                  "✅ JSI",
+                  "✅ FFI",
+                  "✅ FFI",
+                  "✅ SAB",
+                  "✅ SAB",
+                  "✅ SAB",
+                  "N/A",
+                  "N/A"
+                ],
+                [
+                  "F-04: Local Storage",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "N/A"
+                ],
+                [
+                  "F-05: Survival Mesh",
+                  "✅ Leaf",
+                  "✅ Relay",
+                  "✅ Relay",
+                  "✅ Super",
+                  "✅ Super",
+                  "✅ Super",
+                  "N/A",
+                  "N/A"
+                ],
+                [
+                  "F-06: Voice/Video",
+                  "✅ CallKit",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "TURN"
+                ],
+                [
+                  "F-07: WASM `.tapp`",
+                  "✅ wasm3",
+                  "✅ wasmtime",
+                  "✅ wasmtime",
+                  "✅ XPC",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "Enclave"
+                ],
+                [
+                  "F-08: Inter-`.tapp` IPC",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "N/A"
+                ],
+                [
+                  "F-09: Media Transfer",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "storage",
+                  "storage"
+                ],
+                [
+                  "F-10: AI / SLM",
+                  "✅ CoreML",
+                  "✅ ONNX",
+                  "✅ HiAI",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "VPS Enclave"
+                ],
+                [
+                  "F-11: Device Security",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "N/A"
+                ],
+                [
+                  "F-12: Identity",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "HSM anchor",
+                  "N/A"
+                ],
+                [
+                  "F-13: Admin Console",
+                  "read-only",
+                  "read-only",
+                  "read-only",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅"
+                ],
+                [
+                  "F-14: Network Mgmt",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "N/A"
+                ],
+                [
+                  "F-15: Crash-Safe WAL",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "✅",
+                  "N/A",
+                  "N/A"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "32-platform-constraint-reference",
+          "level": 3,
+          "heading": "3.2 Platform Constraint Reference",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "📱 iOS:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WASM: wasm3 interpreter exclusively. No JIT allowed in App Sandbox (W^X).",
+                "NSE RAM: 20 MB hard ceiling (OS-enforced). Ghost Push pattern mandatory for oversized payloads.",
+                "Background network: 30-second window. Voice calls require CallKit or network is killed.",
+                "mlock(): rejected. Double-Buffer Zeroize pattern required.",
+                "Mesh role: Leaf Node always. Tactical Relay under EMDP only (text-only, TTL 60 min).",
+                "AWDL: disabled when Personal Hotspot or CarPlay is active.",
+                "Keychain: three segmented access groups (NSE-only, Main App-only, Share Extension-only).",
+                "AI: CoreML .mlmodelc bundles only. No dynamic WASM AI modules."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "📱 Android:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WASM: wasmtime JIT.",
+                "Android 14+: FCM throttled to 10/hour in Restricted bucket. Mitigation: FCM priority = \"high\" + Companion Device Manager.",
+                "StrongBox: not universal. Fall back to TEE-backed AndroidKeyStore; log STRONGBOX_UNAVAILABLE.",
+                "Mesh: Relay Node eligible if RAM ≥ 3 GB and battery ≥ 40%."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "📱 Huawei HarmonyOS:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WASM: wasmtime JIT (no W^X restriction).",
+                "Push: HMS Push Kit. No content-available background push.",
+                "CRL refresh: ≤ 4 h (foreground polling). Must be disclosed in enterprise SLA.",
+                "Distribution: AppGallery. No dynamic WASM downloads. AOT .waot bundles required."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "💻 macOS:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WASM: wasmtime in XPC Worker (allow-jit). Main App entitlement: NO allow-jit.",
+                "XPC Worker crash: recovery via XpcTransactionJournal (PENDING → VERIFIED → COMMITTED).",
+                "AWDL: same conflict behavior as iOS on Hotspot/CarPlay."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "🖥️ Windows:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Signing: EV Code Signing Certificate via Cloud HSM (DigiCert KeyLocker, ~$500/yr).",
+                "SmartScreen reputation: 30+ days of clean submissions required.",
+                "ARM64 (Surface Pro X, Copilot+ PCs): SAB behavior on WebView2 ARM64 requires pre-release validation."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "🖥️ Linux:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Flatpak: prohibited (bubblewrap + seccomp conflict). Use .deb/.rpm (Tier 1) or AppImage + Cosign (Tier 2).",
+                "AppArmor (Ubuntu) / SELinux (RHEL): postinstall script must auto-detect and load MAC profile. Without it: startup crash on memfd_create and ipc_lock denial.",
+                "Clipboard backend: Wayland → wl-clipboard; X11 → xclip/xsel. Detection via WAYLAND_DISPLAY env var at runtime."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "33-ram-budget-enforcement-matrix-mobile",
+          "level": 3,
+          "heading": "3.3 RAM Budget Enforcement Matrix (Mobile)",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Component",
+                "RAM ≤ 3 GB device",
+                "RAM > 4 GB device",
+                "Enforcement"
+              ],
+              "rows": [
+                [
+                  "NSE / FCM service",
+                  "20 MB hard ceiling",
+                  "20 MB hard ceiling",
+                  "OS-enforced; Circuit Breaker terminates gracefully on breach"
+                ],
+                [
+                  "WASM heap per `.tapp`",
+                  "50 MB; max 1 pre-warm",
+                  "50 MB; max 2 pre-warm",
+                  "`MemoryArbiter.acquire()` returns `MemoryDenied` on overage"
+                ],
+                [
+                  "Whisper voice model",
+                  "Disabled",
+                  "Tiny model (39 MB)",
+                  "`select_whisper_tier()` checks RAM + battery before load"
+                ],
+                [
+                  "BLE Mesh buffer",
+                  "8 MB",
+                  "12 MB",
+                  "`MemoryArbiter` ceiling"
+                ],
+                [
+                  "ONNX / embedding pipeline",
+                  "8 MB hard ceiling",
+                  "8 MB hard ceiling",
+                  "Custom allocator returns `AllocError` on overflow"
+                ],
+                [
+                  "**Total ceiling**",
+                  "**≤ 100 MB**",
+                  "**≤ 130 MB**",
+                  "`MemoryArbiter` reads `sysinfo::available_memory()` at startup"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "4-feature-catalog",
+      "level": 2,
+      "heading": "4. FEATURE CATALOG",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "f-01-secure-e2ee-messaging",
+          "level": 3,
+          "heading": "F-01: Secure E2EE Messaging",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Send and receive text messages encrypted end-to-end using MLS RFC 9420. The VPS relay receives only ciphertext — it has zero access to plaintext, sender identity, or content."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "User types message. UI sends UICommand::SendMessage { recipient_did, plaintext } via FFI.",
+                "Rust Core looks up Epoch_Key from RAM ZeroizeOnDrop struct.",
+                "Core encrypts: AES-256-GCM(Epoch_Key, plaintext). Nonce = Base_Nonce XOR chunk_seq_number.",
+                "Core constructs CRDT_Event { id, parents, hlc, author_did, payload, signature }. Ed25519 signature via DeviceIdentityKey in Secure Enclave (biometric gate required).",
+                "Event appended to hot_dag.db WAL atomically before network dispatch.",
+                "Online path: TLS 1.3 + mTLS → VPS Relay → wal_staging.db → pub/sub fanout.",
+                "Offline path: BLE Control Plane → Mesh Store-and-Forward (text only, ≤ 4 KB).",
+                "Core emits CoreSignal::StateChanged { table: \"messages\", version }.",
+                "UI issues UICommand::ScrollViewport. Core returns 20-message viewport snapshot.",
+                "Plaintext ZeroizeOnDrop after render frame."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §5.3 — MLS encrypt/decrypt, Epoch_Key, Ed25519 signing",
+                "REF: TERA-CORE §7.1 — CRDT_Event schema, hot_dag.db append, nonce uniqueness",
+                "REF: TERA-CORE §4.2 — UICommand::SendMessage, CoreSignal::StateChanged",
+                "REF: TERA-CORE §9.2 — VPS relay, ALPN protocol selection",
+                "REF: TERA-CORE §4.3 — FFI token protocol for viewport buffer transfer"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Writes: CRDT_Event to hot_dag.db WAL; WalStagingEntry to wal_staging.db (relay).",
+                "Reads: Epoch_Key from RAM; cold_state.db viewport for render."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Plaintext never reaches server under any condition.",
+                "Message delivery order determined by HLC_Timestamp, not server receipt time.",
+                "Maximum unpadded plaintext before chunking: 4,096 bytes.",
+                "Biometric authentication required to unlock DeviceIdentityKey for every signing operation.",
+                "CRDT_Event immutable after append. No update or delete of raw events."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Network unavailable at send time: event is durable in hot_dag.db. Retry transmits on reconnect.",
+                "MLS Epoch mismatch on receive: Core triggers Peer-Assisted Epoch Re-induction (TERA-CORE §5.3). Delivery retried after Welcome_Packet received.",
+                "Epoch_Key unavailable (device rejoining group): UI displays \"Waiting for key sync…\". Message held in hot_dag.db. Delivered after epoch key restored."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-02-push-notification-delivery-e2ee",
+          "level": 3,
+          "heading": "F-02: Push Notification Delivery (E2EE)",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Deliver E2EE-encrypted push notifications to backgrounded devices. Decryption is local — APNs, FCM, and HMS never receive plaintext."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS (NSE), 📱 Android (FCM), 📱 Huawei (HMS), 💻 macOS (daemon), 🖥️ Windows (WNS/daemon), 🖥️ Linux (systemd daemon)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Platform-Specific Behavior:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Platform",
+                "Push Channel",
+                "Process",
+                "RAM Constraint"
+              ],
+              "rows": [
+                [
+                  "📱 iOS",
+                  "APNs `mutable-content: 1`",
+                  "`UNNotificationServiceExtension` (NSE)",
+                  "≤ 20 MB hard (OS)"
+                ],
+                [
+                  "📱 Android",
+                  "FCM `priority = \"high\"`",
+                  "`FirebaseMessagingService`",
+                  "No hard limit"
+                ],
+                [
+                  "📱 Huawei",
+                  "HMS Push Kit Data Message",
+                  "HarmonyOS background service",
+                  "No hard limit"
+                ],
+                [
+                  "💻 macOS",
+                  "APNs (LaunchAgent)",
+                  "`terachat-daemon` (~4.5 MB RAM)",
+                  "No hard limit"
+                ],
+                [
+                  "🖥️ Windows",
+                  "WNS / `terachat-daemon`",
+                  "Windows Service",
+                  "No hard limit"
+                ],
+                [
+                  "🖥️ Linux",
+                  "`terachat-daemon`",
+                  "systemd user service",
+                  "No hard limit"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow (iOS NSE — primary path):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "APNs delivers encrypted payload. iOS wakes NSE (≤ 20 MB RAM enforced).",
+                "NSE allocates Static Memory Arena (10 MB, pre-allocated at startup). All operations use arena.",
+                "NSE reads Push_Key_N from Shared Keychain (Access Group: group.com.terachat.nse).",
+                "NSE reads push_key_version from payload header.",
+                "Version match: AES-256-GCM decrypt in arena → display OS notification → ZeroizeOnDrop arena.",
+                "Version mismatch (Versioned Key Ladder):",
+                "Cache raw ciphertext to nse_staging.db.",
+                "Set main_app_decrypt_needed = true in Shared Keychain.",
+                "Send content-available: 1 wake signal.",
+                "Main App wakes → rotates Push_Key → decrypts nse_staging.db → displays notification → clears staging."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow (Desktop daemon):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Relay delivers encrypted payload to terachat-daemon.",
+                "Daemon decrypts payload preview using cached Epoch_Key.",
+                "Daemon triggers OS-native notification (macOS UNUserNotificationCenter / Windows Toast / Linux libnotify).",
+                "Plaintext zeroed immediately after notification dispatch.",
+                "Full DB sync occurs only when Tauri UI process is active."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Ghost Push Skeleton (NSE payload too large):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Trigger: payload_size > 4 KB OR epoch_delta > 1.",
+                "NSE displays \"Decrypting securely…\" notification (no content).",
+                "Sets main_app_decrypt_needed = true in Shared Keychain.",
+                "Main App handles full decryption in foreground (2 GB RAM; no NSE constraints)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §5.5 — Push Key Ratchet, Versioned Key Ladder, NSE RAM budget protocol",
+                "REF: TERA-CORE §5.3 — MLS Epoch, Push_Key rotation after epoch change",
+                "REF: TERA-CORE §8.3 — iOS NSE inbound message flow",
+                "REF: TERA-CORE §4.2 — CoreSignal::StateChanged after Main App decryption"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads: Push_Key_N from Secure Enclave / StrongBox / Shared Keychain.",
+                "Writes (iOS mismatch path): raw ciphertext to nse_staging.db; flag in Shared Keychain.",
+                "Clears: nse_staging.db entry after successful Main App decrypt."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "iOS NSE: Static Memory Arena 10 MB. All decryption reuses arena buffers.",
+                "Android 14+: FCM priority = \"high\" AND Companion Device Manager REQUEST_COMPANION_RUN_IN_BACKGROUND. Both required — either alone is insufficient.",
+                "Huawei: CRL refresh delay ≤ 4 h vs ≤ 30 min on iOS/Android. Must be disclosed in enterprise SLA documentation.",
+                "iOS Keychain access group group.com.terachat.nse accessible by NSE only. Main App and Share Extension cannot read Push_Key from this group."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "NSE OOM: Circuit Breaker terminates NSE gracefully. Sets main_app_decrypt_needed = true. Main App handles on next foreground transition.",
+                "Push_Key not found in Keychain: display generic \"New message\" notification with no content preview.",
+                "HMS polling delay (Huawei): CRL-dependent decryptions may fail within 4 h window. Log HUAWEI_CRL_STALE and defer decrypt to next foreground with refreshed CRL."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-03-ipc-bridge-and-state-synchronization",
+          "level": 3,
+          "heading": "F-03: IPC Bridge and State Synchronization",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: All communication between Rust Core and the UI layer routes through a strict unidirectional IPC bridge. Core emits typed CoreSignal enums; UI sends typed UICommand enums. No raw pointer crosses the FFI boundary."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Rust Core completes a DAG update.",
+                "Core emits CoreSignal::StateChanged { table: &str, version: u64 }.",
+                "UI issues UICommand::ScrollViewport { top_message_id, bottom_message_id }.",
+                "Core fetches 20-message viewport from cold_state.db.",
+                "Core calls tera_buf_acquire(operation_id) → returns opaque u64 token.",
+                "Core writes decrypted snapshot to Data Plane buffer (SAB ring buffer / JSI pointer / Dart FFI TypedData).",
+                "UI reads via token reference. Renders viewport.",
+                "UI calls UICommand::ReleaseBuffer { token } → Core ZeroizeOnDrop when ref_count == 0."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "CoreSignal Catalog (Core → UI, complete):"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Signal",
+                "Payload Fields",
+                "Trigger Condition"
+              ],
+              "rows": [
+                [
+                  "`StateChanged`",
+                  "`table: &str, version: u64`",
+                  "Any DAG mutation or DB state change"
+                ],
+                [
+                  "`ComponentFault`",
+                  "`component: &str, severity: FaultSeverity`",
+                  "Any `catch_unwind` caught panic"
+                ],
+                [
+                  "`MeshRoleChanged`",
+                  "`new_role: MeshRole`",
+                  "Mesh topology change"
+                ],
+                [
+                  "`EmdpExpiryWarning`",
+                  "`minutes_remaining: u32`",
+                  "T-10 min and T-2 min during EMDP TTL"
+                ],
+                [
+                  "`DeadManWarning`",
+                  "`hours_remaining: u32`",
+                  "T-12 h and T-1 h offline grace period"
+                ],
+                [
+                  "`TierChanged`",
+                  "`new_tier: NetworkTier, reason: TierChangeReason`",
+                  "ALPN tier change or AWDL loss"
+                ],
+                [
+                  "`DagMergeProgress`",
+                  "`completed: u64, total: u64`",
+                  "Every 200 ms when merge backlog > 500 events"
+                ],
+                [
+                  "`XpcHealthDegraded`",
+                  "`crash_count: u32, window_secs: u32`",
+                  "macOS XPC crash rate exceeds threshold"
+                ],
+                [
+                  "`MemoryPressureWarning`",
+                  "`component: &str, allocated_mb: u32`",
+                  "`MemoryArbiter` allocated > 80% ceiling"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "UICommand Catalog (UI → Core, complete):"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Command",
+                "Payload Fields",
+                "Effect in Core"
+              ],
+              "rows": [
+                [
+                  "`SendMessage`",
+                  "`recipient_did: DeviceId, plaintext: Vec<u8>`",
+                  "Encrypt and append to DAG"
+                ],
+                [
+                  "`ScrollViewport`",
+                  "`top_message_id: Uuid, bottom_message_id: Uuid`",
+                  "Return viewport snapshot"
+                ],
+                [
+                  "`RequestMeshActivation`",
+                  "none",
+                  "Activate BLE scanning via host adapter"
+                ],
+                [
+                  "`ReleaseBuffer`",
+                  "`token: u64`",
+                  "`ZeroizeOnDrop` when `ref_count == 0`"
+                ],
+                [
+                  "`CancelTask`",
+                  "`message_id: Uuid`",
+                  "Cancel in-flight FFI decrypt task"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §4.2 — CoreSignal and UICommand enum definitions, unidirectional contract",
+                "REF: TERA-CORE §4.3 — FFI Token Protocol (tera_buf_acquire / tera_buf_release)",
+                "REF: TERA-CORE §2.2 — Shared Rust Core principle, Data Plane throughput targets, SAB Tier Ladder"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads: cold_state.db for viewport snapshots.",
+                "Buffer transfers: DataPlane_Payload via SAB / JSI pointer / Dart FFI.",
+                "No writes: IPC bridge is read-only at the feature layer."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "No Vec<u8>, const u8, or mut u8 returned from any pub extern \"C\" function. Enforced by CI Clippy lint. Lint failure is a blocker — do not merge.",
+                "SAB Tier 1 requires COOP+COEP HTTP headers on Desktop. Auto-downgrade to Tier 2 on failure.",
+                "UI never holds decrypted payloads beyond the render frame.",
+                "CoreSignal emission is fire-and-forget. Core does not wait for UI acknowledgment."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "SAB unavailable (missing COOP headers): auto-downgrade to Named Pipe (~200 MB/s). Log tier change to audit trail.",
+                "Named Pipe unavailable: downgrade to Protobuf-over-stdin (~50 MB/s). Log tier change.",
+                "Token not found in Core on ReleaseBuffer: return BufferNotFound error; UI re-issues ScrollViewport."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-04-local-storage-management",
+          "level": 3,
+          "heading": "F-04: Local Storage Management",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Manage the two-tier SQLite storage system (hot_dag.db + cold_state.db): WAL anti-bloat, crash-safe schema migrations, and shadow paging hydration."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — WAL Auto-Compaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Rust Core monitors WAL file size every 60 s via background Tokio task.",
+                "If WAL > 50 MB (mobile) or > 200 MB (desktop): trigger VACUUM sequence.",
+                "Mobile: Register BGTask (iOS) / WorkManager (Android). Execute when device is charging AND screen is off.",
+                "Foreground opportunistic path (primary reliability path): If app idle > 60 s and WAL > 50 MB, spawn low-priority Tokio task. Execute VACUUM INTO hot_dag_tmp.db. Atomic POSIX rename() swap. Task self-cancels on user interaction within 5 s.",
+                "Emit CoreSignal::StateChanged after VACUUM completes."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — Schema Migration:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "On DB open: read PRAGMA user_version from hot_dag.db.",
+                "If user_version < CURRENT_SCHEMA_VERSION:"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "a. Create backup: {db_path}.bak.v{current_version}."
+            },
+            {
+              "type": "paragraph",
+              "text": "b. db.execute_batch(\"BEGIN EXCLUSIVE TRANSACTION\")."
+            },
+            {
+              "type": "paragraph",
+              "text": "c. Run migration scripts in version order."
+            },
+            {
+              "type": "paragraph",
+              "text": "d. PRAGMA user_version = CURRENT_SCHEMA_VERSION."
+            },
+            {
+              "type": "paragraph",
+              "text": "e. COMMIT."
+            },
+            {
+              "type": "list",
+              "data": [
+                "If cold_state.db migration fails: drop file and rebuild from hot_dag.db. Never abort without a recovery path."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — Shadow Paging Hydration:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Core receives Snapshot_CAS reference for a new snapshot.",
+                "Download snapshot in 2 MB chunks to cold_state_shadow.db.",
+                "Verify: SHA-256(downloaded_content) == cas_uuid. Reject and restart on mismatch.",
+                "On full verification: atomic rename(cold_state_shadow.db → cold_state.db).",
+                "Emit CoreSignal::StateChanged { table: \"all\", version }.",
+                "If download interrupted mid-way: delete cold_state_shadow.db; cold_state.db unchanged. Resume from last Hydration_Checkpoint."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Shadow DB Write Lock Protocol (iOS race prevention):"
+            },
+            {
+              "type": "code",
+              "language": "rust",
+              "code": "pub struct ShadowMigrationLock {\n    migration_in_progress: AtomicBool,\n}\n// NSURLSession completion handler checks lock before writing.\n// If migration in progress: queue write to hot_dag.db instead of cold_state_shadow.db.\n// Guarantees no race between atomic shadow rename and NSURLSession background write."
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §7.1 — hot_dag.db and cold_state.db structure, migration protocol, append-only invariant",
+                "REF: TERA-CORE §7.4 — Materialized Snapshot, CAS verification, O(1) recovery bootstrap",
+                "REF: TERA-CORE §12.2 — DB-01 (migration), DB-02 (rebuild safety net), DB-03 (autocheckpoint)"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Writes: CRDT_Event to hot_dag.db; materialized state to cold_state.db; chunks to shadow during hydration.",
+                "Reads: cold_state.db for all viewport rendering; hot_dag.db for DAG operations and recovery."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "cold_state.db: SQLCipher AES-256. Key derived from Secure Enclave — never hardcoded, never stored in plaintext.",
+                "hot_dag.db: append-only. Physical deletion forbidden. Tombstones only.",
+                "PRAGMA wal_autocheckpoint = 1000 enforced on all SQLite databases.",
+                "VACUUM INTO guarantees zero downtime: creates clean copy, then atomic swap. Reads and writes are never blocked.",
+                "BGTask execution is at iOS scheduler's discretion. Foreground opportunistic VACUUM is the primary reliability path."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WAL bloat > 200 MB (mobile): emit CoreSignal::MemoryPressureWarning. UI displays banner: \"Storage cache is full — TeraChat will clean up when charging.\"",
+                "VACUUM fails: log error, retry on next trigger. Do not crash.",
+                "Schema migration fails on cold_state.db: drop file, rebuild from hot_dag.db. Log COLD_STATE_REBUILD.",
+                "Hydration interrupted: delete cold_state_shadow.db; restart from Hydration_Checkpoint in hot_dag.db."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-05-survival-mesh-networking",
+          "level": 3,
+          "heading": "F-05: Survival Mesh Networking",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: When Internet is unavailable, TeraChat activates a BLE 5.0 / Wi-Fi Direct peer-to-peer Mesh for offline text messaging via Store-and-Forward. WASM plugins, AI inference, voice calls, and file transfer (except P2P direct) are suspended."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS (Leaf/EMDP), 📱 Android (Relay), 📱 Huawei (Relay), 💻 macOS (Super Node), 🖥️ Windows (Super Node), 🖥️ Linux (Super Node)"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — Activation:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Rust Core detects all three ALPN paths unavailable.",
+                "Core emits CoreSignal::TierChanged { new_tier: MeshMode, reason: NoInternet }.",
+                "UI transitions to Mesh Mode visual state.",
+                "User confirms Mesh activation (required: OS BLE permission prompt).",
+                "Core calls host adapter FFI: request_mesh_activation(). Swift/Kotlin starts BLE advertising and scanning.",
+                "Devices within range discover each other via BLE Stealth Beacons.",
+                "Text messages route via BLE Store-and-Forward (payload ≤ 4 KB per hop).",
+                "Files and media: P2P Wi-Fi Direct only, < 20 m range. UI shows \"Send files only when nearby.\""
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Role Assignment (deterministic, no voting rounds):"
+            },
+            {
+              "type": "code",
+              "language": "rust",
+              "code": "fn assign_role(device: &DeviceInfo) -> MeshRole {\n    match device.os_type {\n        OsType::iOS => MeshRole::LeafNode,  // always; election_weight = 0\n        OsType::MacOS | OsType::Windows | OsType::Linux\n            if device.power_source == PowerSource::AC =>\n            MeshRole::SuperNode,\n        OsType::Android\n            if device.available_ram_mb >= 3_072 && device.battery_pct >= 40 =>\n            MeshRole::RelayNode,\n        _ => MeshRole::LeafNode,\n    }\n}\n// Border Node: auto-assigned to any device with both internet_available == true\n//              and ble_active == true. No explicit assignment required."
+            },
+            {
+              "type": "paragraph",
+              "text": "Store-and-Forward Quotas:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Role",
+                "Storage Quota",
+                "Message TTL"
+              ],
+              "rows": [
+                [
+                  "Super Node (Desktop)",
+                  "500 MB – 1 GB",
+                  "48 – 72 h"
+                ],
+                [
+                  "Relay Node (Android)",
+                  "100 MB",
+                  "24 h"
+                ],
+                [
+                  "Leaf Node (iOS)",
+                  "50 MB, receive-only",
+                  "N/A"
+                ],
+                [
+                  "Tactical Relay (EMDP iOS)",
+                  "1 MB, text-only CRDT buffer",
+                  "60 min"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "iOS Super Node Handover (Jetsam prevention):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "iOS detects memory pressure approaching Jetsam threshold.",
+                "Core broadcasts MeshRoleHandover { candidate_node_id } via BLE Control Plane to Desktop/Android.",
+                "Receiving node assumes Super Node role immediately.",
+                "iOS reverts to Leaf Node.",
+                "Core emits CoreSignal::MeshRoleChanged { new_role: LeafNode }.",
+                "UI displays: \"Relay role transferred to [device name].\""
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "EMDP (Emergency Mobile Dictator Protocol):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Activation: no Desktop present; Internet unavailable; ≥ 2 iOS devices; battery > 20%.",
+                "Tactical Relay selected by: max(battery_pct × 100 + (ble_rssi + 100)).",
+                "Hard constraints: text-only, 1 MB buffer, TTL 60 min, no DAG merge, no MLS Epoch rotation.",
+                "TTL extension (at T-10 min): broadcast EMDP_TTL_EXTENSION_REQUEST; peer with battery > 30% accepts; encrypted CRDT buffer transferred via BLE Data Plane; new Tactical Relay assumes role with TTL reset.",
+                "Key Escrow: before Desktop goes offline, it encrypts EmdpKeyEscrow { relay_session_key, emdp_start_epoch, expires_at } for iOS Relay via ECIES/Curve25519, transmitted over BLE. On Desktop reconnect: decrypt and merge orphaned messages into main DAG."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Mesh Mode feature restrictions (hard limits, enforced by Rust Core — not UI):"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Feature",
+                "Mesh Mode Status"
+              ],
+              "rows": [
+                [
+                  "WASM `.tapp` execution",
+                  "Terminate immediately; snapshot saved to sled"
+                ],
+                [
+                  "AI / SLM inference",
+                  "Disabled; return `ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED`"
+                ],
+                [
+                  "Voice and video calls",
+                  "Suspended (BLE cannot carry audio stream)"
+                ],
+                [
+                  "File transfer (multi-hop)",
+                  "Suspended"
+                ],
+                [
+                  "File transfer (P2P Wi-Fi Direct, < 20 m)",
+                  "Available"
+                ],
+                [
+                  "Inter-`.tapp` Delegation Tokens",
+                  "Suspended"
+                ],
+                [
+                  "Transient state persistence",
+                  "Disabled"
+                ],
+                [
+                  "MLS Epoch rotation",
+                  "Suspended (EMDP mode)"
+                ],
+                [
+                  "DAG merge",
+                  "Deferred to Desktop reconnect"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §6.1 — MeshTransport trait, platform adapters, payload routing",
+                "REF: TERA-CORE §6.2 — Mesh topology, role assignment, Store-and-Forward quotas",
+                "REF: TERA-CORE §6.3 — BLE Stealth Beaconing, duty cycle, MAC rotation",
+                "REF: TERA-CORE §6.4 — iOS AWDL conflict resolution, pre-emptive warning",
+                "REF: TERA-CORE §6.5 — BLAKE3 Dictator Election, Causal Freeze, failover",
+                "REF: TERA-CORE §6.6 — Byzantine quarantine, PoW anti-spam, Shun propagation",
+                "REF: TERA-CORE §6.7 — EMDP full protocol, Key Escrow handshake, TTL Extension"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Writes: CRDT_Event (text) to hot_dag.db; EmdpKeyEscrow via BLE Data Plane (encrypted).",
+                "Reads: BLE_Stealth_Beacon; Shun_Record from hot_dag.db (to reject quarantined peers)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "iOS election_weight = 0. Hardcoded in mesh/election.rs. Never changed.",
+                "BLE MTU: 512 bytes. PQ-KEM key exchange requires RaptorQ (RFC 6330) fragmentation.",
+                "SOS messages: exempt from all PoW. Zero latency cost.",
+                "Unsigned Shun Records: silently dropped (prevents false-flag Byzantine attacks)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "All-iOS Mesh, no EMDP conditions: Causal Freeze (read-only). No DAG writes until non-iOS node joins.",
+                "iOS AWDL disabled (Hotspot/CarPlay): downgrade to BLE-only Tier 3; queue voice packets (TTL 90 s if CallKit session active; 30 s otherwise); emit CoreSignal::TierChanged.",
+                "EMDP TTL expired, no hand-off found: enter SoloAppendOnly mode. Merge deferred to next Desktop/Android contact.",
+                "Byzantine Shun received for own Node_ID: verify Enterprise CA signature before applying. Unsigned Shun Records are dropped."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-06-voice-and-video-calls-webrtc",
+          "level": 3,
+          "heading": "F-06: Voice and Video Calls (WebRTC)",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Peer-to-peer encrypted voice and video calls via WebRTC DTLS-SRTP. SDP signaling is exchanged over the MLS E2EE channel — no separate signaling server. The TURN relay is blind (relays encrypted UDP only)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS (CallKit required), 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Caller presses call button. UI sends UICommand::SendMessage with content_type: CallOffer.",
+                "SDP offer/answer exchanged over MLS E2EE channel (same channel as text messages).",
+                "ICE candidates gathered from Pre-warmed ICE Pool. Setup perceived latency: ~0 s.",
+                "DTLS-SRTP session established. Call active.",
+                "iOS: CXProvider (CallKit) keeps audio session alive regardless of background state.",
+                "On call end: DTLS-SRTP torn down; ICE candidates cleared from pool; no persistent write."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "iOS Dual TURN Preconnect:"
+            },
+            {
+              "type": "paragraph",
+              "text": "When a CallKit session is active and app is about to enter background:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "CXCallObserver FFI callback detects upcoming background transition.",
+                "Rust Core proactively connects to secondary TURN server as backup.",
+                "Primary TURN failure → immediate failover to secondary. User-perceived drop: 0 s."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "iOS AWDL/Hotspot conflict during active call:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "NWPathMonitor detects tethering interface appearing (1–2 s window before AWDL drops).",
+                "Core emits CoreSignal::TierChanged { reason: HotspotConflictImminent }.",
+                "UI presents: \"Enabling Hotspot will interrupt the Mesh call — continue?\" (3 s auto-dismiss).",
+                "If user proceeds (or auto-dismiss): downgrade to BLE-only Tier 3; queue voice packets TTL 90 s.",
+                "After 90 s with no AWDL recovery: call drops. Notification: \"Call ended — Hotspot is active.\""
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Mesh Mode behavior: Voice calls are not available in Mesh Mode. BLE cannot carry an audio stream. UI displays: \"Voice calls require an Internet connection.\""
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §5.3 — SDP signaling over MLS E2EE channel",
+                "REF: TERA-CORE §6.4 — iOS AWDL conflict, pre-emptive warning, CallKit exception",
+                "REF: TERA-CORE §10.4 — TURN HA sizing (Keepalived Floating IP, 3 s failover), CallKit integration, Dual TURN Preconnect",
+                "REF: TERA-CORE §9.2 — ALPN negotiation for TURN path selection"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads: Epoch_Key for SDP exchange encryption; ICE candidate pool from Core network state.",
+                "Writes: none persistent (ephemeral ICE/DTLS state only; no DB writes during call)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "iOS: CallKit integration is mandatory. Without it, iOS kills network after 30 s background.",
+                "TURN server: relays encrypted UDP only — holds no decryption keys.",
+                "TURN node sizing: 1 node ~50 concurrent HD streams (4 vCPUs, 8 GB RAM, 1 Gbps NIC)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "TURN failover: Keepalived Floating IP activates in < 3 s. Dual preconnect eliminates user-perceived drop.",
+                "All TURN paths fail: attempt direct P2P STUN connection. Notify user \"Call quality degraded.\"",
+                "CallKit session interrupted by system event: CXProvider handles audio session restoration; Core re-establishes DTLS-SRTP."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-07-wasm-plugin-sandbox-tapp-lifecycle",
+          "level": 3,
+          "heading": "F-07: WASM Plugin Sandbox (`.tapp` Lifecycle)",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Execute untrusted third-party mini-apps (.tapp) inside a WASM sandbox with capability-based isolation. Sandbox has no direct access to network, filesystem, or DAG buffer. All outbound requests route through Rust Core's Host Proxy."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS (wasm3), 📱 Android (wasmtime), 📱 Huawei (wasmtime), 💻 macOS (wasmtime in XPC Worker), 🖥️ Windows (wasmtime), 🖥️ Linux (wasmtime)"
+            },
+            {
+              "type": "paragraph",
+              "text": ".tapp Bundle Format:"
+            },
+            {
+              "type": "code",
+              "language": "text",
+              "code": "bundle.tapp/\n├── logic.wasm          # WASM bytecode (stripped: no wasi-sockets, wasi:io, wasi:filesystem)\n├── manifest.json       # publisher_public_key, egress_endpoints, permissions, version_hash (BLAKE3)\n├── assets/             # static assets\n└── signature.ed25519   # Ed25519 by Publisher Key (Merkle Registry)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Launch Sequence:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Admin installs .tapp from Marketplace. Signature verified against Publisher Key.",
+                "manifest.json validated: all required fields present; egress_endpoints declared.",
+                "Platform WASM runtime initialized:",
+                "iOS: wasm3 interpreter. No JIT. No dynamic code generation.",
+                "Android / Huawei / Desktop: wasmtime JIT (Cranelift backend).",
+                "macOS: wasmtime in XPC Worker (com.apple.security.cs.allow-jit = true). Main App: NO allow-jit.",
+                "Sandbox launched: PROT_READ-only access to DAG shared memory. Write attempts to DAG buffer trigger SIGSEGV caught by catch_unwind.",
+                "Host Bindings established: all WASM network access routes through terachat_proxy_request() → OPA policy check → Rust Core Tokio client → sanitized Vec<ASTNode> response."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "WasmParity CI Gate (mandatory before Marketplace listing):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Same test vector executed on wasm3 (iOS reference runtime) and wasmtime (Desktop optimized runtime).",
+                "Output: semantically identical. Latency delta: ≤ 20 ms acceptable.",
+                "CI failure: block merge. This gate is a blocker for Marketplace launch."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Mesh Mode behavior:"
+            },
+            {
+              "type": "code",
+              "language": "text",
+              "code": "All WASM sandbox processes: terminate immediately\nTransient state: snapshot saved to sled LSM-Tree (per-DID namespace)\nNetwork proxy: returns NETWORK_MESH_RESTRICTED for all outbound requests\nOn Internet restore: sled snapshot restored in < 50 ms (single UI blink)"
+            },
+            {
+              "type": "paragraph",
+              "text": "macOS XPC Worker Crash Recovery:"
+            },
+            {
+              "type": "code",
+              "language": "rust",
+              "code": "// XpcJournalEntry states persisted in hot_dag.db:\nPENDING   → abort + emit CoreSignal::ComponentFault\n            → notify user: \"Session interrupted. Please re-sign.\"\nVERIFIED  → idempotent commit from journal (crash-safe; no user action needed)\nCOMMITTED → noop (already complete)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Retry policy: max 3 attempts, backoff 0 s → 2 s → 8 s. After 3rd failure: emit CoreSignal::ComponentFault with severity Critical + XpcPermanentFailure { support_id: Uuid }."
+            },
+            {
+              "type": "paragraph",
+              "text": "Transient State Storage (sled LSM-Tree):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Crate: sled ≥ 0.34 (pure Rust; no C FFI; ~2 MB compiled; < 2 MB RAM idle).",
+                "Rationale for sled over RocksDB: RocksDB compiled size exceeds 50 MB WASM heap budget on mobile.",
+                "API: terachat.storage.persist_keyval(key, value) → debounce 500 ms → AES-256-GCM encrypt → write.",
+                "Recovery: terachat.storage.get_transient_state() → < 50 ms restore.",
+                "Mesh Mode: disabled. RAM/CPU reserved for BLE routing."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §4.1 — ffi/token_protocol.rs, ffi/ipc_bridge.rs",
+                "REF: TERA-CORE §4.4 — Component Fault Isolation, catch_unwind at WASM execution entry",
+                "REF: TERA-CORE §3.2 — Platform WASM runtime selection matrix (Table §3.1)",
+                "REF: TERA-CORE §4.3 — FFI Token Protocol; no raw pointer between Core and sandbox"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads (via Host Proxy only): approved cold_state.db namespaces; sanitized external API responses.",
+                "Writes: sled LSM-Tree transient state (per-DID, AES-256-GCM). Forbidden: direct writes to hot_dag.db or cold_state.db."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WASM heap: ≤ 50 MB mobile / ≤ 64 MB desktop. OOM kills sandbox only; Core is unaffected.",
+                "CPU: ≤ 10% sustained. Spike allowed; not > 500 ms. Circuit Breaker: latency > 1,500 ms or CPU spike > 30% → SUSPEND.",
+                "Rate limit: Token Bucket 50 req/s per .tapp. Continuous exhaustion → SUSPEND + 60 s cool-down.",
+                "Egress: HTTPS, HTTP/2, Secure WebSocket to declared egress_endpoints only. Raw TCP/UDP: forbidden.",
+                "iOS: no dynamic WASM loading. wasm3 interpreter or AOT-compiled .dylib only.",
+                "Huawei: AOT-compiled .waot bundles required for AppGallery. No dynamic download."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WASM sandbox panic: catch_unwind at entry boundary. Emit CoreSignal::ComponentFault. Restart after 1 s.",
+                "Heap exhaustion: OOM kills sandbox. Attempt transient state save before kill. Core unaffected.",
+                "Rate limit exhausted: SUSPEND .tapp; return ERR_RATE_LIMIT_EXCEEDED; resume after 60 s.",
+                "XPC Worker crash (macOS): recover from XpcJournalEntry state. Max 3 retries then XpcPermanentFailure."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-08-inter-tapp-ipc-and-delegation-tokens",
+          "level": 3,
+          "heading": "F-08: Inter-`.tapp` IPC and Delegation Tokens",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Allow two .tapp instances to share data with explicit user consent, mediated by Rust Core as Honest Broker. No direct .tapp-to-.tapp communication channel exists at any layer."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "Mesh Mode behavior: All Delegation Tokens suspended. Return ERR_MESH_MODE_DELEGATION_SUSPENDED for all inter-.tapp share attempts."
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow:"
+            },
+            {
+              "type": "list",
+              "data": [
+                ".tapp A calls terachat.ipc.share(target_did: DID, payload: Bytes).",
+                "Rust Core checks if a valid, unexpired DelegationToken exists for the pair (A → B).",
+                "No existing token: Core displays consent modal: \"Allow [.tapp A name] to share with [.tapp B name]?\"",
+                "User approves: Core issues DelegationToken (TTL 30 days; signed by DeviceIdentityKey).",
+                "Token exists: auto-grant without prompt.",
+                "Enterprise MDM path: Admin pushes Global Trust Policy. Named .tapp pairs set to pre-approved."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Delegation Token structure:"
+            },
+            {
+              "type": "code",
+              "language": "rust",
+              "code": "pub struct DelegationToken {\n    source_did:  DID,\n    target_did:  DID,\n    granted_by:  DeviceId,             // signing device\n    permissions: Vec<Permission>,      // read | write | stream\n    expires_at:  u64,                  // Unix timestamp\n    signature:   Ed25519Signature,     // signed by DeviceIdentityKey in SEP\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §4.2 — UICommand, CoreSignal for IPC mediation",
+                "REF: TERA-CORE §4.3 — Token Protocol; no raw pointer transfer between sandboxes",
+                "REF: TERA-CORE §3.2 — OPA Policy Engine enforces all IPC requests at gateway"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads: DelegationToken from hot_dag.db KV store.",
+                "Writes: new DelegationToken to hot_dag.db on user approval."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Maximum auto-grant TTL: 30 days. Longer TTLs require explicit Admin MDM policy.",
+                "Revocation: Admin revokes via Admin Console. Propagates via OPA policy push. Effective within next policy sync (≤ 60 s online).",
+                "Token is signed by DeviceIdentityKey. Tampered tokens rejected at Core before any data transfer."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Target .tapp suspended or terminated: queue payload. Deliver on .tapp resume.",
+                "Token expired: return ERR_DELEGATION_TOKEN_EXPIRED; prompt user to re-authorize.",
+                "OPA policy change revokes token mid-session: return ERR_TOKEN_REVOKED; prompt user."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-09-media-and-file-transfer",
+          "level": 3,
+          "heading": "F-09: Media and File Transfer",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Send encrypted media files (images, video, documents) via chunked, content-addressable, deduplicated upload. Server stores only ciphertext keyed by cas_hash. Receiver downloads on demand via Zero-Byte Stub."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow (send):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "User selects file in UI.",
+                "Core computes cas_hash = BLAKE3(ciphertext). Checks if cas_hash exists on server (deduplication saves 40–60% storage for shared enterprise files).",
+                "If not exists: chunk file into 2 MB segments. AES-256-GCM encrypt each chunk with ephemeral ChunkKey. Nonce = Base_Nonce XOR chunk_seq_number. ChunkKey ZeroizeOnDrop after each chunk.",
+                "Upload chunks to MinIO Blind Storage at path cas_hash. Server never knows file name.",
+                "Core sends CRDT_Event { content_type: MediaRef, payload: {file_name, cas_hash, encrypted_thumbnail, storage_ref} } (< 5 KB stub)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow (receive):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Receiver's UI renders Zero-Byte Stub immediately (BlurHash preview from encrypted thumbnail).",
+                "User taps to open file. Core downloads and decrypts chunks on demand.",
+                "Stream decryption: AES-256-GCM chunk by chunk. No full-file RAM buffer at any point."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "iOS background transfer:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Pre-signed URL (TTL 15 min, HMAC-SHA256 bound to device) delegated to NSURLSession Background Transfer Service.",
+                "On download complete: iOS wakes app in 30 s window. Core mmap-reads and decrypts into VFS.",
+                "ShadowMigrationLock prevents race with concurrent DB migration."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Mesh Mode: Multi-hop file transfer suspended. P2P Wi-Fi Direct (< 20 m) available for direct transfers. UI shows \"Files can only be sent when devices are nearby.\""
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §5.3 — ChunkKey lifecycle, AES-256-GCM chunk encryption, nonce uniqueness",
+                "REF: TERA-CORE §9.5 — MinIO Blind Storage, CAS path (cas_hash), Zero-Byte Stub format",
+                "REF: TERA-CORE §7.1 — CRDT_Event with content_type: MediaRef",
+                "REF: TERA-CORE §8.1 — Outbound message flow (media stub is a CRDT_Event)"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Writes: encrypted chunks to MinIO; CRDT_Event stub to hot_dag.db.",
+                "Reads: cas_hash dedup lookup; encrypted chunks on demand; ChunkKey ephemeral in RAM."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Maximum single file: 10 GB (chunked streaming; no full-file in RAM at any point).",
+                "ChunkKey must ZeroizeOnDrop immediately after each chunk is processed.",
+                "Deduplication uses Salted MLE: BLAKE3(ciphertext + Channel_Key). Server learns nothing from dedup."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Upload interrupted: resume from last successfully uploaded chunk (last Hydration_Checkpoint in hot_dag.db).",
+                "Decryption failure on receive: display \"File could not be decrypted\" and log error to TeraDiag.",
+                "MinIO node failure: EC+4 auto-recovers. Single-node loss does not affect availability."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-10-ai-slm-integration",
+          "level": 3,
+          "heading": "F-10: AI / SLM Integration",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Local Small Language Model (SLM) inference and cloud LLM routing for .tapp plugins. PII is redacted before any data leaves the device. Inference is isolated in a separate process (crash-safe from Rust Core)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS (CoreML), 📱 Android (ONNX), 📱 Huawei (HiAI), 💻 macOS (ONNX/CoreML), 🖥️ Windows (ONNX), 🖥️ Linux (ONNX)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Mesh Mode behavior: AI fully disabled. Return ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED for all inference requests."
+            },
+            {
+              "type": "paragraph",
+              "text": "Memory budget enforcement:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "ONNX/CoreML allocator: 8 MB hard ceiling (custom allocator returns AllocError on overflow → graceful fallback to Flat-search).",
+                "Runtime monitor: tikv-jemallocator malloc_stats_print polls heap every 5 s. If heap > 6 MB: reduce batch size 32 → 8 vectors/batch."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Whisper model tier selection:"
+            },
+            {
+              "type": "code",
+              "language": "rust",
+              "code": "pub fn select_whisper_tier(available_ram_mb: u32, battery_pct: u8) -> WhisperModelTier {\n    if battery_pct < 20    { return WhisperModelTier::Disabled; }\n    if available_ram_mb > 200 { return WhisperModelTier::Base; }  // 74 MB\n    if available_ram_mb > 100 { return WhisperModelTier::Tiny; }  // 39 MB\n    WhisperModelTier::Disabled\n}\n// On Disabled: emit CoreSignal::StateChanged with note \"Voice transcription unavailable.\""
+            },
+            {
+              "type": "paragraph",
+              "text": "PII Redaction (Interactive SLM Dual-Masking):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Core runs local NER (ONNX/CoreML, < 1 MB) to identify PII: names, phone numbers, email addresses.",
+                "PII replaced with aliases: [REDACTED_PHONE_1], [REDACTED_EMAIL_1].",
+                "Masked prompt sent to LLM (cloud or local).",
+                "LLM returns response. Core de-tokenizes aliases to real values.",
+                "SessionVault ZeroizeOnDrop clears alias map within 100 ms."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "AI Quota enforcement:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Per-.tapp: 10,000 tokens/hour.",
+                "Overage: return ERR_AI_QUOTA_EXCEEDED. UI presents upgrade prompt.",
+                "Enterprise plan (License JWT features field): unlimited."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "KV-Cache management:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Mobile: 1 KV-Cache slot active at a time. Inactive slots: LZ4-compressed to storage.",
+                "Desktop: multiple KV-Cache slots in Hot RAM simultaneously."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "iOS CoreML parity path (W^X constraint):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "iOS cannot load dynamic WASM AI modules (App Store Rule 2.5.2).",
+                "AI features shipped as .mlmodelc CoreML bundles inside the app binary.",
+                "Marketplace \"install\": OPA Policy JSON pushed to unlock the pre-bundled CoreML module.",
+                "Unlock latency: < 1 s. User experience identical to Android/Desktop."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Prompt Injection Defense:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Rust Core wraps LLM response in Vec<ASTNode> (AST Sanitizer). Raw HTML, inline Markdown with external image tracking URLs, and executable content are rejected.",
+                "On 3rd TAINTED flag within a session: suspend the offending .tapp and emit CoreSignal::ComponentFault."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §3.3 — MemoryArbiter, RAM budget matrix, Whisper tier protocol",
+                "REF: TERA-CORE §3.6 — AI infrastructure, Micro-NER, SessionVault ZeroizeOnDrop",
+                "REF: TERA-CORE §4.4 — catch_unwind boundary at AI worker entry; crash isolation from Core"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads: user message context (local, not uploaded to server); LLM API response.",
+                "Writes: inference result to .tapp via sanitized Vec<ASTNode>; alias map in SessionVault (RAM, ZeroizeOnDrop)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "ONNX allocator OOM: graceful fallback to Flat-search (no NLP). Log ONNX_OOM_FALLBACK.",
+                "LLM cloud unreachable: return ERR_AI_CLOUD_UNAVAILABLE. Surface local-only fallback if available.",
+                "AST Sanitizer rejects response (malformed / injection detected): return ERR_AI_RESPONSE_TAINTED. .tapp suspended after 3rd violation in session."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-11-device-security",
+          "level": 3,
+          "heading": "F-11: Device Security",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Client-side security controls: screen capture prevention, Protected Clipboard Bridge, biometric screen lock, Remote Wipe, and cryptographic self-destruct."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            }
+          ],
+          "subsections": [
+            {
+              "id": "f-11a-screen-capture-prevention",
+              "level": 4,
+              "heading": "F-11a: Screen Capture Prevention",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "API",
+                    "Mechanism"
+                  ],
+                  "rows": [
+                    [
+                      "📱 iOS",
+                      "`UIScreen.capturedDidChangeNotification`",
+                      "On `isCaptured == true`: apply `UIBlurEffect(.dark)` over all content"
+                    ],
+                    [
+                      "📱 Android",
+                      "`WindowManager.LayoutParams.FLAG_SECURE` in `Activity.onCreate()`",
+                      "Kernel-level Compositor blocks all capture; returns black frame"
+                    ],
+                    [
+                      "📱 Huawei",
+                      "HarmonyOS `WindowManager` secure flag",
+                      "Same mechanism as Android"
+                    ],
+                    [
+                      "💻 macOS",
+                      "`CGDisplayStream` monitoring",
+                      "On capture detected: blur overlay applied within 1 frame (< 16 ms)"
+                    ],
+                    [
+                      "🖥️ Windows",
+                      "DXGI duplication detection",
+                      "On capture detected: blur overlay"
+                    ],
+                    [
+                      "🖥️ Linux",
+                      "Wayland compositor security hint",
+                      "Platform best-effort; log `LINUX_SCREEN_CAPTURE_UNSUPPORTED` if not available"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "f-11b-protected-clipboard-bridge",
+              "level": 4,
+              "heading": "F-11b: Protected Clipboard Bridge",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "All clipboard operations route through Rust Core's bridge. Direct OS clipboard API calls from Core: blocker."
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Backend",
+                    "Detection Mechanism"
+                  ],
+                  "rows": [
+                    [
+                      "📱 iOS",
+                      "`UIPasteboard`",
+                      "N/A"
+                    ],
+                    [
+                      "📱 Android",
+                      "`ClipboardManager`",
+                      "N/A"
+                    ],
+                    [
+                      "📱 Huawei",
+                      "HarmonyOS PasteBoard",
+                      "N/A"
+                    ],
+                    [
+                      "💻 macOS",
+                      "`NSPasteboard`",
+                      "N/A"
+                    ],
+                    [
+                      "🖥️ Windows",
+                      "Win32 `SetClipboardData`",
+                      "N/A"
+                    ],
+                    [
+                      "🖥️ Linux Wayland",
+                      "`wl-clipboard` (`wl-copy`/`wl-paste`)",
+                      "`WAYLAND_DISPLAY` env var present"
+                    ],
+                    [
+                      "🖥️ Linux X11",
+                      "`xclip` / `xsel`",
+                      "`WAYLAND_DISPLAY` env var absent"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "On copy: Core writes to OS clipboard via bridge. Clipboard cleared after 60 s automatically."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "f-11c-biometric-screen-lock",
+              "level": 4,
+              "heading": "F-11c: Biometric Screen Lock",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "All SQLite I/O blocked until biometric gate clears (iOS kSecAccessControlBiometryCurrentSet / Android BiometricPrompt).",
+                    "PIN fallback: 6 digits. Transmitted via FFI Pointer — never through UI state buffer. ZeroizeOnDrop after each digit.",
+                    "Maximum PIN failures: 5. On 5th: Cryptographic Self-Destruct."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "f-11d-remote-wipe",
+              "level": 4,
+              "heading": "F-11d: Remote Wipe",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Trigger: self.userID in removedMembers of any MLS Commit."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Execution sequence (non-interruptible):"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Delete DeviceIdentityKey from Secure Enclave / StrongBox / TPM 2.0.",
+                    "Drop all tables in hot_dag.db and cold_state.db.",
+                    "Delete all WASM sandbox storage files.",
+                    "Wrapped in autoreleasepool (iOS) / try-finally (Android). Cannot be interrupted by user process."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "f-11e-cryptographic-self-destruct",
+              "level": 4,
+              "heading": "F-11e: Cryptographic Self-Destruct",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "Failed_PIN_Attempts counter encrypted with Device_Key. Ceiling: 5.",
+                    "On 5th failure: Crypto-Shredding of all local DBs + OIDC_ID_Token + both DeviceIdentityKey wrappers → Factory Reset state."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Dependencies:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "REF: TERA-CORE §5.1 — Remote Wipe execution, Dead Man Switch, self-destruct trigger",
+                    "REF: TERA-CORE §5.2 — Biometric-bound key init, Double-Buffer Zeroize, Dual-Wrapped KEK",
+                    "REF: TERA-CORE §12.4 — PLT-04 (clipboard bridge mandate)"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Constraints:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Screen capture prevention overlay: applied within 1 frame (< 16 ms at 60 Hz).",
+                    "Clipboard bridge is mandatory for all platforms. Direct OS clipboard calls from Core: blocker."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Failure Handling:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Biometric sensor unavailable: fall back to Enterprise PIN. 5-attempt maximum.",
+                    "Remote Wipe partial execution (power loss mid-sequence): on next boot, detect wipe_in_progress flag in secure storage; complete remaining steps before presenting any UI.",
+                    "Failed_PIN_Attempts counter corrupted: treat as 5 failures; initiate self-destruct. Log PIN_COUNTER_CORRUPTED to TeraDiag before wipe."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "f-12-identity-onboarding-and-recovery",
+          "level": 3,
+          "heading": "F-12: Identity, Onboarding, and Recovery",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Device enrollment into a TeraChat workspace, identity verification, and recovery flows for lost or replaced devices."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — Initial Enrollment:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Admin generates enrollment token (mTLS Certificate, TTL 12–24 h).",
+                "New device: user scans QR code or enters token.",
+                "Device generates DeviceIdentityKey inside Secure Enclave / StrongBox (biometric required).",
+                "Device submits Proof_of_Identity_and_Device (signed OIDC_ID_Token) to server.",
+                "Server issues mTLS certificate. Device added to workspace MLS group.",
+                "Company_Key delivered via MLS Welcome_Packet (ECIES/Curve25519-encrypted for new device)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — Recovery (Admin-Approved QR):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Admin authenticates biometrically on their device.",
+                "Admin generates Ed25519 Signed Recovery Ticket (single-use, TTL 15 min).",
+                "New device scans QR. Rust Core verifies Ed25519 signature before any action.",
+                "New device generates fresh DeviceIdentityKey.",
+                "Core downloads encrypted cold_state.db backup. Decrypts with new DeviceIdentityKey (backup re-keyed to new device during ticket validation)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "User Flow — Recovery (BIP-39 Mnemonic Fallback):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "User enters 24-word BIP-39 mnemonic AND biometric authentication (both required).",
+                "Core derives: Recovery_Key = BIP39_seed(mnemonic) || biometric_binding.",
+                "DeviceIdentityKey reconstructed locally from Recovery_Key.",
+                "Restore cold_state.db from local backup (if available) or full sync on next connection."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Geofencing and Network Fencing:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Short-lived mTLS certificates (TTL 12–24 h) act as implicit network fencing.",
+                "On mTLS cert expiry or VPN disconnect: Rust Core automatically disables Relay role.",
+                "No UI prompt required; role change emits CoreSignal::MeshRoleChanged."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §5.1 — KMS Bootstrap, Company_Key derivation, Welcome_Packet delivery",
+                "REF: TERA-CORE §5.2 — DeviceIdentityKey generation, biometric binding, Proof_of_Identity_and_Device",
+                "REF: TERA-CORE §5.3 — MLS group join, Re-Add_Member handshake for returning devices"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Writes: DeviceIdentityKey to Secure Enclave/StrongBox; CRDT_Event of type GroupOp:MemberAdd to hot_dag.db.",
+                "Reads: Recovery Ticket Ed25519 signature; cold_state.db backup; mTLS certificate store."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Recovery Ticket: single-use, TTL 15 min. Expired tickets rejected by Core.",
+                "BIP-39 recovery requires mnemonic AND biometric — neither is sufficient alone.",
+                "Short-lived mTLS certificates must be renewed within their TTL window. Expired cert = Relay role disabled."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Enrollment token expired (> 12–24 h): Admin generates new token.",
+                "Recovery Ticket signature invalid: reject; log INVALID_RECOVERY_TICKET to Audit Log.",
+                "BIP-39 phrase incorrect: return ERR_MNEMONIC_INVALID. No attempt count limit (brute force protected by mandatory biometric gate)."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-13-admin-console-and-enterprise-controls",
+          "level": 3,
+          "heading": "F-13: Admin Console and Enterprise Controls",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Centralized management interface for workspace administrators: policy, device management, user offboarding, audit, and license management."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms (full access): 💻 macOS, 🖥️ Windows, 🖥️ Linux, 🗄️ Bare-metal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms (read-only): 📱 iOS, 📱 Android, 📱 Huawei"
+            },
+            {
+              "type": "paragraph",
+              "text": "Admin Console Feature Set:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Feature",
+                "Description",
+                "Access Level"
+              ],
+              "rows": [
+                [
+                  "Device enrollment management",
+                  "Issue / revoke mTLS certificates",
+                  "Admin: full"
+                ],
+                [
+                  "User offboarding (SCIM 2.0)",
+                  "Auto-remove from MLS groups on HR event",
+                  "Server: auto"
+                ],
+                [
+                  "OPA Policy management",
+                  "Define and push ABAC policies to devices",
+                  "Admin: full"
+                ],
+                [
+                  "Remote Wipe",
+                  "Initiate `removedMembers` MLS Commit",
+                  "Admin: full"
+                ],
+                [
+                  "Audit Log viewer",
+                  "Ed25519-signed tamper-proof entries",
+                  "Admin: read-only"
+                ],
+                [
+                  "License management",
+                  "View / renew License JWT; seat count",
+                  "Admin: full"
+                ],
+                [
+                  "Mesh topology view",
+                  "Real-time node roles and connectivity",
+                  "Admin: read-only"
+                ],
+                [
+                  "Software crypto warning",
+                  "Alert when device uses SW backend",
+                  "Auto: emit on detect"
+                ],
+                [
+                  "Dead Man Switch policy",
+                  "Configure grace period per user group",
+                  "Admin: full"
+                ],
+                [
+                  "Federation management",
+                  "Invite / revoke federated clusters",
+                  "Admin: full"
+                ],
+                [
+                  "Whisper tier dashboard",
+                  "Shows which devices have AI disabled",
+                  "Admin: read-only"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "SCIM 2.0 Auto-Offboarding Flow:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "HR system sends SCIM DELETE /Users/{id} to TeraChat SCIM Listener.",
+                "Core emits MLS removedMembers Commit for all of user's enrolled devices.",
+                "Remote Wipe triggered on all devices (F-11d execution sequence).",
+                "Audit Log records offboarding event with Ed25519 signature.",
+                "Admin receives Admin Console notification."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "License Lockout Behavior:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "T+0 (expiry): active calls and messaging continue. Admin Console features lock.",
+                "T+90 days: relay rejects new bootstraps. Running sessions survive until restart.",
+                "On renewal: JWT replaced in Admin Console → Rust verifies → all features restore within 5 s. No restart required."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §5.1 — Remote Wipe, Dead Man Switch policy configuration",
+                "REF: TERA-CORE §3.2 — Backend Services, OPA/ABAC, SCIM Listener",
+                "REF: TERA-CORE §9.5 — Audit Log (PostgreSQL), TERA-CORE §9.6 — Operational Metrics"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Mobile Admin Console: read-only. No policy changes from mobile. Policy mutations require Desktop.",
+                "License lockout at T+0 does NOT interrupt active calls or messaging."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "SCIM event delivery failure: retry with exponential backoff (max 3 retries, 60 s max). Alert Admin on persistent failure.",
+                "OPA policy push fails on device: device retains last known policy. Retry on next connection. Log OPA_PUSH_FAILED."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-14-adaptive-network-and-protocol-management",
+          "level": 3,
+          "heading": "F-14: Adaptive Network and Protocol Management",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Automatic network protocol selection (ALPN), adaptive QUIC probe learning, and graceful fallback to ensure connectivity across enterprise firewalls and restrictive networks."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "ALPN Negotiation Sequence (total < 50 ms):"
+            },
+            {
+              "type": "code",
+              "language": "text",
+              "code": "Step 1: QUIC / HTTP/3 over UDP:443\n        ACK within 50 ms → ONLINE_QUIC (0-RTT, ~30 ms RTT)\n        No ACK / firewall DROP → Step 2\n\nStep 2: gRPC / HTTP/2 over TCP:443\n        TLS handshake success → ONLINE_GRPC (~80 ms RTT)\n        DPI blocks binary framing → Step 3\n\nStep 3: WebSocket Secure over TCP:443\n        WS Upgrade success → ONLINE_WSS (~120 ms RTT)\n        All three fail → MESH_MODE"
+            },
+            {
+              "type": "paragraph",
+              "text": "Strict Compliance Mode:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Activated by Admin in CISO Console. Propagated via OPA policy push.",
+                "Client skips Step 1. Connects directly via gRPC TCP.",
+                "Saves 50 ms probe timeout on known UDP-blocked networks."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Adaptive QUIC Probe Learning:"
+            },
+            {
+              "type": "code",
+              "language": "rust",
+              "code": "fn on_probe_failure(mTLS_cert_fp: &[u8], ssid_hash: &[u8], db: &SqliteConn) {\n    let network_id = blake3::hash(&[mTLS_cert_fp, ssid_hash].concat());\n    let mut profile = db.get_or_create_network_profile(network_id.as_bytes());\n    profile.probe_fail_count += 1;\n    if profile.probe_fail_count >= 3 {\n        profile.strict_compliance = true;\n        emit_admin_notification(\"Auto-switched to TCP on this network.\");\n    }\n    db.save_network_profile(&profile);\n}\n\nfn on_network_change(new_cert_fp: &[u8], ssid_hash: &[u8], db: &SqliteConn) {\n    // Different network: reset probe count and strict_compliance flag\n    let network_id = blake3::hash(&[new_cert_fp, ssid_hash].concat());\n    db.reset_network_profile(network_id.as_bytes());\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "HUD indicator: QUIC / gRPC / WSS / Mesh icon updates in top status bar on every CoreSignal::TierChanged. No dialog interruption."
+            },
+            {
+              "type": "paragraph",
+              "text": "Security hardening:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "QUIC-Pinning State Machine blocks protocol downgrade attacks (QUIC → WSS).",
+                "Socket Panic Circuit Breaker: on detected downgrade manipulation, refuse new TCP/UDP connections for 30 s."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §9.2 — ALPN negotiation protocol, Strict Compliance Mode, Adaptive Probe Learning",
+                "REF: TERA-CORE §4.2 — CoreSignal::TierChanged, NetworkTier enum"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Data Interaction:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Reads/Writes: NetworkProfile in SQLite local config DB (per network identifier)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "ALPN selection is automatic. Admin can override to Strict Compliance Mode only — no other configuration.",
+                "Adaptive learning resets on network change (different mTLS cert fingerprint)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "All three ALPN steps fail: activate Mesh Mode. Emit CoreSignal::TierChanged { new_tier: MeshMode }.",
+                "Adaptive auto-switch false positive: Admin can reset in Settings. Network change also auto-resets."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "f-15-crash-safe-memory-and-wal-management",
+          "level": 3,
+          "heading": "F-15: Crash-Safe Memory and WAL Management",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Description: Platform-specific memory protection and crash-safe WAL flush protocols to prevent key material exposure and data loss on unexpected process termination."
+            },
+            {
+              "type": "paragraph",
+              "text": "Supported Platforms: 📱 iOS, 📱 Android, 📱 Huawei, 💻 macOS, 🖥️ Windows, 🖥️ Linux"
+            },
+            {
+              "type": "paragraph",
+              "text": "iOS / Android Crash-Safe Checkpoint:"
+            },
+            {
+              "type": "code",
+              "language": "swift",
+              "code": "// iOS Swift layer (host adapter) → FFI → Rust Core\nNotificationCenter.default.addObserver(\n    forName: UIApplication.willTerminateNotification,\n    using: { _ in tera_core_flush_io() }   // FFI; completes in ≤ 50 ms\n)"
+            },
+            {
+              "type": "code",
+              "language": "kotlin",
+              "code": "// Android Kotlin layer (host adapter)\noverride fun onTrimMemory(level: Int) {\n    if (level >= TRIM_MEMORY_RUNNING_CRITICAL) tera_core_flush_io()\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Memory pressure response (iOS/Android):"
+            },
+            {
+              "type": "list",
+              "data": [
+                "Receive OS memory warning callback.",
+                "Rust Core immediately: zeroize all vector caches; pause ONNX pipeline.",
+                "Priority preserved: hot_dag.db and active chat session.",
+                "Emit CoreSignal::ComponentFault { component: \"onnx\", severity: Warning }."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Desktop WAL checkpoint on shutdown:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "terachat-daemon registers SIGTERM handler.",
+                "On SIGTERM: PRAGMA wal_checkpoint(TRUNCATE) with 30 s timeout.",
+                "Exit unconditionally after 30 s regardless of checkpoint result.",
+                "systemd TimeoutStopSec = 35."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Linux multi-init daemon support (postinstall script):"
+            },
+            {
+              "type": "code",
+              "language": "bash",
+              "code": "#!/bin/bash\n# postinstall script (included in .deb and .rpm packages)\nif command -v systemctl &>/dev/null && systemctl --version &>/dev/null 2>&1; then\n    systemctl enable --now terachat-daemon.service\nelif command -v rc-service &>/dev/null; then\n    rc-update add terachat-daemon default && rc-service terachat-daemon start\nelif command -v runit &>/dev/null; then\n    ln -sf /etc/sv/terachat-daemon /var/service/\nelse\n    # XDG autostart fallback for non-standard init\n    install -m644 /usr/share/applications/terachat-daemon.desktop \\\n        ~/.config/autostart/terachat-daemon.desktop\nfi\n# terachat-daemon writes PID file → any init system can monitor via PID"
+            },
+            {
+              "type": "paragraph",
+              "text": "AppArmor / SELinux MAC profile auto-load (postinstall):"
+            },
+            {
+              "type": "code",
+              "language": "bash",
+              "code": "# Detect and load MAC profile before first launch\nif command -v apparmor_parser &>/dev/null; then\n    apparmor_parser -r -W /etc/apparmor.d/usr.bin.terachat\n    apparmor_parser -r -W /etc/apparmor.d/terachat-daemon\nelif command -v semodule &>/dev/null; then\n    semodule -i /usr/share/terachat/terachat.pp\nfi\n# Verify: terachat --check-permissions (built-in self-test)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Without this script: startup crash on memfd_create and ipc_lock denial on enforcing systems."
+            },
+            {
+              "type": "paragraph",
+              "text": "Dependencies:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "REF: TERA-CORE §4.4 — SIGTERM handler, wal_checkpoint, TimeoutStopSec = 35",
+                "REF: TERA-CORE §7.1 — WAL anti-bloat, VACUUM protocol",
+                "REF: TERA-CORE §12.2 — DB-03 (wal_autocheckpoint = 1000)",
+                "REF: TERA-CORE §9.3 — wal_staging.db replay on restart"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Constraints:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "tera_core_flush_io() must complete in ≤ 50 ms on mobile (OS kill timer fires at ~500 ms).",
+                "Desktop: 35 s total (30 s checkpoint + 5 s systemd margin). Exit unconditionally after 30 s.",
+                "PRAGMA wal_autocheckpoint = 1000 enforced on all databases at connection open."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Failure Handling:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "WAL checkpoint timeout (Desktop): exit regardless. systemd Restart=on-failure handles restart. wal_staging.db replay covers in-flight events on next start.",
+                "OOM kill before WAL flush (iOS/Android): SQLite WAL is crash-safe by design. WAL replays automatically on next open. No data loss.",
+                "AppArmor/SELinux postinstall script fails: log to /var/log/terachat-install.log; print warning on console; do not abort installation. Alert: \"Manual MAC profile load required. See /var/log/terachat-install.log.\""
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "5-feature-core-mapping-critical",
+      "level": 2,
+      "heading": "5. FEATURE ↔ CORE MAPPING (CRITICAL)",
+      "content_blocks": [
+        {
+          "type": "blockquote",
+          "alert_type": "note",
+          "lines": [
+            "Every feature maps to one or more modules in Core_Spec.md.",
+            "A feature with no Core mapping is an **orphan — blocker, do not ship**.",
+            "Mappings verified against TERA-CORE v2.0."
+          ]
+        },
+        {
+          "type": "table",
+          "headers": [
+            "Feature ID",
+            "Feature Name",
+            "Primary Core Modules",
+            "TERA-CORE References"
+          ],
+          "rows": [
+            [
+              "F-01",
+              "Secure E2EE Messaging",
+              "`crypto/mls_engine.rs`, `crdt/dag.rs`",
+              "§5.3, §7.1, §8.1, §4.2, §4.3"
+            ],
+            [
+              "F-02",
+              "Push Notification Delivery",
+              "`crypto/push_ratchet.rs`",
+              "§5.5, §8.3, §4.2"
+            ],
+            [
+              "F-03",
+              "IPC Bridge & State Sync",
+              "`ffi/ipc_bridge.rs`, `ffi/token_protocol.rs`",
+              "§4.2, §4.3, §2.2"
+            ],
+            [
+              "F-04",
+              "Local Storage Management",
+              "`crdt/dag.rs`, `crdt/snapshot.rs`",
+              "§7.1, §7.4, §12.2 (DB-01, DB-02, DB-03)"
+            ],
+            [
+              "F-05",
+              "Survival Mesh Networking",
+              "`mesh/` (all six modules)",
+              "§6.1, §6.2, §6.3, §6.4, §6.5, §6.6, §6.7"
+            ],
+            [
+              "F-06",
+              "Voice and Video Calls",
+              "`infra/relay.rs` (TURN), host adapters",
+              "§10.4, §6.4, §9.2, §5.3"
+            ],
+            [
+              "F-07",
+              "WASM Plugin Sandbox",
+              "`ffi/token_protocol.rs`, platform WASM adapter",
+              "§4.1, §4.4, §3.2 (Table §3.1)"
+            ],
+            [
+              "F-08",
+              "Inter-`.tapp` IPC",
+              "`ffi/ipc_bridge.rs`",
+              "§4.2, §4.3, §3.2"
+            ],
+            [
+              "F-09",
+              "Media and File Transfer",
+              "`crypto/mls_engine.rs`, `infra/relay.rs`",
+              "§5.3, §9.5, §7.1, §8.1"
+            ],
+            [
+              "F-10",
+              "AI / SLM Integration",
+              "`infra/relay.rs` (VPS Enclave)",
+              "§3.3, §3.6, §4.4"
+            ],
+            [
+              "F-11",
+              "Device Security",
+              "`crypto/hkms.rs`, `crypto/zeroize.rs`",
+              "§5.1, §5.2, §12.4 (PLT-04)"
+            ],
+            [
+              "F-12",
+              "Identity and Onboarding",
+              "`crypto/hkms.rs`, `crypto/mls_engine.rs`",
+              "§5.1, §5.2, §5.3"
+            ],
+            [
+              "F-13",
+              "Admin Console",
+              "`infra/federation.rs`, `infra/metrics.rs`",
+              "§3.2, §5.1, §9.5, §9.6"
+            ],
+            [
+              "F-14",
+              "Adaptive Network Management",
+              "`infra/relay.rs`",
+              "§9.2, §4.2"
+            ],
+            [
+              "F-15",
+              "Crash-Safe WAL Management",
+              "`crdt/dag.rs`, `infra/wal_staging.rs`",
+              "§4.4, §7.1, §9.3, §12.2"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Orphan Feature Verification: All 15 features have verified Core mappings. Zero orphan features in this document."
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "6-user-flow-interaction-model",
+      "level": 2,
+      "heading": "6. USER FLOW & INTERACTION MODEL",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "61-message-send-render-lifecycle",
+          "level": 3,
+          "heading": "6.1 Message Send → Render Lifecycle",
+          "content_blocks": [
+            {
+              "type": "code",
+              "language": "text",
+              "code": "[User input]\n     │  UICommand::SendMessage { recipient_did, plaintext }\n     ▼\n[Rust Core]\n  1. Lookup Epoch_Key (RAM, ZeroizeOnDrop)\n  2. AES-256-GCM encrypt plaintext\n  3. Build CRDT_Event with Ed25519 signature (biometric gate)\n  4. Append to hot_dag.db WAL (durable before network dispatch)\n     │\n     ├── Online: TLS 1.3 + mTLS → VPS → wal_staging → pub/sub\n     └── Offline: BLE Control Plane → Mesh Store-and-Forward\n     │\n  5. Emit CoreSignal::StateChanged { table: \"messages\", version }\n     ▼\n[UI]\n  1. Issue UICommand::ScrollViewport\n  2. Core: tera_buf_acquire → Data Plane buffer write\n  3. UI reads via token → renders 20 messages\n  4. UICommand::ReleaseBuffer → Core ZeroizeOnDrop"
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "62-network-mode-transition",
+          "level": 3,
+          "heading": "6.2 Network Mode Transition",
+          "content_blocks": [
+            {
+              "type": "code",
+              "language": "text",
+              "code": "Internet available\n  ├── QUIC OK  → ONLINE_QUIC\n  ├── gRPC OK  → ONLINE_GRPC\n  ├── WSS OK   → ONLINE_WSS\n  └── All fail → MESH_MODE\n                   │\n                   ├── BLE + Wi-Fi Direct active\n                   ├── F-07 WASM: terminate + sled snapshot\n                   ├── F-10 AI: disabled\n                   └── F-06 Voice: suspended\n\nInternet restored\n  │\n  ├── ALPN renegotiation → highest available tier\n  ├── F-07 WASM: restore from sled snapshot (< 50 ms)\n  ├── F-05 DAG sync: CRDT merge via Dictator Election\n  └── F-01 MLS: Peer-Assisted Epoch Re-induction if needed"
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "63-device-enrollment-flow",
+          "level": 3,
+          "heading": "6.3 Device Enrollment Flow",
+          "content_blocks": [
+            {
+              "type": "code",
+              "language": "text",
+              "code": "Admin generates enrollment token (mTLS cert, TTL 12–24 h)\n  │\n  ▼\nNew device scans QR / enters token\n  │\n  ▼\nDeviceIdentityKey generated in Secure Enclave / StrongBox (biometric required)\n  │\n  ▼\nProof_of_Identity_and_Device submitted → server → mTLS cert issued\n  │\n  ▼\nMLS Welcome_Packet received → Company_Key available\n  │\n  ▼\nDevice operational\ncold_state.db hydration begins in background (F-04 Hydration flow)"
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "64-ios-push-notification-flow-versioned-key-ladder",
+          "level": 3,
+          "heading": "6.4 iOS Push Notification Flow (Versioned Key Ladder)",
+          "content_blocks": [
+            {
+              "type": "code",
+              "language": "text",
+              "code": "APNs delivers push payload\n  │\n  ├── Version match → NSE Arena decrypt → OS notification → ZeroizeOnDrop\n  │\n  └── Version mismatch\n        │\n        ├── Cache ciphertext to nse_staging.db\n        ├── Set main_app_decrypt_needed = true (Shared Keychain)\n        └── Send content-available:1\n              │\n              ▼\n            Main App wakes\n              │\n              ├── Rotate Push_Key\n              ├── Decrypt nse_staging.db entry\n              ├── Display notification\n              └── Clear nse_staging.db"
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "7-data-contracts-high-level",
+      "level": 2,
+      "heading": "7. DATA CONTRACTS (HIGH-LEVEL)",
+      "content_blocks": [
+        {
+          "type": "blockquote",
+          "alert_type": "note",
+          "lines": [
+            "This section defines what data flows between feature modules and Rust Core.",
+            "Detailed cryptographic schemas reside in TERA-CORE §0 (Data Object Catalog).",
+            "This section governs the feature-layer interface only."
+          ]
+        }
+      ],
+      "subsections": [
+        {
+          "id": "71-message-data-contract",
+          "level": 3,
+          "heading": "7.1 Message Data Contract",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Direction",
+                "Object",
+                "Format",
+                "Max Size",
+                "Encryption"
+              ],
+              "rows": [
+                [
+                  "UI → Core (send)",
+                  "`UICommand::SendMessage.plaintext`",
+                  "Raw bytes",
+                  "4,096 B (before padding)",
+                  "None (Core encrypts)"
+                ],
+                [
+                  "Core → UI (render)",
+                  "Viewport snapshot",
+                  "`Vec<CrdtEvent>` decrypted",
+                  "20 msgs × ~2 KB",
+                  "`ZeroizeOnDrop` after render"
+                ],
+                [
+                  "Core → Server",
+                  "`CRDT_Event.payload`",
+                  "AES-256-GCM ciphertext",
+                  "Variable",
+                  "E2EE (server-blind)"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "72-media-data-contract",
+          "level": 3,
+          "heading": "7.2 Media Data Contract",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Direction",
+                "Object",
+                "Format",
+                "Max Size",
+                "Encryption"
+              ],
+              "rows": [
+                [
+                  "UI → Core (send)",
+                  "Raw file bytes",
+                  "Stream",
+                  "10 GB",
+                  "None (Core encrypts in 2 MB chunks)"
+                ],
+                [
+                  "Core → Server",
+                  "Encrypted chunks",
+                  "AES-256-GCM",
+                  "2 MB each",
+                  "E2EE (server-blind)"
+                ],
+                [
+                  "Core → UI (stub)",
+                  "Zero-Byte Stub",
+                  "`{name, cas_hash, thumbnail, ref}`",
+                  "< 5 KB",
+                  "E2EE"
+                ],
+                [
+                  "Core → UI (download)",
+                  "Decrypted chunk",
+                  "Raw bytes",
+                  "2 MB per chunk",
+                  "`ZeroizeOnDrop` per chunk"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "73-wasm-plugin-data-contract",
+          "level": 3,
+          "heading": "7.3 WASM Plugin Data Contract",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Direction",
+                "Object",
+                "Format",
+                "Encryption"
+              ],
+              "rows": [
+                [
+                  "`.tapp` → Core (outbound)",
+                  "`EgressNetworkRequest`",
+                  "Protobuf",
+                  "TLS 1.3 enforced by Core"
+                ],
+                [
+                  "Core → `.tapp` (response)",
+                  "Sanitized response",
+                  "`Vec<ASTNode>`",
+                  "None (sanitized by Core before delivery)"
+                ],
+                [
+                  "`.tapp` → Core (state write)",
+                  "`persist_keyval(key, value)`",
+                  "Raw bytes",
+                  "AES-256-GCM by Core"
+                ],
+                [
+                  "Core → `.tapp` (state restore)",
+                  "`get_transient_state()`",
+                  "Raw bytes",
+                  "Decrypted by Core; `ZeroizeOnDrop` after delivery"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "74-push-notification-contract",
+          "level": 3,
+          "heading": "7.4 Push Notification Contract",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Direction",
+                "Object",
+                "iOS",
+                "Android",
+                "Size Limit"
+              ],
+              "rows": [
+                [
+                  "Server → Device",
+                  "Encrypted payload",
+                  "APNs `mutable-content: 1`",
+                  "FCM Data Message",
+                  "< 4 KB for NSE inline decrypt"
+                ],
+                [
+                  "Core → OS",
+                  "Notification content",
+                  "`UNNotificationContent`",
+                  "`RemoteMessage`",
+                  "OS-enforced"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "75-ipc-buffer-contract",
+          "level": 3,
+          "heading": "7.5 IPC Buffer Contract",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Primitive",
+                "Direction",
+                "Token Lifecycle",
+                "Cleanup"
+              ],
+              "rows": [
+                [
+                  "`tera_buf_acquire(op_id) → u64`",
+                  "Core → UI",
+                  "Opens on acquire",
+                  "—"
+                ],
+                [
+                  "`tera_buf_release(token)`",
+                  "UI → Core",
+                  "Closes on release",
+                  "`ZeroizeOnDrop` when `ref_count == 0`"
+                ],
+                [
+                  "Buffer valid window",
+                  "—",
+                  "Between acquire and release",
+                  "Never held across UI render frames"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "8-constraints-limitations",
+      "level": 2,
+      "heading": "8. CONSTRAINTS & LIMITATIONS",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "81-platform-hard-constraints",
+          "level": 3,
+          "heading": "8.1 Platform Hard Constraints",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Constraint",
+                "Platform",
+                "Feature Impact"
+              ],
+              "rows": [
+                [
+                  "W^X: no JIT WASM in App Sandbox",
+                  "📱 iOS",
+                  "F-07: `wasm3` interpreter only"
+                ],
+                [
+                  "NSE RAM ≤ 20 MB (OS-enforced)",
+                  "📱 iOS",
+                  "F-02: Ghost Push pattern mandatory"
+                ],
+                [
+                  "Background network 30 s",
+                  "📱 iOS",
+                  "F-06: CallKit integration mandatory"
+                ],
+                [
+                  "`mlock()` rejected",
+                  "📱 iOS",
+                  "F-11: Double-Buffer Zeroize required"
+                ],
+                [
+                  "AWDL + Hotspot mutually exclusive",
+                  "📱 iOS",
+                  "F-05/F-06: BLE fallback on Hotspot"
+                ],
+                [
+                  "FCM 10/hr throttle (Android 14+)",
+                  "📱 Android",
+                  "F-02: CDM registration + FCM high-priority"
+                ],
+                [
+                  "StrongBox not universal",
+                  "📱 Android",
+                  "F-11/F-12: TEE-backed AndroidKeyStore fallback"
+                ],
+                [
+                  "HMS: no content-available push",
+                  "📱 Huawei",
+                  "F-02: 4 h CRL delay; polling fallback; SLA disclosure"
+                ],
+                [
+                  "XPC Worker OOM crash atomicity",
+                  "💻 macOS",
+                  "F-07: XpcTransactionJournal required"
+                ],
+                [
+                  "Flatpak incompatible",
+                  "🖥️ Linux",
+                  "F-07: .deb/.rpm or AppImage only"
+                ],
+                [
+                  "AppArmor/SELinux startup crash",
+                  "🖥️ Linux",
+                  "F-15: postinstall MAC profile load mandatory"
+                ],
+                [
+                  "ARM64 SAB behavior (Windows)",
+                  "🖥️ Win ARM64",
+                  "F-03: pre-release SAB validation required"
+                ],
+                [
+                  "No kernel modules / no eBPF client",
+                  "☁️ VPS",
+                  "F-14: Tokio Token Bucket rate limiting (userspace)"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "82-mesh-mode-feature-restrictions-exhaustive-list",
+          "level": 3,
+          "heading": "8.2 Mesh Mode Feature Restrictions (Exhaustive List)",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "The following are disabled in Mesh Mode. Enforcement is in Rust Core — not in UI:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Feature",
+                "Status",
+                "Error Code"
+              ],
+              "rows": [
+                [
+                  "WASM `.tapp` execution",
+                  "Terminate + snapshot",
+                  "N/A"
+                ],
+                [
+                  "AI / SLM inference",
+                  "Disabled",
+                  "`ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED`"
+                ],
+                [
+                  "Voice and video calls",
+                  "Suspended",
+                  "N/A"
+                ],
+                [
+                  "Multi-hop file transfer",
+                  "Suspended",
+                  "N/A"
+                ],
+                [
+                  "Inter-`.tapp` Delegation Tokens",
+                  "Suspended",
+                  "`ERR_MESH_MODE_DELEGATION_SUSPENDED`"
+                ],
+                [
+                  "Transient state persistence",
+                  "Disabled",
+                  "N/A"
+                ],
+                [
+                  "MLS Epoch rotation",
+                  "Suspended (EMDP)",
+                  "N/A"
+                ],
+                [
+                  "DAG merge",
+                  "Deferred to Desktop reconnect",
+                  "N/A"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "83-known-implementation-gaps-open-items",
+          "level": 3,
+          "heading": "8.3 Known Implementation Gaps (Open Items)",
+          "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "Engineers must resolve all Blocker items before production ship:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Item",
+                "Severity",
+                "Reference",
+                "Status"
+              ],
+              "rows": [
+                [
+                  "WasmParity CI gate (wasm3 vs wasmtime semantic identity, ≤ 20 ms delta)",
+                  "Blocker",
+                  "F-07, TERA-CORE §11.4",
+                  "Not implemented"
+                ],
+                [
+                  "CI/CD code signing pipeline (all 5 platforms)",
+                  "Blocker",
+                  "`ops/signing-pipeline.md`",
+                  "Not implemented"
+                ],
+                [
+                  "Dart FFI NativeFinalizer Clippy lint (FFI-01 enforcement)",
+                  "Blocker",
+                  "F-03, TERA-CORE §4.3",
+                  "Not implemented"
+                ],
+                [
+                  "AppArmor/SELinux postinstall script for Linux",
+                  "High",
+                  "F-15",
+                  "Not implemented"
+                ],
+                [
+                  "`sled` crate version pinned in `Cargo.toml`",
+                  "Medium",
+                  "F-07 Transient State",
+                  "Not pinned"
+                ],
+                [
+                  "Border Node auto-detection heuristics (algorithm spec)",
+                  "Medium",
+                  "F-05",
+                  "Algorithm undefined"
+                ],
+                [
+                  "Windows ARM64 SAB behavior validation (WebView2)",
+                  "Medium",
+                  "F-03",
+                  "Not tested"
+                ]
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "9-anti-technical-debt-rules",
+      "level": 2,
+      "heading": "9. ANTI-TECHNICAL-DEBT RULES",
+      "content_blocks": [],
+      "subsections": [
+        {
+          "id": "91-feature-responsibility-boundaries",
+          "level": 3,
+          "heading": "9.1 Feature Responsibility Boundaries",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "ATD-01: No feature implements logic that belongs to another feature. F-02 (Push) reads keys managed by F-01 (Messaging) via TERA-CORE §5.5. F-02 does not implement key rotation logic.",
+                "ATD-02: No feature accesses hot_dag.db or cold_state.db directly from the UI layer. All DB access routes through Rust Core module interfaces.",
+                "ATD-03: No feature implements cryptographic operations. All crypto routes through crypto/ modules in TERA-CORE.",
+                "ATD-04: Platform-specific code lives exclusively in host adapter layers (Swift/Kotlin) or in Rust #[cfg(target_os = \"...\")] blocks. Mixed-platform logic in shared modules: blocker."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "92-anti-coupling-rules",
+          "level": 3,
+          "heading": "9.2 Anti-Coupling Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "ATD-05: Features communicate through typed CoreSignal and UICommand enums. Ad-hoc FFI calls between feature modules: blocker.",
+                "ATD-06: WASM plugins have zero knowledge of MLS key material. They receive only sanitized Vec<ASTNode> response objects. Any code path that exposes key material to WASM: blocker.",
+                "ATD-07: The IPC bridge (F-03) has no semantic knowledge of message content. It transfers opaque bytes. Content interpretation is the UI layer's responsibility.",
+                "ATD-08: DelegationToken (F-08) does not grant .tapp access to raw cold_state.db. It grants access to a defined OPA-enforced namespace only."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "93-scalability-rules",
+          "level": 3,
+          "heading": "9.3 Scalability Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "ATD-09: No feature hardcodes platform count or MLS group size. These parameters come from TERA-CORE §10.3 Scaling Ceilings.",
+                "ATD-10: Every feature that persists data specifies a cleanup/expiry path. No indefinite accumulation of stale data is acceptable.",
+                "ATD-11: Features with battery impact must implement a power budget. F-05 BLE duty cycle, F-10 Whisper tier selection, F-15 BGTask constraints are the reference implementations."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "94-testability-rules",
+          "level": 3,
+          "heading": "9.4 Testability Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "ATD-12: Every feature's Failure Handling clause must correspond to a test case in TERA-TEST. Untested failure paths are not accepted for production.",
+                "ATD-13: Features with platform-specific behavior must have test coverage on each variant. Parity gaps are tracked in §8.3.",
+                "ATD-14: WasmParity CI gate (§8.3) must pass for every .tapp before Marketplace listing. Semantic divergence between wasm3 and wasmtime is a blocker for Marketplace launch."
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "10-implementation-contract",
+      "level": 2,
+      "heading": "10. IMPLEMENTATION CONTRACT",
+      "content_blocks": [
+        {
+          "type": "blockquote",
+          "alert_type": "note",
+          "lines": [
+            "**Read §0 (Data Object Catalog) before implementing any feature.**",
+            "Violating any rule below is a **BLOCKER — do not merge.**"
+          ]
+        }
+      ],
+      "subsections": [
+        {
+          "id": "101-security-rules",
+          "level": 3,
+          "heading": "§10.1 Security Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "[x] SEC-01 — No plaintext UI buffer outlives the render frame. ZeroizeOnDrop on every struct holding decrypted content. Verified with cargo miri test. CI failure: blocker.",
+                "[x] SEC-02 — No Vec<u8>, const u8, or mut u8 returned from any pub extern \"C\" function. Token protocol mandatory. CI Clippy lint enforced. Lint failure: blocker.",
+                "[x] SEC-03 — All clipboard operations route through Protected Clipboard Bridge (F-11b). Direct OS clipboard API calls from Rust Core: blocker.",
+                "[x] SEC-04 — WASM sandbox: PROT_READ-only access to DAG shared memory. Write attempts outside sandbox boundary trigger SIGSEGV caught by catch_unwind. No exceptions.",
+                "[x] SEC-05 — iOS Keychain access groups: push_key accessible by NSE only (group.com.terachat.nse); device_identity_key by Main App only (group.com.terachat.main); share_extension_token by Share Extension only (group.com.terachat.share). Cross-group reads: blocker."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "102-platform-rules",
+          "level": 3,
+          "heading": "§10.2 Platform Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "[x] PLT-01 — iOS: wasm3 interpreter only in App Sandbox. wasmtime permitted in XPC Worker (allow-jit entitlement) only. No JIT in Main App: blocker.",
+                "[x] PLT-02 — iOS NSE: Static Memory Arena 10 MB. Circuit Breaker terminates NSE gracefully on 20 MB breach. Never crash without cleanup.",
+                "[x] PLT-03 — iOS: Voice calls require CallKit integration. Without it, network killed after 30 s background. Non-CallKit voice on iOS: blocker.",
+                "[x] PLT-04 — Linux: Flatpak packaging is prohibited (bubblewrap/seccomp conflict). .deb/.rpm or AppImage + Cosign only.",
+                "[x] PLT-05 — Linux clipboard: detect display server at runtime (WAYLAND_DISPLAY). Wayland: wl-clipboard. X11: xclip/xsel. Hardcoded single backend: blocker.",
+                "[x] PLT-06 — Android 14+: FCM priority = \"high\" AND Companion Device Manager REQUEST_COMPANION_RUN_IN_BACKGROUND. Both are required. Either alone is insufficient.",
+                "[x] PLT-07 — Huawei: no dynamic WASM from Marketplace. AOT .waot bundles only. CRL delay ≤ 4 h must be documented in enterprise SLA."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "103-feature-integrity-rules",
+          "level": 3,
+          "heading": "§10.3 Feature Integrity Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "[x] FI-01 — Every feature maps to at least one TERA-CORE module (§5 mapping table verified). Orphan features: blocker.",
+                "[x] FI-02 — Mesh Mode restrictions (§8.2) are enforced in Rust Core. UI cannot re-enable restricted features by bypassing Core. UI-side Mesh override: blocker.",
+                "[x] FI-03 — WasmParity CI gate must pass before any .tapp is listed on Marketplace. Gate failure: blocker for Marketplace launch.",
+                "[x] FI-04 — sled crate is the mandated LSM-Tree for WASM transient state (F-07). RocksDB on mobile exceeds 50 MB heap budget. Switching without budget validation: blocker.",
+                "[x] FI-05 — iOS election_weight = 0 is hardcoded in mesh/election.rs. Any PR modifying this constant: blocker."
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "104-ipc-rules",
+          "level": 3,
+          "heading": "§10.4 IPC Rules",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "[x] IPC-01 — State flow unidirectional: Core → UI. UI sends Commands only. Bidirectional state channel: blocker.",
+                "[x] IPC-02 — SAB Tier Ladder selection (Tier 1/2/3) logged to audit trail. Silent tier selection: blocker.",
+                "[x] IPC-03 — CoreSignal::DagMergeProgress emitted every 200 ms when merge backlog > 500 events. Required for mobile ANR prevention."
+              ]
+            }
+          ],
+          "subsections": []
+        }
+      ]
+    },
+    {
+      "id": "11-changelog",
+      "level": 2,
+      "heading": "11. CHANGELOG",
+      "content_blocks": [
+        {
+          "type": "table",
+          "headers": [
+            "Version",
+            "Date",
+            "Summary"
+          ],
+          "rows": [
+            [
+              "0.3.0",
+              "2026-03-18",
+              "Complete rewrite from scratch. Full alignment with Core_Spec.md v2.0 (TERA-CORE). 15 features with mandatory Feature Definition Standard (platforms, user flow, Core dependencies, data interaction, constraints, failure handling). §5 Feature ↔ Core Mapping table with explicit TERA-CORE references for all 15 features. §0 Client-side Data Object Catalog with Core cross-references for every object. §9 Anti-Technical-Debt Rules (ATD-01 through ATD-14). §10 Implementation Contract with unique rule IDs (SEC-01–SEC-05, PLT-01–PLT-07, FI-01–FI-05, IPC-01–IPC-03). Platform constraint matrix with feature impact column. Known implementation gaps table with severity and status. Incorporated from all architecture sessions: WasmParity CI gate (F-07, §8.3), Dart FFI NativeFinalizer Clippy lint (F-03, §10.1 SEC-02), iOS AWDL conflict resolution (F-05/F-06), EMDP Key Escrow Handshake (F-05), Versioned Push Key Ladder (F-02), Double-Buffer Zeroize (F-11), `sled` crate pin for transient state (F-07, §10.3 FI-04), Border Node auto-detection (F-05), Linux multi-init daemon + AppArmor/SELinux postinstall (F-15), Huawei CRL delay SLA disclosure (F-02/§8.1), Adaptive QUIC Probe Learning (F-14), XPC Journal crash recovery (F-07), Shadow DB Write Lock Protocol (F-04), iOS CoreML parity path (F-10), `MemoryArbiter` RAM budget enforcement (§3.3), SAB Tier Ladder audit trail (§10.4 IPC-02)."
+            ],
+            [
+              "0.2.5",
+              "2026-03-13",
+              "Legacy iterative updates (see TERA-CORE §13 for aligned changelog context). Deprecated React Native → Flutter unified mobile. Added PLATFORM-01 through PLATFORM-16 sections (now fully integrated into feature definitions above)."
+            ],
+            [
+              "0.1.6",
+              "2026-03-04",
+              "Initial feature spec. Added WASM Sandbox Isolation, Protected Clipboard Bridge, Zero-Byte Stub rendering, NSE Circuit Breaker."
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Cross-references:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "MLS cryptographic internals, CRDT algorithms, server infrastructure → TERA-CORE (Core_Spec.md)",
+            "UI animation, glassmorphism state machine → TERA-DESIGN (Design.md)",
+            "Plugin publishing, Marketplace review, .tapp signing → TERA-MKT (Web_Marketplace.md)",
+            "Combined-failure chaos test scenarios → TERA-TEST (TestMatrix.md)",
+            "Code signing pipeline, certificate rotation → ops/signing-pipeline.md",
+            "PostgreSQL PITR recovery, Shamir ceremony → ops/db-recovery.md, ops/shamir-bootstrap.md"
+          ]
+        }
+      ],
+      "subsections": []
     }
   ]
 }
