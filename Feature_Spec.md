@@ -1395,6 +1395,58 @@ Without this script: startup crash on `memfd_create` and `ipc_lock` denial on en
 
 ---
 
+
+
+### INFRA-01: [ARCHITECTURE] Client Compute Distribution
+
+> **Nguyên tắc:** Mobile devices không phải là compute nodes.
+> Desktop devices là compute cluster. VPS là blind router.
+> Computation đi đến nơi có resource — không phải nơi thuận tiện architecturally.
+
+#### INFRA-01.1 Mobile Compute Constraints (Hard Rules)
+
+Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
+
+| Operation | Lý do cấm | Alternative |
+|---|---|---|
+| ONNX 80MB model inference | Thermal spike +4°C, 15% battery/op | Desktop offload |
+| DAG merge > 3000 events | ANR risk > 5s | Snapshot sync |
+| FTS5 full-history index | Storage > 300MB | Desktop-hosted search |
+| CRDT full-state storage | hot_dag.db > 300MB | Delta-only + snapshot |
+| BLAKE3 full-file hash (>100MB) | CPU spike blocks UI | Desktop computation |
+
+#### INFRA-01.2 ONNX Inference Offload Protocol
+
+📱 Mobile phát `OnnxOffloadRequest` (E2EE) đến Desktop Super Node:
+
+### INFRA-02: [IMPLEMENTATION] Blob Storage Client
+
+> TeraChat clients interact with blob storage ONLY via TeraRelay's presigned URL mechanism.
+> Clients NEVER have direct credentials to R2/B2/MinIO.
+> This maintains Zero-Knowledge: relay signs URLs without seeing content.
+
+#### INFRA-02.1 File Upload Flow (Revised)
+
+### INFRA-03: [IMPLEMENTATION] TeraRelay Health & Self-Healing
+
+> Single-binary deployment means no cluster coordination.
+> Self-healing must happen within the binary itself.
+
+#### INFRA-03.1 In-Process Watchdog
+
+### PLATFORM-19: One-Touch Relay Deployment
+
+#### PLATFORM-19.1 Deployment Requirements (Revised)
+
+| Tier | VPS Spec | Monthly Cost | Admin Skill Required | Setup Time |
+|---|---|---|---|---|
+| Solo (≤50 users) | 1 vCPU, 512MB RAM, 20GB SSD | $6 + $1 storage | None | 5 min |
+| SME (≤500 users) | 2 vCPU, 2GB RAM, 40GB SSD | $12 + $5 storage | None | 10 min |
+| Enterprise (≤5000 users) | 4 vCPU, 8GB RAM, 100GB SSD | $28 + $20 storage | Basic | 20 min |
+| Gov (air-gapped, any size) | Existing hardware | CAPEX only | IT Admin | 1 hour |
+
+#### PLATFORM-19.2 `tera-relay` CLI Commands
+
 ## 5. FEATURE ↔ CORE MAPPING (CRITICAL)
 
 > Every feature maps to one or more modules in Core_Spec.md.
@@ -1702,356 +1754,7 @@ Engineers must resolve all Blocker items before production ship:
 
 ---
 
-## 11. CHANGELOG
-
-| Version | Date | Summary |
-| --- | --- | --- |
-| 0.3.0 | 2026-03-18 | Complete rewrite from scratch. Full alignment with Core_Spec.md v2.0 (TERA-CORE). 15 features with mandatory Feature Definition Standard (platforms, user flow, Core dependencies, data interaction, constraints, failure handling). §5 Feature ↔ Core Mapping table with explicit TERA-CORE references for all 15 features. §0 Client-side Data Object Catalog with Core cross-references for every object. §9 Anti-Technical-Debt Rules (ATD-01 through ATD-14). §10 Implementation Contract with unique rule IDs (SEC-01–SEC-05, PLT-01–PLT-07, FI-01–FI-05, IPC-01–IPC-03). Platform constraint matrix with feature impact column. Known implementation gaps table with severity and status. Incorporated from all architecture sessions: WasmParity CI gate (F-07, §8.3), Dart FFI NativeFinalizer Clippy lint (F-03, §10.1 SEC-02), iOS AWDL conflict resolution (F-05/F-06), EMDP Key Escrow Handshake (F-05), Versioned Push Key Ladder (F-02), Double-Buffer Zeroize (F-11), `sled` crate pin for transient state (F-07, §10.3 FI-04), Border Node auto-detection (F-05), Linux multi-init daemon + AppArmor/SELinux postinstall (F-15), Huawei CRL delay SLA disclosure (F-02/§8.1), Adaptive QUIC Probe Learning (F-14), XPC Journal crash recovery (F-07), Shadow DB Write Lock Protocol (F-04), iOS CoreML parity path (F-10), `MemoryArbiter` RAM budget enforcement (§3.3), SAB Tier Ladder audit trail (§10.4 IPC-02). |
-| 0.2.5 | 2026-03-13 | Legacy iterative updates (see TERA-CORE §13 for aligned changelog context). Deprecated React Native → Flutter unified mobile. Added PLATFORM-01 through PLATFORM-16 sections (now fully integrated into feature definitions above). |
-| 0.1.6 | 2026-03-04 | Initial feature spec. Added WASM Sandbox Isolation, Protected Clipboard Bridge, Zero-Byte Stub rendering, NSE Circuit Breaker. |
-
----
-
-*Cross-references:*
-
-- *MLS cryptographic internals, CRDT algorithms, server infrastructure → `TERA-CORE` (`Core_Spec.md`)*
-- *UI animation, glassmorphism state machine → `TERA-DESIGN` (`Design.md`)*
-- *Plugin publishing, Marketplace review, `.tapp` signing → `TERA-MKT` (`Web_Marketplace.md`)*
-- *Combined-failure chaos test scenarios → `TERA-TEST` (`TestMatrix.md`)*
-- *Code signing pipeline, certificate rotation → `ops/signing-pipeline.md`*
-- *PostgreSQL PITR recovery, Shamir ceremony → `ops/db-recovery.md`, `ops/shamir-bootstrap.md`*
-
-
-## INFRA-01: [ARCHITECTURE] Client Compute Distribution
-
-> **Nguyên tắc:** Mobile devices không phải là compute nodes.
-> Desktop devices là compute cluster. VPS là blind router.
-> Computation đi đến nơi có resource — không phải nơi thuận tiện architecturally.
-
-### INFRA-01.1 Mobile Compute Constraints (Hard Rules)
-
-Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
-
-| Operation | Lý do cấm | Alternative |
-|---|---|---|
-| ONNX 80MB model inference | Thermal spike +4°C, 15% battery/op | Desktop offload |
-| DAG merge > 3000 events | ANR risk > 5s | Snapshot sync |
-| FTS5 full-history index | Storage > 300MB | Desktop-hosted search |
-| CRDT full-state storage | hot_dag.db > 300MB | Delta-only + snapshot |
-| BLAKE3 full-file hash (>100MB) | CPU spike blocks UI | Desktop computation |
-
-### INFRA-01.2 ONNX Inference Offload Protocol
-
-📱 Mobile phát `OnnxOffloadRequest` (E2EE) đến Desktop Super Node:
-```rust
-// Transparent to application code — same API, different execution
-impl MobileOnnxClient {
-    pub async fn embed(&self, masked_text: &str) -> Result<Vec<f32>> {
-        match self.available_compute() {
-            ComputeTarget::LocalSuperNode(node) => {
-                // Prefer Desktop on same LAN (< 5ms)
-                node.offload_embedding(masked_text).await
-            },
-            ComputeTarget::RelayedSuperNode => {
-                // Super Node reachable via VPS relay (< 50ms)
-                self.relay_offload_embedding(masked_text).await
-            },
-            ComputeTarget::LocalFallback => {
-                // No Desktop available: use TinyBERT (6MB, bundled)
-                // Lower quality but no external dependency
-                self.local_tinybert.embed(masked_text).await
-            },
-        }
-    }
-}
-```
-
-**Performance targets:**
-
-- Desktop offload via LAN: < 15ms total (0ms model load + 10ms inference + 5ms network)
-- Desktop offload via relay: < 60ms total
-- TinyBERT local fallback: < 50ms (lower quality, always available)
-
-### INFRA-01.3 Mobile Storage Profile (New Limits)
-
-| Component | Old limit | New limit | Enforcement |
-|---|---|---|---|
-| `hot_dag.db` | Unbounded | **25MB hard cap** | SQLite page limit + eviction |
-| ONNX models | 80MB (all-MiniLM) | **6MB (TinyBERT only)** | Bundle constraint |
-| CRDT buffer | Full DAG | **Delta-only (7 days)** | Snapshot sync mechanism |
-| File cache | VFS stub (5KB/file) | **Same — no change** | Existing mechanism |
-| FTS5 index | 30-day window | **7-day window** | GC scheduler |
-
-### INFRA-01.4 Desktop Super Node Auto-Registration
-
-💻 Desktop auto-registers as Super Node when:
-
-- Battery: AC powered (not on battery)
-- OS: macOS / Windows / Linux (not iOS/Android)
-- RAM available: > 4GB
-- Network: Connected to same LAN as VPS relay
-
-```rust
-impl DesktopNode {
-    pub async fn maybe_promote_to_super_node(&self) -> MeshRole {
-        let power = self.battery_status().await;
-        let ram = self.available_ram_mb().await;
-        let connectivity = self.relay_connectivity().await;
-
-        if power == PowerStatus::AcPowered
-            && ram > 4096
-            && connectivity == ConnectivityStatus::Connected
-        {
-            self.announce_super_node_availability().await;
-            MeshRole::SuperNode
-        } else {
-            MeshRole::LeafNode
-        }
-    }
-}
-```
-
-```
-
----
-
-
-## INFRA-02: [IMPLEMENTATION] Blob Storage Client
-
-> TeraChat clients interact with blob storage ONLY via TeraRelay's presigned URL mechanism.
-> Clients NEVER have direct credentials to R2/B2/MinIO.
-> This maintains Zero-Knowledge: relay signs URLs without seeing content.
-
-### INFRA-02.1 File Upload Flow (Revised)
-text
-OLD FLOW (complex):
-📱 Client → encrypt → VPS → write to MinIO cluster → return URL
-VPS has direct MinIO credentials → security surface
-
-NEW FLOW (clean):
-📱 Client → encrypt locally → request presigned URL from Relay
-Relay → call R2/B2/MinIO API → return signed URL (60s TTL)
-📱 Client → PUT directly to R2/B2/MinIO using presigned URL
-Relay never sees ciphertext content (Zero-Knowledge preserved)
-VPS credentials never exposed to client
-```
-
-```rust
-// Feature_Spec.md §8.1 REVISED — File Upload
-
-impl TeraFileUploader {
-    pub async fn upload_file_e2ee(&self, file_path: &Path) -> Result<CasHash> {
-        // Step 1: Encrypt locally (existing — no change)
-        let (ciphertext, cas_hash, merkle_root) =
-            self.encrypt_file_chunked(file_path).await?;
-
-        // Step 2: Request presigned upload URL from Relay
-        // Relay signs URL without seeing content
-        let presigned_url = self.relay_client
-            .request_presigned_put(&cas_hash, ciphertext.len())
-            .await?;
-
-        // Step 3: PUT directly to R2/B2/MinIO via presigned URL
-        // Relay not involved in actual data transfer
-        self.http_client
-            .put(presigned_url.url)
-            .header("Content-Length", ciphertext.len())
-            .body(ciphertext)
-            .send()
-            .await?;
-
-        // Step 4: Confirm upload to Relay (Relay updates blob_index table)
-        self.relay_client
-            .confirm_upload(&cas_hash, &merkle_root)
-            .await?;
-
-        Ok(cas_hash)
-    }
-}
-```
-
-### INFRA-02.2 File Download Flow (Revised)
-
-```rust
-impl TeraFileDownloader {
-    pub async fn download_file(&self, cas_hash: &CasHash) -> Result<Vec<u8>> {
-        // Step 1: Request presigned download URL from Relay
-        let presigned_url = self.relay_client
-            .request_presigned_get(cas_hash)
-            .await?;
-
-        // Step 2: GET directly from R2/B2/MinIO
-        let ciphertext = self.http_client
-            .get(presigned_url.url)
-            .send()
-            .await?
-            .bytes()
-            .await?;
-
-        // Step 3: Verify BLAKE3 Merkle root
-        self.verify_merkle_integrity(&ciphertext, cas_hash)?;
-
-        // Step 4: Decrypt (existing streaming decrypt — no change)
-        self.decrypt_file_chunked(&ciphertext).await
-    }
-}
-```
-
-```
-
----
-
-
-## INFRA-03: [IMPLEMENTATION] TeraRelay Health & Self-Healing
-
-> Single-binary deployment means no cluster coordination.
-> Self-healing must happen within the binary itself.
-
-### INFRA-03.1 In-Process Watchdog
-```rust
-// TeraRelay self-monitors and recovers without external orchestration
-
-pub struct RelayWatchdog {
-    restart_count: AtomicU32,
-    last_restart: AtomicU64,
-}
-
-impl RelayWatchdog {
-    pub async fn watch(relay: Arc<TeraRelay>) {
-        loop {
-            tokio::select! {
-                // Monitor SQLite health
-                _ = tokio::time::interval(Duration::from_secs(60)).tick() => {
-                    if let Err(e) = relay.db.health_check().await {
-                        warn!(event = "db.health_check_failed", error = %e);
-                        relay.reconnect_db().await.ok();
-                    }
-                }
-                // Monitor blob storage
-                _ = tokio::time::interval(Duration::from_secs(300)).tick() => {
-                    if let Err(e) = relay.blob_storage.health_check().await {
-                        warn!(event = "blob.health_check_failed", error = %e);
-                        // Non-fatal: clients can still message, just can't upload files
-                        relay.set_blob_degraded_mode(true);
-                    }
-                }
-                // Monitor WebSocket connections
-                _ = tokio::time::interval(Duration::from_secs(30)).tick() => {
-                    relay.purge_stale_sessions(Duration::from_secs(90)).await;
-                }
-            }
-        }
-    }
-}
-```
-
-### INFRA-03.2 Automatic TLS Renewal
-
-```rust
-// TeraRelay manages its own TLS certificates via ACME (Let's Encrypt)
-// No external certbot cron job needed
-
-pub struct AcmeManager {
-    domain: String,
-    cert_path: PathBuf,
-    key_path: PathBuf,
-}
-
-impl AcmeManager {
-    pub async fn ensure_valid_cert(&self) -> Result<()> {
-        let cert = self.load_current_cert().await?;
-
-        // Renew if expiring within 30 days
-        if cert.days_until_expiry() < 30 {
-            self.renew_via_acme().await?;
-            // Hot-reload TLS without restart
-            self.reload_tls_in_place().await?;
-            info!(event = "tls.renewed", domain = self.domain);
-        }
-        Ok(())
-    }
-}
-```
-
-### INFRA-03.3 Graceful Upgrade (Zero-Downtime)
-
-```bash
-# Upgrading TeraRelay: single command, zero downtime
-
-$ tera-relay upgrade
-
-# What happens internally:
-# 1. Download new binary (Ed25519 verified against TeraChat CA)
-# 2. Compare version sequence (anti-rollback check)
-# 3. Fork: new process starts on port 4443 (temp)
-# 4. Wait for new process to signal "ready" (health endpoint)
-# 5. Atomic socket transfer: old → new (SO_REUSEPORT)
-# 6. Old process: drain existing connections (30s graceful)
-# 7. Old process exits
-# 8. SQLite migrations run automatically
-# Total downtime: 0ms (connections seamlessly transferred)
-```
-
-```
-
----
-
-
-## PLATFORM-19: One-Touch Relay Deployment
-
-### PLATFORM-19.1 Deployment Requirements (Revised)
-
-| Tier | VPS Spec | Monthly Cost | Admin Skill Required | Setup Time |
-|---|---|---|---|---|
-| Solo (≤50 users) | 1 vCPU, 512MB RAM, 20GB SSD | $6 + $1 storage | None | 5 min |
-| SME (≤500 users) | 2 vCPU, 2GB RAM, 40GB SSD | $12 + $5 storage | None | 10 min |
-| Enterprise (≤5000 users) | 4 vCPU, 8GB RAM, 100GB SSD | $28 + $20 storage | Basic | 20 min |
-| Gov (air-gapped, any size) | Existing hardware | CAPEX only | IT Admin | 1 hour |
-
-### PLATFORM-19.2 `tera-relay` CLI Commands
-bash
-# Install
-curl -sL install.terachat.com/relay | bash
-
-# Status
-tera-relay status
-# Output: ✅ Running | Connections: 342 | Uptime: 14d 6h | Version: v0.3.0
-
-# Upgrade (zero-downtime)
-tera-relay upgrade
-
-# Backup (routing.db snapshot)
-tera-relay backup --output /backups/relay-$(date +%Y%m%d).db
-
-# Logs (structured JSON → pipe to any log aggregator)
-tera-relay logs --follow --level warn
-
-# Config (interactive re-configuration)
-tera-relay config --storage  # Switch storage provider
-tera-relay config --domain   # Change domain + re-issue TLS
-
-# License renewal
-tera-relay license --renew --token "eyJhbG..."
-```
-
-### PLATFORM-19.3 Admin Console Integration
-
-After relay deployment, Admin scans QR code with TeraChat mobile app:
-
-- Relay status dashboard (connections, storage usage, latency P99)
-- License management (renew, view expiry, seat count)
-- Storage management (usage by tenant, cleanup old blobs)
-- User management (delegated to mobile app, not VPS console)
-
-Admin does NOT need SSH, terminal, or CLI knowledge after initial setup.
-All operational tasks available in Admin Console mobile UI.
-
-```
-
----
-
-
-## ARCH-TRADEOFFS: New Architecture Trade-offs
+## 11. ARCHITECTURE TRADE-OFFS
 
 ### What We Gain
 | Benefit | Quantified Impact |
@@ -2083,3 +1786,23 @@ fficient |
 - Air-gapped deployment option: intact (Gov/Military tier)
 - Shamir Secret Sharing / KMS Bootstrap: intact
 - All cryptographic guarantees: intact
+
+## 12. CHANGELOG
+
+| Version | Date | Summary |
+| --- | --- | --- |
+| 0.3.0 | 2026-03-18 | Complete rewrite from scratch. Full alignment with Core_Spec.md v2.0 (TERA-CORE). 15 features with mandatory Feature Definition Standard (platforms, user flow, Core dependencies, data interaction, constraints, failure handling). §5 Feature ↔ Core Mapping table with explicit TERA-CORE references for all 15 features. §0 Client-side Data Object Catalog with Core cross-references for every object. §9 Anti-Technical-Debt Rules (ATD-01 through ATD-14). §10 Implementation Contract with unique rule IDs (SEC-01–SEC-05, PLT-01–PLT-07, FI-01–FI-05, IPC-01–IPC-03). Platform constraint matrix with feature impact column. Known implementation gaps table with severity and status. Incorporated from all architecture sessions: WasmParity CI gate (F-07, §8.3), Dart FFI NativeFinalizer Clippy lint (F-03, §10.1 SEC-02), iOS AWDL conflict resolution (F-05/F-06), EMDP Key Escrow Handshake (F-05), Versioned Push Key Ladder (F-02), Double-Buffer Zeroize (F-11), `sled` crate pin for transient state (F-07, §10.3 FI-04), Border Node auto-detection (F-05), Linux multi-init daemon + AppArmor/SELinux postinstall (F-15), Huawei CRL delay SLA disclosure (F-02/§8.1), Adaptive QUIC Probe Learning (F-14), XPC Journal crash recovery (F-07), Shadow DB Write Lock Protocol (F-04), iOS CoreML parity path (F-10), `MemoryArbiter` RAM budget enforcement (§3.3), SAB Tier Ladder audit trail (§10.4 IPC-02). |
+| 0.2.5 | 2026-03-13 | Legacy iterative updates (see TERA-CORE §13 for aligned changelog context). Deprecated React Native → Flutter unified mobile. Added PLATFORM-01 through PLATFORM-16 sections (now fully integrated into feature definitions above). |
+| 0.1.6 | 2026-03-04 | Initial feature spec. Added WASM Sandbox Isolation, Protected Clipboard Bridge, Zero-Byte Stub rendering, NSE Circuit Breaker. |
+
+---
+
+*Cross-references:*
+
+- *MLS cryptographic internals, CRDT algorithms, server infrastructure → `TERA-CORE` (`Core_Spec.md`)*
+- *UI animation, glassmorphism state machine → `TERA-DESIGN` (`Design.md`)*
+- *Plugin publishing, Marketplace review, `.tapp` signing → `TERA-MKT` (`Web_Marketplace.md`)*
+- *Combined-failure chaos test scenarios → `TERA-TEST` (`TestMatrix.md`)*
+- *Code signing pipeline, certificate rotation → `ops/signing-pipeline.md`*
+- *PostgreSQL PITR recovery, Shamir ceremony → `ops/db-recovery.md`, `ops/shamir-bootstrap.md`*
+
