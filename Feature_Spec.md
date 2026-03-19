@@ -1447,6 +1447,106 @@ Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
 
 #### PLATFORM-19.2 `tera-relay` CLI Commands
 
+### OBSERVE-01: [IMPLEMENTATION] Client-Side Observability
+
+> Clients không expose Prometheus scrape endpoint.
+> Thay vào đó: push aggregate metrics qua OTLP HTTP khi online,
+> buffer locally khi offline.
+
+---
+
+#### OBSERVE-01.1 [IMPLEMENTATION] Mobile Metrics Push
+
+📱 **OTLP Push khi online:**
+
+### OBSERVE-02: [IMPLEMENTATION] DAG Merge Progress UI
+
+> Khi merge > 500 events, user PHẢI thấy progress — không black screen.
+
+---
+
+#### OBSERVE-02.1 [IMPLEMENTATION] IPC Signal Spec
+
+### PLATFORM-17: [IMPLEMENTATION] Dart FFI Memory Contract
+
+> **Supersedes PLATFORM-14.** Đây là contract bắt buộc — vi phạm = CI fail.
+
+---
+
+#### PLATFORM-17.1 Quy tắc bắt buộc
+
+**Rule 1:** Mọi `TeraSecureBuffer` PHẢI được wrap bởi `useInTransaction()`.
+Direct `.toPointer()` bên ngoài wrapper → CI lint error.
+
+**Rule 2:** Rust Token Registry KHÔNG tự expire/zeroize token.
+Khi timeout → Rust emit `IpcSignal::TransactionTimeout`.
+UI hiển thị: *"Phiên xử lý đã hết hạn — vui lòng thực hiện lại."*
+
+**Rule 3:** GC Finalizer chỉ là safety net.
+GC release → WARNING metric + log. Không silent.
+
+**Rule 4:** Explicit `releaseNow()` là primary release path.
+`useInTransaction()` gọi `releaseNow()` trong `finally` block tự động.
+
+---
+
+#### PLATFORM-17.2 Implementation
+
+### PLATFORM-18: [SECURITY] [IMPLEMENTATION] ONNX Model Integrity
+
+> **Áp dụng cho:** §5.27 Edge ONNX, §8.19 EICB, §5.33 EDES, §9.3 Dual-Mask.
+> Mọi ONNX model load PHẢI qua `OnnxModelLoader.load_verified()`.
+
+---
+
+#### PLATFORM-18.1 Verification Flow
+
+### PLATFORM-19: [IMPLEMENTATION] TeraEdge Client Integration
+
+> Mobile tự động detect TeraEdge trên LAN và ưu tiên dùng
+> thay vì ONNX inference local hoặc VPS relay.
+
+---
+
+#### PLATFORM-19.1 Super Node Discovery Priority
+
+📱 Khi Mobile cần ONNX inference, thứ tự ưu tiên:
+
+### INFRA-04: [IMPLEMENTATION] Canary Deployment Strategy
+
+> **Bài toán:** Không có staged rollout = bad release ảnh hưởng 100% customers.
+> Giải pháp: DNS-based traffic splitting + feature flag per-tenant.
+
+---
+
+#### INFRA-04.1 Traffic Splitting via DNS
+
+### INFRA-05: [IMPLEMENTATION] SBOM & Reproducible Builds
+
+> Enterprise/Gov customers yêu cầu SBOM cho compliance audit.
+> Reproducible builds cần thiết cho binary transparency claims.
+
+---
+
+#### INFRA-05.1 SBOM Generation
+
+### CICD-01: [IMPLEMENTATION] CI/CD Pipeline Requirements
+
+> Danh sách gates bắt buộc — tất cả phải pass trước khi merge vào main.
+
+---
+
+#### CICD-01.1 Required Gates
+
+### INFRA-06: [TEST] [IMPLEMENTATION] Automated Chaos Engineering
+
+> TestMatrix.md định nghĩa 28 scenarios. File này spec implementation.
+> Mục tiêu: automated CI test suite, không chỉ manual runbook.
+
+---
+
+#### INFRA-06.1 Chaos Test Framework
+
 ## 5. FEATURE ↔ CORE MAPPING (CRITICAL)
 
 > Every feature maps to one or more modules in Core_Spec.md.
@@ -1791,6 +1891,8 @@ fficient |
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v0.4.0 | 2026-03-19 | Add OBSERVE-01/02 client observability; PLATFORM-17/18/19/20;
+|         |            | INFRA-01/02/03/04/05/06; CICD-01/02; Update PLATFORM-14→17 |
 | 0.3.0 | 2026-03-18 | Complete rewrite from scratch. Full alignment with Core_Spec.md v2.0 (TERA-CORE). 15 features with mandatory Feature Definition Standard (platforms, user flow, Core dependencies, data interaction, constraints, failure handling). §5 Feature ↔ Core Mapping table with explicit TERA-CORE references for all 15 features. §0 Client-side Data Object Catalog with Core cross-references for every object. §9 Anti-Technical-Debt Rules (ATD-01 through ATD-14). §10 Implementation Contract with unique rule IDs (SEC-01–SEC-05, PLT-01–PLT-07, FI-01–FI-05, IPC-01–IPC-03). Platform constraint matrix with feature impact column. Known implementation gaps table with severity and status. Incorporated from all architecture sessions: WasmParity CI gate (F-07, §8.3), Dart FFI NativeFinalizer Clippy lint (F-03, §10.1 SEC-02), iOS AWDL conflict resolution (F-05/F-06), EMDP Key Escrow Handshake (F-05), Versioned Push Key Ladder (F-02), Double-Buffer Zeroize (F-11), `sled` crate pin for transient state (F-07, §10.3 FI-04), Border Node auto-detection (F-05), Linux multi-init daemon + AppArmor/SELinux postinstall (F-15), Huawei CRL delay SLA disclosure (F-02/§8.1), Adaptive QUIC Probe Learning (F-14), XPC Journal crash recovery (F-07), Shadow DB Write Lock Protocol (F-04), iOS CoreML parity path (F-10), `MemoryArbiter` RAM budget enforcement (§3.3), SAB Tier Ladder audit trail (§10.4 IPC-02). |
 | 0.2.5 | 2026-03-13 | Legacy iterative updates (see TERA-CORE §13 for aligned changelog context). Deprecated React Native → Flutter unified mobile. Added PLATFORM-01 through PLATFORM-16 sections (now fully integrated into feature definitions above). |
 | 0.1.6 | 2026-03-04 | Initial feature spec. Added WASM Sandbox Isolation, Protected Clipboard Bridge, Zero-Byte Stub rendering, NSE Circuit Breaker. |

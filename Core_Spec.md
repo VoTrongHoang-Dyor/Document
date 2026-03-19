@@ -1810,10 +1810,73 @@ All options: store ONLY ciphertext — provider sees nothing
 
 ---
 
-## 13. CHANGELOG
+
+
+## 16. [ARCHITECTURE] [IMPLEMENTATION] Observability Layer
+
+> **Nguyên tắc Zero-Knowledge Observability:** Metrics và traces KHÔNG
+> chứa plaintext message, User_ID thật, key material, hay bất kỳ thông tin
+> có thể deanonymize user. Mọi telemetry content-free và pseudonymous.
+> Đây là hard constraint, không phải best-practice.
+
+---
+
+### 16.1 [ARCHITECTURE] Stack Overview
+
+## 17. [ARCHITECTURE] [IMPLEMENTATION] Schema Versioning Protocol
+
+> **Nguyên tắc:** Mọi data schema có cross-component dependency PHẢI có
+> formal versioning. Breaking changes chỉ được phép trong major version.
+> Migration phải backward-compatible và có automated rollback.
+
+---
+
+### 17.1 [IMPLEMENTATION] hot_dag.db Schema Versioning
+
+## 18. [ARCHITECTURE] [IMPLEMENTATION] Hydration Scheduler
+
+> **Bài toán:** >50 clients reconnect đồng thời sau outage →
+> concurrent WAL hydration → OOM-Kill VPS.
+> Giải pháp: global semaphore + per-tenant rate limit + exponential backoff.
+
+## 19. [ARCHITECTURE] [SECURITY] HSM High Availability
+
+> **Vấn đề:** Single HSM = single point of failure cho License JWT signing
+> và KMS Bootstrap. HSM failure → không issue được license mới → revenue block.
+
+---
+
+### 19.1 [ARCHITECTURE] Dual-HSM Setup
+
+## 20. [ARCHITECTURE] [IMPLEMENTATION] TeraEdge Device
+
+> **Bài toán:** Fully-remote enterprise (không có Desktop AC-powered) và
+> field operations (quân đội, y tế dã chiến) không có Super Node.
+> Không có Super Node = Mobile overload lại.
+>
+> **Giải pháp:** TeraEdge — mini-PC on-premise ($150-200) chạy TeraRelay
+> + Super Node role trong cùng một thiết bị. Không cần cloud VPS.
+> Phù hợp cho đơn vị có LAN nhưng không có Desktop cố định.
+
+---
+
+### 20.1 [ARCHITECTURE] TeraEdge Hardware Profile
+
+| Tier | Hardware | Cost | Use Case |
+|------|----------|------|----------|
+| TeraEdge Nano | Raspberry Pi 5 (4GB) | ~$80 | SME remote, ≤50 users |
+| TeraEdge Mini | Intel N100 mini-PC (8GB) | ~$150 | Enterprise remote, ≤500 users |
+| TeraEdge Pro | ARM SBC + NVMe (16GB) | ~$300 | Gov field, ≤2000 users |
+
+### 20.2 [ARCHITECTURE] TeraEdge Role Matrix
+
+## 21. CHANGELOG
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v0.4.0 | 2026-03-19 | Add §16 Observability Layer; §17 Schema Versioning; §19 HSM HA;
+|         |            | §20 TeraEdge Device; Update §5.15 EpochId split-brain fix;
+|         |            | Update §5.9.3 C_trunc 8B→16B; Update §10.6 RotatingCrlFilter |
 | 0.2.5 | 2026-03-18 | Complete rewrite from scratch. Unified §0–§13 structure with stable anchors. Zero duplicate section numbering. All CHANGELOG entries populated. Rules section replaced with `[ ]` checklist using unique rule IDs (KEY-01, NET-01, etc.). Platform Behavior Matrices added (§3.1–§3.5). AI routing hint with explicit positive/negative routing directives. Incorporated all decisions from architecture sessions: EMDP Key Escrow (§6.7), Adaptive WAL batch sizing (§9.3), Component Fault Isolation with `panic='unwind'` mandate (§4.4), Relay WAL Staging at-least-once delivery (§9.3), Prometheus Zero-Knowledge metrics (§9.6), WasmParity CI gate requirement (§11.4), Configurable Dead Man Switch grace period (§5.1), Batched TreeKEM Update_Path delivery (§5.3), XPC Transaction Journal with retry policy (§11.1), iOS Double-Buffer Zeroize (§5.2), Adaptive QUIC Probe Learning (§9.2), Federation schema version negotiation (§9.4), Mobile DAG merge time-slicing (§7.3). |
 | 0.2.1 | 2026-03-13 | Deprecated: eBPF/XDP, Hardware TEE (SGX/SEV), `mlock()` pinning, Envoy Sidecar — removed for VPS compatibility. Added: §3.5 Micro-Core Relay, §4.6 Soft-Enclave WASM Isolation (ChaCha8 + ZeroizeOnDrop), §3.4.2 SQLite OOM Prevention. |
 | 0.1.5 | 2026-03-11 | Removed ODES/Blind Shard. Added E2EE Cloud Backup (§9.1). Simplified Mesh Gossip: iBeacon + Gossip Broadcast (removed 3D-A* routing). |
