@@ -1,221 +1,529 @@
 ```yaml
 # DOCUMENT IDENTITY
 id:       "TERA-FUNC"
-title:    "Function — Khả năng Hành động của Từng Vai trò"
-version:  "1.0"
-audience: "Product Manager, CEO, Sales Engineer, Customer Success, Developer"
-purpose:  "Mô tả chi tiết những gì từng vai trò (Admin, User, AI) có thể thực hiện và luồng nghiệp vụ tương ứng."
+title:    "TeraChat — Function & Capability Blueprint"
+version:  "0.2.5"
+audience: "Product Manager, CEO, Sales Engineer, Customer Success, Developer, Investor"
+purpose:  "Strategic product reference: full functional architecture, system capabilities,
+           component interactions, and core value propositions of TeraChat."
 
 ai_routing_hint: |
-  "Trọng tâm của file này là trả lời câu hỏi 'Người dùng và Admin có thể làm gì?'. Đọc file này khi cần tìm hiểu về phân quyền (RBAC), quá trình phục hồi, cấu hình AI Shield, hệ thống liên tổ chức (Federation), hoặc hướng quản trị sự cố của Admin."
+  "Open this file to understand what TeraChat can do and why — covering role-based
+   permissions, business flows, AI integration, cross-org Federation, and the .tapp
+   plugin ecosystem. This is the Product-level source of truth."
 ```
 
-# Function.md — Khả năng Hành động của Từng Vai trò
+---
 
-> *"Bảo mật thực sự không bắt người dùng thay đổi hành vi. Nó bảo vệ họ ngầm, trong khi họ tiếp tục làm việc nhanh hơn, hiệu quả hơn so với bất kỳ công cụ nào họ từng dùng."*
+> *"Trong thế giới mà dữ liệu là quyền lực, ai kiểm soát khóa mã hóa — kẻ đó làm chủ cuộc chơi.
+> TeraChat trao lại chìa khóa đó về tay doanh nghiệp."*
 >
 > — CEO, TeraChat
 
-TeraChat không chỉ là ứng dụng nhắn tin — đây là **Hệ điều hành Công việc** cho doanh nghiệp đòi hỏi Bảo mật không thỏa hiệp. Mỗi vai trò trong tổ chức — từ Admin, đến nhân viên, đến đối tác liên tổ chức — được trao đúng quyền, đúng công cụ, và đúng mức độ kiểm soát. Không ai có nhiều hơn những gì họ cần. Không ai có ít hơn những gì họ đòi hỏi.
+---
+
+# TeraChat — Function & Capability Blueprint
+
+**TERA-FUNC v0.2.5 · March 2026 · Internal Document**
 
 ---
 
-## 1. [FLOW] Chức năng dành cho Quản trị viên (Admin)
+## Tóm Tắt Điều Hành
 
-Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệu và thiết lập các hàng rào bảo mật. Các chức năng chính bao gồm:
+TeraChat không phải là ứng dụng nhắn tin. Đây là **Hệ điều hành Công việc Chủ quyền** (Sovereign Work OS) — nền tảng cộng tác doanh nghiệp được bảo vệ bằng toán học, nơi không có bất kỳ máy chủ, nhà cung cấp hay đối thủ nào có thể đọc được dữ liệu mà TeraChat truyền tải.
 
-* **Quản lý Khóa và Định danh (KMS & Identity):**
-  * Thiết lập ban đầu với `KMS Bootstrap`, trong đó Admin phải quản lý `Master Key` (in ra giấy / lưu file `.terakey` / YubiKey) để tránh thảm họa "Zero-Access" (→ TERA-CORE).
-  * ☁️ Phát hành `Invite Token` (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt `Epoch Rotation` và `Remote Wipe` (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.
-  * 🗄️ Nắm giữ `Enterprise Escrow Key` (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.
-  * **Thu hồi & Cấp lại Định danh (HR Recovery Delegation):** Admin có thể ủy quyền cấp phát thiết bị mới cho bộ phận HR thông qua SCIM 2.0. HR được cấp role `HR_Recovery_Officer`.
-  * **Offline Recovery Flow:** Nhân viên mất máy cầm thiết bị mới đến phòng HR hoặc liên hệ Admin trực tuyến. Admin xác thực Biometric trên thiết bị của chính mình và tạo **Admin-approved QR Key Exchange** (Recovery Ticket đã ký của Ed25519). Người dùng quét QR bằng thiết bị mới, Lõi Rust xác minh Ticket và giải mã `cold_state.db` tải về từ Cloud — không cần mạng Internet hay phần cứng ngoại vi. Nếu không tiếp cận được Admin, dùng **Recovery Phrase (BIP-39 Mnemonic)** làm fallback.
+| Giá Trị Cốt Lõi | Cơ Chế Thực Thi |
+|---|---|
+| Bảo mật bằng Toán học | Zero-Knowledge: server chỉ định tuyến ciphertext, không bao giờ plaintext |
+| Sinh tồn Offline | BLE 5.0 + Wi-Fi Direct Mesh — hoạt động khi không có Internet |
+| Kiểm soát Doanh nghiệp | Admin-owned keys, HSM-backed KMS, OPA Zero-Trust enforcement |
+| Nền tảng Mở rộng | .tapp WASM sandbox Marketplace với chữ ký mật mã học |
+| Kết nối Liên tổ chức | Federation Bridge mTLS + Sealed Sender Protocol |
+| AI Ưu tiên Riêng tư | SLM trên thiết bị + PII redaction trước mọi cuộc gọi LLM bên ngoài |
 
-### 1.1 [SECURITY] Quy trình Xử lý Khủng hoảng Thiết bị (Device Loss Scenarios)
+**Biểu tượng platform:**
 
-* 💻 **TH1 (Mất CẢ Laptop & Điện thoại) - Multi-Sig Shamir's Secret Sharing Quorum:**
-  * 🗄️ **HSM Quorum M-of-N (mặc định 3/5):** `Enterprise_Escrow_Key` được chia thành 5 mảnh Shamir's SSS. Mỗi mảnh giao cho 1 C-Level khác nhau. Cần đúng **3 mảnh hợp lệ** mới tái tạo được `Escrow_Key`.
-  * 📱 **BLE Physical Presence Verification:** Khi CEO khởi tạo Break-glass, thiết bị CEO phát `BreakglassRequest` BLE beacon (Ed25519 signed). Ít nhất **2 thiết bị C-Level khác** phải xác thực sinh trắc học và phát `BreakglassApproval` beacon trong phạm vi **< 2m**.
-  * 📱💻 **Quorum Timer (10 phút):** Tất cả approvals phải hoàn tất trong 10 phút. Hết timeout → hủy session. Ngăn replay attack.
-  * 🗄️ **HSM Lagrange Reconstruction (Secure Arena):** Sau khi đủ 3 mảnh, Lõi Rust chạy Lagrange Interpolation trong `mlock`-protected arena.
-  * 📱 **Thiết bị mới phát Remote Wipe:** Phát lệnh `{Remote_Wipe, Revoke}` tới 2 thiết bị đã mất — `ZeroizeOnDrop` khi chúng chạm mạng.
+- 📱 iOS / Android / Huawei (Mobile)
+- 💻 Laptop / macOS
+- 🖥️ Desktop / Windows / Linux
+- 🗄️ Bare-metal Server
+- ☁️ VPS Cluster / Cloud
 
-* 📱💻 **TH2 (Chỉ mất Điện thoại, Laptop vẫn còn an toàn) - Kiến trúc Cấp phép:**
-  * **Bước 1 (Báo cáo & Khởi chạy Thu hồi):** 💻 Laptop nhân viên báo mất điện thoại. Lõi Rust phát lệnh Crypto-Shredding qua Gossip. Device_Key cũ bị phế truất khỏi MLS Group.
-  * **Bước 2 (Yêu cầu Ghép nối):** 📱 Điện thoại mới sinh khóa mới, hiển thị QR. 💻 Laptop quét QR, đóng gói thông tin + Chữ ký đẩy lên ☁️ VPS là Pending Approval.
-  * **Bước 3 (Xác thực Định danh):** 💻/🖥️ HR nhận cảnh báo, xác minh nhân viên bằng Voice/Video nội bộ trên Laptop. HR Approve bằng cách ký điện tử, tạo Authorization Ticket đẩy OPA Policy xuống mạng.
-  * **Bước 4 (Bơm Khóa An toàn):** 💻 Laptop nhận Ticket, "mở khóa" hàm xuất Company_Key. 📱💻 Kênh P2P (BLE/Wi-Fi Direct) mở, truyền Company_Key sang máy mới.
+**Chế độ hoạt động:**
 
-### 1.2 [SECURITY] Kỹ thuật: OPA Engine & DLP (Data Loss Prevention)
-
-* ☁️ **VPS Cluster / Cloud (Control Plane):** Nơi CISO/Admin định nghĩa các file chính sách Rego. Đẩy chính sách xuống mạng lưới qua kết nối mTLS.
-* 💻📱 **Laptop / Mobile (Policy Enforcement Point):** Lõi Rust đóng vai trò "Cảnh sát chốt chặn" (Enforcer). Giao diện phải xin phép Lõi Rust trước khi hoạt động.
-* 📱💻 **Giới hạn tốc độ (Rate Limiting):** Áp dụng Token Bucket trên RAM Client. Nếu cố tình kéo dữ liệu (Data Exfiltration), Lõi Rust tự block socket Egress, ngắt mạng cục bộ.
-* 📱💻 **Thời gian lưu trữ tin nhắn (TTL):** Khi hết hạn, Lõi Rust kích hoạt Crypto-Shredding. Ghi đè `0x00` lên khóa giải mã của tin nhắn trong SQLite WAL.
-
-### 1.3 [UI] Cấu hình Hiển thị Launchpad (UI/UX Glassmorphism)
-
-* 📱💻 **Cơ chế Mapping Policy - UI:** Ẩn/hiện `.tapp` dựa trên OPA Policy. Frontend (Tauri/React Native) truy vấn Lõi Rust, nhận ma trận quyền truy cập.
-* **Trạng thái Cấp quyền (Sáng):** `.tapp` nổi khối (Neumorphism), sẵn sàng tương tác.
-* **Trạng thái Vô hiệu hóa (Glassmờ):** Nếu không có quyền, đổi sang màu đơn sắc, phủ kính mờ (`backdrop-filter: blur(8px) brightness(0.5)`). Nút bấm bị vô hiệu hóa, hiện tooltip viền Hổ phách: *"🔒 OPA Policy: Phân quyền truy cập bị từ chối bởi CISO"* (→ TERA-DESIGN).
+- ☀️ **Online Mode** — Giao diện Sáng, kết nối Cloud/Server
+- 🌑 **Mesh Mode** — Giao diện Tối, hoạt động offline P2P
 
 ---
 
-## 2. [FLOW] Chức năng dành cho Người dùng cuối (User/Nhân viên)
+## Module 1 — Lõi Mật Mã & Quản lý Khóa
 
-* 📱💻 **Giao tiếp và Nhắn tin Cốt lõi:** Nhắn tin, gọi thoại/video HD (WebRTC) mã hóa đầu cuối (E2EE) qua chuẩn MLS và Signal. Tìm kiếm toàn văn (SQLite FTS5) siêu tốc độ tại máy trạm (Zero-Knowledge Search).
-* 💻📱 **Tài liệu thông minh (Smart Document):**
-  * **Quy trình:** Người sửa (Editor) điều chỉnh nội dung . Người duyệt (Chấp nhận / Từ chối / Gộp).
-  * 🗄️ **RBAC:** Viewer (Chỉ xem), Commenter (Bôi đen ghi chú), Editor (Tạo Shadow Branch).
-* 📱💻 **Làm việc Ngoại tuyến & Mạng Lưới (Survival Mesh):**
-  * Kích hoạt mạng Mesh qua BLE/Wi-Fi Direct khi rớt Internet. Quét QR bắt tay (Offline X3DH) truyền file tốc độ cao (50-100MB/s).
-  * 📱 **iOS Alert:** Yêu cầu quyền "Local Network" theo chính sách Apple. Nếu từ chối, Mesh thu hẹp xuống BLE-only.
-* 📱💻 **Quản lý Cây thư mục (TeraVault):** Kéo thả file từ khung chat vào Virtual File System, không nhân bản file. Xem trước tài liệu nhờ Zero-Byte Stub (~5KB).
-* 📱 **iOS Background Transfer:** Tải file lớn qua `NSURLSession Background Transfer`, Lõi Rust giải mã ngầm. Xem video không độ trễ qua Native-to-Rust Media DataSource Bridge, chạy được ở Background.
-* 📱💻 **Sử dụng Tiện ích (`.tapp`) và Phê duyệt:** Tương tác AI Bot (`@mention`) qua ISDM. Dùng Mini-App (độ trễ <50ms, Time-Travel Undo/Redo). Ký số tài liệu Smart Approval với sinh trắc học.
+> **Nguyên tắc bất biến:** Khóa riêng tư không bao giờ rời khỏi phần cứng. Plaintext không bao giờ tồn tại ngoài phạm vi. Không có ngoại lệ.
 
----
+### 1.1 Hệ thống Quản lý Khóa Phân tầng (HKMS)
 
-## 3. [IMPLEMENTATION] Chức năng Tích hợp & Mở rộng (Dành cho Developer)
+```
+[Master Key] — HSM FIPS 140-3 L3 / Secure Enclave / TPM 2.0 (không bao giờ xuất ra ngoài)
+      │
+      └──► [Company_Key] — mã hóa toàn bộ dữ liệu workspace
+                 │
+                 ├──► [Epoch_Key] — khóa phiên MLS, ZeroizeOnDrop khi rotation
+                 ├──► [Push_Key] — chuỗi HKDF một chiều, cô lập khỏi TreeKEM
+                 └──► [Escrow_Key] — Shamir SSS M-of-N, tồn tại trong RAM < 100ms
+```
 
-* ☁️ **Hệ sinh thái API Đa tầng:** REST API, WebSocket, Webhook quy hoạch từ Tier 1 đến Tier 4.
-* ☁️ **Đồng bộ Nhân sự Tự động (SCIM 2.0 Identity Sync):** Lắng nghe Azure AD/Google Workspace. Khi nghỉ việc → khóa tài khoản trong < 30s. Race Condition Guard đảm bảo Device_Key sinh ra đúng chuẩn thời gian OIDC.
-* 📱💻 **1-Tap Magic Deep-Link:** `magic_deep_link` gửi qua SMS/Email. App tự chuyển `pre_authenticated`, Lõi Rust sinh `Device_Key` nối với `pre_auth_token` trước khi OIDC xong. 📱 (iOS Native OIDC PKCE prompt=none).
-* ☁️ **Cổng Tích hợp Đồng thuận (Consent-Driven Bridge):** Egress Worker bot trung gian giao tiếp Jira, Salesforce. Yêu cầu Consent của Admin trước khi phân tích qua RAM.
-* 🖥️ **ChatOps & Secure Tunneling:** Luồng hầm bảo mật kĩ sư ssh/rdp vào mạng nội bộ không cần VPN.
+- **Shamir Secret Sharing (mặc định 3-of-5):** `Enterprise_Escrow_Key` chia thành 5 mảnh cho 5 C-Level. Cần đúng 3 mảnh mới tái tạo được.
+- **ZeroizeOnDrop:** Mọi struct chứa plaintext tự xóa bộ nhớ (ghi đè 0x00) khi hết phạm vi.
+- **Dead Man Switch:** Bộ đếm monotonic TPM 2.0 giới hạn offline TTL (Consumer 24h / Enterprise configurable / GovMilitary 30 ngày).
 
----
+### 1.2 Mã hóa Nhóm MLS RFC 9420
 
-## 4. [FLOW] Chức năng Vận hành & Cứu hộ (Dành cho DevOps/SecOps)
+- 📱💻🖥️ Hỗ trợ tới **10.000 thành viên** trong một nhóm E2EE.
+- **TreeKEM:** phân phối khóa O(log n) — hiệu quả băng thông ngay cả nhóm lớn.
+- **Epoch Rotation:** kích hoạt khi thành viên rời nhóm, Admin yêu cầu, hoặc theo lịch 24h.
+- **Batched Update_Path:** nhóm ≤1.000: cửa sổ 60s; ≤5.000: 300s — ngăn bão mạng.
+- **Post-Quantum Hybrid (ML-KEM-768 + X25519):** tuân thủ CNSA 2.0 / NIST FIPS 203.
 
-* 📱 **Graceful Degradation (Quá tải RAM NSE):** Bảo vệ trần RAM 24MB của tiến trình ngầm (iOS NSE/Android FCM). Kích hoạt Circuit Breaker chặn giải mã ngầm nếu payload > 20MB, gọi app qua Foreground.
-* ☁️ **Khôi phục PostgreSQL (PITR):** WAL Archiving có thể tua ngược Database về thời điểm cụ thể nếu cấu hình lỗi.
-* 📱 **Auto-Healing VMS (Cứu staging desync):** `nse_staging.db` gặp "PENDING" do app bị force kill, Lõi Rust tự kiểm tra `PRAGMA quick_check(1)`. Chấp nhập hoặc Drop file và Gossip Re-hydration kéo lại dữ liệu từ Super Node mượt mà.
-* 🗄️ **Lưu trữ Tự chủ (BYOS):** Tương thích S3 (MinIO), lưu trữ cục bộ (Infinite Retention).
+### 1.3 Phần cứng Bảo vệ Khóa
 
----
+| Platform | Nơi lưu trữ Khóa | Cổng Xác thực |
+|---|---|---|
+| 📱 iOS / macOS | Secure Enclave Processor (SEP) | Face ID / Touch ID — bắt buộc |
+| 📱 Android | StrongBox Keymaster HAL | BiometricPrompt — bắt buộc |
+| 📱 Huawei | TrustZone TEE via HMS | HMS Biometric — bắt buộc |
+| 💻🖥️ Windows | TPM 2.0 — CNG Platform Provider | Windows Hello |
+| 🖥️ Linux | TPM 2.0 — tpm2-pkcs11 | PIN — bắt buộc |
+| 🗄️ Bare-metal | HSM FIPS 140-3 L3 (PKCS#11) | Physical presence + Shamir quorum |
 
-## 5. [ARCHITECTURE] Chức năng "Tàng hình" của Lõi Rust (Cấp Hệ thống)
+### 1.4 Cryptographic Self-Destruct
 
-* 📱💻 **Truyền tải Đa đường (TeraLink Multipath):** Gửi song song gói CRDT qua 4G, Wi-Fi LAN, BLE Mesh. Đạt độ trễ 0ms khi Roaming (→ TERA-CORE).
-* 📱💻 **Trạm Trung chuyển Dữ liệu AI (Predictive Data Mules):** Edge ML phân tích thói quen di chuyển mạng Offline để chuyển tin.
-* ☁️ **Bẫy Hắc Ín chống DDoS (Infinite Tarpit):** Cầm chân kết nối sai TLS Fingerprint, nhả byte chậm cạn kiệt RAM kẻ phá hoại.
-* 📱💻 **Puncturing Stream (Phục hồi luồng tệp):** Đánh dấu đoạn truyền file hỏng (Punctured), tiếp tục nhận và tự vá đoạn hỏng cuối luồng.
-* 💻 **FFI Pointer Freezing (Authorization Gateway):** Khóa hàm FFI với Role giới hạn (Viewer). Chỉ cấp phép `ffi_propose_change` cho Editor. Trái phép lập tức gọi `ZeroizeOnDrop` để dọn sạch (→ TERA-FEAT).
-
----
-
-## 6. [FLOW] Chức năng cho hệ thống Liên tổ chức (Federation)
-
-### 6.1 [ARCHITECTURE] Kiến trúc Độc lập và Cầu nối (Zone 2 Routing)
-
-* Tổng công ty (`Org_ID_HQ`) và Chi nhánh (`Org_ID_Sub`) có Private Cluster riêng.
-* Giao tiếp qua **Federation Bridge (Zone 2)** bằng mTLS và Sealed Sender.
-
-### 6.2 [FLOW] Quá trình Kết nối Chi nhánh (Cross-Cluster)
-
-* **Bước 1:** Admin HQ tạo **Federation Invite Token** (Signed JWT) chuyển cho nhánh.
-* **Bước 2:** Admin nhánh nạp Token → Gửi Kết nối (kèm Public Key).
-* **Bước 3:** HQ Phê duyệt. Hai server trao đổi vào `federation_trust_registry`.
-
-### 6.3 [SECURITY] Kiểm soát Đặc quyền và Chống làm phiền
-
-* ☁️ Giới hạn OPA Role. Token Bucket Group-Based Rate Limit — VPS drop ngay lập tức các gói PROPOSE_CHANGE bất hợp lý ở trạm trung chuyển để chống tấn công DoS diện rộng.
-
-### 6.4 [SECURITY] Thu hồi quyền liên tổ chức
-
-* SCIM thu hồi nhánh → Vô hiệu mTLS HQ < 30 giây. Tổng bộ không cần can thiệp.
+- 📱💻 **PIN thất bại 5 lần:** Crypto-Shredding toàn bộ DB nội địa + factory reset. Bộ đếm HMAC-xác thực chống giả mạo.
+- 📱💻 **Remote Wipe:** Xóa `DeviceIdentityKey` khỏi phần cứng, drop mọi bảng DB, xóa WASM sandbox storage. Không thể bị người dùng ngắt.
+- 📱💻 **Cryptographic Erasure (GDPR):** Hết TTL → Crypto-Shredding khóa giải mã; ciphertext vĩnh viễn không đọc được.
 
 ---
 
-## 7. [SECURITY] Kiểm soát AI Privacy Shield
+## Module 2 — Nhắn tin, Cộng tác & UX
 
-Admin / CISO thống trị dòng dữ liệu sang AI (`@ai`) qua 3 mức:
+### 2.1 Engine Nhắn tin Cốt lõi
 
-* **Mức 1 (Strict Compliance):** AI Shield bật vĩnh viễn (allow: false cho toggle). Thêm mức con **1b (Nework Mode)**: Chạy thẳng gRPC over HTTP/2 qua tcp 443 bỏ qua thăm dò UDP nhằm thích ứng Firewall mạnh.
-* **Mức 2 (Role-Based Acceptance):** Cấp quyền Mkt/C-Level. Nếu tắt Shield để lấy full context, Rust Core ghi Audit Chain (Non-Repudiation Audit, ký Ed25519) nhằm truy vết sai phạm pháp lý sau này.
-* **Mức 3 (DLP Threshold - Bắt buộc):** Ngay cả khi Shield OFF, Rust Core luôn chặn cứng (hard-block) Egress nếu payload > 4KB.
-* 📱💻 **ECRP — AI Context Switch:** Gọi số lượng lớn Log cho AI, lõi Rust xử lý Dual-Masking PII (gắn token `[MASK_01]`), đóng gói TLS 1.3 rồi đẩy Sandbox AI, sau khi có dữ liệu sẽ dịch ngược `MASK` này mà không hề persist xuống vùng disk.
+- 📱💻🖥️ **E2EE đa phương thức:** Văn bản, tệp tin, thoại, video — mã hóa và giải mã tại thiết bị.
+- 📱💻 **CRDT DAG:** Nhật ký sự kiện append-only đảm bảo nhất quán trên mọi thiết bị không cần điều phối trung tâm.
+- 📱💻 **Hybrid Logical Clock (HLC):** Sắp xếp toàn phần sự kiện phân tán — không cần timestamp authority phía server.
+- 📱💻 **Full-text Search Zero-Knowledge:** SQLite FTS5 tại thiết bị — server không bao giờ thấy nội dung tìm kiếm.
+- 📱💻 **Message TTL:** Hết hạn → Crypto-Shredding tự động.
+- 📱💻 **TeraLink Multipath:** Gửi song song qua 4G + Wi-Fi LAN + BLE Mesh — 0ms latency khi roaming.
 
----
+### 2.2 Thoại & Video (WebRTC)
 
-## 8. [PERFORMANCE] Trải nghiệm Giao tiếp Thích ứng Không gian (3-Tier Adaptive)
+- 📱💻 **HD Voice & Video** qua WebRTC DTLS-SRTP, E2EE đầu cuối.
+- 💻 **ICE Pool Pre-warming:** Kết nối thiết lập trước khi người dùng nhấn "Gọi" — không có màn hình chờ.
+- 💻 **Failover tự động < 3s:** P2P Direct → Internal TURN relay. Badge "P2P (Direct)" hoặc "Relayed (E2EE)".
+- 📱 **CallKit Integration (iOS):** Dead Man Switch lockout hoãn cho đến khi cuộc gọi kết thúc.
 
-* 📱💻 **Fallback Voice Recording:**
-  * **Tier 1 (Online):** Opus 128kbps Stereo.
-  * **Tier 2 (Wi-Fi Mesh):** AMR-NB 4.75kbps Mono (~35KB/phút).
-  * **Tier 3 (BLE Long Range):** Vô hiệu Mic UI. Rust Whisper AI translate cục bộ rồi gửi text.
-* 📱💻 **Auto-Pause Media (Tier 3):** Lõi Rust phát `MediaUnavailable(tier=3)`. UI xóa luôn nút Upload File/Camera.
+### 2.3 Tài liệu & Smart Approval
 
----
+- 📱💻 **Smart Document với RBAC:** Viewer → Commenter → Editor (Shadow Branch).
+- 💻🖥️ **Smart Approval Workflow:** Ký số với sinh trắc học (Ed25519), phân giai đoạn phê duyệt.
+- 📱💻 **Conflict Resolution:** Merge/Discard khi sửa song song — không bao giờ silent LWW trên CONTRACT/POLICY/APPROVAL.
+- 📱💻 **TeraVault (Virtual File System):** Kéo thả file từ chat vào VFS, không nhân bản. Preview qua Zero-Byte Stub (~5KB).
 
-## 9. [SECURITY] Quản trị Agentic, Tuân thủ & Khôi Phục Dữ Liệu
+### 2.4 Hệ thống UX Glassmorphism
 
-* 🗄️ **Cài Agent toàn hệ thống:** Admin có quyền Deploy `.tapp` qua Federation Console.
-* 💻📱 **Redaction Rules (Bôi đỏ tin đi lọt AI):** Rust Core chạy Local ML để bôi dãy số CC (`[REDACTED_CC]`), Địa chỉ IP nội ra khỏi Prompt gửi LLMs.
-* 🗄️ **Signed Audit Log (Ed25519) Egress:** Egress Telemetry log tuân thủ ISO 27001 (A.13.1) ký bằng BLAKE3. CISO nhận biết ngay lập tức Client nào rò rỉ mà không thấy rõ Log. Chống thất thoát dữ liệu (Byte-Quota Circuit Breaker) khoá Egress trong 24h nếu quá 100% dung lượng.
-* ☁️ **Poisoned Agent Remote Alerting (PARA):** Trạm SASB rớt Token Taint báo hiệu Incident Hash E2EE về CISO Dashboard. Tự khóa luồng App (Suspension Agent Protocol) không phải đợi update.
-* 🗄️ **OPA Banned Lexicon Policy:** List từ khóa cấm. Rust inject MUTE_LOCK xuống UI khoá Session và đòi Admin.
-* 🗄️☁️ **Anti-Remanence Policy (ARP):** Ghi đè TTL xoá CSDL. CISO lệnh Wipe, Rust shredder checkpoints Zero-fill bằng signature.
-* 📱💻 **Sealing Conversation (SSA):** Khi rò AI Taint, session đóng băng chỉ xem viền Hazard-Stripe. Lập Quarantined_Record trình CISO phê duyệt giả mạo (Release) hay Cứu hỏa.
+| Trạng thái | Chế độ UI | Màu Viền | Indicator |
+|---|---|---|---|
+| ☀️ Online | Light Frosted Glass | Xanh lam #24A1DE | "E2EE Active · Key Epoch N" |
+| 🌑 Mesh Fallback | Dark Navy #0F172A | Radar Pulse | "📡 Survival Mesh Active" |
+| ⚠️ Warning | Amber Glow | #F59E0B | Warning banner |
+| 🔴 Containment | Red Border 4px | #EF4444 | FCP pulse overlay |
+| ☠️ Kill-Switch | Blood-Red Frosted | Đỏ máu | Shatter animation + Shield |
 
-### 9.1 [FLOW] "The Red Pill" — FCP Admin Flow
+**Security Event Animations (bắt buộc):**
 
-* Cắm Hard-Token (YubiKey) → Gõ chính xác `"I_ACCEPT_LIABILITY_FOR_THIRD_PARTY_AI_LLM_EGRESS"`. Nới vòng FCP giới hạn với On-Premise Agents do doanh nghiệp làm chủ. UI nổi Modal Cảnh báo + Màn hình Đỏ Red Border → Nhập FaceID xác nhận.
+- **Self-Destruct:** Timer ring collapse → fragment dissolve (400ms)
+- **Crypto-Shred:** Pixel noise → wipe (350ms)
+- **Memory Purge:** "SECURE MEMORY PURGE" overlay + progress bar
 
----
+**GPU Capability Fallback:**
 
-## 10. [SECURITY] Cơ chế Mở Rộng & Chống Nội gián
-
-### 10.1 [SECURITY] PCAB (Privilege-Based Context-Aware Bypass)
-
-* OPA đánh giá Vị trí truy cập. Áp xác thực Argon2id nếu cố mở vùng Acrylic. Chết Màn hình Vỡ.
-
-### 10.2 [SECURITY] Mạng chính sách phân phối Tệp (Format Whitelist)
-
-* Format được phép `[.pdf, .txt, .jpg]`. Lọc Macro độc hại `.vbs`.
-
-### 10.3 [SECURITY] Anti-Insider Key Ceremony
-
-* Thập diện ngáng trở Cảnh Xấu trong đội ngũ DevOps/Admin cố sửa Master Key: HSM cần 2/N lệnh từ điện thoại các C-Level đứng trong vòng 5m (BLE Beacons), kèm quét Biometric. Khóa băng USB Port.
+| Tier | Điều kiện | Rendering |
+|---|---|---|
+| Tier A | Hardware compositing | `backdrop-filter: blur(16–24px)` |
+| Tier B | Software compositing | `blur(8px)`, opacity 0.85 |
+| Tier C | No compositing (legacy) | Flat solid + border accent — full functionality |
 
 ---
 
-## 11. [FLOW] Quản lý Sự cố và Khôi phục (Incident Response)
+## Module 3 — Survival Mesh Network
 
-* 🖥️ **Mesh Mode Hard-lock UI (#0F172A Amber Glow):** Khi có tấn công lớn, Device khoác áo Darkness + Amber viền (#0F172A), chặn truy xuất ngoại trừ luồng cứu hộ.
-* 🖥️ **Live Sanitization Stream:** Gửi Egress dưới bộ lọc Regex để không văng tên/địa chỉ.
-* 💻 **Hardware Biometric Validation:** In TouchID / Windows Hello vào Audit Log để truy cứu.
+> **Cam kết:** Khi Internet sụp đổ, TeraChat không suy giảm. Nó kích hoạt mạng P2P tự tổ chức, bảo mật mật mã học, không cần server trung tâm.
+
+### 3.1 Mô hình Kết nối 4 Tầng
+
+| Tầng | Transport | Throughput | Kích hoạt khi |
+|---|---|---|---|
+| ☀️ Tier 1 — Online | QUIC / gRPC / WSS | > 100 Mbps | Bình thường |
+| 🌑 Tier 2 — Wi-Fi Mesh | AWDL / Wi-Fi Direct | 250–500 MB/s | LAN, không Internet |
+| 🌑 Tier 3 — BLE Control | BLE 5.0 (< 15 mW) | ~50ms latency | Control plane |
+| 🌑 Tier 4 — BLE Emergency | BLE Long Range | Text-only | EMDP active |
+
+**Adaptive Voice Codec:**
+
+- Tier 1 → Opus 128kbps Stereo
+- Tier 2 → AMR-NB 4.75kbps Mono
+- Tier 3 → Whisper local transcription → text only (tắt mic UI)
+
+### 3.2 Vai trò Mesh Node
+
+| Vai trò | Platform | Lưu trữ | Trách nhiệm |
+|---|---|---|---|
+| **Super Node** | 💻🖥️ Desktop (AC) | 500MB–1GB / 48–72h | Backbone, DAG merge dictator |
+| **Relay Node** | 📱 Android (RAM ≥ 3GB) | 100MB / 24h | Intermediate relay |
+| **Tactical Relay (EMDP)** | 📱 iOS (emergency) | 1MB / 60 phút | Text-only CRDT buffer |
+| **Leaf Node** | 📱 iOS (luôn luôn) | 50MB receive-only | Nhận tin, không định tuyến |
+| **Border Node** | Bất kỳ (Internet + BLE) | N/A | Bridge TCP/IP ↔ BLE Mesh |
+
+> **Quy tắc kiến trúc bất biến:** `iOS election_weight = 0` — iOS không bao giờ là Merge Dictator.
+
+### 3.3 BLE Stealth Beaconing
+
+- 📱💻 **31-byte BLE PDU:** không chứa device identifier. Scanner thụ động chỉ thấy entropy.
+- 📱💻 HMAC-BLAKE3 commitment với slot rotation 5 phút. MAC rotation: iOS mỗi 15 phút, Android/Desktop mỗi 5 phút.
+- 📱💻 Duty cycle: 200ms active / 800ms sleep (20%). Standby: 1 beacon / 5 phút.
+
+### 3.4 Split-Brain & Dictator Election
+
+- **Bầu cử xác định, không bỏ phiếu:** BLAKE3 hash Node ID quyết định người thắng. Handover < 10ms.
+- 🌑 **DAG Merge O(N log N):** Rayon parallel — chỉ trên Desktop. Mobile nhận `Materialized_Snapshot` → áp dụng O(1).
+- **Chính sách xung đột:** MESSAGE → giữ cả hai phiên bản. CONTRACT/POLICY/APPROVAL → yêu cầu giải quyết thủ công.
+
+### 3.5 Emergency Mobile Dictator Protocol (EMDP)
+
+Kích hoạt khi: không có Desktop + không có Internet + ≥ 2 iOS pin > 20%.
+
+- 📱 Text-only Store-and-Forward. Không merge DAG, không MLS Epoch rotation.
+- 📱 Key Escrow: Desktop chuyển session key sang iOS qua ECIES/Curve25519 trước khi offline.
+- 📱 TTL 60 phút. Extension ở phút 50: chuyển giao sang peer pin cao hơn.
 
 ---
 
-## 12. [IMPLEMENTATION] Đặc tả Logic WASM và Mạng lưới (Network Function Specifications)
+## Module 4 — AI Privacy Shield
 
-**(Mô tả chi tiết kỹ thuật phân luồng Lõi Rust → Xem thêm TERA-CORE & TERA-FEAT)**
+> **Cam kết:** AI worker không bao giờ trực tiếp truy cập database tin nhắn. PII luôn được redact trước bất kỳ cuộc gọi ra ngoài.
 
-* **FUNC-01: `terachat_proxy_request`**
-  Validate Protocol + Rate Limit 50 req/s. Quản lý lỗi `NETWORK_MESH_RESTRICTED`, `PAYLOAD_TOO_LARGE`.
-* **FUNC-02: Message TTL Lifecycle (Bitchat Store-and-Forward)**
-  Desktop giữ 48-72 giờ (Super Node), Mobile (Light) 24h. Gossip mạng cục bộ rồi dọn dẹp.
-* **FUNC-03: Sync Logic khi Device Reconnect**
-  LAN Sync ưu tiên → VPN → Cloud. Auto-healing khi MAC mismatch bằng Epoch Ratchet ZKP.
-* **FUNC-04: WebRTC Fallback & ICE Pool Management**
-  Host Rust duy trì ICE Pool (5 phút lấy 1 lần). Bị chặn mDNS → Fallback nội bộ DMZ TURN.
-* **FUNC-05: Mesh Graceful Super Node Handover Flow**
-  Mobile báo Jetsam OOM Pressure → Nhường ghế qua BLE (MeshRoleHandover) cho Desktop đang Online đón cờ chạy tiếp mạng Relay.
-* **FUNC-06: AWDL Hotspot Conflict User Flow**
-  IOS vướng tần số Mesh vs Hotspot mạng cá nhân → Tự Downgrade về sóng BLE (Tier 3). Lên cảnh báo 30s.
-* **FUNC-07: Offline Conflict Resolution Flow**
-  Sửa văn bản độc lập không mạng → Chạm kết nối sẽ bật Bảng đối chiếu 2 cột Bản của họ - Bản của mình (Merge/Discard).
-* **FUNC-08: Huawei Notification Flow (HMS Push)**
-  Nhận Data Message, Rust Core FFI Wake up App lấy khoá giải mã. Cache Push <4h vòng đời Huawei OS Push Kit.
-* **FUNC-09: GPU Tier C User Flow (Flat Mode)**
-  GPU không có năng lực đánh bóng Blur (backdrop-filter) → Bật giao diện "Flat Solid". Full tính năng.
-* **FUNC-10: FCP Trust Boundary Declaration**
-  Phòng Hờ Trách Nhiệm từ YubiKey đối với máy chủ của Đối Tác AI thứ 3.
-* **FUNC-11: AES-NI Performance Fallback User Flow**
-  Hệ thống chạy trên Server/Máy tính đời cũ không tập lệnh vi xử lý phần cứng AES → Tự lui về kiến trúc phần mềm ChaCha20-Poly1305.
+### 4.1 Pipeline AI Cô lập
+
+```
+User Prompt
+    ↓ (bắt buộc)
+Micro-NER PII Detection (ONNX < 1MB trên thiết bị)
+    → Phát hiện: Tên, SĐT, Email, CMND, Tài khoản ngân hàng, Địa chỉ
+    ↓
+SanitizedPrompt (newtype — không thể tạo nếu không qua redaction)
+    ↓
+SessionVault { [MASK_01] → real@email.com } — ZeroizeOnDrop < 100ms
+    ↓
+AI Worker Process (cô lập OS — crash không ảnh hưởng Rust Core)
+    → On-device SLM (CoreML / ONNX) hoặc External LLM (nếu Admin cho phép)
+    ↓
+Response Vec<ASTNode> (HTML/Markdown raw bị reject bởi AST Sanitizer)
+    ↓
+SessionVault.restore_and_drop() — alias map zeroized
+```
+
+### 4.2 Mức Kiểm soát AI (Admin-Configured)
+
+| Tier | AI Shield | Egress Limit | Audit |
+|---|---|---|---|
+| **Tier 1 — Strict** | Vĩnh viễn BẬT (không thể toggle) | 0 | N/A |
+| **Tier 1b — Network** | BẬT, gRPC direct (bypass UDP probe) | 0 | N/A |
+| **Tier 2 — Role-Based** | C-Level / Marketing có thể tắt | 4KB hard | Ed25519-signed |
+| **Tier 3 — DLP** | Tắt cho phép, hard block vẫn active | 4KB tối đa | Bắt buộc |
+
+### 4.3 AI Runtime
+
+| Platform | Runtime | Model tối đa | Ghi chú |
+|---|---|---|---|
+| 📱 iOS | CoreML (.mlmodelc) | 74MB / 39MB | W^X: không dynamic WASM AI |
+| 📱 Android | ONNX Runtime | 39MB | HiAI fallback Huawei |
+| 📱 Huawei | HiAI / ONNX | 39MB | AOT bundle only |
+| 💻 macOS | CoreML / ONNX | 74MB | Isolated XPC Worker |
+| 🖥️ Windows/Linux | ONNX Runtime | 74MB | CPU; GPU optional |
 
 ---
 
-*TeraChat — Hệ điều hành Công việc Sinh tồn.*
+## Module 5 — Hệ sinh thái Plugin (.tapp)
+
+> **Lập trường:** Không có .tapp nào được phép yêu cầu exception khỏi Sandbox. Mọi capability khai báo tường minh trong manifest, OPA Policy kiểm soát. Không có ngoại lệ.
+
+### 5.1 Vòng đời .tapp
+
+```
+[Submit] → [WASM Static Scan] → [Manifest Audit] → [LLVM IR Heuristics]
+    ↓
+[Ed25519 Bundle Signing bởi Marketplace CA]
+    ↓
+[Client: BLAKE3 verify → Sandbox Launch]
+    ↓
+[Execute: OPA + Egress Circuit Breaker] ↔ [Suspend: AES-256-GCM Snapshot]
+    ↓
+[Terminate: RAM freed · Capability Tokens revoked · KV-Cache cleared]
+```
+
+### 5.2 Publisher Trust Tiers
+
+| Tier | Yêu cầu | Egress | Badge |
+|---|---|---|---|
+| **Unverified** | Ed25519 key | HTTP GET < 1KB, no file | 🔵 Community |
+| **Verified** | KYC + Key + Review | File < 10MB | ✅ Verified |
+| **Enterprise** | SOC2 / ISO27001 | Full egress + custom consent | 🏢 Enterprise |
+| **TeraChat Native** | First-party | Unrestricted (subject to OPA) | ⭐ Native |
+
+### 5.3 WASM Sandbox Constraints
+
+- 📱💻 **RAM:** ≤ 64MB softcap — vượt → OOM-kill không cảnh báo.
+- 📱💻 **CPU:** ≤ 10% sustained — spike ≤ 500ms.
+- 📱💻 **Egress Circuit Breaker:** 4.096 bytes/call hard limit. 3 vi phạm/session → terminate + quarantine.
+- ☁️ **Session Quota:** 512KB tổng egress/session — vượt → suspend + Admin alert.
+- 📱💻 **No Persistent Storage Egress:** `storage.read → network.write` yêu cầu user consent mỗi lần.
+- 💻🖥️ **Timing Defense:** 5ms Fixed-Interval Dispatch Metronome + ChaCha20 noise padding.
+
+### 5.4 Capability Declaration
+
+| Capability | Grant Condition | Default |
+|---|---|---|
+| `network.egress` | Chỉ domain khai báo trong manifest | ❌ Blocked |
+| `clipboard.read` | User consent per-session | ❌ Blocked |
+| `file.read` | Explicit user file picker | ❌ Blocked |
+| `crypto.sign` | Publisher Ed25519 proof | ❌ Blocked |
+| `push.notify` | Admin whitelist per-tenant | ❌ Blocked |
+
+### 5.5 Host Function ABI Versioning
+
+```json
+{ "host_api_version": "1.3.0", "min_host_api_version": "1.0.0", "max_host_api_version": "2.0.0" }
+```
+
+- Breaking changes chỉ trong major version. Minor: additive-only.
+- Support 2 major versions đồng thời (deprecation window 12 tháng).
+
+---
+
+## Module 6 — Identity, RBAC & Quản trị
+
+### 6.1 Role-Based Access Control
+
+| Vai trò | Năng lực | Ràng buộc |
+|---|---|---|
+| **CISO / Admin** | Toàn quyền: KMS, policy, revocation, federation, audit | HSM quorum cho policy changes |
+| **HR Recovery Officer** | Device re-provisioning, identity recovery | Không thể đọc nội dung tin nhắn |
+| **Editor** | Tạo/sửa tài liệu, `ffi_propose_change` | Không có quyền key ceremony |
+| **Commenter** | Ghi chú shadow branch | Read + comment only |
+| **Viewer** | Chỉ đọc, FFI pointer frozen | `ZeroizeOnDrop` khi thoát |
+
+### 6.2 OPA Policy Engine
+
+- 📱💻☁️ Mọi hành động phải qua OPA Rego Policy. Không có bypass.
+- 🗄️☁️ **M-of-N HSM Quorum (2-of-3: CISO + CTO + Legal):** Không một cá nhân đơn lẻ nào có thể thay đổi production policy.
+- ☁️ **Policy Rollback Protection:** Monotonic version counter — client từ chối bundle version thấp hơn.
+- 📱💻 **Local enforcement:** OPA WASM build tại thiết bị. Không round-trip server.
+
+### 6.3 Device Recovery
+
+**TH1 — Mất CẢ thiết bị:**
+
+1. CEO khởi tạo Break-glass → BLE beacon đến C-Level trong phạm vi < 2m.
+2. ≥ 3-of-5 C-Level xác thực sinh trắc học trong **10 phút** (Quorum Timer).
+3. Lagrange Interpolation tái tạo `Escrow_Key` trong mlock-protected arena **< 100ms** → zeroize.
+4. Thiết bị cũ nhận Remote Wipe khi chạm mạng.
+
+**TH2 — Mất Điện thoại, Laptop còn:**
+
+1. Laptop → Gossip Crypto-Shredding Device_Key cũ.
+2. Điện thoại mới sinh khóa, QR → Laptop quét → Pending Approval trên VPS.
+3. HR xác minh qua video call → ký Authorization Ticket.
+4. Company_Key truyền qua P2P (BLE/Wi-Fi Direct). **Zero cloud exposure.**
+
+### 6.4 SCIM 2.0 & Identity Sync
+
+- ☁️ Azure AD / Google Workspace: nghỉ việc → tài khoản khóa trong **< 30 giây**.
+- ☁️ Federation Revocation: cross-org mTLS vô hiệu trong < 30 giây.
+- 📱💻 **1-Tap Magic Deep-Link:** App tự chuyển `pre_authenticated`, `Device_Key` sinh trước OIDC hoàn tất.
+
+---
+
+## Module 7 — Federation & Cross-Org Communication
+
+### 7.1 Kiến trúc
+
+- Mỗi tổ chức vận hành **Private Cluster độc lập** với ranh giới mã hóa riêng.
+- ☁️ **Federation Bridge (Zone 2):** mTLS + **Sealed Sender** — server nhận không thể xác định người gửi.
+- 🗄️ **Trust Registry:** append-only SQLite — không dùng public CA.
+- Schema Version: ±1 minor → read-only federation. ±1 major → `SCHEMA_INCOMPATIBLE`, rejected.
+
+### 7.2 Quy trình Kết nối
+
+```
+Admin HQ → Federation Invite Token (Signed JWT)
+    ↓
+Admin Branch → nạp Token → gửi kết nối kèm Public Key
+    ↓
+HQ approve → key exchange vào federation_trust_registry
+    ↓
+OPA Rate Limiting ngăn cross-org DoS
+    ↓
+SCIM offboarding → mTLS vô hiệu < 30s tự động
+```
+
+---
+
+## Module 8 — Compliance, DLP & Audit
+
+> **Nguyên tắc:** Tuân thủ thực thi bằng toán học, không phải hợp đồng. Không Admin nào có thể thay đổi lịch sử mà không phá vỡ Merkle chain.
+
+### 8.1 Data Loss Prevention
+
+- 📱💻 **OPA Egress Whitelist:** Egress đến domain không khai báo → bị chặn tại OS.
+- 📱💻 **Byte-Quota Circuit Breaker:** 4KB/call. Vượt 100% session quota → Egress khóa 24h, CISO alert.
+- 📱💻 **Format Whitelist:** [.pdf, .txt, .jpg]. `.vbs`, `.xlsm` bị chặn.
+- 💻📱 **Redaction Rules:** Rust Core local ML redact CC numbers, nội bộ IP khỏi AI prompt.
+- 🗄️ **Anti-Remanence Policy (ARP):** TTL Crypto-Shredding. CISO-initiated Wipe → zero-fill với Ed25519-signed checkpoint.
+
+### 8.2 Tamper-Proof Audit Log
+
+- 🗄️ Mọi entry mang chữ ký Ed25519. Entry không ký → reject khi ghi, không bao giờ lưu.
+- 🗄️ **Merkle Chain:** Xóa bất kỳ entry nào → phá vỡ chain ngay lập tức, audit độc lập được.
+- ☁️ Marketplace Transparency Log: append-only, Merkle-proofed.
+- ☁️ Prometheus metrics delay 30 giây vs event time — ngăn timing correlation.
+
+### 8.3 Incident Response
+
+- ☁️ **PARA:** AI agent/tapp Token Taint → CISO nhận E2EE incident hash. Suspension không cần app update.
+- 📱💻 **Sealing Conversation (SSA):** Taint → session read-only với hazard-stripe overlay. CISO approve Release.
+- 🗄️ **OPA Banned Lexicon:** Keyword → MUTE_LOCK. Admin unlock bắt buộc.
+
+---
+
+## Module 9 — Infrastructure & Deployment
+
+### 9.1 Server Topology
+
+```
+[GeoDNS]
+    ├──► Zone 1: VPS Relay (Rust Blind Relay · SQLite WAL · NATS JetStream)
+    ├──► Zone 2: Federation Bridge (mTLS · Sealed Sender)
+    └──► Zone 0: Bare-metal HSM (HSM FIPS 140-3 · PostgreSQL · MinIO EC+4)
+```
+
+### 9.2 Scale Tiers
+
+| Quy mô | Topology | Hardware Tối thiểu |
+|---|---|---|
+| ≤ 10.000 users | Single-node Rust relay | 512MB VPS |
+| ≤ 100.000 users | Geo-federated clusters | PostgreSQL HA + MinIO |
+| ≥ 1.000.000 users | Multi-cloud active-active | PostgreSQL Geo-Partitioning |
+
+**TCO Reference:**
+
+| Users | Storage/năm | Min VPS | DR RTO |
+|---|---|---|---|
+| 1.000 | ~500GB | 4 vCPU, 8GB RAM, 100GB SSD | < 15 phút |
+| 5.000 | ~2.5TB | 8 vCPU, 16GB RAM, 250GB SSD | < 15 phút |
+| 10.000 | ~5TB | 16 vCPU, 32GB RAM, 1TB SSD | < 15 phút |
+
+### 9.3 Performance Targets
+
+| Operation | Target | Platform |
+|---|---|---|
+| ALPN negotiation (full fallback) | < 50ms | All |
+| MLS encrypt (single message) | < 5ms | All |
+| Push notification decrypt (NSE) | < 500ms | 📱 iOS |
+| End-to-end relay delivery | < 200ms | All |
+| TURN failover | < 3s | WebRTC |
+| VPS concurrent WebSocket | ~500.000 | ☁️ 4GB VPS |
+| AES-256-GCM (hardware) | 4–8 GB/s | AES-NI / ARM NEON |
+| Wi-Fi Direct file transfer | 250–500 MB/s | 📱 Mesh |
+
+---
+
+## Licensing & Service Tiers
+
+| Feature | Community | Enterprise | GovMilitary |
+|---|---|---|---|
+| Offline TTL | 24 giờ | 7 ngày | **30 ngày** |
+| EMDP Tactical Relay | ❌ | ✅ | ✅ |
+| Air-Gapped License | ❌ | ✅ | ✅ |
+| Compliance Retention | ❌ | 90 ngày | **7 năm** |
+| TEE Enclaves (SGX) | ❌ | ❌ | ✅ |
+| Chaos Engineering | ❌ | Optional | **Bắt buộc** |
+| Federation | ❌ | ✅ | ✅ Air-gapped |
+| AI Token Quota | 10K/giờ | Unlimited | Unlimited + local-only |
+
+**Open-Core Boundary:**
+
+| Component | License | Auditable by |
+|---|---|---|
+| `terachat-core` (Crypto, MLS, CRDT, Mesh) | AGPLv3 | Gov, Bank, Public |
+| `terachat-license-guard` | BSL | Không public |
+| `terachat-ui` (Tauri, Flutter) | Apache 2.0 | Public |
+
+---
+
+## Constraints & Open Items
+
+### Platform Hard Constraints
+
+| Platform | Ràng buộc | Giải pháp |
+|---|---|---|
+| 📱 iOS | W^X: không WASM JIT | wasm3 + AOT .dylib trong XPC Worker |
+| 📱 iOS | NSE RAM: 20MB ceiling | Ghost Push + Main App decrypt |
+| 📱 iOS | AWDL tắt khi Hotspot/CarPlay | Auto-downgrade BLE Tier 3 |
+| 📱 Android | FCM throttled 10/h Restricted battery | FCM high-priority + Companion Device Manager |
+| 📱 Huawei | Không có content-available background push | Foreground polling; CRL ≤ 4h |
+| 🖥️ Linux | Flatpak không tương thích seccomp-bpf | .deb / .rpm / AppImage Cosign |
+| ☁️ VPS | eBPF/XDP yêu cầu bare-metal | Tokio Token Bucket userspace |
+
+### Blocker Items (Phải hoàn thành trước production)
+
+| Item | Mức độ |
+|---|---|
+| CI/CD code signing pipeline (5 platform) | **BLOCKER** |
+| WasmParity CI gate (wasm3 vs wasmtime) | **BLOCKER** |
+| Dart FFI NativeFinalizer Clippy lint | **BLOCKER** |
+| AppArmor / SELinux postinstall (Linux) | HIGH |
+| Gossip PSK rotation runbook (90 ngày) | MEDIUM |
+| PostgreSQL PITR recovery runbook | MEDIUM |
+| Shamir ceremony runbook (Admin turnover) | MEDIUM |
+
+---
+
+## Document Navigation Map
+
+| Audience | Document | Content |
+|---|---|---|
+| Developer | `Feature_Spec.md` → TERA-FEAT | IPC, OS hooks, platform behavior |
+| System Architect | `Core_Spec.md` → TERA-CORE | MLS, CRDT, Mesh, server infrastructure |
+| Designer | `Design.md` → TERA-DESIGN | UI state machine, Glassmorphism, animations |
+| Ecosystem Builder | `Web_Marketplace.md` → TERA-MKT | .tapp lifecycle, WASM, Marketplace |
+| Investor / Executive | `BusinessPlan.md` → TERA-BIZ | GTM, pricing, licensing |
+| New Team Member | `Introduction.md` → TERA-INTRO | Vision, architecture overview, terminology |
+
+---
+
+*TeraChat — Hệ điều hành Công việc Sinh tồn. Trao lại chủ quyền số cho người tiên phong.*
+
+---
+
+```yaml
+# CHANGELOG
+- version: "3.0"
+  date: "2026-03-19"
+  changes:
+    - "Complete rewrite from CEO/CTO perspective — removed low-level technical noise"
+    - "Synthesized from Core_Spec.md, Design.md, Web_Marketplace.md, BusinessPlan.md, Introduction.md"
+    - "Added Module 3 (Survival Mesh), Module 4 (AI Shield), Module 5 (.tapp) as standalone sections"
+    - "Added TCO Reference, Performance Targets, Platform Constraints tables"
+    - "Standardized platform icons and Online/Mesh mode indicators throughout"
+    - "Full Licensing Tiers table (Community / Enterprise / GovMilitary)"
+    - "Consolidated Recovery flows into Module 6; removed duplicate content"
+```

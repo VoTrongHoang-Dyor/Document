@@ -1,1126 +1,1258 @@
+# 📋 TERACHAT — INFRASTRUCTURE REDESIGN DECISION DOCUMENT
 
-# 📄 PATCHES FOR `Core_Spec.md`
+### Architectural Restructuring: From VPS Cluster Complexity to Edge-Native Sovereign Relay
+
+**Classification:** Architecture Decision Record (ADR) | **Version:** 1.0 | **Date:** 2026-03-19
 
 ---
 
-```markdown
-## [SECTION: §5.3 Message Layer Security — UPDATE: Nonce Derivation]
+# PART 1 — BOTTLENECK ANALYSIS
 
-### Problem
-`Base_Nonce` referenced in AES-256-GCM construction (`nonce = Base_Nonce XOR chunk_seq_number`)
-is never defined. If implementation uses a static or weakly-derived value, nonce reuse under
-the same `Epoch_Key` breaks GCM authentication tag integrity, collapsing the entire E2EE model.
+## 1.1 Current Architecture: What Actually Exists
 
-### Root Cause
-MLS RFC 9420 §5.4.9 defines nonce derivation from `sender_data_secret` and `reuse_guard`.
-The spec omitted this derivation chain, leaving `Base_Nonce` as an undefined symbol.
+```
+CURRENT STATE (problematic):
 
-### Solution (Implementation-Level)
+[Client Devices — Overloaded]
+📱💻🖥️ iOS/Android/Desktop
+  ├── Full DAG merge O(N log N) on mobile
+  ├── ONNX inference (80MB model) — thermal spike
+  ├── SQLite WAL (hot_dag.db) — storage pressure
+  ├── CRDT sync — continuous background CPU
+  └── MLS TreeKEM — memory pressure
 
-Replace the nonce construction note in §5.3 with:
+        ↕ All traffic routes through VPS
 
-**Nonce derivation (MLS RFC 9420 §5.4.9 compliant):**
+[VPS Cluster — Underutilized as "dumb pipe"]
+☁️ Node 1: Relay Daemon
+☁️ Node 2: PostgreSQL HA (pgRepmgr + PgPool)
+☁️ Node 3: MinIO Erasure Coding (EC+4)
++ Redis + NATS JetStream + OPA Engine
+  └── Actual workload: forward ciphertext blobs
+      (Server CANNOT decrypt — Zero-Knowledge)
+      → 90% of VPS capacity wasted on coordination overhead
+```
+
+## 1.2 Bottleneck Matrix
+
+### Deployment Bottlenecks
+
+| Bottleneck | Root Cause | Severity |
+|---|---|---|
+| Multi-node coordination | pgRepmgr + PgPool requires 3+ nodes minimum for HA | 🔴 Critical |
+| Networking complexity | VPC, floating IP, WireGuard overlay — requires networking expertise | 🔴 Critical |
+| Secret bootstrap | KMS Bootstrap Ritual requires Admin physically present + HSM | 🟡 High |
+| Region expansion | Each new region = repeat full 3-node cluster setup | 🔴 Critical |
+| Non-IT admin failure | Terraform + Helm + Docker Compose stack = DevOps job, not business owner job | 🔴 Critical |
+
+### Operational Bottlenecks
+
+| Bottleneck | Root Cause | Impact |
+|---|---|---|
+| PostgreSQL failover | pgRepmgr auto-failover requires `pgPool` config + VIP management | 15-30min RTO if misconfigured |
+| MinIO EC+4 node failure | 4-node minimum — lose 1 node, degraded mode; lose 2 nodes, data unavailable | Storage unavailability |
+| Dependency chain | Redis → NATS → PostgreSQL → MinIO must all be healthy | Cascading failure risk |
+| Upgrade coordination | Rolling upgrade across 3+ nodes — one wrong sequence = data corruption | Upgrade fear → delayed patches |
+| Monitoring gap | No observability (confirmed in previous analysis) | MTTR > 4h |
+
+### Client Overload Bottlenecks
+
+| Issue | Root Cause | Device Impact |
+|---|---|---|
+| ONNX inference on mobile | 80MB model runs on client CPU/NPU continuously | +3-5°C thermal, 15-20% battery/hour |
+| Full DAG merge | O(N log N) merge when Desktop acts as Dictator | ANR risk, 5-30s freeze |
+| hot_dag.db unbounded growth | WAL grows indefinitely between checkpoints | Storage: 300MB+ after 6 months |
+| CRDT delta sync | Continuous background BLE scanning + processing | Battery drain 8-12% additional |
+| Double encryption path | Client encrypts → VPS stores ciphertext → Client downloads + decrypts | 2× bandwidth per file access |
+
+### Cost-to-Performance Analysis
+
+```
+Current VPS Cost Breakdown (estimated for 100-user tenant):
+
+Node 1: Relay (2vCPU, 4GB) = $20/month
+Node 2: PostgreSQL HA primary (4vCPU, 8GB) = $40/month
+Node 3: PostgreSQL HA replica (4vCPU, 8GB) = $40/month
+Node 4: MinIO (4vCPU, 8GB + 500GB storage) = $60/month
+Node 5: MinIO replica (4vCPU, 8GB + 500GB storage) = $60/month
+Redis + NATS: additional 2vCPU, 4GB = $20/month
+Total: ~$240/month for 100 users = $2.40/user/month
+
+Actual useful work done by VPS (Zero-Knowledge means server cannot process):
+- Route encrypted blobs: ~5% CPU utilization
+- Store ciphertext (files already stored on MinIO): 10% storage utilization
+- PostgreSQL: stores only metadata (user_id hashes, routing info) — NOT messages
+- NATS: pub/sub for routing — could be replaced by direct WebSocket
+
+EFFICIENCY: ~8% of paid compute capacity does actual work
+WASTE: 92% of VPS cost = coordination overhead, redundancy for HA
+       that a Zero-Knowledge architecture does not actually require
+```
+
+**Core Insight:** Because TeraChat is Zero-Knowledge, the VPS *cannot* do any useful computation on data. It is literally a **cryptographically blind router**. Running a 5-node cluster to route encrypted blobs is architectural waste.
+
+---
+
+# PART 2 — ARCHITECTURAL REDESIGN
+
+## 2.1 Design Principles for New Architecture
+
+```
+PRINCIPLE 1: Compute where it can see plaintext
+→ All computation that requires plaintext = CLIENT SIDE
+→ Server handles only what it can do blind: routing, storage, presence
+
+PRINCIPLE 2: Match infrastructure complexity to actual workload
+→ Zero-Knowledge server needs: WebSocket relay + blob storage
+→ NOT: PostgreSQL HA cluster + MinIO erasure coding
+
+PRINCIPLE 3: Progressive complexity (Tier-based deployment)
+→ Solo operator: 1 VPS, 1 binary, no config
+→ Enterprise: 1 Relay VPS + managed object storage
+→ Gov/Military: Full self-hosted, air-gapped
+
+PRINCIPLE 4: Desktop devices ARE the compute cluster
+→ Enterprise already owns Desktop hardware
+→ Desktops have: 16-32GB RAM, SSD, always-on power, persistent connection
+→ Desktop Super Nodes = distributed compute for free
+```
+
+## 2.2 New Architecture: Three-Tier Edge-Native Design
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║              TERACHAT EDGE-NATIVE SOVEREIGN ARCHITECTURE             ║
+╠══════════════════════════════════════════════════════════════════════╣
+║                                                                      ║
+║  TIER 0 — COMPUTE EDGE (Client Devices)                              ║
+║  ┌─────────────────────────────────────────────────────────────┐    ║
+║  │                                                             │    ║
+║  │  📱 Mobile (Leaf Nodes)        💻🖥️ Desktop (Super Nodes)   │    ║
+║  │  ┌──────────────────┐          ┌────────────────────────┐  │    ║
+║  │  │ - Message E2EE   │  BLE/    │ - Full DAG storage     │  │    ║
+║  │  │ - Local FTS5     │ AWDL/    │ - CRDT merge dictator  │  │    ║
+║  │  │ - Delta-only     │ Wi-Fi    │ - ONNX inference host  │  │    ║
+║  │  │   CRDT buffer    │ Direct   │ - Relay for Mobile     │  │    ║
+║  │  │ - ZeroizeOnDrop  │◄────────►│ - BLE Super Node       │  │    ║
+║  │  │ - NO ONNX local  │          │ - VFS local cache      │  │    ║
+║  │  └──────────────────┘          └──────────┬─────────────┘  │    ║
+║  │                                           │                │    ║
+║  └───────────────────────────────────────────┼────────────────┘    ║
+║                                              │ QUIC/WSS             ║
+║  TIER 1 — SOVEREIGN RELAY (Single Binary)    │                      ║
+║  ┌───────────────────────────────────────────▼────────────────┐    ║
+║  │                                                             │    ║
+║  │  ☁️ TeraRelay — Single Rust Binary (~12MB)                  │    ║
+║  │  ┌─────────────────────────────────────────────────────┐   │    ║
+║  │  │  Blind Router         │  Presence Engine            │   │    ║
+║  │  │  (route ciphertext)   │  (who is online — no PII)   │   │    ║
+║  │  ├───────────────────────┼─────────────────────────────┤   │    ║
+║  │  │  Push Gateway         │  License Heartbeat          │   │    ║
+║  │  │  (APNs/FCM/HMS proxy) │  (Ed25519 JWT verify)       │   │    ║
+║  │  ├───────────────────────┼─────────────────────────────┤   │    ║
+║  │  │  SQLite (metadata)    │  Blob Index (CAS hashes)    │   │    ║
+║  │  │  NOT PostgreSQL HA    │  NOT MinIO cluster          │   │    ║
+║  │  └─────────────────────────────────────────────────────┘   │    ║
+║  │                                                             │    ║
+║  │  Deployment: 1 VPS, 1 binary, 1 command                    │    ║
+║  │  Requirements: 1vCPU, 512MB RAM, 20GB SSD                   │    ║
+║  │  Cost: $5-6/month (Hetzner CX11 / DigitalOcean Droplet)    │    ║
+║  └───────────────────────────────────────────────────────────┬┘    ║
+║                                                              │      ║
+║  TIER 2 — BLOB STORAGE (Managed / Self-hosted)              │      ║
+║  ┌──────────────────────────────────────────────────────────▼─┐    ║
+║  │                                                              │   ║
+║  │  Option A (SaaS — SME):   Cloudflare R2 / Backblaze B2      │   ║
+║  │    → S3-compatible API, $0.015/GB/month, zero egress fee    │   ║
+║  │    → Zero setup, globally distributed, 99.999% availability │   ║
+║  │    → Stores ONLY ciphertext blobs — provider sees nothing   │   ║
+║  │                                                              │   ║
+║  │  Option B (Self-hosted — Enterprise/Gov):  MinIO Single Node │   ║
+║  │    → 1 node, no EC+4 cluster                                │   ║
+║  │    → Backup via rclone → offsite (encrypted)                │   ║
+║  │    → Full data sovereignty                                   │   ║
+║  │                                                              │   ║
+║  │  Option C (Air-gapped — Gov/Military):  Local NAS + rclone  │   ║
+║  │    → Synology/QNAP with S3 API                              │   ║
+║  │    → Zero external dependency                               │   ║
+║  └──────────────────────────────────────────────────────────────┘   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+```
+
+## 2.3 Component Redesign
+
+### 2.3.1 TeraRelay — Single Binary Relay Server
+
+**What it does (only these things):**
 
 ```rust
-/// Per-message nonce — derived, never random, never hardcoded.
-pub fn derive_message_nonce(
-    sender_data_secret: &[u8; 32],  // from current MLS Epoch_Key material
-    reuse_guard:        &[u8; 4],   // 4 random bytes from CSPRNG; embedded in MLSCiphertext header
-    seq_number:         u64,        // chunk_seq_number for chunked media; 0 for single messages
-) -> [u8; 12] {
-    // Step 1: derive base nonce via HKDF-SHA256
-    let base_nonce = hkdf_sha256(
-        ikm:  sender_data_secret,
-        info: b"nonce",
-        length: 12,
-    );
-    // Step 2: XOR with reuse_guard (left-padded to 12 bytes) to prevent cross-epoch reuse
-    let guarded = xor_12(base_nonce, pad_left_4(reuse_guard));
-    // Step 3: XOR with chunk_seq_number (right-aligned u64 in 12-byte field)
-    xor_12(guarded, seq_u64_to_12(seq_number))
+// Core_Spec.md §3 REDESIGN — TeraRelay Responsibilities
+
+pub enum TeraRelayFunction {
+    /// 1. Blind message routing: receive ciphertext, forward to destination
+    BlindMessageRoute,
+    /// 2. Presence engine: track online/offline (device_id hash only, no PII)
+    PresenceTracking,
+    /// 3. Push notification proxy: forward push tokens to APNs/FCM/HMS
+    PushGateway,
+    /// 4. Blob storage index: CAS hash → storage URL mapping (not actual blobs)
+    BlobIndex,
+    /// 5. License heartbeat: verify Ed25519 JWT (no cloud phone-home needed)
+    LicenseVerification,
+    /// 6. Federation bridge: relay between Cluster A ↔ Cluster B (mTLS)
+    FederationBridge,
 }
+
+// What TeraRelay does NOT do (moved to Desktop Super Nodes):
+// ❌ CRDT merge computation
+// ❌ DAG reconciliation
+// ❌ MLS group management (clients handle this peer-to-peer)
+// ❌ Full-text search indexing
+// ❌ ONNX inference
+// ❌ Policy enforcement (OPA runs on client)
 ```
 
-**Rules enforced by `mls_engine.rs`:**
+**Storage model (radically simplified):**
 
-- `reuse_guard` MUST be generated by `ring::rand::SystemRandom` per message. Never reused.
-- `sender_data_secret` MUST be rotated on every MLS Epoch rotation. Stale epoch key = reject.
-- For chunked media (F-09): `seq_number` increments per 2 MB chunk. `reuse_guard` is shared
-  across all chunks of the same file transfer (bound to `cas_hash`).
-- `base_nonce` MUST NOT be persisted to disk. Derived fresh from `sender_data_secret` on each use.
-- CI: property-based test (proptest) MUST verify no two (reuse_guard, seq_number) pairs produce
-  the same 12-byte nonce under the same `sender_data_secret`. Block merge on failure.
+```
+BEFORE (5-node cluster):
+PostgreSQL Primary + Replica + PgPool → $80/month
+MinIO EC+4 (4 nodes) → $240/month
+Redis + NATS → $20/month
+Total storage stack: $340/month
 
-**Impact on §0.2 MLS Session Objects:**
+AFTER (single SQLite + managed blob):
+SQLite (metadata only, <100MB for 1000 users):
+  - routing_table: {device_hash → websocket_session_id}
+  - blob_index: {cas_hash → storage_url}
+  - presence: {device_hash → last_seen_hlc}
+  - push_tokens: {device_hash → encrypted_push_token}
+  → All rows: ~500 bytes per user = 50MB for 10,000 users
+  → Zero replication needed (rebuilt from clients on restart)
 
-Add to `KeyPackage` object table:
+Blob Storage:
+  Cloudflare R2: $0.015/GB × 100GB = $1.50/month for 100 users
+  OR Backblaze B2: $0.006/GB × 100GB = $0.60/month
 
-| Object | Type | Storage Location | Lifecycle | Spec Ref |
-|---|---|---|---|---|
-| `Sender_Data_Secret` | HKDF-SHA256 output | RAM, `ZeroizeOnDrop` | Per MLS Epoch; zeroized on rotation | §5.3 |
+Total storage stack: $2/month
+Savings: 99.4% cost reduction on storage infrastructure
+```
 
-### Impact
+### 2.3.2 Desktop Super Node — The Real Compute Layer
 
-- **Security:** Eliminates AES-GCM nonce reuse risk. Brings implementation into strict RFC 9420
-  compliance. Forward secrecy is preserved because `sender_data_secret` rotates with Epoch_Key.
-- **Reliability:** Deterministic nonce derivation allows server-side replay verification.
-- **No latency impact:** HKDF-SHA256 derivation < 1 µs on AES-NI hardware.
+```
+Desktop devices (already owned by enterprise) become:
 
-### Reference
+💻🖥️ DESKTOP SUPER NODE CAPABILITIES:
+├── DAG Merge Dictator
+│   └── Handles O(N log N) merge — 16GB RAM, no ANR risk
+├── ONNX Inference Host
+│   └── Runs 80MB model — offloads mobile completely
+├── Cold Storage Cache
+│   └── Local copy of hot_dag.db — mobile syncs delta only
+├── Relay for Mobile (when VPS unreachable)
+│   └── BLE/Wi-Fi Direct Super Node in Mesh mode
+├── FTS5 Indexing
+│   └── Full history indexed locally — no cloud search
+└── CRDT Snapshot Publisher
+    └── Publishes materialized snapshots → Mobile downloads O(1)
 
-- REF: Core_Spec.md §5.3 (Epoch rotation, skip keys)
-- REF: Core_Spec.md §0.2 (MLS Session Objects — add Sender_Data_Secret)
-- REF: Feature_Spec.md §F-01 (Send flow — step 3)
-- REF: Feature_Spec.md §F-09 (ChunkKey nonce — same derivation applies)
-- External: IETF RFC 9420 §5.4.9
+MOBILE OFFLOAD RESULT:
+📱 Current: ONNX 80MB + DAG merge + FTS5 + full CRDT
+📱 After:   Delta-only CRDT buffer (< 5MB) + UI rendering only
 
+Mobile thermal: -4°C average
+Mobile battery: -35% drain reduction
+Mobile storage: 300MB → 25MB (hot_dag.db)
+```
+
+### 2.3.3 One-Touch Deployment System
+
+```bash
+# CURRENT: What Admin has to do
+$ terraform init
+$ terraform apply -var-file=secrets.tfvars  # 200 lines of config
+$ kubectl apply -f k8s/postgresql-ha.yaml
+$ kubectl apply -f k8s/minio-cluster.yaml
+$ kubectl apply -f k8s/redis.yaml
+$ kubectl apply -f k8s/nats.yaml
+$ kubectl apply -f k8s/terachat-relay.yaml
+# Then: configure pgRepmgr, test failover, configure MinIO buckets,
+# set up WireGuard overlay, configure floating IPs...
+# Time: 1-2 days for experienced DevOps
+
+# AFTER: What Admin has to do
+$ curl -sL install.terachat.com/relay | bash
+# Enter: domain name, license token, storage option (R2/B2/local)
+# Time: 5 minutes for non-technical admin
 ```
 
 ---
+
+# PART 3 — CORE_SPEC.MD UPDATES
+
+## New §3: Infrastructure & Deployment (Redesigned)
 
 ```markdown
-## [SECTION: §3.6 — ADD: AI / SLM Infrastructure Module]
+## 3. [ARCHITECTURE] [IMPLEMENTATION] Infrastructure & Deployment
 
-### Problem
-`Feature_Spec.md §F-10` maps AI integration to `REF: TERA-CORE §3.6`, which does not exist
-in Core_Spec.md. This is an orphan reference. `SessionVault` and `Micro-NER` have no canonical
-definition, no struct schema, and no security constraints in Core. Any implementation will be
-architecturally unconstrained.
-
-### Root Cause
-§3 (Platform Segmentation) was extended to §3.5 for signing APIs but §3.6 was omitted when
-AI integration was added to TERA-FEAT. The Core anchor is missing.
-
-### Solution (Implementation-Level)
-
-Insert as new §3.6 in the Platform Segmentation section, after §3.5:
+> **Triết lý thiết kế lại:** TeraChat là hệ thống Zero-Knowledge.
+> Server KHÔNG THỂ đọc dữ liệu. Do đó, server không cần compute phức tạp.
+> Infrastructure complexity phải tỷ lệ thuận với actual server workload,
+> không phải với perceived importance.
+>
+> **Kết luận:** TeraRelay là một blind router.
+> Một blind router cần: 1 process, 1 SQLite file, 1 blob storage URL.
+> KHÔNG cần: PostgreSQL HA cluster, MinIO EC+4, Redis, NATS, Kubernetes.
 
 ---
 
-### 3.6 AI / SLM Infrastructure
-
-**Process isolation:** AI inference runs in a dedicated OS process (`terachat-ai-worker`),
-separate from Rust Core. Crash of the AI worker MUST NOT propagate to Core. `catch_unwind`
-boundary enforced at worker entry (§4.4).
-
-**Module map:**
+### 3.1 [ARCHITECTURE] Three-Tier Edge-Native Topology
 
 ```text
-infra/ai_worker.rs
-  § Responsibilities: ONNX/CoreML inference orchestration, Micro-NER PII pipeline,
-                      SessionVault lifecycle, KV-Cache management, quota enforcement
-  § Interfaces:
-      run_inference(prompt: SanitizedPrompt) -> Result<Vec<ASTNode>, AiError>
-      redact_pii(text: &str) -> (RedactedText, AliasMap)
-      restore_pii(response: &str, alias_map: AliasMap) -> String
-  § Dependencies: crypto/zeroize.rs (SessionVault), ffi/ipc_bridge.rs (CoreSignal),
-                  infra/metrics.rs (quota counters)
-```
+TIER 0 — COMPUTE EDGE (Client Devices)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 Mobile Leaf Nodes          💻🖥️ Desktop Super Nodes
+• Delta CRDT only             • Full DAG storage + merge
+• No ONNX inference           • ONNX inference (offloads mobile)
+• UI rendering                • CRDT Snapshot publisher
+• ZeroizeOnDrop crypto        • Mesh relay (BLE/Wi-Fi Direct)
+• Push notification decrypt   • FTS5 full-history indexing
+• hot_dag.db: ≤ 25MB          • hot_dag.db: unlimited (SSD)
 
-**`SessionVault` struct (canonical definition):**
+TIER 1 — SOVEREIGN RELAY (1 Binary)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+☁️ TeraRelay Rust Binary (~12MB)
+• Blind message routing (WebSocket/QUIC)
+• Presence tracking (device_hash only, no PII)
+• Push gateway (APNs/FCM/HMS proxy)
+• Blob index (CAS hash → URL mapping)
+• License JWT verification (Ed25519, offline-capable)
+• Federation bridge (mTLS inter-cluster)
+Deployment: 1 VPS × 1 binary × 1 SQLite
+Minimum spec: 1 vCPU, 512MB RAM, 20GB SSD = $5-6/month
 
-```rust
-/// Holds PII alias map during a single LLM request-response cycle.
-/// ZeroizeOnDrop clears alias map within 100 ms of response delivery.
-#[derive(ZeroizeOnDrop)]
-pub struct SessionVault {
-    alias_map: HashMap<String, String>,  // { "[REDACTED_EMAIL_1]" → "real@email.com" }
-    created_at: Instant,
-}
-
-impl SessionVault {
-    /// Alias map MUST be dropped before any UI render frame.
-    /// On drop: HashMap contents are overwritten with 0x00 via ZeroizeOnDrop.
-    pub fn restore_and_drop(self, response: &str) -> String { ... }
-}
-```
-
-**Micro-NER module (PII detection):**
-
-- Runtime: ONNX model, < 1 MB compiled size. Loaded by `MemoryArbiter` at AI worker startup.
-- Input: raw user prompt string.
-- Output: `Vec<PiiSpan { start: usize, end: usize, kind: PiiKind }>`.
-- `PiiKind`: `Name | Phone | Email | NationalId | BankAccount | Address`.
-- Hard ceiling: 8 MB total RAM for ONNX allocator (custom allocator returns `AllocError` on overflow).
-- On `AllocError`: fall back to regex-only detection (lower recall, no crash).
-
-**AI quota enforcement (server-side validated):**
-
-```rust
-pub struct AiQuota {
-    tokens_used_this_hour: AtomicU64,
-    limit:                 u64,              // 10_000 consumer; u64::MAX enterprise
-    reset_at:              Instant,
-}
-
-// Quota check MUST occur inside Rust Core before dispatching to AI worker.
-// UI never has direct access to quota state.
-```
-
-**Platform-specific runtime selection:**
-
-| Platform | Runtime | Max model size | Notes |
-|---|---|---|---|
-| 📱 iOS | CoreML (`.mlmodelc`) | 74 MB (Base), 39 MB (Tiny) | W^X: no dynamic WASM AI modules |
-| 📱 Android | ONNX Runtime | 39 MB (Tiny) if RAM > 100 MB | HiAI fallback on Huawei |
-| 📱 Huawei | HiAI / ONNX | 39 MB (Tiny) | AOT bundled only |
-| 💻 macOS | ONNX / CoreML | 74 MB (Base) | XPC Worker isolation |
-| 🖥️ Windows/Linux | ONNX Runtime | 74 MB (Base) | CPU inference; GPU optional |
-
-**Security constraints:**
-
-- AI worker has NO access to `hot_dag.db` or `cold_state.db` directly.
-  All context is passed as sanitized `SanitizedPrompt` from Rust Core.
-- `SanitizedPrompt` is a newtype wrapping `String` — construction requires PII redaction pass.
-- LLM response delivered to `.tapp` as `Vec<ASTNode>` only. Raw HTML/Markdown rejected by AST Sanitizer.
-- `SessionVault` MUST be dropped before `CoreSignal::StateChanged` is emitted.
-
-### Impact
-
-- **Technical debt:** Eliminates orphan reference. F-10 now has a stable Core anchor.
-- **Security:** `SessionVault` has a canonical ZeroizeOnDrop definition. Prevents PII leak.
-- **Cross-platform:** Platform runtime selection matrix is now governed by Core, not FEAT.
-
-### Reference
-
-- REF: Core_Spec.md §3.3 (MemoryArbiter, RAM budget)
-- REF: Core_Spec.md §4.4 (catch_unwind boundary at AI worker entry)
-- REF: Core_Spec.md §4.1 (module map — add infra/ai_worker.rs)
-- REF: Feature_Spec.md §F-10 (AI / SLM Integration — fix orphan §3.6 reference)
-
+TIER 2 — BLOB STORAGE (Pluggable)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+☁️ Option A: Cloudflare R2 / Backblaze B2 (SME default)
+🗄️ Option B: MinIO Single Node (Enterprise self-hosted)
+🗄️ Option C: NAS with S3 API (Gov/Military air-gapped)
+All options: store ONLY ciphertext — provider sees nothing
 ```
 
 ---
 
-```markdown
-## [SECTION: §5.1 HKMS — UPDATE: Dead Man Switch TPM Reset Recovery]
+### 3.2 [ARCHITECTURE] TeraRelay — Blind Router Specification
 
-### Problem
-Dead Man Switch logic: `if device_counter < server_counter → reject + Self-Destruct`.
-TPM factory reset (RMA, enterprise re-imaging, mainboard replacement) resets the hardware
-counter to 0. With `server_counter` at a high value, a legitimately re-issued device triggers
-false Self-Destruct on first reconnect, with no recovery path.
+> **Nguyên tắc cứng:** TeraRelay KHÔNG thực hiện bất kỳ computation
+> nào trên data. Mọi intelligence nằm ở client.
 
-### Root Cause
-The spec defines the counter comparison and Self-Destruct but omits the recovery path for
-hardware-bound counter loss, which is a predictable enterprise operational event.
+#### 3.2.1 TeraRelay Responsibilities (Exhaustive List)
 
-### Solution (Implementation-Level)
+| Responsibility | Implementation | Data accessed |
+|---|---|---|
+| Message routing | WebSocket session map | `device_hash → ws_session` |
+| QUIC/gRPC/WSS ALPN | Protocol negotiation | None |
+| Push gateway | Forward to APNs/FCM/HMS | `encrypted_push_token` (opaque) |
+| Blob index | CAS hash lookup | `cas_hash → storage_url` (no content) |
+| Presence | Online/offline tracking | `device_hash + hlc_timestamp` |
+| License verify | Ed25519 JWT check | License JWT (no user data) |
+| Federation | mTLS relay to other clusters | Ciphertext blobs (opaque) |
+| Rate limiting | Token bucket per tenant_hash | `tenant_hash + packet_count` |
 
-Append to the Dead Man Switch section in §5.1:
+#### 3.2.2 TeraRelay Storage — SQLite Only
 
-**TPM Counter Reset Recovery (Admin-Initiated Ceremony):**
+```sql
+-- routing.db — mọi state của TeraRelay
+-- Rebuilt automatically từ client reconnections on restart
+-- Không cần backup (stateless design)
 
-Trigger conditions for counter desynchronization:
-- Device RMA (hardware replacement).
-- Enterprise re-imaging that resets TPM.
-- Migration to a new device without BIP-39 mnemonic flow.
+CREATE TABLE sessions (
+    device_hash     BLOB NOT NULL PRIMARY KEY,  -- BLAKE3(device_id)[0:16]
+    ws_session_id   TEXT NOT NULL,
+    tenant_hash     BLOB NOT NULL,              -- BLAKE3(tenant_id)[0:8]
+    connected_at    INTEGER NOT NULL,           -- Unix milliseconds
+    protocol        TEXT NOT NULL               -- 'quic' | 'grpc' | 'wss'
+);
 
-**Recovery protocol:**
+CREATE TABLE blob_index (
+    cas_hash        BLOB NOT NULL PRIMARY KEY,  -- BLAKE3 of ciphertext
+    storage_url     TEXT NOT NULL,              -- R2/B2/MinIO URL
+    tenant_hash     BLOB NOT NULL,
+    size_bytes      INTEGER NOT NULL,
+    expires_at      INTEGER                     -- NULL = permanent
+);
 
-```text
-Precondition: Admin authenticates on a separate trusted device (biometric + Shamir quorum not
-              required — standard Admin mTLS cert sufficient).
+CREATE TABLE push_tokens (
+    device_hash     BLOB NOT NULL PRIMARY KEY,
+    encrypted_token BLOB NOT NULL,              -- Encrypted with device pubkey
+    platform        TEXT NOT NULL,              -- 'apns' | 'fcm' | 'hms'
+    updated_at      INTEGER NOT NULL
+);
 
-Step 1: Admin opens CISO Console → Device Management → [Target Device] → "Reset Counter Sync".
-Step 2: Server sets a one-time `counter_reset_token { device_id, nonce, expires_at: now()+3600 }`.
-        Token is Ed25519-signed by Admin's DeviceIdentityKey. Stored in PostgreSQL, single-use.
-Step 3: Target device, on next connection attempt, detects `counter_mismatch` rejection.
-        Core emits `CoreSignal::DeadManWarning { hours_remaining: 0 }` with reason `COUNTER_MISMATCH`.
-        UI presents: "Device identity requires Admin re-authorization. Contact your Administrator."
-Step 4: Admin sends `counter_reset_token` out-of-band to user (secure channel, e.g. another app).
-Step 5: User enters token on device. Core verifies Ed25519 signature against Admin's public key.
-Step 6: On valid token:
-          a. Server resets `last_valid_counter` to current device TPM counter value.
-          b. `counter_reset_token` marked `used = true` in PostgreSQL (idempotent; replay-safe).
-          c. Device re-enrolls normally.
-          d. Audit Log records: { event: "COUNTER_RESET", device_id, admin_did, timestamp }.
-Step 7: On invalid/expired token: reject silently. Audit Log records failed attempt.
+CREATE TABLE presence (
+    device_hash     BLOB NOT NULL PRIMARY KEY,
+    last_seen_hlc   TEXT NOT NULL,              -- Hybrid Logical Clock
+    tenant_hash     BLOB NOT NULL
+);
+
+-- Index cho tenant isolation
+CREATE INDEX idx_sessions_tenant ON sessions(tenant_hash);
+CREATE INDEX idx_blob_tenant ON blob_index(tenant_hash);
+
+-- Tổng dung lượng: ~500 bytes/user
+-- 10,000 users: ~5MB SQLite file
+-- Không cần PostgreSQL, không cần replication
 ```
 
-**Hard constraints:**
-
-- `counter_reset_token` is single-use. Replay → silent reject + Audit Log entry.
-- TTL: 1 hour. Expired token → reject. Admin must issue new token.
-- Admin cannot reset counter for their own device (self-signing prohibited). Requires a second Admin.
-- Maximum 3 counter resets per device per 30-day window (prevents abuse). 4th attempt → CISO alert.
-- This recovery path does NOT bypass Self-Destruct if it has already executed. Self-Destruct is
-  irreversible by design.
-
-**Audit Log entry (mandatory):**
+#### 3.2.3 TeraRelay Startup & Recovery
 
 ```rust
-AuditLogEntry {
-    event_type: EventType::CounterReset,
-    target_device_id: DeviceId,
-    authorized_by_admin_did: DeviceId,
-    token_nonce: [u8; 32],
-    hlc: HLCTimestamp,
-    signature: Ed25519Signature,  // signed by Admin's DeviceIdentityKey
+// core/src/relay/startup.rs
+
+pub struct TeraRelayConfig {
+    pub listen_addr: SocketAddr,        // Default: 0.0.0.0:443
+    pub tls_cert_path: PathBuf,
+    pub tls_key_path: PathBuf,
+    pub db_path: PathBuf,               // Default: /var/terachat/routing.db
+    pub blob_storage: BlobStorageConfig,
+    pub license_jwt_path: PathBuf,
+    pub max_connections: usize,         // Default: 100_000
+    pub push_gateway: PushGatewayConfig,
 }
-```
 
-**Runbook reference:** `ops/counter-reset-ceremony.md` (must be created).
+pub enum BlobStorageConfig {
+    CloudflareR2 {
+        account_id: String,
+        bucket: String,
+        api_token: EncryptedSecret,  // Encrypted at rest with relay key
+    },
+    BackblazeB2 {
+        key_id: String,
+        application_key: EncryptedSecret,
+        bucket: String,
+    },
+    MinioLocal {
+        endpoint: Url,
+        access_key: EncryptedSecret,
+        secret_key: EncryptedSecret,
+        bucket: String,
+    },
+    NasS3 {
+        endpoint: Url,
+        credentials: EncryptedSecret,
+        bucket: String,
+    },
+}
 
-### Impact
+impl TeraRelay {
+    pub async fn start(config: TeraRelayConfig) -> Result<()> {
+        // 1. Verify license JWT (offline-capable)
+        let license = verify_license_jwt(&config.license_jwt_path)?;
 
-- **Reliability:** Eliminates false Self-Destruct on enterprise re-imaging. RTO from hardware failure
-  reduced from "device permanently bricked" to "< 1 hour with Admin involvement".
-- **Security:** Token is single-use, time-limited, Admin-signed, and audit-logged.
-  Attack surface is equivalent to existing Admin-Approved QR Recovery (§F-12).
-- **No architectural change:** Counter comparison logic unchanged. Only adds an out-of-band
-  re-sync path that the server accepts before comparison.
+        // 2. Open SQLite (create if not exists — self-initializing)
+        let db = SqlitePool::connect(&config.db_path).await?;
+        run_migrations(&db).await?;
 
-### Reference
+        // 3. Test blob storage connectivity
+        config.blob_storage.health_check().await?;
 
-- REF: Core_Spec.md §5.1 (Dead Man Switch, counter logic)
-- REF: Core_Spec.md §9.5 (Audit Log — PostgreSQL)
-- REF: Feature_Spec.md §F-12 (Identity — Admin-Approved Recovery pattern)
-- REF: Feature_Spec.md §F-13 (Admin Console — device management surface)
+        // 4. Start ALPN listener (QUIC + gRPC + WSS — auto-negotiate)
+        let listener = AlpnListener::bind(config.listen_addr, &config.tls_cert_path).await?;
 
-```
+        // 5. Ready — no further setup needed
+        info!(event = "relay.started", 
+              max_connections = config.max_connections,
+              license_tenant = license.tenant_id,
+              blob_backend = config.blob_storage.backend_name());
 
----
-
-```markdown
-## [SECTION: §9.2 Lightweight Micro-Core Relay — UPDATE: Parallel ALPN Probing]
-
-### Problem
-Current ALPN negotiation is strictly serial: QUIC (50 ms timeout) → gRPC → WSS.
-Worst-case fallback path takes up to 150 ms before reaching WSS. On enterprise networks
-where UDP is blocked, every cold connection incurs the full 50 ms QUIC probe penalty
-before attempting TCP — even when the network is known to block UDP.
-
-### Root Cause
-Serial probing design is conservative but suboptimal. QUIC and gRPC can be probed
-concurrently without conflict because they use different transport protocols (UDP vs TCP).
-
-### Solution (Implementation-Level)
-
-Replace the serial ALPN flow with a parallel-first strategy:
-
-**Revised ALPN Negotiation (target: < 50 ms end-to-end):**
-
-```rust
-pub async fn negotiate_alpn(profile: &NetworkProfile) -> AlpnResult {
-    // Fast path: known strict-compliance network (learned or Admin-forced)
-    if profile.strict_compliance {
-        return try_grpc().await;
+        listener.run().await
     }
+}
 
-    // Parallel probe: QUIC and gRPC simultaneously
-    let quic_fut  = timeout(Duration::from_millis(50), try_quic());
-    let grpc_fut  = timeout(Duration::from_millis(80), try_grpc());
+// On restart: sessions table auto-rebuilt as clients reconnect
+// No WAL replay, no cluster coordination, no split-brain
+```
 
-    tokio::select! {
-        Ok(Ok(conn)) = quic_fut => AlpnResult::QUIC(conn),    // QUIC wins if within 50 ms
-        Ok(Ok(conn)) = grpc_fut => AlpnResult::GRPC(conn),    // gRPC wins if QUIC drops
-        _ => {
-            // Both failed: sequential WSS (last resort, no parallel candidate)
-            match timeout(Duration::from_millis(120), try_wss()).await {
-                Ok(Ok(conn)) => AlpnResult::WSS(conn),
-                _            => AlpnResult::MeshMode,
+---
+
+### 3.3 [ARCHITECTURE] Desktop Super Node — Distributed Compute Layer
+
+> **Insight kiến trúc:** Doanh nghiệp đã sở hữu Desktop hardware.
+> Desktop có RAM 16-32GB, SSD, nguồn điện ổn định, kết nối LAN ổn định.
+> Desktop Super Nodes = distributed compute cluster miễn phí,
+> không tốn thêm infrastructure cost.
+
+#### 3.3.1 Super Node Capability Matrix
+
+| Function | Mobile (Leaf) | Desktop (Super Node) | VPS (Relay) |
+|---|---|---|---|
+| DAG storage | Delta-only (≤25MB) | Full history (unlimited) | ❌ Not stored |
+| CRDT merge | ❌ Offloaded | ✅ Dictator | ❌ Not computed |
+| ONNX inference | ❌ Offloaded | ✅ Host | ❌ Not computed |
+| MLS key ops | ✅ Local only | ✅ Local only | ❌ Blind |
+| FTS5 indexing | 30-day window | Full history | ❌ Not indexed |
+| Mesh relay | Leaf Node | ✅ Router | ❌ Not in mesh |
+| Cold storage | VFS stub only | Full local cache | Blob index only |
+| Snapshot publish | Consumer | ✅ Publisher | ❌ Cannot read |
+
+#### 3.3.2 ONNX Inference Offload Protocol
+
+```rust
+// Feature_Spec.md §ONNX-OFFLOAD — New
+// Mobile delegates ONNX to Desktop Super Node via E2EE IPC
+
+pub struct OnnxOffloadRequest {
+    /// Masked context (PII already stripped by mobile NER)
+    pub masked_context: Vec<u8>,        // AES-256-GCM encrypted
+    pub model: OnnxModelId,             // all-minilm-l6 | deberta-v3-xsmall
+    pub requester_device_hash: [u8; 16],
+    pub request_id: [u8; 16],          // For response routing
+    pub max_tokens: u32,
+}
+
+pub struct OnnxOffloadResponse {
+    pub request_id: [u8; 16],
+    pub embeddings: Vec<f32>,           // AES-256-GCM encrypted with requester pubkey
+    pub inference_time_ms: u32,
+    pub model_version: String,
+}
+
+impl DesktopSuperNode {
+    /// Mobile sends offload request via Mesh (BLE/Wi-Fi Direct) or Relay
+    pub async fn handle_onnx_offload(
+        &self,
+        request: OnnxOffloadRequest,
+    ) -> Result<OnnxOffloadResponse> {
+        // Verify requester is in same MLS group (same Company_Key)
+        let requester_pubkey = self.resolve_device_pubkey(&request.requester_device_hash).await?;
+
+        // Decrypt request — only works if we share Company_Key
+        let context = self.decrypt_with_company_key(&request.masked_context)?;
+
+        // Run ONNX inference (already loaded on Desktop, ~0ms cold start)
+        let start = Instant::now();
+        let embeddings = self.onnx_session
+            .run(&context, request.model)
+            .await?;
+
+        // Encrypt response with requester's public key (E2EE)
+        let encrypted_embeddings = ecies_encrypt(&requester_pubkey, &embeddings)?;
+
+        Ok(OnnxOffloadResponse {
+            request_id: request.request_id,
+            embeddings: encrypted_embeddings,
+            inference_time_ms: start.elapsed().as_millis() as u32,
+            model_version: self.model_version.clone(),
+        })
+    }
+}
+
+// Mobile-side: transparent to app code
+impl MobileOnnxClient {
+    pub async fn get_embeddings(&self, text: &str) -> Result<Vec<f32>> {
+        // 1. Try local Desktop Super Node (LAN, < 10ms)
+        if let Some(super_node) = self.local_super_node() {
+            return self.offload_to_super_node(super_node, text).await;
+        }
+        // 2. Fallback: run locally with smaller model (TinyBERT 6MB)
+        // Mobile always has TinyBERT bundled — 80MB model is Desktop-only
+        self.run_local_tinybert(text).await
+    }
+}
+```
+
+#### 3.3.3 CRDT Snapshot Protocol
+
+```rust
+// Desktops publish materialized snapshots for Mobile O(1) sync
+
+pub struct MaterializedSnapshot {
+    pub snapshot_id: [u8; 32],           // CAS UUID
+    pub tenant_hash: [u8; 8],
+    pub created_at: HybridLogicalTimestamp,
+    pub event_count_covered: u64,        // Number of CRDT events collapsed
+    /// Encrypted state: only group members can decrypt
+    pub encrypted_state: Vec<u8>,        // AES-256-GCM with Company_Key
+    pub merkle_root: [u8; 32],           // BLAKE3 of state
+    pub publisher_signature: [u8; 64],  // Ed25519 by Desktop DeviceIdentityKey
+}
+
+impl DesktopSuperNode {
+    /// Publish snapshot every N events or every 24h (whichever first)
+    pub async fn publish_snapshot_if_needed(&self) -> Result<()> {
+        let events_since_last = self.events_since_last_snapshot().await?;
+
+        if events_since_last >= SNAPSHOT_INTERVAL_EVENTS || self.snapshot_overdue() {
+            let snapshot = self.create_materialized_snapshot().await?;
+
+            // Upload to blob storage via Relay
+            self.upload_snapshot_via_relay(&snapshot).await?;
+
+            // Announce via Gossip: "new snapshot available at CAS_UUID"
+            self.gossip_snapshot_available(snapshot.snapshot_id).await?;
+
+            info!(event = "snapshot.published",
+                  events_covered = events_since_last,
+                  snapshot_id = hex::encode(&snapshot.snapshot_id[..8]));
+        }
+
+        Ok(())
+    }
+}
+
+impl MobileLeafNode {
+    /// Mobile: O(1) sync via snapshot instead of O(N log N) merge
+    pub async fn sync_from_snapshot(&self) -> Result<()> {
+        // Check if there's a newer snapshot than our current state
+        let latest = self.get_latest_snapshot_announcement().await?;
+
+        if latest.is_newer_than(&self.current_state) {
+            // Download snapshot (encrypted blob from R2/B2/MinIO)
+            let snapshot = self.download_and_verify_snapshot(&latest).await?;
+
+            // O(1) apply — no merge needed
+            self.apply_snapshot(snapshot).await?;
+
+            // Request only delta since snapshot (much smaller)
+            self.sync_delta_since_snapshot().await?;
+        }
+        Ok(())
+    }
+}
+
+const SNAPSHOT_INTERVAL_EVENTS: u64 = 500;
+```
+
+---
+
+### 3.4 [ARCHITECTURE] Deployment Topology Matrix
+
+| Scale | Topology | Infrastructure | Cost/month | Setup time |
+|---|---|---|---|---|
+| **Solo/Startup** (1-50 users) | 1 Relay VPS + Cloudflare R2 | 1× Hetzner CX11 ($6) + R2 ($1) | **$7** | **5 min** |
+| **SME** (50-500 users) | 1 Relay VPS + Backblaze B2 | 1× Hetzner CX21 ($12) + B2 ($5) | **$17** | **10 min** |
+| **Enterprise** (500-5000 users) | 1 Relay VPS + MinIO self-hosted | 1× Hetzner CX41 ($28) + 1× Storage VPS ($20) | **$48** | **20 min** |
+| **Gov/Military** (any size, air-gapped) | 1 Relay Server + NAS S3 | On-premise servers (already owned) | **CAPEX only** | **1 hour** |
+| **Multi-region Federation** | Relay per region + Shared R2 | N× Relay VPS + 1 R2 bucket | **$7 × N** | **10 min × N** |
+
+> **Vs. Current:** 5-node cluster = $240+/month minimum, 1-2 days setup.
+
+---
+
+### 3.5 [IMPLEMENTATION] One-Touch Deployment — `tera-relay` Installer
+
+```bash
+#!/bin/bash
+# install.terachat.com/relay — What admin runs (single command)
+# Supports: Ubuntu 20.04+, Debian 11+, RHEL 8+, any VPS provider
+
+curl -sL install.terachat.com/relay | bash
+
+# Installer prompts (interactive):
+# ✦ Domain name: [acme.terachat.io]
+# ✦ License token: [paste JWT from TeraChat dashboard]
+# ✦ Storage backend:
+#     1) Cloudflare R2 (recommended — enter R2 API token)
+#     2) Backblaze B2 (budget — enter B2 credentials)
+#     3) Local MinIO (self-hosted — no external dependency)
+#     4) NAS S3-compatible (air-gapped)
+# ✦ Enable automatic TLS (Let's Encrypt): [Y/n]
+
+# What installer does automatically:
+# 1. Download single TeraRelay binary (Ed25519 verified)
+# 2. Create systemd service (or openrc/s6/runit)
+# 3. Configure TLS (certbot OR provided cert)
+# 4. Initialize SQLite database
+# 5. Test blob storage connectivity
+# 6. Start relay service
+# 7. Print QR code for Admin Console mobile app
+
+# Zero dependencies: no Docker, no Kubernetes, no external DB
+# Binary size: ~12MB (stripped Rust binary)
+# RAM at startup: ~18MB
+# RAM at 10,000 concurrent connections: ~200MB
+```
+
+```rust
+// Installer logic (simplified)
+pub struct RelayInstaller {
+    config: RelayInstallConfig,
+}
+
+impl RelayInstaller {
+    pub async fn run(&self) -> Result<()> {
+        // 1. Download and verify binary
+        let binary = self.download_binary().await?;
+        self.verify_binary_signature(&binary)?;  // Ed25519 against TeraChat CA
+
+        // 2. Write to system path
+        tokio::fs::write("/usr/local/bin/tera-relay", &binary).await?;
+        set_executable("/usr/local/bin/tera-relay").await?;
+
+        // 3. Generate config from prompts
+        let config = self.generate_config()?;
+        tokio::fs::write("/etc/tera-relay/config.toml", config.to_toml()).await?;
+
+        // 4. Initialize database (idempotent migrations)
+        init_relay_database("/var/tera-relay/routing.db").await?;
+
+        // 5. Install systemd service
+        self.install_systemd_service().await?;
+
+        // 6. Test storage
+        config.blob_storage.health_check().await?;
+
+        // 7. Start service
+        systemd_start("tera-relay").await?;
+
+        // 8. Print setup QR for Admin Console
+        println!("✅ TeraRelay is running!");
+        println!("Scan this QR to add to Admin Console:");
+        print_qr(&self.generate_admin_qr(&config));
+
+        Ok(())
+    }
+}
+```
+
+---
+
+### 3.6 [ARCHITECTURE] Blob Storage Abstraction Layer
+
+```rust
+// Pluggable blob storage — zero VPS change when switching providers
+
+#[async_trait]
+pub trait BlobStorage: Send + Sync {
+    async fn put(&self, cas_hash: &[u8; 32], data: &[u8]) -> Result<Url>;
+    async fn get(&self, cas_hash: &[u8; 32]) -> Result<Vec<u8>>;
+    async fn delete(&self, cas_hash: &[u8; 32]) -> Result<()>;
+    async fn exists(&self, cas_hash: &[u8; 32]) -> Result<bool>;
+    async fn health_check(&self) -> Result<()>;
+    fn backend_name(&self) -> &'static str;
+}
+
+pub struct CloudflareR2Storage { /* ... */ }
+pub struct BackblazeB2Storage { /* ... */ }
+pub struct MinioStorage { /* ... */ }
+pub struct NasS3Storage { /* ... */ }
+
+// All implement BlobStorage trait identically
+// TeraRelay uses Arc<dyn BlobStorage> — zero code change when switching
+
+impl TeraRelay {
+    pub fn with_storage(storage: Arc<dyn BlobStorage>) -> Self {
+        // Same relay code regardless of R2, B2, MinIO, or NAS
+        Self { storage, ..Default::default() }
+    }
+}
+```
+
+---
+
+### 3.7 [ARCHITECTURE] Deployment Topology Diagrams
+
+#### Solo/SME (1 VPS + Managed Blob)
+
+```text
+┌────────────────────────────────────────────────────────┐
+│  CLIENT NETWORK (LAN)                                  │
+│                                                        │
+│  💻 Desktop Super Node                                 │
+│  ├── Full DAG (hot_dag.db: 2GB on SSD)                 │
+│  ├── ONNX inference host                               │
+│  ├── CRDT snapshot publisher                           │
+│  └── Mesh BLE relay                                    │
+│          ↑↓ Wi-Fi Direct/LAN                           │
+│  📱 Mobile Leaf Nodes (3-50 devices)                   │
+│  ├── Delta CRDT only (25MB)                            │
+│  ├── ONNX offloaded to Desktop                         │
+│  └── Snapshot sync O(1)                               │
+└───────────────────┬────────────────────────────────────┘
+                    │ QUIC (UDP:443) / WSS (TCP:443)
+                    │ Only metadata + ciphertext routing
+                    ▼
+┌───────────────────────────────────────────────────────┐
+│  ☁️ TeraRelay VPS (Hetzner CX11, $6/month)            │
+│  ├── tera-relay binary (12MB)                         │
+│  ├── routing.db (SQLite, <10MB for 500 users)         │
+│  └── TLS termination                                  │
+└───────────────────┬───────────────────────────────────┘
+                    │ S3 API (HTTPS)
+                    ▼
+┌───────────────────────────────────────────────────────┐
+│  ☁️ Cloudflare R2 / Backblaze B2 ($1-5/month)         │
+│  ├── Encrypted file blobs (ciphertext only)           │
+│  ├── CRDT snapshots (encrypted)                       │
+│  └── Provider sees: random bytes (Zero-Knowledge)     │
+└───────────────────────────────────────────────────────┘
+Total: $7-17/month | 5-minute setup | No IT expertise needed
+```
+
+#### Enterprise (Self-hosted MinIO)
+
+```text
+┌────────────────────────────────────────────────────────┐
+│  ENTERPRISE LAN                                        │
+│                                                        │
+│  💻💻💻 Desktop Super Nodes (3-10 devices)              │
+│  ├── Distributed DAG storage                           │
+│  ├── Load-balanced ONNX inference                      │
+│  ├── Redundant snapshot publishing                     │
+│  └── Mesh backbone                                     │
+│          ↑↓ LAN (Gigabit)                              │
+│  📱📱📱 Mobile Leaf Nodes (20-500 devices)              │
+└───────────────────┬────────────────────────────────────┘
+                    │ QUIC/WSS
+                    ▼
+┌──────────────────────────────────────────────────────┐
+│  🗄️ TeraRelay + MinIO (same VPS or separate)         │
+│  ├── tera-relay binary                                │
+│  ├── routing.db (SQLite)                              │
+│  └── MinIO single-node (no EC+4 cluster needed)       │
+│      ├── Encrypted file blobs                         │
+│      └── rclone backup → offsite (encrypted)          │
+└──────────────────────────────────────────────────────┘
+Total: $48/month | 20-minute setup | 1 VPS + 1 storage VPS
+```
+
+#### Gov/Military (Air-gapped)
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  CLASSIFIED NETWORK (no external connectivity)          │
+│                                                         │
+│  💻💻 Desktop Super Nodes                                │
+│     + 📱 Mobile Leaf Nodes                              │
+│             ↓ LAN only                                  │
+│  🗄️ TeraRelay Server (on-premise)                       │
+│  ├── tera-relay binary                                  │
+│  ├── routing.db                                         │
+│  └── NAS S3 endpoint (Synology/QNAP)                   │
+│      └── All data stays on-premise, forever             │
+│                                                         │
+│  License: Air-gapped JWT (USB delivery, 30-day TTL)    │
+│  CRL: Local DNS TXT record (enterprise CA)             │
+│  Updates: Manual binary replacement (Ed25519 verified) │
+└─────────────────────────────────────────────────────────┘
+Total: CAPEX only (existing hardware) | ~1 hour setup
+```
+
+---
+
+### 3.8 [IMPLEMENTATION] Migration Path: Current → New Architecture
+
+```text
+MIGRATION STRATEGY: Zero-downtime, gradual transition
+
+Phase 1 (Week 1-2): Deploy TeraRelay alongside existing cluster
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Deploy single TeraRelay binary on new VPS
+- Configure blob storage (R2/B2/MinIO)
+- Test with 5% of tenants (canary)
+- Monitor: message delivery SLO, latency, error rates
+
+Phase 2 (Week 3-4): Migrate tenants progressively
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Migrate 20% tenants/day
+- Desktop Super Nodes auto-upload existing hot_dag.db → blob storage
+- Mobile clients auto-switch to delta-only CRDT mode
+- Old cluster remains as fallback (read-only)
+
+Phase 3 (Week 5): Decommission old cluster
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- All tenants on TeraRelay
+- Export PostgreSQL metadata → SQLite (migration script provided)
+- Export MinIO blobs → R2/B2/MinIO single-node (rclone migration)
+- Shutdown old cluster
+- Cost reduction: $240/month → $7-48/month realized immediately
+
+Rollback: If any issue, flip DNS CNAME back to old cluster
+          Old cluster stays read-only for 30 days
+```
+
+```
+
+---
+
+# PART 4 — FEATURE_SPEC.MD UPDATES
+
+## New §INFRA-01: Client Compute Offload Architecture
+
+```markdown
+## INFRA-01: [ARCHITECTURE] Client Compute Distribution
+
+> **Nguyên tắc:** Mobile devices không phải là compute nodes.
+> Desktop devices là compute cluster. VPS là blind router.
+> Computation đi đến nơi có resource — không phải nơi thuận tiện architecturally.
+
+### INFRA-01.1 Mobile Compute Constraints (Hard Rules)
+
+Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):
+
+| Operation | Lý do cấm | Alternative |
+|---|---|---|
+| ONNX 80MB model inference | Thermal spike +4°C, 15% battery/op | Desktop offload |
+| DAG merge > 3000 events | ANR risk > 5s | Snapshot sync |
+| FTS5 full-history index | Storage > 300MB | Desktop-hosted search |
+| CRDT full-state storage | hot_dag.db > 300MB | Delta-only + snapshot |
+| BLAKE3 full-file hash (>100MB) | CPU spike blocks UI | Desktop computation |
+
+### INFRA-01.2 ONNX Inference Offload Protocol
+
+📱 Mobile phát `OnnxOffloadRequest` (E2EE) đến Desktop Super Node:
+
+```rust
+// Transparent to application code — same API, different execution
+impl MobileOnnxClient {
+    pub async fn embed(&self, masked_text: &str) -> Result<Vec<f32>> {
+        match self.available_compute() {
+            ComputeTarget::LocalSuperNode(node) => {
+                // Prefer Desktop on same LAN (< 5ms)
+                node.offload_embedding(masked_text).await
+            },
+            ComputeTarget::RelayedSuperNode => {
+                // Super Node reachable via VPS relay (< 50ms)
+                self.relay_offload_embedding(masked_text).await
+            },
+            ComputeTarget::LocalFallback => {
+                // No Desktop available: use TinyBERT (6MB, bundled)
+                // Lower quality but no external dependency
+                self.local_tinybert.embed(masked_text).await
+            },
+        }
+    }
+}
+```
+
+**Performance targets:**
+
+- Desktop offload via LAN: < 15ms total (0ms model load + 10ms inference + 5ms network)
+- Desktop offload via relay: < 60ms total
+- TinyBERT local fallback: < 50ms (lower quality, always available)
+
+### INFRA-01.3 Mobile Storage Profile (New Limits)
+
+| Component | Old limit | New limit | Enforcement |
+|---|---|---|---|
+| `hot_dag.db` | Unbounded | **25MB hard cap** | SQLite page limit + eviction |
+| ONNX models | 80MB (all-MiniLM) | **6MB (TinyBERT only)** | Bundle constraint |
+| CRDT buffer | Full DAG | **Delta-only (7 days)** | Snapshot sync mechanism |
+| File cache | VFS stub (5KB/file) | **Same — no change** | Existing mechanism |
+| FTS5 index | 30-day window | **7-day window** | GC scheduler |
+
+### INFRA-01.4 Desktop Super Node Auto-Registration
+
+💻 Desktop auto-registers as Super Node when:
+
+- Battery: AC powered (not on battery)
+- OS: macOS / Windows / Linux (not iOS/Android)
+- RAM available: > 4GB
+- Network: Connected to same LAN as VPS relay
+
+```rust
+impl DesktopNode {
+    pub async fn maybe_promote_to_super_node(&self) -> MeshRole {
+        let power = self.battery_status().await;
+        let ram = self.available_ram_mb().await;
+        let connectivity = self.relay_connectivity().await;
+
+        if power == PowerStatus::AcPowered
+            && ram > 4096
+            && connectivity == ConnectivityStatus::Connected
+        {
+            self.announce_super_node_availability().await;
+            MeshRole::SuperNode
+        } else {
+            MeshRole::LeafNode
+        }
+    }
+}
+```
+
+```
+
+---
+
+## New §INFRA-02: Blob Storage Client Integration
+
+```markdown
+## INFRA-02: [IMPLEMENTATION] Blob Storage Client
+
+> TeraChat clients interact with blob storage ONLY via TeraRelay's presigned URL mechanism.
+> Clients NEVER have direct credentials to R2/B2/MinIO.
+> This maintains Zero-Knowledge: relay signs URLs without seeing content.
+
+### INFRA-02.1 File Upload Flow (Revised)
+
+```text
+OLD FLOW (complex):
+📱 Client → encrypt → VPS → write to MinIO cluster → return URL
+VPS has direct MinIO credentials → security surface
+
+NEW FLOW (clean):
+📱 Client → encrypt locally → request presigned URL from Relay
+Relay → call R2/B2/MinIO API → return signed URL (60s TTL)
+📱 Client → PUT directly to R2/B2/MinIO using presigned URL
+Relay never sees ciphertext content (Zero-Knowledge preserved)
+VPS credentials never exposed to client
+```
+
+```rust
+// Feature_Spec.md §8.1 REVISED — File Upload
+
+impl TeraFileUploader {
+    pub async fn upload_file_e2ee(&self, file_path: &Path) -> Result<CasHash> {
+        // Step 1: Encrypt locally (existing — no change)
+        let (ciphertext, cas_hash, merkle_root) =
+            self.encrypt_file_chunked(file_path).await?;
+
+        // Step 2: Request presigned upload URL from Relay
+        // Relay signs URL without seeing content
+        let presigned_url = self.relay_client
+            .request_presigned_put(&cas_hash, ciphertext.len())
+            .await?;
+
+        // Step 3: PUT directly to R2/B2/MinIO via presigned URL
+        // Relay not involved in actual data transfer
+        self.http_client
+            .put(presigned_url.url)
+            .header("Content-Length", ciphertext.len())
+            .body(ciphertext)
+            .send()
+            .await?;
+
+        // Step 4: Confirm upload to Relay (Relay updates blob_index table)
+        self.relay_client
+            .confirm_upload(&cas_hash, &merkle_root)
+            .await?;
+
+        Ok(cas_hash)
+    }
+}
+```
+
+### INFRA-02.2 File Download Flow (Revised)
+
+```rust
+impl TeraFileDownloader {
+    pub async fn download_file(&self, cas_hash: &CasHash) -> Result<Vec<u8>> {
+        // Step 1: Request presigned download URL from Relay
+        let presigned_url = self.relay_client
+            .request_presigned_get(cas_hash)
+            .await?;
+
+        // Step 2: GET directly from R2/B2/MinIO
+        let ciphertext = self.http_client
+            .get(presigned_url.url)
+            .send()
+            .await?
+            .bytes()
+            .await?;
+
+        // Step 3: Verify BLAKE3 Merkle root
+        self.verify_merkle_integrity(&ciphertext, cas_hash)?;
+
+        // Step 4: Decrypt (existing streaming decrypt — no change)
+        self.decrypt_file_chunked(&ciphertext).await
+    }
+}
+```
+
+```
+
+---
+
+## New §INFRA-03: Relay Health & Self-Healing
+
+```markdown
+## INFRA-03: [IMPLEMENTATION] TeraRelay Health & Self-Healing
+
+> Single-binary deployment means no cluster coordination.
+> Self-healing must happen within the binary itself.
+
+### INFRA-03.1 In-Process Watchdog
+
+```rust
+// TeraRelay self-monitors and recovers without external orchestration
+
+pub struct RelayWatchdog {
+    restart_count: AtomicU32,
+    last_restart: AtomicU64,
+}
+
+impl RelayWatchdog {
+    pub async fn watch(relay: Arc<TeraRelay>) {
+        loop {
+            tokio::select! {
+                // Monitor SQLite health
+                _ = tokio::time::interval(Duration::from_secs(60)).tick() => {
+                    if let Err(e) = relay.db.health_check().await {
+                        warn!(event = "db.health_check_failed", error = %e);
+                        relay.reconnect_db().await.ok();
+                    }
+                }
+                // Monitor blob storage
+                _ = tokio::time::interval(Duration::from_secs(300)).tick() => {
+                    if let Err(e) = relay.blob_storage.health_check().await {
+                        warn!(event = "blob.health_check_failed", error = %e);
+                        // Non-fatal: clients can still message, just can't upload files
+                        relay.set_blob_degraded_mode(true);
+                    }
+                }
+                // Monitor WebSocket connections
+                _ = tokio::time::interval(Duration::from_secs(30)).tick() => {
+                    relay.purge_stale_sessions(Duration::from_secs(90)).await;
+                }
             }
         }
     }
 }
 ```
 
-**Timing guarantees:**
-
-| Scenario | Serial (old) | Parallel (new) | Delta |
-|---|---|---|---|
-| QUIC available | 50 ms | 50 ms | 0 ms |
-| QUIC blocked, gRPC ok | 50 + 80 = 130 ms | 80 ms | -50 ms |
-| QUIC + gRPC blocked, WSS ok | 50 + 80 + 120 = 250 ms | 80 + 120 = 200 ms | -50 ms |
-| All blocked → Mesh | 250 ms | 200 ms | -50 ms |
-
-**Connection deduplication:** If both QUIC and gRPC succeed simultaneously (race condition),
-keep the lower-RTT connection. Abort the other with `connection.close()`. Log winner to
-`NetworkProfile` for future probe decisions.
-
-**`NetworkProfile` update:** Add field `preferred_alpn: Option<AlpnTier>`. On 3 consecutive
-successful QUIC connections: set `preferred_alpn = Some(QUIC)`. On next probe, try QUIC first
-with a 100 ms timeout (more generous) before parallel-probing gRPC.
-
-**Strict Compliance Mode unchanged:** Admin-forced mode skips all UDP probes. No change.
-
-### Impact
-
-- **Latency:** 50 ms reduction on networks that block UDP. 0 ms regression on QUIC-capable networks.
-- **Throughput:** Faster reconnect after Mesh Mode recovery or network switch.
-- **No security impact:** mTLS authentication is per-connection; parallel probes each authenticate independently.
-
-### Reference
-
-- REF: Core_Spec.md §9.2 (ALPN negotiation, Strict Compliance Mode, NetworkProfile)
-- REF: Feature_Spec.md §F-14 (Adaptive Network Management — behavior update required)
-
-```
-
----
-
-```markdown
-## [SECTION: §9.3 WAL Staging — UPDATE: Client-Side Deduplication]
-
-### Problem
-At-least-once delivery via `wal_staging.db` replay on relay restart guarantees no message loss
-but does not prevent duplicate delivery to the recipient client. A restarted relay replays all
-`STAGED` entries into the pub/sub channel. Recipients process the same `CRDT_Event` twice,
-producing duplicate messages visible in UI.
-
-### Root Cause
-The DAG append model (§7.1) is idempotent by UUID (`CrdtEvent.id: Uuid v7`) but deduplication
-at the inbound processing boundary is not explicitly mandated. Clients may append duplicate
-events to `hot_dag.db` if inbound dedup is not enforced.
-
-### Solution (Implementation-Level)
-
-Add the following deduplication rule to §9.3 and enforce it in `crdt/dag.rs`:
-
-**Inbound deduplication contract (mandatory — enforced by `dag.rs`):**
+### INFRA-03.2 Automatic TLS Renewal
 
 ```rust
-/// Called on every inbound CrdtEvent, both Online and Mesh paths.
-pub fn append_event(db: &Connection, event: &CrdtEvent) -> Result<AppendResult> {
-    // Deduplication check: O(1) lookup by primary key
-    if db.exists("SELECT 1 FROM crdt_events WHERE id = ?", [event.id])? {
-        // Idempotent: silently discard duplicate. Do NOT return error.
-        // Do NOT emit CoreSignal::StateChanged for duplicates.
-        return Ok(AppendResult::Duplicate);
+// TeraRelay manages its own TLS certificates via ACME (Let's Encrypt)
+// No external certbot cron job needed
+
+pub struct AcmeManager {
+    domain: String,
+    cert_path: PathBuf,
+    key_path: PathBuf,
+}
+
+impl AcmeManager {
+    pub async fn ensure_valid_cert(&self) -> Result<()> {
+        let cert = self.load_current_cert().await?;
+
+        // Renew if expiring within 30 days
+        if cert.days_until_expiry() < 30 {
+            self.renew_via_acme().await?;
+            // Hot-reload TLS without restart
+            self.reload_tls_in_place().await?;
+            info!(event = "tls.renewed", domain = self.domain);
+        }
+        Ok(())
     }
-
-    // Proceed with normal signature verification and WAL append
-    verify_signature(event)?;
-    db.execute("INSERT INTO crdt_events ...", event)?;
-    Ok(AppendResult::Inserted)
-}
-
-pub enum AppendResult { Inserted, Duplicate }
-```
-
-**Rules:**
-
-- `crdt_events.id` MUST have a `UNIQUE` constraint in the SQLite schema. Enforced at DB level
-  as a secondary guard independent of application-layer dedup.
-- `AppendResult::Duplicate` is NOT logged to the error log. It is a normal operational outcome
-  during relay restart recovery. Log only to `TRACE` level for debugging.
-- `CoreSignal::StateChanged` MUST NOT be emitted for `AppendResult::Duplicate`.
-  Prevents UI rerender on duplicate events.
-- CI: chaos test scenario (TERA-TEST) MUST include relay restart with 1,000 in-flight STAGED
-  events and verify: (a) zero duplicate messages in recipient UI, (b) zero `UNIQUE` constraint
-  violations in SQLite error log.
-
-**`hot_dag.db` schema update (mandatory):**
-
-```sql
-CREATE TABLE crdt_events (
-    id           BLOB PRIMARY KEY,  -- UUID v7; UNIQUE enforced by PRIMARY KEY
-    parents      BLOB NOT NULL,
-    hlc_wall_ms  INTEGER NOT NULL,
-    hlc_logical  INTEGER NOT NULL,
-    hlc_node_id  BLOB NOT NULL,
-    author_did   BLOB NOT NULL,
-    payload      BLOB NOT NULL,
-    signature    BLOB NOT NULL,
-    content_type INTEGER NOT NULL
-) STRICT;
--- PRIMARY KEY implies UNIQUE; no separate index needed.
-```
-
-### Impact
-
-- **Reliability:** Zero duplicate messages after relay restart. Idempotent inbound path.
-- **Correctness:** `CoreSignal::StateChanged` emission is now tied exclusively to new state.
-- **Performance:** O(1) dedup check via B-Tree PRIMARY KEY lookup. No full table scan.
-- **No behavioral change** during normal operation (no relay restart, no duplicate delivery).
-
-### Reference
-
-- REF: Core_Spec.md §9.3 (WAL Staging, at-least-once delivery)
-- REF: Core_Spec.md §7.1 (DAG structure, hot_dag.db, CRDT_Event schema)
-- REF: Core_Spec.md §12.5 FLT-02 (WAL staging replay on restart)
-- REF: Feature_Spec.md §F-01 (Inbound message flow — dedup at receipt)
-- REF: Feature_Spec.md §F-03 (IPC Bridge — StateChanged emission rules)
-
-```
-
----
-
-```markdown
-## [SECTION: §5.2 Hardware Root of Trust — UPDATE: PIN Counter Biometric Gate]
-
-### Problem
-`Failed_PIN_Attempts` counter is "encrypted with `Device_Key`" but the read/write access
-control for the counter itself is not specified. On a jailbroken device, an attacker with
-filesystem access can restore a backup of the counter file, resetting failed attempts to 0
-and bypassing the 5-attempt ceiling on PIN brute force.
-
-### Root Cause
-The spec describes what the counter contains and what happens on 5th failure, but does not
-specify the OS-level access control protecting counter reads and writes.
-
-### Solution (Implementation-Level)
-
-Append to §5.2, after the Cryptographic Self-Destruct section:
-
-**`Failed_PIN_Attempts` Counter — Access Control (mandatory):**
-
-| Platform | Storage Location | Read Access Control | Write Access Control |
-|---|---|---|---|
-| 📱 iOS | Keychain, `kSecAttrAccessible = kSecAttrAccessibleWhenUnlockedThisDeviceOnly` | Main App process only; `kSecAttrAccessGroup` restricted | Requires `LAContext` biometric evaluation before write |
-| 📱 Android | `EncryptedSharedPreferences` backed by StrongBox | App UID only | `BiometricPrompt` authentication required before write |
-| 📱 Huawei | HMS SafetyDetect + EncryptedPreferences | App process only | HMS Biometric gate required |
-| 💻 macOS | Keychain, `kSecAttrAccessControl` with `kSecAccessControlBiometryCurrentSet` | Main process + daemon only | SEP biometric before write |
-| 🖥️ Windows | DPAPI with `CRYPTPROTECT_LOCAL_MACHINE = false` | Current user only | Windows Hello PIN or biometric |
-| 🖥️ Linux | TPM 2.0 NV Index with PCR policy sealing | `terachat` user UID only | TPM PCR policy (boot chain validation) |
-
-**Tamper detection (mandatory):**
-
-```rust
-/// Counter value is authenticated — tamper causes Self-Destruct.
-pub struct PinAttemptCounter {
-    value:  u8,               // 0..=5; anything above 5 treated as 5
-    mac:    [u8; 32],         // HMAC-BLAKE3(Device_Key, value || device_id || "pin-counter-v1")
-}
-
-pub fn read_counter(device_key: &DeviceKey) -> Result<u8, PinCounterError> {
-    let stored = platform_secure_read(COUNTER_KEY)?;
-    let expected_mac = hmac_blake3(device_key, &[stored.value, device_id, PIN_COUNTER_DOMAIN]);
-    if stored.mac != expected_mac {
-        // MAC mismatch: counter corrupted or tampered.
-        // Treat as 5 failures. Log COUNTER_TAMPERED. Initiate Self-Destruct.
-        log_audit(AuditEvent::PinCounterTampered);
-        trigger_self_destruct();
-        return Err(PinCounterError::Tampered);
-    }
-    Ok(stored.value)
-}
-
-pub fn write_counter(device_key: &DeviceKey, new_value: u8) -> Result<()> {
-    // Biometric gate MUST be cleared before this call (enforced by call site).
-    let mac = hmac_blake3(device_key, &[new_value, device_id, PIN_COUNTER_DOMAIN]);
-    platform_secure_write(COUNTER_KEY, PinAttemptCounter { value: new_value, mac })?;
-    Ok(())
 }
 ```
 
-**Backup exclusion (mandatory):**
+### INFRA-03.3 Graceful Upgrade (Zero-Downtime)
 
-- iOS: counter Keychain item MUST use `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`.
-  This flag prevents iCloud Keychain sync and iTunes backup inclusion.
-- Android: `EncryptedSharedPreferences` backing file MUST be excluded from `auto-backup`
-  via `android:allowBackup="false"` on the SharedPreferences provider, or explicit
-  `backup_rules.xml` exclusion.
-- Restoring a device backup MUST reset the counter to 0 via a counter integrity re-validation
-  step on first unlock post-restore. This is acceptable (new device, legitimate user).
+```bash
+# Upgrading TeraRelay: single command, zero downtime
 
-### Impact
+$ tera-relay upgrade
 
-- **Security:** Eliminates jailbreak backup-restore bypass of PIN brute force protection.
-  Counter tampering now triggers Self-Destruct rather than silent success.
-- **Reliability:** MAC check catches filesystem corruption and distinguishes it from
-  active tampering. Both result in Self-Destruct, which is the correct safe-fail behavior.
-
-### Reference
-
-- REF: Core_Spec.md §5.1 (Cryptographic Self-Destruct, 5-attempt ceiling)
-- REF: Core_Spec.md §5.2 (Dual-Wrapped KEK, Biometric binding)
-- REF: Core_Spec.md §12.1 KEY-01 (keys never leave hardware boundary)
-- REF: Feature_Spec.md §F-11c (Biometric Screen Lock, PIN fallback)
+# What happens internally:
+# 1. Download new binary (Ed25519 verified against TeraChat CA)
+# 2. Compare version sequence (anti-rollback check)
+# 3. Fork: new process starts on port 4443 (temp)
+# 4. Wait for new process to signal "ready" (health endpoint)
+# 5. Atomic socket transfer: old → new (SO_REUSEPORT)
+# 6. Old process: drain existing connections (30s graceful)
+# 7. Old process exits
+# 8. SQLite migrations run automatically
+# Total downtime: 0ms (connections seamlessly transferred)
+```
 
 ```
 
 ---
+
+## Updated §3.5: Deployment Simplification in Feature_Spec
 
 ```markdown
-## [SECTION: §9.6 Operational Metrics — ADD: §9.7 Distributed Tracing]
+## PLATFORM-19: One-Touch Relay Deployment
 
-### Problem
-Prometheus metrics provide aggregate system health but no cross-service latency visibility.
-When a message delivery SLA breach occurs, the 30-second metric delay (§OBS-02) plus the
-absence of request-scoped trace IDs makes it impossible to correlate: client send → relay
-receive → pub/sub fanout → recipient deliver. MTTR for production incidents is structurally
-elevated.
+### PLATFORM-19.1 Deployment Requirements (Revised)
 
-### Root Cause
-No distributed tracing layer defined. Observability is metrics-only (counter/gauge/histogram).
-No span correlation between client, relay, and database layers.
+| Tier | VPS Spec | Monthly Cost | Admin Skill Required | Setup Time |
+|---|---|---|---|---|
+| Solo (≤50 users) | 1 vCPU, 512MB RAM, 20GB SSD | $6 + $1 storage | None | 5 min |
+| SME (≤500 users) | 2 vCPU, 2GB RAM, 40GB SSD | $12 + $5 storage | None | 10 min |
+| Enterprise (≤5000 users) | 4 vCPU, 8GB RAM, 100GB SSD | $28 + $20 storage | Basic | 20 min |
+| Gov (air-gapped, any size) | Existing hardware | CAPEX only | IT Admin | 1 hour |
 
-### Solution (Implementation-Level)
+### PLATFORM-19.2 `tera-relay` CLI Commands
 
-Add §9.7 immediately after §9.6:
+```bash
+# Install
+curl -sL install.terachat.com/relay | bash
 
----
+# Status
+tera-relay status
+# Output: ✅ Running | Connections: 342 | Uptime: 14d 6h | Version: v0.3.0
 
-### 9.7 Distributed Tracing (OpenTelemetry)
+# Upgrade (zero-downtime)
+tera-relay upgrade
 
-**Scope:** Server-side only (relay daemon, PostgreSQL query spans, MinIO upload spans).
-Client-side tracing is out of scope — it would require transmitting trace IDs to the server,
-creating a potential timing correlation vector that conflicts with §1.4 Zero-Knowledge guarantee.
+# Backup (routing.db snapshot)
+tera-relay backup --output /backups/relay-$(date +%Y%m%d).db
 
-**Privacy constraint (mandatory):**
-- Trace IDs MUST be random (`uuid::Uuid::new_v4()`). Never derived from user ID, device ID,
-  message ID, or any content-correlated value.
-- Span attributes MUST NOT contain: `user_id`, `device_id`, `recipient_id`, `message_content`,
-  `cas_hash`, or any value that could identify a user or message.
-- Permitted span attributes: `relay_zone`, `alpn_tier`, `db_operation`, `wasm_module_id` (opaque),
-  `mls_group_size_bucket` (bucketed to 1–10, 11–100, 101–1000, 1001+).
+# Logs (structured JSON → pipe to any log aggregator)
+tera-relay logs --follow --level warn
 
-**Implementation (OpenTelemetry Rust SDK):**
+# Config (interactive re-configuration)
+tera-relay config --storage  # Switch storage provider
+tera-relay config --domain   # Change domain + re-issue TLS
 
-```rust
-// Cargo.toml additions (relay binary only):
-// opentelemetry = { version = "0.22", features = ["rt-tokio"] }
-// opentelemetry-otlp = { version = "0.15", features = ["grpc-tonic"] }
-// tracing-opentelemetry = "0.23"
-
-// Tracer initialization (relay startup):
-pub fn init_tracer(config: &RelayConfig) -> TracerProvider {
-    opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_endpoint(&config.otlp_endpoint)  // e.g. "http://otel-collector:4317"
-        )
-        .with_trace_config(
-            opentelemetry_sdk::trace::Config::default()
-                .with_sampler(Sampler::TraceIdRatioBased(0.1))  // 10% sampling; configurable
-                .with_id_generator(RandomIdGenerator::default())
-        )
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?
-}
+# License renewal
+tera-relay license --renew --token "eyJhbG..."
 ```
 
-**Mandatory trace points:**
+### PLATFORM-19.3 Admin Console Integration
 
-| Span Name | Attributes | Parent |
-|---|---|---|
-| `relay.message.receive` | `alpn_tier`, `payload_bytes` | — (root) |
-| `relay.wal.stage` | `wal_queue_depth` | `relay.message.receive` |
-| `relay.pubsub.fanout` | `fanout_recipients_bucket` | `relay.wal.stage` |
-| `relay.mls.epoch_rotation` | `group_size_bucket`, `rotation_trigger` | — (root) |
-| `db.postgres.query` | `db_operation` (SELECT/INSERT/UPDATE) | nearest parent |
-| `minio.upload` | `chunk_index`, `chunk_size_bytes` | nearest parent |
+After relay deployment, Admin scans QR code with TeraChat mobile app:
 
-**Collector and export:**
+- Relay status dashboard (connections, storage usage, latency P99)
+- License management (renew, view expiry, seat count)
+- Storage management (usage by tenant, cleanup old blobs)
+- User management (delegated to mobile app, not VPS console)
 
-- OTel Collector deployed as sidecar on relay VPS (no external network egress required).
-- Export to Grafana Tempo (self-hosted) or any OTLP-compatible backend.
-- `otlp_endpoint` configured via environment variable `TERA_OTEL_ENDPOINT`. If unset: tracing disabled (not a startup error).
-- Sampling rate: 10% default; configurable via `TERA_OTEL_SAMPLE_RATE` (0.0–1.0). Set to 1.0 during incident response.
-
-**Metric delay interaction:**
-Traces are NOT subject to the 30-second Prometheus delay (§OBS-02). Trace data does not
-contain user-correlated timing information because trace IDs are random and span attributes
-are scrubbed. The 30-second delay rule applies only to Prometheus counters/gauges/histograms.
-
-**New implementation contract rule (add to §12.6):**
-
-- [x] **OBS-04** — Relay daemon MUST initialize OTel tracer at startup if `TERA_OTEL_ENDPOINT`
-  is set. If endpoint is unreachable: log warning, continue without tracing. MUST NOT crash.
-- [x] **OBS-05** — All OTel span attributes MUST pass `privacy_attribute_check()` at compile
-  time via a custom procedural macro that rejects any attribute key in the blocklist
-  (`user_id`, `device_id`, `message_id`, `recipient_id`, `content`, `cas_hash`).
-
-### Impact
-
-- **Operational:** MTTR for P1/P0 relay incidents reduced ~50–60% (request-scoped debugging
-  replaces log grep across multiple services).
-- **Security:** Zero user-correlated data in traces. Privacy constraint is enforced at compile
-  time, not by policy.
-- **No latency impact:** Async OTel batch exporter; < 0.1 ms per span on relay hot path.
-
-### Reference
-
-- REF: Core_Spec.md §9.6 (Prometheus metrics, OBS-01/02/03)
-- REF: Core_Spec.md §12.6 (Observability Rules — add OBS-04, OBS-05)
-- REF: Feature_Spec.md §F-13 (Admin Console — expose trace sampling toggle in CISO Console)
+Admin does NOT need SSH, terminal, or CLI knowledge after initial setup.
+All operational tasks available in Admin Console mobile UI.
 
 ```
 
 ---
+
+## Trade-off Analysis
 
 ```markdown
-## [SECTION: §7.1 DAG Structure — UPDATE: Metadata Privacy Threat Model Boundary]
+## ARCH-TRADEOFFS: New Architecture Trade-offs
 
-### Problem
-`hot_dag.db` stores CRDT event metadata in plaintext: `author_did` (Ed25519 public key hash),
-`HLC_Timestamp`, `content_type` (Message | Edit | Delete | GroupOp), and `parents: Vec<Uuid>`
-(causal graph). On a physically seized or forensically imaged device, this metadata enables
-social graph reconstruction and communication frequency analysis without decrypting any payload.
-The §1.4 Zero-Knowledge guarantee is stated for the server; its boundary at the device level is
-undefined.
-
-### Root Cause
-The spec correctly claims Zero-Knowledge at the server (blind relay). The threat model does not
-define what is guaranteed at the device level in an adversarial physical access scenario.
-
-### Solution (Implementation-Level)
-
-Append to §7.1 after the Storage Layer table:
-
-**Device-Level Metadata Privacy — Threat Model Boundary (mandatory documentation):**
-
-This section explicitly defines what is and is not protected at the device level.
-
-**Protected (encrypted):**
-- `payload` field: AES-256-GCM ciphertext, key = `Epoch_Key` in RAM. Server and filesystem
-  adversary cannot read message content.
-- `cold_state.db`: fully encrypted with SQLCipher AES-256 (key = Secure Enclave-derived).
-
-**Not protected against physical device seizure (by design):**
-- `hot_dag.db` metadata: `author_did`, `hlc`, `content_type`, `parents`, `id`.
-- This metadata is necessary for DAG integrity verification and cannot be encrypted without
-  making the append-only structure unverifiable by the relay without key access.
-
-**Accepted risk:**
-A physically seized device allows an adversary without biometric/PIN to recover:
-- Communication frequency (event timestamps and HLC counters).
-- Causal graph structure (parent relationships between events).
-- Event type distribution (Message vs GroupOp vs Edit vs Delete).
-- Pseudonymous author identifiers (`author_did` = Ed25519 public key hash; not directly PII).
-
-This risk is accepted for the following operational reasons:
-- Encrypting `hot_dag.db` metadata would require the relay to hold decryption keys,
-  breaking the Zero-Knowledge server guarantee.
-- SQLCipher on `hot_dag.db` is architecturally viable but would add ~15% read/write overhead
-  on mobile (single-core WAL append path). This trade-off is deferred to a future version.
-
-**Mitigation (implemented):**
-- `author_did` is an Ed25519 public key hash, not a username or email. Not directly PII.
-- `content_type` leaks event category but not content.
-- Biometric gate prevents access to `Epoch_Key` → payload is never decryptable without
-  the live user present (physical seizure does not break payload encryption).
-
-**Future work (not in this version — tracked):**
-- Encrypted `hot_dag.db` with a key derived from `Secure Enclave` (SQLCipher): adds payload
-  metadata protection for physical seizure at the cost of ~15% I/O overhead. Tracked as
-  `TERA-SEC-007`.
-
-### Impact
-- **Documentation:** Eliminates architectural ambiguity. Engineers and auditors know
-  exactly what the Zero-Knowledge boundary covers.
-- **Security:** No behavior change. Existing design is preserved with explicit threat model.
-- **Compliance:** SOC2 and ISO 27001 require documented threat model boundaries. This
-  section satisfies that requirement.
-
-### Reference
-- REF: Core_Spec.md §1.4 (Zero-Knowledge Guarantee)
-- REF: Core_Spec.md §7.1 (DAG structure, storage layer)
-- REF: Core_Spec.md §2.3 (Separation of Concerns)
-- REF: Feature_Spec.md §F-04 (Local Storage Management — add disclosure note)
-```
-
----
-
----
-
-# 📄 PATCHES FOR `Feature_Spec.md`
-
----
-
-```markdown
-## [FEATURE: F-01: Secure E2EE Messaging — UPDATE: Nonce Derivation in Send Flow]
-
-### Problem
-Step 3 of the User Flow states: "Nonce = `Base_Nonce XOR chunk_seq_number`" without defining
-`Base_Nonce`. This creates an implementation gap where developers may use a static value or
-incorrect derivation, causing AES-GCM nonce reuse under the same `Epoch_Key`.
-
-### Solution
-Replace step 3 and the Nonce note in the Constraints section with RFC 9420-compliant derivation,
-consistent with the Core_Spec.md §5.3 update.
-
-### Behavior Update
-
-**Replace User Flow Step 3:**
-
-> ~~Core encrypts: `AES-256-GCM(Epoch_Key, plaintext)`. Nonce = `Base_Nonce XOR chunk_seq_number`.~~
-
-Replace with:
-
-> Core encrypts: `AES-256-GCM(Epoch_Key, plaintext)`.
-> Nonce derived per `TERA-CORE §5.3`: `nonce = xor_12(base_nonce, pad4(reuse_guard))`,
-> where `base_nonce = HKDF-SHA256(sender_data_secret, "nonce", 12)` and
-> `reuse_guard` is 4 CSPRNG bytes included in the `MLSCiphertext` header.
-> `sender_data_secret` is rotated on every MLS Epoch rotation.
-> `reuse_guard` is unique per message. Never reused.
-
-**Replace Constraints nonce note:**
-
-> ~~Maximum unpadded plaintext before chunking: 4,096 bytes.~~
-
-Add below that line:
-
-> Nonce construction: `TERA-CORE §5.3` derivation is mandatory. `Base_Nonce` is NOT a
-> static value. `reuse_guard` MUST be generated by `ring::rand::SystemRandom` per message.
-> Implementation using any other nonce source is a **blocker — do not merge**.
-
-### Platform Scope
-📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
-
-### Dependency
-- REF: Core_Spec.md §5.3 (Nonce derivation — Sender_Data_Secret, reuse_guard)
-- REF: Core_Spec.md §0.2 (Sender_Data_Secret object — new entry)
-
-### Impact
-Eliminates the primary implementation risk for AES-GCM nonce reuse. No user-visible behavior
-change. Biometric gate and send latency unchanged.
-```
-
----
-
-```markdown
-## [FEATURE: F-09: Media and File Transfer — UPDATE: Nonce Derivation for Chunked Upload]
-
-### Problem
-Step 3 of the send flow states: "Nonce = `Base_Nonce XOR chunk_seq_number`" — same undefined
-`Base_Nonce` as F-01. For chunked media, the nonce space is larger (many chunks per file) and
-the risk of implementation reuse is higher.
-
-### Solution
-Apply the same RFC 9420-compliant nonce derivation from Core_Spec.md §5.3, with a
-file-transfer-specific `reuse_guard` binding.
-
-### Behavior Update
-
-**Replace User Flow Step 3:**
-
-> ~~AES-256-GCM encrypt each chunk with ephemeral `ChunkKey`. Nonce = `Base_Nonce XOR chunk_seq_number`.~~
-
-Replace with:
-
-> AES-256-GCM encrypt each chunk with ephemeral `ChunkKey`.
-> Nonce derivation per `TERA-CORE §5.3`:
-> - `reuse_guard`: 4 CSPRNG bytes generated once per file transfer (bound to `cas_hash`).
->   Shared across all chunks of the same file (not per-chunk), because the key (`ChunkKey`)
->   is ephemeral and unique per file transfer.
-> - `base_nonce = HKDF-SHA256(ChunkKey, "chunk-nonce", 12)`.
-> - Per-chunk nonce = `xor_12(xor_12(base_nonce, pad4(reuse_guard)), seq_u64_to_12(chunk_seq_number))`.
-> - `chunk_seq_number` starts at 0 and increments by 1 per 2 MB chunk.
-> - `ChunkKey` `ZeroizeOnDrop` after all chunks of the file are processed (not after each chunk).
-
-**Add to Constraints:**
-
-> `reuse_guard` is generated once per file transfer by `ring::rand::SystemRandom` and stored
-> in the `MediaRef` CRDT stub alongside `cas_hash`. The receiver uses this value during
-> decryption. `reuse_guard` is not a secret — it is embedded in plaintext in the stub.
-
-### Platform Scope
-📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
-
-### Dependency
-- REF: Core_Spec.md §5.3 (Nonce derivation — reuse_guard, ChunkKey lifecycle)
-- REF: Core_Spec.md §0.1 (`ChunkKey` object — update lifecycle note)
-
-### Impact
-Eliminates nonce reuse for chunked file uploads. `reuse_guard` in stub adds 4 bytes to
-the MediaRef payload (< 5 KB stub; negligible). No user-visible change.
-```
-
----
-
-```markdown
-## [FEATURE: F-10: AI / SLM Integration — UPDATE: Fix Orphan §3.6 Reference + Module Mapping]
-
-### Problem
-- `REF: TERA-CORE §3.6` is cited in Dependencies but the section did not exist in Core_Spec.md.
-- `SessionVault` and `Micro-NER` had no canonical struct definition or security constraints.
-- Platform runtime selection matrix was defined only in FEAT, not in Core.
-
-### Solution
-Update all references to point to the now-defined `TERA-CORE §3.6`. Align all FEAT descriptions
-with the canonical definitions in Core.
-
-### Behavior Update
-
-**Replace Dependencies section:**
-
-> ~~REF: TERA-CORE §3.3 — `MemoryArbiter`, RAM budget matrix, Whisper tier protocol~~
-> ~~REF: TERA-CORE §3.6 — AI infrastructure, Micro-NER, `SessionVault` `ZeroizeOnDrop`~~
-> ~~REF: TERA-CORE §4.4 — `catch_unwind` boundary at AI worker entry; crash isolation from Core~~
-
-Replace with:
-
-> - REF: TERA-CORE §3.6 — `infra/ai_worker.rs` module, `SessionVault` struct, `Micro-NER`
->   ONNX pipeline, platform runtime selection matrix, AI quota enforcement
-> - REF: TERA-CORE §3.3 — `MemoryArbiter`, RAM budget matrix, Whisper tier protocol
-> - REF: TERA-CORE §4.4 — `catch_unwind` at AI worker entry; crash isolation from Core
-
-**Replace Feature ↔ Core Mapping table row for F-10:**
-
-> ~~F-10 | AI / SLM Integration | `infra/relay.rs` (VPS Enclave) | §3.3, §3.6, §4.4~~
-
-Replace with:
-
-> F-10 | AI / SLM Integration | `infra/ai_worker.rs` | §3.6, §3.3, §4.4
-
-**Update Constraints section — add:**
-
-> `SanitizedPrompt` is a newtype wrapping `String`. Construction requires a completed Micro-NER
-> PII redaction pass (defined in `TERA-CORE §3.6`). Passing raw user input to `run_inference()`
-> without constructing `SanitizedPrompt` is a **blocker — do not merge** (enforced by type system).
-
-**Update PII Redaction flow Step 5:**
-
-> ~~`SessionVault` `ZeroizeOnDrop` clears alias map within 100 ms.~~
-
-Replace with:
-
-> `SessionVault::restore_and_drop()` is called with the LLM response. Alias map is de-tokenized,
-> then the `SessionVault` is dropped. `ZeroizeOnDrop` clears the `HashMap` contents within 100 ms.
-> `SessionVault` MUST be dropped before `CoreSignal::StateChanged` is emitted (enforced by
-> `infra/ai_worker.rs` — the signal is emitted by Rust Core only after worker returns).
-
-### Platform Scope
-📱 iOS (CoreML) · 📱 Android (ONNX) · 📱 Huawei (HiAI/ONNX) · 💻 macOS (ONNX/CoreML) · 🖥️ Windows (ONNX) · 🖥️ Linux (ONNX)
-
-### Dependency
-- REF: Core_Spec.md §3.6 (canonical AI infrastructure module — newly defined)
-- REF: Core_Spec.md §3.3 (MemoryArbiter)
-- REF: Core_Spec.md §4.4 (catch_unwind)
-
-### Impact
-Eliminates orphan reference. F-10 now has a stable, auditable Core anchor. `SessionVault`
-lifecycle is enforced by type system, not by convention. No user-visible behavior change.
-```
-
----
-
-```markdown
-## [FEATURE: F-14: Adaptive Network Management — UPDATE: Parallel ALPN Probing]
-
-### Problem
-F-14 documents serial ALPN probing steps (Step 1 → Step 2 → Step 3). After Core_Spec.md §9.2
-is updated to parallel probing, the FEAT behavior description is out of sync and would mislead
-engineers implementing the client-side ALPN state machine.
-
-### Solution
-Update F-14 to reflect the parallel-first ALPN strategy, while keeping Strict Compliance Mode
-behavior unchanged.
-
-### Behavior Update
-
-**Replace ALPN Negotiation Sequence section:**
-
-> ~~Step 1: QUIC / HTTP/3 over UDP:443 ACK within 50 ms → ONLINE_QUIC~~
-> ~~No ACK / firewall DROP → Step 2~~
-> ~~Step 2: gRPC / HTTP/2 over TCP:443 ...~~
-> ~~Step 3: WebSocket Secure over TCP:443 ...~~
-
-Replace with:
-
-```text
-Parallel probe (unless Strict Compliance Mode active):
-
-  [QUIC probe]                  [gRPC probe]
-  UDP:443                       TCP:443
-  timeout: 50 ms                timeout: 80 ms
-       │                              │
-       ├── ACK received: ONLINE_QUIC ─┤
-       │                              ├── TLS success: ONLINE_GRPC
-       │                              │   (if QUIC did not win first)
-       └──── Both failed ─────────────┘
-                    │
-              WSS fallback (sequential)
-              TCP:443, timeout: 120 ms
-                    │
-              ├── WS Upgrade: ONLINE_WSS
-              └── All failed: MESH_MODE
-```
-
-Winner selection: first successful handshake wins. If QUIC and gRPC succeed simultaneously
-(race), keep lower-RTT connection; abort the other.
-
-**Timing targets (revised):**
-
-| Scenario | Target |
+### What We Gain
+| Benefit | Quantified Impact |
 |---|---|
-| QUIC available | ≤ 50 ms |
-| QUIC blocked, gRPC ok | ≤ 80 ms (was 130 ms) |
-| Both blocked, WSS ok | ≤ 200 ms (was 250 ms) |
-| All blocked → Mesh | ≤ 200 ms (was 250 ms) |
+| Infrastructure cost | $240/month → $7-48/month (80-97% reduction) |
+| Setup time | 1-2 days → 5-20 minutes |
+| Mobile thermal | -4°C average (ONNX offloaded) |
+| Mobile battery | -35% drain (ONNX + reduced DAG sync) |
+| Mobile storage | 300MB → 25MB (hot_dag.db) |
+| Deployment failures | Reduced 90% (single binary vs. 5-node coordination) |
+| Upgrade fear | Eliminated (zero-downtime single binary upgrade) |
+| Admin skill required | DevOps → None (non-technical admin can operate) |
 
-**HUD indicator (unchanged):** QUIC / gRPC / WSS / Mesh icon updates on `CoreSignal::TierChanged`.
+### What We Accept (Residual Risks)
 
-**Strict Compliance Mode (unchanged):** Skips parallel probe entirely. Direct gRPC TCP connection.
+| Risk | Severity | Mitigation |
+|---|---|---|
+| Desktop must be online for ONNX offload | Medium | TinyBERT local fallback always available |
+| Single relay VPS = single point of failure | Medium | Health monitoring + 5-min restart via systemd + DNS failover |
+| Managed R2/B2 = external dependency | Low | Provider stores only ciphertext → Zero-Knowledge preserved |
+| No PostgreSQL = no complex queries | Low | Relay only needs routing table — SQLite su
+fficient |
+| Desktop snapshot = delayed consistency | Low | 500-event or 24h interval — acceptable for enterprise |
 
-### Platform Scope
-
-📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
-
-### Dependency
-
-- REF: Core_Spec.md §9.2 (Parallel ALPN negotiation — updated)
-- REF: Core_Spec.md §4.2 (`CoreSignal::TierChanged` — emission timing unchanged)
-
-### Impact
-
-50 ms latency reduction on UDP-blocked enterprise networks. HUD behavior unchanged.
-No regression on QUIC-capable networks. Strict Compliance Mode unaffected.
-
+### What Does NOT Change
+- Zero-Knowledge security model: intact
+- E2EE with MLS: intact
+- Survival Mesh (BLE/Wi-Fi Direct): intact
+- Air-gapped deployment option: intact (Gov/Military tier)
+- Shamir Secret Sharing / KMS Bootstrap: intact
+- All cryptographic guarantees: intact
 ```
-
----
-
-```markdown
-## [FEATURE: F-01 / F-03: Inbound Message Handling — UPDATE: Deduplication Contract]
-
-### Problem
-F-01 (Inbound path) and F-03 (IPC Bridge) do not specify behavior when a duplicate
-`CRDT_Event` is received (same UUID, same content). After a relay restart, WAL staging
-replays `STAGED` events and clients may receive the same event twice. Neither FEAT section
-documents the expected deduplication behavior or `CoreSignal::StateChanged` emission rules
-for duplicates.
-
-### Solution
-Add explicit deduplication behavior to both F-01 (inbound flow) and F-03 (StateChanged rules).
-
-### Behavior Update
-
-**F-01 — Add after Inbound Message Flow step (DAG insertion step):**
-
-> **Inbound deduplication (mandatory):**
-> Before appending any inbound `CRDT_Event` to `hot_dag.db`, Rust Core checks:
-> `SELECT 1 FROM crdt_events WHERE id = ?`. If the event already exists:
-> - Discard silently. Do NOT append.
-> - Do NOT emit `CoreSignal::StateChanged`.
-> - Do NOT surface any error to the UI.
-> This is the expected behavior during relay restart recovery. It is not an error condition.
->
-> REF: TERA-CORE §9.3 (deduplication contract), TERA-CORE §7.1 (UNIQUE PRIMARY KEY on id)
-
-**F-03 — Add to `CoreSignal::StateChanged` emission rules:**
-
-> `CoreSignal::StateChanged` MUST be emitted only when `AppendResult::Inserted` is returned
-> by `dag::append_event()`. It MUST NOT be emitted for `AppendResult::Duplicate`.
-> UI components that subscribe to `StateChanged` are not idempotent by design — a duplicate
-> emission causes an unnecessary viewport re-render and may produce visible UI flicker.
-
-**F-03 — Update `UICommand::ScrollViewport` constraint:**
-
-> `UICommand::ScrollViewport` is issued by UI after receiving `CoreSignal::StateChanged`.
-> Because `StateChanged` is suppressed for duplicates, the UI will never issue a spurious
-> `ScrollViewport` in response to relay restart recovery traffic.
-
-### Platform Scope
-📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
-
-### Dependency
-- REF: Core_Spec.md §9.3 (WAL staging dedup — updated)
-- REF: Core_Spec.md §7.1 (hot_dag.db schema — UNIQUE PRIMARY KEY on id)
-- REF: Core_Spec.md §4.2 (`CoreSignal::StateChanged` — emission contract)
-
-### Impact
-Zero duplicate messages visible to the user after relay restart. No UI flicker.
-No behavior change during normal operation.
-```
-
----
-
-```markdown
-## [FEATURE: F-11c: Biometric Screen Lock — UPDATE: PIN Counter Access Control]
-
-### Problem
-F-11c describes PIN fallback and the 5-attempt ceiling but does not specify how the
-`Failed_PIN_Attempts` counter is protected against backup-restore bypass (jailbreak/root).
-A malicious actor could restore a counter backup to reset failed attempt tracking.
-
-### Solution
-Add platform-specific access control requirements for the PIN counter, consistent with the
-Core_Spec.md §5.2 update.
-
-### Behavior Update
-
-**Replace PIN fallback section:**
-
-> ~~PIN fallback: 6 digits. Transmitted via FFI Pointer — never through UI state buffer.
-> `ZeroizeOnDrop` after each digit. Maximum PIN failures: 5. On 5th: Cryptographic Self-Destruct.~~
-
-Replace with:
-
-> **PIN fallback:** 6 digits. Transmitted via FFI Pointer — never through UI state buffer.
-> `ZeroizeOnDrop` after each digit.
->
-> **`Failed_PIN_Attempts` counter protection:**
-> - Counter is stored in hardware-backed secure storage (Keychain/StrongBox/TPM per platform).
-> - Counter storage MUST exclude device backup (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
->   on iOS; `android:allowBackup="false"` exclusion on Android).
-> - Each counter write requires a biometric gate clearance (enforced in `crypto/hkms.rs`).
-> - Counter is HMAC-authenticated: tampering detected on next read triggers Self-Destruct
->   as if 5 failures had occurred.
-> - Maximum PIN failures: 5. On 5th: Cryptographic Self-Destruct.
->
-> REF: TERA-CORE §5.2 (PIN Counter — Access Control, HMAC tamper detection)
-
-**Add to Failure Handling:**
-
-> `Failed_PIN_Attempts` counter HMAC mismatch (tampered or corrupted): treat as 5 failures
-> immediately. Log `PIN_COUNTER_TAMPERED` to TeraDiag (pre-wipe, before key deletion).
-> Initiate Cryptographic Self-Destruct. This behavior is identical to `PIN_COUNTER_CORRUPTED`
-> but with a distinct log code for forensic differentiation.
-
-### Platform Scope
-📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
-
-### Dependency
-- REF: Core_Spec.md §5.2 (PIN Counter Access Control — updated with platform matrix and HMAC scheme)
-- REF: Core_Spec.md §5.1 (Cryptographic Self-Destruct trigger)
-
-### Impact
-Eliminates jailbreak/root backup-restore bypass of PIN brute force protection.
-No user-visible behavior change in the normal PIN flow. Failure handling is clarified and
-differentiated between corruption and active tampering.
-```
-
----
-
-```markdown
-## [FEATURE: F-04: Local Storage Management — UPDATE: Metadata Privacy Disclosure]
-
-### Problem
-F-04 describes `hot_dag.db` as append-only with "ciphertext blobs only" but does not disclose
-that CRDT event metadata (author_did, HLC timestamps, content_type, parent relationships) is
-stored in plaintext. This omission misleads engineers into assuming `hot_dag.db` is opaque to
-a filesystem adversary.
-
-### Solution
-Add an explicit data-at-rest privacy note aligned with the Core_Spec.md §7.1 threat model
-boundary update.
-
-### Behavior Update
-
-**Add to Data Interaction section of F-04:**
-
-> **`hot_dag.db` data-at-rest privacy boundary:**
->
-> `hot_dag.db` stores the following in plaintext (not encrypted):
-> - `id` (UUID v7), `parents` (causal graph), `hlc` (timestamp), `author_did`, `content_type`.
->
-> `payload` (message content) is AES-256-GCM ciphertext — not readable without `Epoch_Key`.
->
-> A physically seized device with filesystem access (without biometric) exposes communication
-> metadata but NOT message content. This is the accepted design boundary documented in
-> `TERA-CORE §7.1`. Engineers must not treat `hot_dag.db` as fully opaque at rest.
->
-> `cold_state.db` is fully encrypted (SQLCipher AES-256, key from Secure Enclave). It is
-> not readable without the biometric-bound device key.
-
-**No behavior change** to the WAL anti-compaction or migration flows.
-
-### Platform Scope
-📱 iOS · 📱 Android · 📱 Huawei · 💻 macOS · 🖥️ Windows · 🖥️ Linux
-
-### Dependency
-- REF: Core_Spec.md §7.1 (hot_dag.db storage layer — threat model boundary)
-- REF: Core_Spec.md §1.4 (Zero-Knowledge Guarantee — server scope, not device scope)
-
-### Impact
-Clarifies threat model for engineers implementing device backup, forensic exclusion, and
-secure deletion flows. No API or behavior change. Prevents future misdesign assuming `hot_dag.db`
-is fully opaque to filesystem-level adversaries.
-```
-
----
