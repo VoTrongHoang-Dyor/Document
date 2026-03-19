@@ -1879,9 +1879,9 @@ All options: store ONLY ciphertext — provider sees nothing
 |         |            | Update §5.9.3 C_trunc 8B→16B; Update §10.6 RotatingCrlFilter |
 | 0.2.3 | 2026-03-18 | Complete rewrite from scratch. Unified §0–§13 structure with stable anchors. Zero duplicate section numbering. All CHANGELOG entries populated. Rules section replaced with `[ ]` checklist using unique rule IDs (KEY-01, NET-01, etc.). Platform Behavior Matrices added (§3.1–§3.5). AI routing hint with explicit positive/negative routing directives. Incorporated all decisions from architecture sessions: EMDP Key Escrow (§6.7), Adaptive WAL batch sizing (§9.3), Component Fault Isolation with `panic='unwind'` mandate (§4.4), Relay WAL Staging at-least-once delivery (§9.3), Prometheus Zero-Knowledge metrics (§9.6), WasmParity CI gate requirement (§11.4), Configurable Dead Man Switch grace period (§5.1), Batched TreeKEM Update_Path delivery (§5.3), XPC Transaction Journal with retry policy (§11.1), iOS Double-Buffer Zeroize (§5.2), Adaptive QUIC Probe Learning (§9.2), Federation schema version negotiation (§9.4), Mobile DAG merge time-slicing (§7.3). |
 | 0.2.1 | 2026-03-13 | Deprecated: eBPF/XDP, Hardware TEE (SGX/SEV), `mlock()` pinning, Envoy Sidecar — removed for VPS compatibility. Added: §3.5 Micro-Core Relay, §4.6 Soft-Enclave WASM Isolation (ChaCha8 + ZeroizeOnDrop), §3.4.2 SQLite OOM Prevention. |
-| 0.1.1 | 2026-03-11 | Removed ODES/Blind Shard. Added E2EE Cloud Backup (§9.1). Simplified Mesh Gossip: iBeacon + Gossip Broadcast (removed 3D-A* routing). |
+| 0.1.4 | 2026-03-11 | Removed ODES/Blind Shard. Added E2EE Cloud Backup (§9.1). Simplified Mesh Gossip: iBeacon + Gossip Broadcast (removed 3D-A* routing). |
 | 0.1.3 | 2026-03-05 | Added Hierarchical Crypto-Shredding (§5.35), SSA Retroactive Taint (§5.36), Anti-Snapshot TPM 2.0 Monotonic Counter. |
-| 0.1.1 | 2026-03-04 | Added Constant-time Memory Access (§9.2), EMIP Plugin Integrity (§5.24), TeraVault VFS (§6.13). |
+| 0.1.2 | 2026-03-04 | Added Constant-time Memory Access (§9.2), EMIP Plugin Integrity (§5.24), TeraVault VFS (§6.13). |
 
 ---
 
