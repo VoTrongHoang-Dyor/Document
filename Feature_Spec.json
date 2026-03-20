@@ -964,6 +964,20 @@
           "content_blocks": [
             {
               "type": "paragraph",
+              "text": "<!-- INSERTED PATCH: Chunked DAG Merger & Progress UI -->"
+            },
+            {
+              "type": "list",
+              "data": [
+                "📱 Mobile environments execute ChunkedDagMerger logic wrapping hard boundaries over a maximum count allocation limits explicitly set to MAX_MOBILE_MERGE_EVENTS = 3000.",
+                "📱 Excess triggers dispatch an asynchronous payload containing an isolated SnapshotRequired IPC signalling spec execution to offload processing to the Desktop layer.",
+                "📱 Computations expanding boundaries wider than 500 events natively trigger Core progression flags via mapped IPC signals explicitly structured using DagMergeProgress schemas.",
+                "📱 Mobile UI: Linear completion bars output mapped text representations limiting block impacts scaling: \"Synchronizing [X]% — [Y] messages remaining\". Non-blocking background parameters correctly maintain user interactions cleanly.",
+                "💻🖥️ Desktop UI: Embedded mapping renders a subtle background marker positioned on the corner status bar. Eliminating central processing modals inherently respects high desktop background computational bounds."
+              ]
+            },
+            {
+              "type": "paragraph",
               "text": "Description: Send and receive text messages encrypted end-to-end using MLS RFC 9420. The VPS relay receives only ciphertext — it has zero access to plaintext, sender identity, or content."
             },
             {
@@ -1048,6 +1062,17 @@
           "level": 3,
           "heading": "F-02: Push Notification Delivery (E2EE)",
           "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "<!-- INSERTED PATCH: Zero-Knowledge Push Notification -->"
+            },
+            {
+              "type": "list",
+              "data": [
+                "☁️ Struct modifications inside Push_Key require standard version: u32 allocation mapping limits.",
+                "☁️ NSE routines implement a strict read validation from the payload header configuration parsing keys specifically matched to precise parameter alignment as outlined across TERA-CORE §17.2."
+              ]
+            },
             {
               "type": "paragraph",
               "text": "Description: Deliver E2EE-encrypted push notifications to backgrounded devices. Decryption is local — APNs, FCM, and HMS never receive plaintext."
@@ -1211,6 +1236,26 @@
           "level": 3,
           "heading": "F-03: IPC Bridge and State Synchronization",
           "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "<!-- INSERTED PATCH: Dart FFI Contract — Mandatory Enforcement -->"
+            },
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Note: Supersedes PLATFORM-14.** Mandatory contract mapping explicitly tied directly to CI/CD compilation blocks yielding compiler drops upon internal constraint violation sequences."
+              ]
+            },
+            {
+              "type": "list",
+              "data": [
+                "🔗 Extracted pointers via natively structured TeraSecureBuffer elements ALWAYS mandate encapsulation logic specifically run exactly inside useInTransaction().",
+                "🔗 The Core Rust Token Registry logic actively bypasses internal zeroization sequence flags over TTL limit bounds directly preferring manual interaction states explicitly invoking releaseNow().",
+                "🔗 TTL timeout boundaries crossing limits trigger asynchronous internal structures broadcasting IpcSignal::TransactionTimeout flags yielding mapped parameter modals alerting: \"Timeout boundary reached, require explicit re-initiation sequences\".",
+                "🔗 Routine Garbage Collector parsing is heavily depreciated only mapping inside limits specifically structured uniquely as safety-net fallback variables maintaining detailed log tracking capabilities."
+              ]
+            },
             {
               "type": "paragraph",
               "text": "Description: All communication between Rust Core and the UI layer routes through a strict unidirectional IPC bridge. Core emits typed CoreSignal enums; UI sends typed UICommand enums. No raw pointer crosses the FFI boundary."
@@ -1391,6 +1436,19 @@
           "level": 3,
           "heading": "F-04: Local Storage Management",
           "content_blocks": [
+            {
+              "type": "paragraph",
+              "text": "<!-- INSERTED PATCH: Two-Tier State Squashing & Stream-based Hydration -->"
+            },
+            {
+              "type": "list",
+              "data": [
+                "🗄️ Explicit protocol specification: The 7-day hot DAG structural eviction trigger is explicitly suspended when the Mesh_Partition_Active parameter returns true.",
+                "🗄️ Standard eviction clears ONLY trigger after the tombstone.clock ≤ MVC requirement fully satisfies constraints mapped across TERA-CORE §17.1.",
+                "🌐 Hydration capabilities route through variables mapping across HydrationScheduler load balancers.",
+                "🌐 Connected endpoints strictly implement mathematical exponential backoff procedures structured tightly via execution jitter limits initiating hydration slot calls."
+              ]
+            },
             {
               "type": "paragraph",
               "text": "Description: Manage the two-tier SQLite storage system (hot_dag.db + cold_state.db): WAL anti-bloat, crash-safe schema migrations, and shadow paging hydration."
@@ -2193,6 +2251,33 @@
           "content_blocks": [
             {
               "type": "paragraph",
+              "text": "<!-- INSERTED PATCH: Edge ONNX Embedding Engine & Model Integrity Protocol -->"
+            },
+            {
+              "type": "list",
+              "data": [
+                "⚙️ ONNX operational execution heavily relies on the architectural limits set functionally inside PLATFORM-18.",
+                "⚙️ Initial model allocation parsing mandatorily executes through OnnxModelLoader.load_verified() pipeline wrappers to ensure BLAKE3 + Ed25519 signature integrity."
+              ]
+            },
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Mandatory Model Integrity Rules:**"
+              ]
+            },
+            {
+              "type": "list",
+              "data": [
+                "⚙️ Signature verification structurally relies precisely against specific endpoints maintaining Ed25519 values routed perfectly inside the central TeraChat Model Signing Root nodes checking isolated model_name.sig blocks.",
+                "⚙️ BLAKE3 hashing specifications require internal compilation hard-coding paths executing cleanly directly bounded inside build.rs targets locking binary bounds preventing network lookup risks natively.",
+                "⚙️ Linear sequence execution locks strict bounds dropping precisely scaling: BLAKE3 hash execution validation → Ed25519 signature constraint bounds → active ONNX session loading calls. Error mapping enforces functional quarantine limits backing down dynamically to keyword mapping.",
+                "⚙️ Host retrieval pipelines exclusively demand natively enforced DoH (DNS-over-HTTPS) bounds bundled inside TLS wrappers utilizing mapped SPKI pinning parameters natively bouncing standard DNS limits rejecting open DNS queries directly."
+              ]
+            },
+            {
+              "type": "paragraph",
               "text": "Description: Local Small Language Model (SLM) inference and cloud LLM routing for .tapp plugins. PII is redacted before any data leaves the device. Inference is isolated in a separate process (crash-safe from Rust Core)."
             },
             {
@@ -2663,6 +2748,29 @@
           "content_blocks": [
             {
               "type": "paragraph",
+              "text": "<!-- INSERTED PATCH: Client-Side Observability Integration -->"
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "client-side-observability-integration",
+          "level": 3,
+          "heading": "Client-Side Observability Integration",
+          "content_blocks": [
+            {
+              "type": "list",
+              "data": [
+                "📱 OTEL Push (khi online): Core logic exports mapped metrics strictly functioning out over OTLP HTTP POST payload limits routing to VPS operational endpoints strictly within 60s intervals. Data parsing exclusively utilizes the TeraDiagMetrics protobuf schema.",
+                "📱 Offline Buffer: Metrics load and cache directly into local variables mapping inside isolation wrappers marked fully as metrics_buffer.db bounded strictly at 24 hours. Connective limits flush buffers dynamically tracking immediate network reconnections.",
+                "📱 Battery-Aware Export: Detection constraints drop metric transmission intervals structurally back over 300s when power levels detect constraints < 20%. Suspensions drop cleanly at ≤ 10%.",
+                "💻🖥️ Prometheus Node Exporter: Standard node routing parses direct exposure inside the local /metrics host parameter set cleanly limiting access exclusively bounded to localhost:9092.",
+                "💻🖥️ OTLP Push Fallback: Alternate bounds revert exactly parsing metrics to the native VPS OTEL Collector pipelines mapped standard from internal Mobile specifications.",
+                "📱💻 GC Release Warning: Warning metrics trigger functionally mapping when automated GC boundaries execute a garbage cache reduction over TeraSecureBuffer parameter instances sidestepping typical releaseNow() explicit paths."
+              ]
+            },
+            {
+              "type": "paragraph",
               "text": "Description: Centralized management interface for workspace administrators: policy, device management, user offboarding, audit, and license management."
             },
             {
@@ -3023,837 +3131,1945 @@
             }
           ],
           "subsections": []
+        },
+        {
+          "id": "infra-01-architecture-client-compute-distribution",
+          "level": 3,
+          "heading": "INFRA-01: [ARCHITECTURE] Client Compute Distribution",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Nguyên tắc:** Mobile devices không phải là compute nodes.",
+                "Desktop devices là compute cluster. VPS là blind router.",
+                "Computation đi đến nơi có resource — không phải nơi thuận tiện architecturally."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "infra-011-mobile-compute-constraints-hard-rules",
+              "level": 4,
+              "heading": "INFRA-01.1 Mobile Compute Constraints (Hard Rules)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Các operation sau TUYỆT ĐỐI KHÔNG chạy trên Mobile (📱):"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Operation",
+                    "Lý do cấm",
+                    "Alternative"
+                  ],
+                  "rows": [
+                    [
+                      "ONNX 80MB model inference",
+                      "Thermal spike +4°C, 15% battery/op",
+                      "Desktop offload"
+                    ],
+                    [
+                      "DAG merge > 3000 events",
+                      "ANR risk > 5s",
+                      "Snapshot sync"
+                    ],
+                    [
+                      "FTS5 full-history index",
+                      "Storage > 300MB",
+                      "Desktop-hosted search"
+                    ],
+                    [
+                      "CRDT full-state storage",
+                      "hot_dag.db > 300MB",
+                      "Delta-only + snapshot"
+                    ],
+                    [
+                      "BLAKE3 full-file hash (>100MB)",
+                      "CPU spike blocks UI",
+                      "Desktop computation"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "infra-012-onnx-inference-offload-protocol",
+              "level": 4,
+              "heading": "INFRA-01.2 ONNX Inference Offload Protocol",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "📱 Mobile phát OnnxOffloadRequest (E2EE) đến Desktop Super Node khi cần inference:"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Điều kiện kích hoạt offload:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Trigger",
+                    "Hành động"
+                  ],
+                  "rows": [
+                    [
+                      "Model tier yêu cầu \"base\" (74MB) và RAM mobile ≤ 3GB",
+                      "Bắt buộc offload"
+                    ],
+                    [
+                      "Battery mobile < 30%",
+                      "Bắt buộc offload"
+                    ],
+                    [
+                      "Thermal state = Critical (iOS: `.serious` / Android: `THERMAL_STATUS_SEVERE`)",
+                      "Bắt buộc offload"
+                    ],
+                    [
+                      "Model tier \"tiny\" nhưng CPU utilization > 80% sustained 10s",
+                      "Khuyến nghị offload"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Offload Protocol Flow:"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "📱 Mobile → [ONNX_OFFLOAD_REQUEST]\n  {\n    request_id: Uuid,\n    sanitized_prompt: SanitizedPrompt,   // PII đã redact — KHÔNG gửi raw text\n    model_tier: \"base\" | \"tiny\",\n    ttl_ms: 5000,\n    requester_did: DeviceId,\n    hmac: HMAC-BLAKE3(Company_Key, request_id || sanitized_prompt)\n  }\n  │ Transport: E2EE CRDT_Event (nonce rotation per request)\n  ▼\n💻 Desktop Super Node\n  1. Verify HMAC-BLAKE3 — reject nếu mismatch\n  2. Check OPA Policy: requester_did có AI quota còn lại không?\n  3. Run ONNX inference trong isolated process (không share RAM với Rust Core)\n  4. Phản hồi [ONNX_OFFLOAD_RESPONSE]:\n     {\n       request_id: Uuid,         // Echo — match với request\n       ast_nodes: Vec<ASTNode>,  // Sanitized output — không có raw LLM text\n       tokens_used: u32,\n       latency_ms: u32\n     }\n  │ Transport: E2EE CRDT_Event về đúng requester_did\n  ▼\n📱 Mobile nhận response\n  1. Verify request_id khớp với pending request — reject nếu stale\n  2. Deliver Vec<ASTNode> đến .tapp hoặc AI context\n  3. Decrement AI quota: tokens_used\n  4. ZeroizeOnDrop trên SanitizedPrompt sau khi response nhận được"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Failure Handling:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Desktop không online / không trong Mesh: fall back to Tiny model local.",
+                    "TTL 5000ms hết mà không có response: emit CoreSignal::ComponentFault { component: \"ai_offload\", severity: Warning }. UI hiển thị \"AI đang xử lý chậm — đang thử lại...\" Retry 1 lần với TTL 3000ms. Sau đó: fall back Tiny local.",
+                    "HMAC mismatch trên Desktop: log OFFLOAD_HMAC_VIOLATION { requester_did } vào Audit Log. Không phản hồi request.",
+                    "ONNX worker crash trên Desktop: catch_unwind tại worker entry. Emit ComponentFault. Mobile nhận timeout sau TTL."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Constraints:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "SanitizedPrompt là newtype — construction bắt buộc qua PII redaction pass (Micro-NER). Không thể truyền raw string.",
+                    "Desktop ONNX process: RAM ceiling 150MB. Nếu vượt: OOM-kill worker, trả về OFFLOAD_OOM_ERROR.",
+                    "Không có persistent connection giữa Mobile và Desktop cho offload — mỗi request là độc lập CRDT_Event."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "infra-02-implementation-blob-storage-client",
+          "level": 3,
+          "heading": "INFRA-02: [IMPLEMENTATION] Blob Storage Client",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "TeraChat clients interact with blob storage ONLY via TeraRelay's presigned URL mechanism.",
+                "Clients NEVER have direct credentials to R2/B2/MinIO.",
+                "This maintains Zero-Knowledge: relay signs URLs without seeing content."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "infra-021-file-upload-flow-revised",
+              "level": 4,
+              "heading": "INFRA-02.1 File Upload Flow (Revised)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Nguyên tắc: Client không bao giờ có direct credentials đến R2/B2/MinIO. Mọi upload/download đi qua presigned URL từ TeraRelay. Zero-Knowledge được bảo toàn vì relay ký URL mà không thấy nội dung."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Upload Flow (Chunked, E2EE):"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "[UI] File bytes → UICommand::SendMedia { file_bytes, recipient_did }\n  │\n  ▼\n[Rust Core]\n  1. Split file thành 2MB chunks: [chunk_0, chunk_1, ..., chunk_N]\n  2. Với mỗi chunk_i:\n     a. ChunkKey_i = HKDF(Epoch_Key, \"chunk\" || cas_hash || i)\n     b. ciphertext_i = AES-256-GCM(ChunkKey_i, chunk_i, nonce_i)\n        - nonce_i = derive_message_nonce(sender_data_secret, reuse_guard, seq=i)\n     c. ZeroizeOnDrop: ChunkKey_i và chunk_i plaintext\n  3. cas_hash = BLAKE3(file_bytes)  ← tính trước khi encrypt\n  4. Request presigned URL từ TeraRelay:\n     PUT /v1/presign\n     { cas_hash: hex, chunk_count: N+1, content_type: \"application/octet-stream\" }\n     → Response: [presigned_url_0, ..., presigned_url_N] (TTL 15 phút mỗi URL)\n  5. Upload mỗi ciphertext_i lên presigned_url_i (parallel, max 3 concurrent)\n  6. Sau khi tất cả chunks uploaded:\n     Tạo CRDT_Event { content_type: MediaStub, payload: ZeroByteStub }\n     ZeroByteStub = { name, cas_hash, chunk_count, encrypted_thumbnail, storage_ref }\n  7. Append CRDT_Event vào hot_dag.db → broadcast qua E2EE channel"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Download Flow (On-Demand, Streaming):"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "[UI] User tap on ZeroByteStub → UICommand::RequestMedia { cas_hash }\n  │\n  ▼\n[Rust Core]\n  1. Request presigned download URLs:\n     GET /v1/presign/download\n     { cas_hash: hex, chunk_count: N+1 }\n     → Response: [download_url_0, ..., download_url_N] (TTL 5 phút)\n  2. Với mỗi chunk_i (sequential để preserve stream order):\n     a. Download ciphertext_i từ download_url_i\n     b. ChunkKey_i = HKDF(Epoch_Key, \"chunk\" || cas_hash || i)\n     c. plaintext_i = AES-256-GCM decrypt(ChunkKey_i, ciphertext_i)\n     d. tera_buf_acquire → write plaintext_i đến 2MB RingBuffer\n     e. Emit CoreSignal::StateChanged → UI render chunk\n     f. ZeroizeOnDrop: ChunkKey_i và plaintext_i sau render frame\n  3. Sau khi tất cả chunks: emit CoreSignal::MediaComplete { cas_hash }"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Deduplication (Content-Addressed Storage):"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Server lưu file theo cas_hash → identical files chỉ upload 1 lần.",
+                    "Trước khi upload: HEAD request kiểm tra cas_hash đã tồn tại chưa.",
+                    "Nếu tồn tại: bỏ qua upload, chỉ tạo ZeroByteStub mới tham chiếu cùng cas_hash."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Constraints:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Presigned URL TTL: 15 phút (upload), 5 phút (download). Hết TTL: request URL mới.",
+                    "Max concurrent chunks upload: 3 (tránh saturate bandwidth trên mobile).",
+                    "Chunk size: 2MB fixed. File < 2MB: 1 chunk duy nhất.",
+                    "TeraRelay không lưu presigned URL — stateless generation dựa trên HMAC-signed payload."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Failure Handling:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Upload chunk thất bại: retry tối đa 3 lần với exponential backoff (1s, 2s, 4s). Sau 3 lần: MEDIA_UPLOAD_FAILED, notify UI.",
+                    "Download interrupted mid-way: Hydration_Checkpoint ghi { cas_hash, last_chunk_index } vào hot_dag.db. Resume từ checkpoint khi user tap lại.",
+                    "Presigned URL expired mid-upload: request URL mới cho chunk đang pending. Các chunks đã upload giữ nguyên."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "infra-03-implementation-terarelay-health-self-healing",
+          "level": 3,
+          "heading": "INFRA-03: [IMPLEMENTATION] TeraRelay Health & Self-Healing",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "Single-binary deployment means no cluster coordination.",
+                "Self-healing must happen within the binary itself."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "infra-031-in-process-watchdog",
+              "level": 4,
+              "heading": "INFRA-03.1 In-Process Watchdog",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Nguyên tắc: Single-binary deployment không có cluster coordinator. Self-healing phải xảy ra trong binary. Systemd là last-resort, không phải primary recovery mechanism."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Watchdog Architecture:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub struct InProcessWatchdog {\n    component_health: HashMap<ComponentId, ComponentHealth>,\n    last_heartbeat:   HashMap<ComponentId, Instant>,\n    restart_counts:   HashMap<ComponentId, u32>,\n    alert_tx:         mpsc::Sender<WatchdogAlert>,\n}\n\npub struct ComponentHealth {\n    status:            HealthStatus,   // Healthy | Degraded | Failed\n    last_error:        Option<String>,\n    restart_count_1h:  u32,\n}\n\n/// Được gọi mỗi 1 giây bởi dedicated Tokio task\npub async fn watchdog_tick(watchdog: Arc<Mutex<InProcessWatchdog>>) {\n    let now = Instant::now();\n    for (component_id, last_hb) in &watchdog.last_heartbeat {\n        let elapsed = now.duration_since(*last_hb);\n        // Threshold: 10 giây không có heartbeat → component considered failed\n        if elapsed > Duration::from_secs(10) {\n            watchdog.mark_failed(component_id);\n            watchdog.schedule_restart(component_id, Duration::from_secs(1)).await;\n        }\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Component Heartbeat Registration:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Component",
+                    "Heartbeat interval",
+                    "Max silence threshold",
+                    "Restart policy"
+                  ],
+                  "rows": [
+                    [
+                      "WAL staging consumer",
+                      "2s",
+                      "10s",
+                      "Restart after 1s delay"
+                    ],
+                    [
+                      "Pub/sub fanout",
+                      "2s",
+                      "10s",
+                      "Restart after 1s delay"
+                    ],
+                    [
+                      "BLE beacon scanner",
+                      "5s",
+                      "20s",
+                      "Restart after 2s delay"
+                    ],
+                    [
+                      "ALPN probe task",
+                      "10s",
+                      "30s",
+                      "Restart after 5s delay"
+                    ],
+                    [
+                      "AI worker process",
+                      "5s",
+                      "15s",
+                      "Restart after 2s delay; max 3/hour"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Restart Budget (Circuit Breaker):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub fn schedule_restart(&mut self, component_id: &ComponentId, delay: Duration) {\n    let count_1h = self.restart_counts.entry(*component_id).or_insert(0);\n    if *count_1h >= 5 {\n        // Circuit breaker: 5 restarts trong 1 giờ → mark permanently degraded\n        self.component_health.insert(*component_id, ComponentHealth {\n            status: HealthStatus::Degraded,\n            last_error: Some(\"Restart budget exceeded (5/hour)\".to_string()),\n            restart_count_1h: *count_1h,\n        });\n        // Alert Admin Console — không tắt daemon\n        self.alert_tx.send(WatchdogAlert::CircuitBreakerTripped {\n            component: *component_id,\n            restart_count: *count_1h,\n        }).ok();\n        return;\n    }\n    *count_1h += 1;\n    tokio::spawn(async move {\n        tokio::time::sleep(delay).await;\n        restart_component(component_id).await;\n    });\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Prometheus Metrics (Zero-Knowledge):"
+                },
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "terachat_watchdog_restarts_total{component=\"wal_staging\"} 2\nterachat_watchdog_circuit_breaker_trips_total{component=\"ai_worker\"} 1\nterachat_component_health{component=\"ble_scanner\", status=\"healthy\"} 1"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Không có user ID, message content, hay session data trong metrics."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "SIGTERM Handling (Graceful Shutdown):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "tokio::signal::ctrl_c().await?;\n// 1. Stop accepting new connections\n// 2. Signal all components via watchdog to flush\nwatchdog.initiate_shutdown().await;\n// 3. WAL checkpoint (30s timeout)\nlet _ = timeout(Duration::from_secs(30),\n    db.execute(\"PRAGMA wal_checkpoint(TRUNCATE)\")\n).await;\n// 4. Exit unconditionally\nprocess::exit(0);"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Systemd TimeoutStopSec = 35 — 5 giây margin sau 30 giây checkpoint."
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "platform-19-one-touch-relay-deployment",
+          "level": 3,
+          "heading": "PLATFORM-19: One-Touch Relay Deployment",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "platform-191-deployment-requirements-revised",
+              "level": 4,
+              "heading": "PLATFORM-19.1 Deployment Requirements (Revised)",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tier",
+                    "VPS Spec",
+                    "Monthly Cost",
+                    "Admin Skill Required",
+                    "Setup Time"
+                  ],
+                  "rows": [
+                    [
+                      "Solo (≤50 users)",
+                      "1 vCPU, 512MB RAM, 20GB SSD",
+                      "$6 + $1 storage",
+                      "None",
+                      "5 min"
+                    ],
+                    [
+                      "SME (≤500 users)",
+                      "2 vCPU, 2GB RAM, 40GB SSD",
+                      "$12 + $5 storage",
+                      "None",
+                      "10 min"
+                    ],
+                    [
+                      "Enterprise (≤5000 users)",
+                      "4 vCPU, 8GB RAM, 100GB SSD",
+                      "$28 + $20 storage",
+                      "Basic",
+                      "20 min"
+                    ],
+                    [
+                      "Gov (air-gapped, any size)",
+                      "Existing hardware",
+                      "CAPEX only",
+                      "IT Admin",
+                      "1 hour"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "platform-192-tera-relay-cli-commands",
+              "level": 4,
+              "heading": "PLATFORM-19.2 `tera-relay` CLI Commands",
+              "content_blocks": [],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "observe-01-implementation-client-side-observability",
+          "level": 3,
+          "heading": "OBSERVE-01: [IMPLEMENTATION] Client-Side Observability",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "Clients không expose Prometheus scrape endpoint.",
+                "Thay vào đó: push aggregate metrics qua OTLP HTTP khi online,",
+                "buffer locally khi offline."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "observe-011-implementation-mobile-metrics-push",
+              "level": 4,
+              "heading": "OBSERVE-01.1 [IMPLEMENTATION] Mobile Metrics Push",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Nguyên tắc thiết kế: Mobile không expose scrape endpoint (firewall/NAT issues). Push aggregate metrics qua OTLP HTTP khi online. Buffer locally khi offline. Không có user-correlated data trong bất kỳ metric nào."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Metric Types (Privacy-Safe):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub struct ClientMetricBatch {\n    /// Anonymized device class — không có device ID hay user ID\n    device_class:   DeviceClass,   // Mobile | Desktop | Server\n    platform:       PlatformKind,  // iOS | Android | macOS | Windows | Linux\n    app_version:    SemVer,\n\n    /// Performance metrics (aggregate, không có per-message data)\n    mls_encrypt_p50_ms:      u32,\n    mls_encrypt_p99_ms:      u32,\n    ipc_buf_acquire_p50_us:  u32,\n    ipc_buf_acquire_p99_us:  u32,\n    dag_append_p50_ms:       u32,\n    dag_merge_events_per_s:  u32,\n\n    /// Reliability metrics\n    wasm_sandbox_crashes:    u32,\n    nse_circuit_breaker_trips: u32,\n    push_key_version_mismatches: u32,\n    alpn_fallback_count:     u32,   // Số lần phải fallback từ QUIC → gRPC → WSS\n\n    /// Health indicators\n    wal_size_mb:             u32,   // Bucket: 0-10, 10-50, 50-100, 100+\n    available_ram_mb:        u32,   // Bucket: 0-100, 100-500, 500-1000, 1000+\n    battery_pct:             u8,    // Bucket: 0-20, 20-40, 40-60, 60-80, 80-100\n\n    /// Timestamps (no user correlation)\n    collection_period_start: u64,   // Unix epoch, second precision\n    collection_period_end:   u64,\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Push Flow:"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "Mỗi 15 phút (hoặc khi app foreground sau offline):\n  1. Aggregate metrics từ AtomicCounters trong Rust Core\n  2. Serialize → OTLP protobuf\n  3. KHÔNG gửi nếu battery < 15% (tiết kiệm power)\n  4. Gửi qua HTTPS POST /v1/metrics (mTLS — same relay connection)\n     Nếu online: gửi ngay\n     Nếu offline: append vào metrics_buffer.db (max 48h, 500KB)\n  5. Server nhận, ghi vào Prometheus remote write endpoint\n  6. ZeroizeOnDrop: xóa batch sau khi ACK nhận được"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Crash Reporter (Privacy-Safe):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub struct CrashReport {\n    crash_id:       Uuid,           // Random UUID v4 — không liên kết với user\n    platform:       PlatformKind,\n    app_version:    SemVer,\n    component:      &'static str,   // \"wasm_sandbox\" | \"mls_engine\" | \"mesh_transport\"\n    panic_type:     &'static str,   // Panic type string, không có backtrace nếu có PII\n    stack_hash:     [u8; 8],        // BLAKE3[0:8] của stripped stacktrace\n    os_version:     String,\n    timestamp_utc:  u64,\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Crash report KHÔNG bao gồm: user ID, device ID, message content, file paths có username, full stacktrace (chỉ hash)."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Retention và Privacy:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Metrics server: data retention 30 ngày, sau đó auto-delete.",
+                    "Không có cross-device correlation trong bất kỳ query nào.",
+                    "Mọi device_class, platform được bucket để ngăn re-identification.",
+                    "Admin có thể opt-out metrics hoàn toàn qua OPA Policy: { \"telemetry.enabled\": false }."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "observe-02-implementation-dag-merge-progress-ui",
+          "level": 3,
+          "heading": "OBSERVE-02: [IMPLEMENTATION] DAG Merge Progress UI",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "Khi merge > 500 events, user PHẢI thấy progress — không black screen."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "observe-021-implementation-ipc-signal-spec",
+              "level": 4,
+              "heading": "OBSERVE-02.1 [IMPLEMENTATION] IPC Signal Spec",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Mục tiêu: Khi DAG merge > 500 events (sau partition dài), user không được thấy black screen. Progress phải visible và có thể interrupted."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "IPC Signal Contract:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "/// Emitted mỗi 200ms khi DAG merge backlog > 500 events.\n/// Dừng emit sau khi merge hoàn tất.\nCoreSignal::DagMergeProgress {\n    completed: u64,       // Events đã merge\n    total:     u64,       // Tổng events cần merge\n    // Derived: percentage = completed * 100 / total\n    // Derived: eta_seconds = (total - completed) / current_rate\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Mobile ANR Prevention — Time-Slicing:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub async fn merge_dag_timesliced(\n    events: Vec<CrdtEvent>,\n    progress_tx: mpsc::Sender<MergeProgress>,\n) {\n    const BATCH_SIZE: usize = 100;\n    let total = events.len() as u64;\n    let mut completed: u64 = 0;\n\n    for batch in events.chunks(BATCH_SIZE) {\n        // Process batch — O(batch_size * log n) HLC sort\n        merge_batch(batch).await;\n        completed += batch.len() as u64;\n\n        // Yield để UI event loop có 1-2ms để process user input\n        tokio::task::yield_now().await;\n\n        // Emit progress mỗi 200ms (kiểm tra timer, không phải mỗi batch)\n        if should_emit_progress() {\n            progress_tx.send(MergeProgress { completed, total }).ok();\n        }\n    }\n    // Final signal: merge hoàn tất\n    progress_tx.send(MergeProgress { completed: total, total }).ok();\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "UI Behavior khi nhận DagMergeProgress:"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "completed / total < 1.0:\n  → Hiển thị Progress Banner (non-blocking, không modal):\n    \"⟳ Đồng bộ tin nhắn trong lúc mất mạng... [████░░░░] 62%\"\n  → Chat vẫn scrollable nhưng disable Send button\n  → ETA hiển thị nếu total > 1000: \"~45 giây còn lại\"\n\ncompleted / total == 1.0:\n  → Banner tự dismiss sau 1.5 giây\n  → Enable Send button\n  → CoreSignal::StateChanged { table: \"messages\" } sẽ trigger UI refresh"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Desktop (không có ANR risk):"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Rayon parallel thread pool — merge toàn bộ trong background Tokio task.",
+                    "Emit DagMergeProgress mỗi 200ms (same signal, cùng UI behavior).",
+                    "Không có time-slicing — Desktop merge hoàn tất nhanh hơn Mobile 10-20x."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "platform-17-implementation-dart-ffi-memory-contract",
+          "level": 3,
+          "heading": "PLATFORM-17: [IMPLEMENTATION] Dart FFI Memory Contract",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Supersedes PLATFORM-14.** Đây là contract bắt buộc — vi phạm = CI fail."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "platform-171-quy-tắc-bắt-buộc",
+              "level": 4,
+              "heading": "PLATFORM-17.1 Quy tắc bắt buộc",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Rule 1: Mọi TeraSecureBuffer PHẢI được wrap bởi useInTransaction()."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Direct .toPointer() bên ngoài wrapper → CI lint error."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rule 2: Rust Token Registry KHÔNG tự expire/zeroize token."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Khi timeout → Rust emit IpcSignal::TransactionTimeout."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "UI hiển thị: \"Phiên xử lý đã hết hạn — vui lòng thực hiện lại.\""
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rule 3: GC Finalizer chỉ là safety net."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "GC release → WARNING metric + log. Không silent."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rule 4: Explicit releaseNow() là primary release path."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "useInTransaction() gọi releaseNow() trong finally block tự động."
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "platform-172-implementation",
+              "level": 4,
+              "heading": "PLATFORM-17.2 Implementation",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Dart FFI TeraSecureBuffer Wrapper:"
+                },
+                {
+                  "type": "code",
+                  "language": "dart",
+                  "code": "/// Mandatory wrapper cho mọi Rust buffer transfer trên Android/Huawei.\n/// Direct .toPointer() ngoài wrapper này → CI lint error (BLOCKER).\nclass TeraSecureBuffer {\n  final int _token;\n  bool _released = false;\n\n  TeraSecureBuffer._(this._token);\n\n  /// Factory: acquire token từ Rust Core\n  static Future<TeraSecureBuffer> acquire(int operationId) async {\n    final token = await _teraFfi.tera_buf_acquire(operationId);\n    if (token == 0) throw const TeraBufferError('acquire failed — token=0');\n    return TeraSecureBuffer._(token);\n  }\n\n  /// Primary release path — PHẢI gọi trong finally block\n  void releaseNow() {\n    if (_released) return;\n    _teraFfi.tera_buf_release(_token);\n    _released = true;\n  }\n\n  /// GC Finalizer: safety net — không phải primary path\n  @override\n  void finalize() {\n    if (!_released) {\n      // Log WARNING metric — GC release là code smell\n      MetricsCollector.increment('ffi.gc_finalizer_release.count');\n      _logger.warning('TeraSecureBuffer $token released by GC finalizer — explicit releaseNow() missing');\n      _teraFfi.tera_buf_release(_token);\n    }\n  }\n}\n\n/// Helper: bắt buộc sử dụng để access buffer content\nFuture<T> useInTransaction<T>(\n    int operationId,\n    Future<T> Function(Pointer<Uint8> data, int length) fn,\n) async {\n  final buf = await TeraSecureBuffer.acquire(operationId);\n  try {\n    final ptr = _teraFfi.tera_buf_get_pointer(buf._token);\n    final len = _teraFfi.tera_buf_get_length(buf._token);\n    return await fn(ptr, len);\n  } finally {\n    buf.releaseNow();  // Guaranteed execution\n  }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "CI Clippy Lint (Rust side) — FFI-01 Enforcement:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// custom_lints/src/ffi_token_lint.rs\n// Từ chối mọi pub extern \"C\" function return Vec<u8>, *const u8, *mut u8\n// mà không đi qua tera_buf_acquire protocol.\n#[clippy::msrv = \"1.75.0\"]\nfn check_fn_return_type(cx: &LateContext, fn_id: DefId) {\n    if is_pub_extern_c(fn_id) {\n        if returns_raw_ptr_or_vec(cx, fn_id) && !uses_token_protocol(cx, fn_id) {\n            cx.span_error(\n                fn_span(fn_id),\n                \"FFI-01 VIOLATION: pub extern \\\"C\\\" function returns raw pointer/Vec. \\\n                 Use tera_buf_acquire/tera_buf_release token protocol. \\\n                 See TERA-FEAT §10.1 SEC-02 and TERA-CORE §4.3.\"\n            );\n        }\n    }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "NativeFinalizer Registration (Android/Huawei):"
+                },
+                {
+                  "type": "code",
+                  "language": "dart",
+                  "code": "// Trong TeraSecureBuffer constructor — NativeFinalizer là safety net\nfinal _finalizer = NativeFinalizer(\n    _teraFfi.tera_buf_release_ptr.cast(), // Native callback pointer\n);\n\nTeraSecureBuffer._(this._token) {\n    // Attach finalizer — GC sẽ gọi tera_buf_release nếu explicit release bị quên\n    _finalizer.attach(this, Pointer.fromAddress(_token), detach: this);\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Dart Lint Rule (analysis_options.yaml):"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "analyzer:\n  plugins:\n    - tera_dart_lints\nlinter:\n  rules:\n    - tera_avoid_direct_ffi_pointer  # Block direct .toPointer() ngoài useInTransaction\n    - tera_require_secure_buffer     # Require TeraSecureBuffer cho tera_buf_acquire calls"
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "platform-18-security-implementation-onnx-model-integrity",
+          "level": 3,
+          "heading": "PLATFORM-18: [SECURITY] [IMPLEMENTATION] ONNX Model Integrity",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Áp dụng cho:** §5.27 Edge ONNX, §8.19 EICB, §5.33 EDES, §9.3 Dual-Mask.",
+                "Mọi ONNX model load PHẢI qua `OnnxModelLoader.load_verified()`."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "platform-181-verification-flow",
+              "level": 4,
+              "heading": "PLATFORM-18.1 Verification Flow",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Áp dụng cho: Mọi ONNX model load trong F-10 (AI/SLM). Không có exception."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Model Manifest (bundled với app):"
+                },
+                {
+                  "type": "code",
+                  "language": "json",
+                  "code": "{\n  \"models\": [\n    {\n      \"name\": \"micro_ner\",\n      \"tier\": \"tiny\",\n      \"file\": \"micro_ner.onnx\",\n      \"blake3\": \"a3f2e1d4c5b6a7e8f9d0c1b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2\",\n      \"size_bytes\": 987654,\n      \"min_available_ram_mb\": 12\n    },\n    {\n      \"name\": \"whisper_tiny\",\n      \"tier\": \"tiny\",\n      \"file\": \"whisper_tiny.mlmodelc\",\n      \"blake3\": \"b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5\",\n      \"size_bytes\": 39000000,\n      \"min_available_ram_mb\": 100\n    }\n  ],\n  \"manifest_signature\": \"Ed25519:TeraChat_Marketplace_CA_Key:XXXXXXXX\"\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "OnnxModelLoader.load_verified() Flow:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub fn load_verified(\n    model_name: &str,\n    manifest: &ModelManifest,\n) -> Result<OrtSession, ModelLoadError> {\n    // Step 1: Lookup model spec trong manifest\n    let spec = manifest.find(model_name)\n        .ok_or(ModelLoadError::NotInManifest)?;\n\n    // Step 2: Verify manifest signature (Ed25519, TeraChat CA)\n    verify_ed25519(&manifest.manifest_signature, &TeraChat_CA_PublicKey)?;\n\n    // Step 3: Check available RAM trước khi load\n    let available_mb = sysinfo::available_memory_mb();\n    if available_mb < spec.min_available_ram_mb as u64 {\n        return Err(ModelLoadError::InsufficientRam {\n            required: spec.min_available_ram_mb,\n            available: available_mb as u32,\n        });\n    }\n\n    // Step 4: Load file bytes\n    let model_bytes = load_bundled_asset(&spec.file)?;\n\n    // Step 5: Verify BLAKE3 hash\n    let actual_hash = blake3::hash(&model_bytes);\n    if actual_hash.as_bytes() != spec.blake3.as_bytes() {\n        // Log ke Audit Log — tampering detected\n        log_audit(AuditEvent::ModelIntegrityViolation {\n            model_name: model_name.to_string(),\n            expected_hash: spec.blake3.clone(),\n            actual_hash: hex::encode(actual_hash.as_bytes()),\n        });\n        return Err(ModelLoadError::HashMismatch);\n    }\n\n    // Step 6: Initialize ORT session trong isolated arena\n    let session = ort::Session::builder()\n        .with_memory_pattern(true)\n        .with_parallel_execution(false)    // Không share thread pool với Rust Core\n        .build_from_bytes(&model_bytes)?;\n\n    // Step 7: ZeroizeOnDrop trên model_bytes sau khi ORT internalize\n    drop(Zeroizing::new(model_bytes));\n\n    Ok(session)\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Platform-Specific Paths:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Model format",
+                    "Loader"
+                  ],
+                  "rows": [
+                    [
+                      "📱 iOS",
+                      "CoreML `.mlmodelc`",
+                      "`CoreML::load_compiled_model()`"
+                    ],
+                    [
+                      "📱 Android",
+                      "ONNX `.onnx`",
+                      "`OnnxRuntime::Session::new()`"
+                    ],
+                    [
+                      "📱 Huawei",
+                      "HiAI `.om` hoặc ONNX",
+                      "`HiAI::load()` với fallback ONNX"
+                    ],
+                    [
+                      "💻 macOS",
+                      "CoreML `.mlmodelc`",
+                      "`CoreML::load_compiled_model()`"
+                    ],
+                    [
+                      "🖥️ Win/Linux",
+                      "ONNX `.onnx`",
+                      "`OnnxRuntime::Session::new()`"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Failure Handling:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "HashMismatch: terminate AI worker, emit CoreSignal::ComponentFault { severity: Critical }. UI: \"Tập tin AI bị lỗi — đang tắt tính năng AI tạm thời.\" AI feature disabled cho phiên đó.",
+                    "InsufficientRam: log ONNX_RAM_DENIED { model, required, available }. Chọn tier thấp hơn nếu có. Nếu không: AI feature unavailable cho phiên đó.",
+                    "NotInManifest: BLOCKER — model không được phép chạy. Terminate AI worker."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "platform-19-implementation-teraedge-client-integration",
+          "level": 3,
+          "heading": "PLATFORM-19: [IMPLEMENTATION] TeraEdge Client Integration",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "Mobile tự động detect TeraEdge trên LAN và ưu tiên dùng",
+                "thay vì ONNX inference local hoặc VPS relay."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "platform-191-super-node-discovery-priority",
+              "level": 4,
+              "heading": "PLATFORM-19.1 Super Node Discovery Priority",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "📱 Khi Mobile cần ONNX inference, thứ tự ưu tiên (được enforce bởi Rust Core):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "pub async fn resolve_inference_backend(\n    model_tier: ModelTier,\n    memory_arbiter: &MemoryArbiter,\n) -> InferenceBackend {\n    // Priority 1: TeraEdge Desktop trên cùng LAN (< 5ms latency)\n    if let Some(edge) = discover_local_desktop_edge().await {\n        if edge.onnx_available && edge.latency_ms < 50 {\n            return InferenceBackend::RemoteDesktop(edge);\n        }\n    }\n\n    // Priority 2: Local model nếu RAM đủ và battery > 30%\n    let battery = platform_battery_pct();\n    let available_ram = memory_arbiter.available_for(ComponentId::AiWorker);\n    let required_ram = model_tier.required_ram_mb();\n    if available_ram >= required_ram && battery > 30 {\n        return InferenceBackend::Local;\n    }\n\n    // Priority 3: VPS Enclave (cloud, cần Internet)\n    if is_internet_available() {\n        return InferenceBackend::VpsEnclave;\n    }\n\n    // Priority 4: Downgrade model tier và thử lại local\n    if model_tier != ModelTier::Tiny {\n        return resolve_inference_backend(ModelTier::Tiny, memory_arbiter).await;\n    }\n\n    // No backend available\n    InferenceBackend::Unavailable\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Discovery Protocol (Local Desktop):"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "Mobile phát mDNS query: _terachat-edge._tcp.local\n  │\n  ↓ (100ms timeout)\nDesktop Super Node respond:\n  {\n    node_id: NodeId,\n    onnx_available: bool,\n    model_tiers: [\"tiny\", \"base\"],\n    current_load_pct: u8,   // 0-100\n    latency_hint_ms: u32,   // Round-trip time estimate\n  }\n  │ Signed bằng Desktop DeviceIdentityKey\n  ↓\nMobile verify signature → connect nếu load < 80% và latency < 50ms"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Fallback khi Desktop quá tải:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Desktop current_load_pct > 80%: Mobile tự động downgrade sang Local Tiny hoặc VPS.",
+                    "Desktop mất kết nối mid-inference: retry 1 lần với 3s timeout. Nếu thất bại: VPS Enclave hoặc Local Tiny."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "infra-04-implementation-canary-deployment-strategy",
+          "level": 3,
+          "heading": "INFRA-04: [IMPLEMENTATION] Canary Deployment Strategy",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Bài toán:** Không có staged rollout = bad release ảnh hưởng 100% customers.",
+                "Giải pháp: DNS-based traffic splitting + feature flag per-tenant."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "infra-041-traffic-splitting-via-dns",
+              "level": 4,
+              "heading": "INFRA-04.1 Traffic Splitting via DNS",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Nguyên tắc: Không có Kubernetes, không có service mesh. DNS-based traffic splitting + per-tenant feature flags."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "DNS Traffic Splitting (GeoDNS):"
+                },
+                {
+                  "type": "code",
+                  "language": "text",
+                  "code": "relay.terachat.com\n  ├── 95% → relay-stable.terachat.com  (current stable version)\n  └── 5%  → relay-canary.terachat.com  (new version under validation)"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Clients không biết họ đang trên stable hay canary — cùng TLS cert, cùng API surface."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Canary Promotion Gate (automated):"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "# ops/canary-policy.yaml\ncanary_validation:\n  initial_traffic_pct: 5\n  promotion_steps: [5, 25, 50, 100]\n  promotion_interval_hours: 2     # Mỗi 2 giờ nếu tất cả gates pass\n  \n  auto_rollback_triggers:\n    - metric: \"relay_error_rate_5xx\"\n      threshold: \"> 0.5%\"\n      window_minutes: 5\n    - metric: \"wasm_sandbox_crashes_total_rate\"\n      threshold: \"> 0.1/min\"\n      window_minutes: 5\n    - metric: \"dag_merge_duration_p99_ms\"\n      threshold: \"> 2000\"\n      window_minutes: 10\n    - metric: \"client_reported_crash_rate\"     # Từ OBSERVE-01 client metrics\n      threshold: \"> 0.2%\"\n      window_minutes: 15\n  \n  required_gates:\n    - name: \"WasmParity CI gate passed\"\n      source: \"ci_result\"\n    - name: \"SBOM signature verified\"\n      source: \"ops/sbom-verification.sh\"\n    - name: \"Security scan clean\"\n      source: \"trivy_result\""
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Per-Tenant Feature Flags (Emergency Override):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// Admin Console → OPA Policy → pushed down đến clients\n{\n  \"feature_flags\": {\n    \"canary_opt_out\": true,         // Force stable version cho tenant này\n    \"ai_inference_enabled\": false,  // Disable AI cho specific compliance requirement\n    \"mesh_mode_enabled\": true,\n    \"max_file_size_mb\": 100\n  }\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Rollback Procedure (< 5 phút):"
+                },
+                {
+                  "type": "code",
+                  "language": "bash",
+                  "code": "# 1. Automated trigger: canary-controller phát hiện threshold breach\n# 2. DNS weight reset: canary → 0%, stable → 100%\ntera-ops dns set-weight --target relay-canary --weight 0\ntera-ops dns set-weight --target relay-stable --weight 100\n\n# 3. Alert: gửi PagerDuty incident + Slack notification\n# 4. Log rollback event với timestamp và triggering metric"
+                }
+              ],
+              "subsections": []
+            }
+          ]
         }
       ]
     },
     {
-      "id": "5-feature-core-mapping-critical",
-      "level": 2,
-      "heading": "5. FEATURE ↔ CORE MAPPING (CRITICAL)",
+      "id": "opscanary-policyyaml",
+      "level": 1,
+      "heading": "ops/canary-policy.yaml",
       "content_blocks": [
         {
-          "type": "blockquote",
-          "alert_type": "note",
-          "lines": [
-            "Every feature maps to one or more modules in Core_Spec.md.",
-            "A feature with no Core mapping is an **orphan — blocker, do not ship**.",
-            "Mappings verified against TERA-CORE v2.0."
-          ]
+          "type": "paragraph",
+          "text": "canary_validation:"
         },
         {
-          "type": "table",
-          "headers": [
-            "Feature ID",
-            "Feature Name",
-            "Primary Core Modules",
-            "TERA-CORE References"
-          ],
-          "rows": [
-            [
-              "F-01",
-              "Secure E2EE Messaging",
-              "`crypto/mls_engine.rs`, `crdt/dag.rs`",
-              "§5.3, §7.1, §8.1, §4.2, §4.3"
-            ],
-            [
-              "F-02",
-              "Push Notification Delivery",
-              "`crypto/push_ratchet.rs`",
-              "§5.5, §8.3, §4.2"
-            ],
-            [
-              "F-03",
-              "IPC Bridge & State Sync",
-              "`ffi/ipc_bridge.rs`, `ffi/token_protocol.rs`",
-              "§4.2, §4.3, §2.2"
-            ],
-            [
-              "F-04",
-              "Local Storage Management",
-              "`crdt/dag.rs`, `crdt/snapshot.rs`",
-              "§7.1, §7.4, §12.2 (DB-01, DB-02, DB-03)"
-            ],
-            [
-              "F-05",
-              "Survival Mesh Networking",
-              "`mesh/` (all six modules)",
-              "§6.1, §6.2, §6.3, §6.4, §6.5, §6.6, §6.7"
-            ],
-            [
-              "F-06",
-              "Voice and Video Calls",
-              "`infra/relay.rs` (TURN), host adapters",
-              "§10.4, §6.4, §9.2, §5.3"
-            ],
-            [
-              "F-07",
-              "WASM Plugin Sandbox",
-              "`ffi/token_protocol.rs`, platform WASM adapter",
-              "§4.1, §4.4, §3.2 (Table §3.1)"
-            ],
-            [
-              "F-08",
-              "Inter-`.tapp` IPC",
-              "`ffi/ipc_bridge.rs`",
-              "§4.2, §4.3, §3.2"
-            ],
-            [
-              "F-09",
-              "Media and File Transfer",
-              "`crypto/mls_engine.rs`, `infra/relay.rs`",
-              "§5.3, §9.5, §7.1, §8.1"
-            ],
-            [
-              "F-10",
-              "AI / SLM Integration",
-              "`infra/relay.rs` (VPS Enclave)",
-              "§3.3, §3.6, §4.4"
-            ],
-            [
-              "F-11",
-              "Device Security",
-              "`crypto/hkms.rs`, `crypto/zeroize.rs`",
-              "§5.1, §5.2, §12.4 (PLT-04)"
-            ],
-            [
-              "F-12",
-              "Identity and Onboarding",
-              "`crypto/hkms.rs`, `crypto/mls_engine.rs`",
-              "§5.1, §5.2, §5.3"
-            ],
-            [
-              "F-13",
-              "Admin Console",
-              "`infra/federation.rs`, `infra/metrics.rs`",
-              "§3.2, §5.1, §9.5, §9.6"
-            ],
-            [
-              "F-14",
-              "Adaptive Network Management",
-              "`infra/relay.rs`",
-              "§9.2, §4.2"
-            ],
-            [
-              "F-15",
-              "Crash-Safe WAL Management",
-              "`crdt/dag.rs`, `infra/wal_staging.rs`",
-              "§4.4, §7.1, §9.3, §12.2"
-            ]
+          "type": "paragraph",
+          "text": "initial_traffic_pct: 5"
+        },
+        {
+          "type": "paragraph",
+          "text": "promotion_steps: [5, 25, 50, 100]"
+        },
+        {
+          "type": "paragraph",
+          "text": "promotion_interval_hours: 2     # Mỗi 2 giờ nếu tất cả gates pass"
+        },
+        {
+          "type": "paragraph",
+          "text": "auto_rollback_triggers:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "metric: \"relay_error_rate_5xx\""
           ]
         },
         {
           "type": "paragraph",
-          "text": "Orphan Feature Verification: All 15 features have verified Core mappings. Zero orphan features in this document."
+          "text": "threshold: \"> 0.5%\""
+        },
+        {
+          "type": "paragraph",
+          "text": "window_minutes: 5"
+        },
+        {
+          "type": "list",
+          "data": [
+            "metric: \"wasm_sandbox_crashes_total_rate\""
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "threshold: \"> 0.1/min\""
+        },
+        {
+          "type": "paragraph",
+          "text": "window_minutes: 5"
+        },
+        {
+          "type": "list",
+          "data": [
+            "metric: \"dag_merge_duration_p99_ms\""
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "threshold: \"> 2000\""
+        },
+        {
+          "type": "paragraph",
+          "text": "window_minutes: 10"
+        },
+        {
+          "type": "list",
+          "data": [
+            "metric: \"client_reported_crash_rate\"     # Từ OBSERVE-01 client metrics"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "threshold: \"> 0.2%\""
+        },
+        {
+          "type": "paragraph",
+          "text": "window_minutes: 15"
+        },
+        {
+          "type": "paragraph",
+          "text": "required_gates:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "name: \"WasmParity CI gate passed\""
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "source: \"ci_result\""
+        },
+        {
+          "type": "list",
+          "data": [
+            "name: \"SBOM signature verified\""
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "source: \"ops/sbom-verification.sh\""
+        },
+        {
+          "type": "list",
+          "data": [
+            "name: \"Security scan clean\""
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "source: \"trivy_result\""
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n**Per-Tenant Feature Flags (Emergency Override):**\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "// Admin Console → OPA Policy → pushed down đến clients"
+        },
+        {
+          "type": "paragraph",
+          "text": "{"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"feature_flags\": {"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"canary_opt_out\": true,         // Force stable version cho tenant này"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"ai_inference_enabled\": false,  // Disable AI cho specific compliance requirement"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"mesh_mode_enabled\": true,"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"max_file_size_mb\": 100"
+        },
+        {
+          "type": "paragraph",
+          "text": "}"
+        },
+        {
+          "type": "paragraph",
+          "text": "}"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n**Rollback Procedure (< 5 phút):**\n"
         }
       ],
       "subsections": []
     },
     {
-      "id": "6-user-flow-interaction-model",
-      "level": 2,
-      "heading": "6. USER FLOW & INTERACTION MODEL",
+      "id": "1-automated-trigger-canary-controller-phát-hiện-threshold-breach",
+      "level": 1,
+      "heading": "1. Automated trigger: canary-controller phát hiện threshold breach",
       "content_blocks": [],
-      "subsections": [
-        {
-          "id": "61-message-send-render-lifecycle",
-          "level": 3,
-          "heading": "6.1 Message Send → Render Lifecycle",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "text",
-              "code": "[User input]\n     │  UICommand::SendMessage { recipient_did, plaintext }\n     ▼\n[Rust Core]\n  1. Lookup Epoch_Key (RAM, ZeroizeOnDrop)\n  2. AES-256-GCM encrypt plaintext\n  3. Build CRDT_Event with Ed25519 signature (biometric gate)\n  4. Append to hot_dag.db WAL (durable before network dispatch)\n     │\n     ├── Online: TLS 1.3 + mTLS → VPS → wal_staging → pub/sub\n     └── Offline: BLE Control Plane → Mesh Store-and-Forward\n     │\n  5. Emit CoreSignal::StateChanged { table: \"messages\", version }\n     ▼\n[UI]\n  1. Issue UICommand::ScrollViewport\n  2. Core: tera_buf_acquire → Data Plane buffer write\n  3. UI reads via token → renders 20 messages\n  4. UICommand::ReleaseBuffer → Core ZeroizeOnDrop"
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "62-network-mode-transition",
-          "level": 3,
-          "heading": "6.2 Network Mode Transition",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "text",
-              "code": "Internet available\n  ├── QUIC OK  → ONLINE_QUIC\n  ├── gRPC OK  → ONLINE_GRPC\n  ├── WSS OK   → ONLINE_WSS\n  └── All fail → MESH_MODE\n                   │\n                   ├── BLE + Wi-Fi Direct active\n                   ├── F-07 WASM: terminate + sled snapshot\n                   ├── F-10 AI: disabled\n                   └── F-06 Voice: suspended\n\nInternet restored\n  │\n  ├── ALPN renegotiation → highest available tier\n  ├── F-07 WASM: restore from sled snapshot (< 50 ms)\n  ├── F-05 DAG sync: CRDT merge via Dictator Election\n  └── F-01 MLS: Peer-Assisted Epoch Re-induction if needed"
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "63-device-enrollment-flow",
-          "level": 3,
-          "heading": "6.3 Device Enrollment Flow",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "text",
-              "code": "Admin generates enrollment token (mTLS cert, TTL 12–24 h)\n  │\n  ▼\nNew device scans QR / enters token\n  │\n  ▼\nDeviceIdentityKey generated in Secure Enclave / StrongBox (biometric required)\n  │\n  ▼\nProof_of_Identity_and_Device submitted → server → mTLS cert issued\n  │\n  ▼\nMLS Welcome_Packet received → Company_Key available\n  │\n  ▼\nDevice operational\ncold_state.db hydration begins in background (F-04 Hydration flow)"
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "64-ios-push-notification-flow-versioned-key-ladder",
-          "level": 3,
-          "heading": "6.4 iOS Push Notification Flow (Versioned Key Ladder)",
-          "content_blocks": [
-            {
-              "type": "code",
-              "language": "text",
-              "code": "APNs delivers push payload\n  │\n  ├── Version match → NSE Arena decrypt → OS notification → ZeroizeOnDrop\n  │\n  └── Version mismatch\n        │\n        ├── Cache ciphertext to nse_staging.db\n        ├── Set main_app_decrypt_needed = true (Shared Keychain)\n        └── Send content-available:1\n              │\n              ▼\n            Main App wakes\n              │\n              ├── Rotate Push_Key\n              ├── Decrypt nse_staging.db entry\n              ├── Display notification\n              └── Clear nse_staging.db"
-            }
-          ],
-          "subsections": []
-        }
-      ]
+      "subsections": []
     },
     {
-      "id": "7-data-contracts-high-level",
-      "level": 2,
-      "heading": "7. DATA CONTRACTS (HIGH-LEVEL)",
+      "id": "2-dns-weight-reset-canary-0-stable-100",
+      "level": 1,
+      "heading": "2. DNS weight reset: canary → 0%, stable → 100%",
       "content_blocks": [
         {
-          "type": "blockquote",
-          "alert_type": "note",
-          "lines": [
-            "This section defines what data flows between feature modules and Rust Core.",
-            "Detailed cryptographic schemas reside in TERA-CORE §0 (Data Object Catalog).",
-            "This section governs the feature-layer interface only."
-          ]
-        }
-      ],
-      "subsections": [
-        {
-          "id": "71-message-data-contract",
-          "level": 3,
-          "heading": "7.1 Message Data Contract",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Direction",
-                "Object",
-                "Format",
-                "Max Size",
-                "Encryption"
-              ],
-              "rows": [
-                [
-                  "UI → Core (send)",
-                  "`UICommand::SendMessage.plaintext`",
-                  "Raw bytes",
-                  "4,096 B (before padding)",
-                  "None (Core encrypts)"
-                ],
-                [
-                  "Core → UI (render)",
-                  "Viewport snapshot",
-                  "`Vec<CrdtEvent>` decrypted",
-                  "20 msgs × ~2 KB",
-                  "`ZeroizeOnDrop` after render"
-                ],
-                [
-                  "Core → Server",
-                  "`CRDT_Event.payload`",
-                  "AES-256-GCM ciphertext",
-                  "Variable",
-                  "E2EE (server-blind)"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "72-media-data-contract",
-          "level": 3,
-          "heading": "7.2 Media Data Contract",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Direction",
-                "Object",
-                "Format",
-                "Max Size",
-                "Encryption"
-              ],
-              "rows": [
-                [
-                  "UI → Core (send)",
-                  "Raw file bytes",
-                  "Stream",
-                  "10 GB",
-                  "None (Core encrypts in 2 MB chunks)"
-                ],
-                [
-                  "Core → Server",
-                  "Encrypted chunks",
-                  "AES-256-GCM",
-                  "2 MB each",
-                  "E2EE (server-blind)"
-                ],
-                [
-                  "Core → UI (stub)",
-                  "Zero-Byte Stub",
-                  "`{name, cas_hash, thumbnail, ref}`",
-                  "< 5 KB",
-                  "E2EE"
-                ],
-                [
-                  "Core → UI (download)",
-                  "Decrypted chunk",
-                  "Raw bytes",
-                  "2 MB per chunk",
-                  "`ZeroizeOnDrop` per chunk"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "73-wasm-plugin-data-contract",
-          "level": 3,
-          "heading": "7.3 WASM Plugin Data Contract",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Direction",
-                "Object",
-                "Format",
-                "Encryption"
-              ],
-              "rows": [
-                [
-                  "`.tapp` → Core (outbound)",
-                  "`EgressNetworkRequest`",
-                  "Protobuf",
-                  "TLS 1.3 enforced by Core"
-                ],
-                [
-                  "Core → `.tapp` (response)",
-                  "Sanitized response",
-                  "`Vec<ASTNode>`",
-                  "None (sanitized by Core before delivery)"
-                ],
-                [
-                  "`.tapp` → Core (state write)",
-                  "`persist_keyval(key, value)`",
-                  "Raw bytes",
-                  "AES-256-GCM by Core"
-                ],
-                [
-                  "Core → `.tapp` (state restore)",
-                  "`get_transient_state()`",
-                  "Raw bytes",
-                  "Decrypted by Core; `ZeroizeOnDrop` after delivery"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "74-push-notification-contract",
-          "level": 3,
-          "heading": "7.4 Push Notification Contract",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Direction",
-                "Object",
-                "iOS",
-                "Android",
-                "Size Limit"
-              ],
-              "rows": [
-                [
-                  "Server → Device",
-                  "Encrypted payload",
-                  "APNs `mutable-content: 1`",
-                  "FCM Data Message",
-                  "< 4 KB for NSE inline decrypt"
-                ],
-                [
-                  "Core → OS",
-                  "Notification content",
-                  "`UNNotificationContent`",
-                  "`RemoteMessage`",
-                  "OS-enforced"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "75-ipc-buffer-contract",
-          "level": 3,
-          "heading": "7.5 IPC Buffer Contract",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Primitive",
-                "Direction",
-                "Token Lifecycle",
-                "Cleanup"
-              ],
-              "rows": [
-                [
-                  "`tera_buf_acquire(op_id) → u64`",
-                  "Core → UI",
-                  "Opens on acquire",
-                  "—"
-                ],
-                [
-                  "`tera_buf_release(token)`",
-                  "UI → Core",
-                  "Closes on release",
-                  "`ZeroizeOnDrop` when `ref_count == 0`"
-                ],
-                [
-                  "Buffer valid window",
-                  "—",
-                  "Between acquire and release",
-                  "Never held across UI render frames"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "8-constraints-limitations",
-      "level": 2,
-      "heading": "8. CONSTRAINTS & LIMITATIONS",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "81-platform-hard-constraints",
-          "level": 3,
-          "heading": "8.1 Platform Hard Constraints",
-          "content_blocks": [
-            {
-              "type": "table",
-              "headers": [
-                "Constraint",
-                "Platform",
-                "Feature Impact"
-              ],
-              "rows": [
-                [
-                  "W^X: no JIT WASM in App Sandbox",
-                  "📱 iOS",
-                  "F-07: `wasm3` interpreter only"
-                ],
-                [
-                  "NSE RAM ≤ 20 MB (OS-enforced)",
-                  "📱 iOS",
-                  "F-02: Ghost Push pattern mandatory"
-                ],
-                [
-                  "Background network 30 s",
-                  "📱 iOS",
-                  "F-06: CallKit integration mandatory"
-                ],
-                [
-                  "`mlock()` rejected",
-                  "📱 iOS",
-                  "F-11: Double-Buffer Zeroize required"
-                ],
-                [
-                  "AWDL + Hotspot mutually exclusive",
-                  "📱 iOS",
-                  "F-05/F-06: BLE fallback on Hotspot"
-                ],
-                [
-                  "FCM 10/hr throttle (Android 14+)",
-                  "📱 Android",
-                  "F-02: CDM registration + FCM high-priority"
-                ],
-                [
-                  "StrongBox not universal",
-                  "📱 Android",
-                  "F-11/F-12: TEE-backed AndroidKeyStore fallback"
-                ],
-                [
-                  "HMS: no content-available push",
-                  "📱 Huawei",
-                  "F-02: 4 h CRL delay; polling fallback; SLA disclosure"
-                ],
-                [
-                  "XPC Worker OOM crash atomicity",
-                  "💻 macOS",
-                  "F-07: XpcTransactionJournal required"
-                ],
-                [
-                  "Flatpak incompatible",
-                  "🖥️ Linux",
-                  "F-07: .deb/.rpm or AppImage only"
-                ],
-                [
-                  "AppArmor/SELinux startup crash",
-                  "🖥️ Linux",
-                  "F-15: postinstall MAC profile load mandatory"
-                ],
-                [
-                  "ARM64 SAB behavior (Windows)",
-                  "🖥️ Win ARM64",
-                  "F-03: pre-release SAB validation required"
-                ],
-                [
-                  "No kernel modules / no eBPF client",
-                  "☁️ VPS",
-                  "F-14: Tokio Token Bucket rate limiting (userspace)"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "82-mesh-mode-feature-restrictions-exhaustive-list",
-          "level": 3,
-          "heading": "8.2 Mesh Mode Feature Restrictions (Exhaustive List)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "The following are disabled in Mesh Mode. Enforcement is in Rust Core — not in UI:"
-            },
-            {
-              "type": "table",
-              "headers": [
-                "Feature",
-                "Status",
-                "Error Code"
-              ],
-              "rows": [
-                [
-                  "WASM `.tapp` execution",
-                  "Terminate + snapshot",
-                  "N/A"
-                ],
-                [
-                  "AI / SLM inference",
-                  "Disabled",
-                  "`ERR_SURVIVAL_MODE_ACTIVE_AI_DISABLED`"
-                ],
-                [
-                  "Voice and video calls",
-                  "Suspended",
-                  "N/A"
-                ],
-                [
-                  "Multi-hop file transfer",
-                  "Suspended",
-                  "N/A"
-                ],
-                [
-                  "Inter-`.tapp` Delegation Tokens",
-                  "Suspended",
-                  "`ERR_MESH_MODE_DELEGATION_SUSPENDED`"
-                ],
-                [
-                  "Transient state persistence",
-                  "Disabled",
-                  "N/A"
-                ],
-                [
-                  "MLS Epoch rotation",
-                  "Suspended (EMDP)",
-                  "N/A"
-                ],
-                [
-                  "DAG merge",
-                  "Deferred to Desktop reconnect",
-                  "N/A"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "83-known-implementation-gaps-open-items",
-          "level": 3,
-          "heading": "8.3 Known Implementation Gaps (Open Items)",
-          "content_blocks": [
-            {
-              "type": "paragraph",
-              "text": "Engineers must resolve all Blocker items before production ship:"
-            },
-            {
-              "type": "table",
-              "headers": [
-                "Item",
-                "Severity",
-                "Reference",
-                "Status"
-              ],
-              "rows": [
-                [
-                  "WasmParity CI gate (wasm3 vs wasmtime semantic identity, ≤ 20 ms delta)",
-                  "Blocker",
-                  "F-07, TERA-CORE §11.4",
-                  "Not implemented"
-                ],
-                [
-                  "CI/CD code signing pipeline (all 5 platforms)",
-                  "Blocker",
-                  "`ops/signing-pipeline.md`",
-                  "Not implemented"
-                ],
-                [
-                  "Dart FFI NativeFinalizer Clippy lint (FFI-01 enforcement)",
-                  "Blocker",
-                  "F-03, TERA-CORE §4.3",
-                  "Not implemented"
-                ],
-                [
-                  "AppArmor/SELinux postinstall script for Linux",
-                  "High",
-                  "F-15",
-                  "Not implemented"
-                ],
-                [
-                  "`sled` crate version pinned in `Cargo.toml`",
-                  "Medium",
-                  "F-07 Transient State",
-                  "Not pinned"
-                ],
-                [
-                  "Border Node auto-detection heuristics (algorithm spec)",
-                  "Medium",
-                  "F-05",
-                  "Algorithm undefined"
-                ],
-                [
-                  "Windows ARM64 SAB behavior validation (WebView2)",
-                  "Medium",
-                  "F-03",
-                  "Not tested"
-                ]
-              ]
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "9-anti-technical-debt-rules",
-      "level": 2,
-      "heading": "9. ANTI-TECHNICAL-DEBT RULES",
-      "content_blocks": [],
-      "subsections": [
-        {
-          "id": "91-feature-responsibility-boundaries",
-          "level": 3,
-          "heading": "9.1 Feature Responsibility Boundaries",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "ATD-01: No feature implements logic that belongs to another feature. F-02 (Push) reads keys managed by F-01 (Messaging) via TERA-CORE §5.5. F-02 does not implement key rotation logic.",
-                "ATD-02: No feature accesses hot_dag.db or cold_state.db directly from the UI layer. All DB access routes through Rust Core module interfaces.",
-                "ATD-03: No feature implements cryptographic operations. All crypto routes through crypto/ modules in TERA-CORE.",
-                "ATD-04: Platform-specific code lives exclusively in host adapter layers (Swift/Kotlin) or in Rust #[cfg(target_os = \"...\")] blocks. Mixed-platform logic in shared modules: blocker."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "92-anti-coupling-rules",
-          "level": 3,
-          "heading": "9.2 Anti-Coupling Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "ATD-05: Features communicate through typed CoreSignal and UICommand enums. Ad-hoc FFI calls between feature modules: blocker.",
-                "ATD-06: WASM plugins have zero knowledge of MLS key material. They receive only sanitized Vec<ASTNode> response objects. Any code path that exposes key material to WASM: blocker.",
-                "ATD-07: The IPC bridge (F-03) has no semantic knowledge of message content. It transfers opaque bytes. Content interpretation is the UI layer's responsibility.",
-                "ATD-08: DelegationToken (F-08) does not grant .tapp access to raw cold_state.db. It grants access to a defined OPA-enforced namespace only."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "93-scalability-rules",
-          "level": 3,
-          "heading": "9.3 Scalability Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "ATD-09: No feature hardcodes platform count or MLS group size. These parameters come from TERA-CORE §10.3 Scaling Ceilings.",
-                "ATD-10: Every feature that persists data specifies a cleanup/expiry path. No indefinite accumulation of stale data is acceptable.",
-                "ATD-11: Features with battery impact must implement a power budget. F-05 BLE duty cycle, F-10 Whisper tier selection, F-15 BGTask constraints are the reference implementations."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "94-testability-rules",
-          "level": 3,
-          "heading": "9.4 Testability Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "ATD-12: Every feature's Failure Handling clause must correspond to a test case in TERA-TEST. Untested failure paths are not accepted for production.",
-                "ATD-13: Features with platform-specific behavior must have test coverage on each variant. Parity gaps are tracked in §8.3.",
-                "ATD-14: WasmParity CI gate (§8.3) must pass for every .tapp before Marketplace listing. Semantic divergence between wasm3 and wasmtime is a blocker for Marketplace launch."
-              ]
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "10-implementation-contract",
-      "level": 2,
-      "heading": "10. IMPLEMENTATION CONTRACT",
-      "content_blocks": [
-        {
-          "type": "blockquote",
-          "alert_type": "note",
-          "lines": [
-            "**Read §0 (Data Object Catalog) before implementing any feature.**",
-            "Violating any rule below is a **BLOCKER — do not merge.**"
-          ]
-        }
-      ],
-      "subsections": [
-        {
-          "id": "101-security-rules",
-          "level": 3,
-          "heading": "§10.1 Security Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "[x] SEC-01 — No plaintext UI buffer outlives the render frame. ZeroizeOnDrop on every struct holding decrypted content. Verified with cargo miri test. CI failure: blocker.",
-                "[x] SEC-02 — No Vec<u8>, const u8, or mut u8 returned from any pub extern \"C\" function. Token protocol mandatory. CI Clippy lint enforced. Lint failure: blocker.",
-                "[x] SEC-03 — All clipboard operations route through Protected Clipboard Bridge (F-11b). Direct OS clipboard API calls from Rust Core: blocker.",
-                "[x] SEC-04 — WASM sandbox: PROT_READ-only access to DAG shared memory. Write attempts outside sandbox boundary trigger SIGSEGV caught by catch_unwind. No exceptions.",
-                "[x] SEC-05 — iOS Keychain access groups: push_key accessible by NSE only (group.com.terachat.nse); device_identity_key by Main App only (group.com.terachat.main); share_extension_token by Share Extension only (group.com.terachat.share). Cross-group reads: blocker."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "102-platform-rules",
-          "level": 3,
-          "heading": "§10.2 Platform Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "[x] PLT-01 — iOS: wasm3 interpreter only in App Sandbox. wasmtime permitted in XPC Worker (allow-jit entitlement) only. No JIT in Main App: blocker.",
-                "[x] PLT-02 — iOS NSE: Static Memory Arena 10 MB. Circuit Breaker terminates NSE gracefully on 20 MB breach. Never crash without cleanup.",
-                "[x] PLT-03 — iOS: Voice calls require CallKit integration. Without it, network killed after 30 s background. Non-CallKit voice on iOS: blocker.",
-                "[x] PLT-04 — Linux: Flatpak packaging is prohibited (bubblewrap/seccomp conflict). .deb/.rpm or AppImage + Cosign only.",
-                "[x] PLT-05 — Linux clipboard: detect display server at runtime (WAYLAND_DISPLAY). Wayland: wl-clipboard. X11: xclip/xsel. Hardcoded single backend: blocker.",
-                "[x] PLT-06 — Android 14+: FCM priority = \"high\" AND Companion Device Manager REQUEST_COMPANION_RUN_IN_BACKGROUND. Both are required. Either alone is insufficient.",
-                "[x] PLT-07 — Huawei: no dynamic WASM from Marketplace. AOT .waot bundles only. CRL delay ≤ 4 h must be documented in enterprise SLA."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "103-feature-integrity-rules",
-          "level": 3,
-          "heading": "§10.3 Feature Integrity Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "[x] FI-01 — Every feature maps to at least one TERA-CORE module (§5 mapping table verified). Orphan features: blocker.",
-                "[x] FI-02 — Mesh Mode restrictions (§8.2) are enforced in Rust Core. UI cannot re-enable restricted features by bypassing Core. UI-side Mesh override: blocker.",
-                "[x] FI-03 — WasmParity CI gate must pass before any .tapp is listed on Marketplace. Gate failure: blocker for Marketplace launch.",
-                "[x] FI-04 — sled crate is the mandated LSM-Tree for WASM transient state (F-07). RocksDB on mobile exceeds 50 MB heap budget. Switching without budget validation: blocker.",
-                "[x] FI-05 — iOS election_weight = 0 is hardcoded in mesh/election.rs. Any PR modifying this constant: blocker."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "104-ipc-rules",
-          "level": 3,
-          "heading": "§10.4 IPC Rules",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "[x] IPC-01 — State flow unidirectional: Core → UI. UI sends Commands only. Bidirectional state channel: blocker.",
-                "[x] IPC-02 — SAB Tier Ladder selection (Tier 1/2/3) logged to audit trail. Silent tier selection: blocker.",
-                "[x] IPC-03 — CoreSignal::DagMergeProgress emitted every 200 ms when merge backlog > 500 events. Required for mobile ANR prevention."
-              ]
-            }
-          ],
-          "subsections": []
-        }
-      ]
-    },
-    {
-      "id": "11-changelog",
-      "level": 2,
-      "heading": "11. CHANGELOG",
-      "content_blocks": [
-        {
-          "type": "table",
-          "headers": [
-            "Version",
-            "Date",
-            "Summary"
-          ],
-          "rows": [
-            [
-              "0.3.0",
-              "2026-03-18",
-              "Complete rewrite from scratch. Full alignment with Core_Spec.md v2.0 (TERA-CORE). 15 features with mandatory Feature Definition Standard (platforms, user flow, Core dependencies, data interaction, constraints, failure handling). §5 Feature ↔ Core Mapping table with explicit TERA-CORE references for all 15 features. §0 Client-side Data Object Catalog with Core cross-references for every object. §9 Anti-Technical-Debt Rules (ATD-01 through ATD-14). §10 Implementation Contract with unique rule IDs (SEC-01–SEC-05, PLT-01–PLT-07, FI-01–FI-05, IPC-01–IPC-03). Platform constraint matrix with feature impact column. Known implementation gaps table with severity and status. Incorporated from all architecture sessions: WasmParity CI gate (F-07, §8.3), Dart FFI NativeFinalizer Clippy lint (F-03, §10.1 SEC-02), iOS AWDL conflict resolution (F-05/F-06), EMDP Key Escrow Handshake (F-05), Versioned Push Key Ladder (F-02), Double-Buffer Zeroize (F-11), `sled` crate pin for transient state (F-07, §10.3 FI-04), Border Node auto-detection (F-05), Linux multi-init daemon + AppArmor/SELinux postinstall (F-15), Huawei CRL delay SLA disclosure (F-02/§8.1), Adaptive QUIC Probe Learning (F-14), XPC Journal crash recovery (F-07), Shadow DB Write Lock Protocol (F-04), iOS CoreML parity path (F-10), `MemoryArbiter` RAM budget enforcement (§3.3), SAB Tier Ladder audit trail (§10.4 IPC-02)."
-            ],
-            [
-              "0.2.5",
-              "2026-03-13",
-              "Legacy iterative updates (see TERA-CORE §13 for aligned changelog context). Deprecated React Native → Flutter unified mobile. Added PLATFORM-01 through PLATFORM-16 sections (now fully integrated into feature definitions above)."
-            ],
-            [
-              "0.1.6",
-              "2026-03-04",
-              "Initial feature spec. Added WASM Sandbox Isolation, Protected Clipboard Bridge, Zero-Byte Stub rendering, NSE Circuit Breaker."
-            ]
-          ]
+          "type": "paragraph",
+          "text": "tera-ops dns set-weight --target relay-canary --weight 0"
         },
         {
           "type": "paragraph",
-          "text": "Cross-references:"
+          "text": "tera-ops dns set-weight --target relay-stable --weight 100"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "3-alert-gửi-pagerduty-incident-slack-notification",
+      "level": 1,
+      "heading": "3. Alert: gửi PagerDuty incident + Slack notification",
+      "content_blocks": [],
+      "subsections": []
+    },
+    {
+      "id": "4-log-rollback-event-với-timestamp-và-triggering-metric",
+      "level": 1,
+      "heading": "4. Log rollback event với timestamp và triggering metric",
+      "content_blocks": [
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n---\n\n### INFRA-05: [IMPLEMENTATION] SBOM & Reproducible Builds\n\n> Enterprise/Gov customers yêu cầu SBOM cho compliance audit.\n> Reproducible builds cần thiết cho binary transparency claims.\n\n---\n\n#### INFRA-05.1 SBOM Generation\n\n**SBOM (Software Bill of Materials) — Yêu cầu cho Enterprise/Gov:**\n"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "ci-pipeline-generate-sbom-sau-mỗi-build",
+      "level": 1,
+      "heading": "CI pipeline: generate SBOM sau mỗi build",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "cargo cyclonedx --format json --output terachat-sbom.json"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "ký-sbom-bằng-terachat-release-key",
+      "level": 1,
+      "heading": "Ký SBOM bằng TeraChat Release Key",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "cosign sign-blob \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--key release-key.pem \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--output-signature terachat-sbom.json.sig \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "terachat-sbom.json"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "upload-cả-sbom-và-signature-lên-github-release-assets",
+      "level": 1,
+      "heading": "Upload cả SBOM và signature lên GitHub Release Assets",
+      "content_blocks": [
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n**SBOM Content (CycloneDX 1.5 format):**\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "{"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"bomFormat\": \"CycloneDX\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"specVersion\": \"1.5\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"version\": 1,"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"metadata\": {"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"component\": {"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"name\": \"terachat-core\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"version\": \"1.0.0\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"type\": \"library\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"supplier\": { \"name\": \"TeraChat Inc.\" }"
+        },
+        {
+          "type": "paragraph",
+          "text": "},"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"tools\": [{ \"name\": \"cargo-cyclonedx\", \"version\": \"0.3.x\" }]"
+        },
+        {
+          "type": "paragraph",
+          "text": "},"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"components\": ["
+        },
+        {
+          "type": "paragraph",
+          "text": "{"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"name\": \"ring\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"version\": \"0.17.x\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"purl\": \"pkg:cargo/ring@0.17.x\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"licenses\": [{ \"expression\": \"ISC AND OpenSSL\" }],"
+        },
+        {
+          "type": "paragraph",
+          "text": "\"hashes\": [{ \"alg\": \"SHA-256\", \"content\": \"...\" }]"
+        },
+        {
+          "type": "paragraph",
+          "text": "}"
+        },
+        {
+          "type": "paragraph",
+          "text": "]"
+        },
+        {
+          "type": "paragraph",
+          "text": "}"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n**Reproducible Builds:**\n"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "dockerfilebuild-hermetic-build-environment",
+      "level": 1,
+      "heading": "Dockerfile.build — hermetic build environment",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "FROM rust:1.75.0-slim-bookworm AS builder"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "pin-all-system-packages-to-exact-versions",
+      "level": 1,
+      "heading": "Pin ALL system packages to exact versions",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "RUN apt-get install -y --no-install-recommends \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "libclang-dev=1:15.0-56 \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "pkg-config=1.8.1-1"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "rust-toolchain-pinned-via-rust-toolchaintoml",
+      "level": 1,
+      "heading": "Rust toolchain pinned via rust-toolchain.toml",
+      "content_blocks": [],
+      "subsections": []
+    },
+    {
+      "id": "cargo-build-với-source-date-epoch-để-deterministic-timestamps",
+      "level": 1,
+      "heading": "cargo build với SOURCE_DATE_EPOCH để deterministic timestamps",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "ENV SOURCE_DATE_EPOCH=1700000000"
+        },
+        {
+          "type": "paragraph",
+          "text": "RUN cargo build --release --locked"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": ""
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "rust-toolchaintoml-pinned-in-repository-root",
+      "level": 1,
+      "heading": "rust-toolchain.toml — pinned in repository root",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "[toolchain]"
+        },
+        {
+          "type": "paragraph",
+          "text": "channel = \"1.75.0\""
+        },
+        {
+          "type": "paragraph",
+          "text": "components = [\"rustfmt\", \"clippy\"]"
+        },
+        {
+          "type": "paragraph",
+          "text": "targets = ["
+        },
+        {
+          "type": "paragraph",
+          "text": "\"x86_64-unknown-linux-gnu\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"aarch64-unknown-linux-gnu\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"x86_64-apple-darwin\","
+        },
+        {
+          "type": "paragraph",
+          "text": "\"aarch64-apple-darwin\""
+        },
+        {
+          "type": "paragraph",
+          "text": "]"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n**Verification (Customer-Side):**\n"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "customer-verify-binary-khớp-với-sbom-claimed-hash",
+      "level": 1,
+      "heading": "Customer verify binary khớp với SBOM-claimed hash",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "cosign verify-blob \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--key https://releases.terachat.com/cosign-pub.pem \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--signature terachat-sbom.json.sig \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "terachat-sbom.json"
+        }
+      ],
+      "subsections": []
+    },
+    {
+      "id": "verify-binary-hash-khớp-với-sbom-component-hash",
+      "level": 1,
+      "heading": "Verify binary hash khớp với SBOM component hash",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "sha256sum terachat-relay-linux-x64 | grep $(jq -r '.metadata.component.hashes[0].content' terachat-sbom.json)"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n---\n\n# CI pipeline: generate SBOM sau mỗi build\ncargo cyclonedx --format json --output terachat-sbom.json\n\n# Ký SBOM bằng TeraChat Release Key\ncosign sign-blob \\\n    --key release-key.pem \\\n    --output-signature terachat-sbom.json.sig \\\n    terachat-sbom.json\n\n# Upload cả SBOM và signature lên GitHub Release Assets"
+        },
+        {
+          "type": "paragraph",
+          "text": "SBOM Content (CycloneDX 1.5 format):"
+        },
+        {
+          "type": "code",
+          "language": "json",
+          "code": "{\n  \"bomFormat\": \"CycloneDX\",\n  \"specVersion\": \"1.5\",\n  \"version\": 1,\n  \"metadata\": {\n    \"component\": {\n      \"name\": \"terachat-core\",\n      \"version\": \"1.0.0\",\n      \"type\": \"library\",\n      \"supplier\": { \"name\": \"TeraChat Inc.\" }\n    },\n    \"tools\": [{ \"name\": \"cargo-cyclonedx\", \"version\": \"0.3.x\" }]\n  },\n  \"components\": [\n    {\n      \"name\": \"ring\",\n      \"version\": \"0.17.x\",\n      \"purl\": \"pkg:cargo/ring@0.17.x\",\n      \"licenses\": [{ \"expression\": \"ISC AND OpenSSL\" }],\n      \"hashes\": [{ \"alg\": \"SHA-256\", \"content\": \"...\" }]\n    }\n  ]\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reproducible Builds:"
+        },
+        {
+          "type": "code",
+          "language": "dockerfile",
+          "code": "# Dockerfile.build — hermetic build environment\nFROM rust:1.75.0-slim-bookworm AS builder\n# Pin ALL system packages to exact versions\nRUN apt-get install -y --no-install-recommends \\\n    libclang-dev=1:15.0-56 \\\n    pkg-config=1.8.1-1\n# Rust toolchain pinned via rust-toolchain.toml\n# cargo build với SOURCE_DATE_EPOCH để deterministic timestamps\nENV SOURCE_DATE_EPOCH=1700000000\nRUN cargo build --release --locked"
+        },
+        {
+          "type": "code",
+          "language": "toml",
+          "code": "# rust-toolchain.toml — pinned in repository root\n[toolchain]\nchannel = \"1.75.0\"\ncomponents = [\"rustfmt\", \"clippy\"]\ntargets = [\n    \"x86_64-unknown-linux-gnu\",\n    \"aarch64-unknown-linux-gnu\",\n    \"x86_64-apple-darwin\",\n    \"aarch64-apple-darwin\"\n]"
+        },
+        {
+          "type": "paragraph",
+          "text": "Verification (Customer-Side):"
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": "# Customer verify binary khớp với SBOM-claimed hash\ncosign verify-blob \\\n    --key https://releases.terachat.com/cosign-pub.pem \\\n    --signature terachat-sbom.json.sig \\\n    terachat-sbom.json\n\n# Verify binary hash khớp với SBOM component hash\nsha256sum terachat-relay-linux-x64 | grep $(jq -r '.metadata.component.hashes[0].content' terachat-sbom.json)"
+        }
+      ],
+      "subsections": [
+        {
+          "id": "cicd-01-implementation-cicd-pipeline-requirements",
+          "level": 3,
+          "heading": "CICD-01: [IMPLEMENTATION] CI/CD Pipeline Requirements",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "Danh sách gates bắt buộc — tất cả phải pass trước khi merge vào main."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "cicd-011-required-gates",
+              "level": 4,
+              "heading": "CICD-01.1 Required Gates",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Tất cả gates dưới đây phải pass trước khi merge vào main. Bất kỳ gate nào fail = BLOCKER."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Security Gates:"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "security_gates:\n  - name: \"FFI-01: No raw pointer in pub extern C\"\n    command: \"cargo clippy -- -D tera_ffi_raw_pointer\"\n    blocker: true\n\n  - name: \"KEY-02: ZeroizeOnDrop verification\"\n    command: \"cargo miri test --test zeroize_verification\"\n    blocker: true\n\n  - name: \"Dependency audit (RUSTSEC)\"\n    command: \"cargo audit --deny warnings\"\n    blocker: true\n\n  - name: \"Trivy container scan (CRITICAL CVE = fail)\"\n    command: \"trivy image --exit-code 1 --severity CRITICAL terachat-relay:latest\"\n    blocker: true\n\n  - name: \"Secret scan (GitLeaks)\"\n    command: \"gitleaks detect --source . --exit-code 1\"\n    blocker: true"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Correctness Gates:"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "correctness_gates:\n  - name: \"Unit tests (all platforms)\"\n    command: \"cargo nextest run --all-features\"\n    blocker: true\n\n  - name: \"WasmParity CI gate (wasm3 vs wasmtime, delta ≤ 20ms)\"\n    command: \"cargo test --test wasm_parity -- --timeout 60\"\n    blocker: true\n    description: |\n      Executes the same .tapp workload on wasm3 (iOS path) and wasmtime (Desktop path).\n      Fails if: (1) output AST differs, (2) execution time delta > 20ms on reference hardware,\n      (3) memory usage delta > 5MB.\n\n  - name: \"Inbound deduplication contract (CRDT)\"\n    command: \"cargo test --test crdt_dedup_contract\"\n    blocker: true\n    description: |\n      Relay restart with 1000 in-flight STAGED events.\n      Verify: zero duplicate messages in recipient view,\n      zero UNIQUE constraint violations in hot_dag.db.\n\n  - name: \"MLS epoch rotation SLA (≤1s for 100 members)\"\n    command: \"cargo bench --bench mls_epoch_rotation -- --sample-size 10\"\n    blocker: false   # Non-blocking: regression tracked, not blocking merge\n    threshold_ms: 1000"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Build & Signing Gates:"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "build_gates:\n  - name: \"Reproducible build verification\"\n    command: \"ops/verify-reproducible-build.sh\"\n    blocker: true\n    description: |\n      Build twice with identical SOURCE_DATE_EPOCH.\n      SHA-256 of both binaries must be identical.\n      Fails on any non-determinism.\n\n  - name: \"SBOM generation and signing\"\n    command: \"ops/generate-sbom.sh && cosign sign-blob ...\"\n    blocker: true\n\n  - name: \"iOS: fastlane match cert validation\"\n    command: \"bundle exec fastlane match nuke --type development --dry-run\"\n    blocker: false\n    platforms: [ios]\n\n  - name: \"Windows: EV Code Signing (DigiCert KeyLocker)\"\n    command: \"signtool verify /pa terachat-setup.exe\"\n    blocker: true\n    platforms: [windows]\n\n  - name: \"Linux: GPG signature on .deb/.rpm\"\n    command: \"dpkg-sig --verify terachat_*.deb\"\n    blocker: true\n    platforms: [linux]\n\n  - name: \"AppImage: Cosign verification\"\n    command: \"cosign verify-blob --key terachat-root.pub terachat-*.AppImage\"\n    blocker: true\n    platforms: [linux_appimage]"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Performance Budget Gates:"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "performance_gates:\n  - name: \"IPC buffer acquire P99 < 100µs\"\n    command: \"cargo bench --bench ipc_bridge\"\n    threshold_p99_us: 100\n    blocker: false   # Regression alert, not blocking\n\n  - name: \"AES-256-GCM throughput regression (< 10% drop)\"\n    command: \"cargo bench --bench crypto_throughput\"\n    blocker: false\n\n  - name: \"hot_dag.db append P99 < 10ms\"\n    command: \"cargo bench --bench dag_append\"\n    threshold_p99_ms: 10\n    blocker: false"
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "infra-06-test-implementation-automated-chaos-engineering",
+          "level": 3,
+          "heading": "INFRA-06: [TEST] [IMPLEMENTATION] Automated Chaos Engineering",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "TestMatrix.md định nghĩa 28 scenarios. File này spec implementation.",
+                "Mục tiêu: automated CI test suite, không chỉ manual runbook."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "infra-061-chaos-test-framework",
+              "level": 4,
+              "heading": "INFRA-06.1 Chaos Test Framework",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Mục tiêu: 28 scenarios trong TestMatrix.md phải chạy automated trong CI (staging environment), không chỉ manual runbook. Gov/Military tier: phải pass tất cả 28 trước contract ký."
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Framework Architecture:"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// chaos/src/lib.rs\npub struct ChaosScenario {\n    pub id:            &'static str,       // e.g. \"SC-01\"\n    pub name:          &'static str,\n    pub fault_inject:  Box<dyn FaultInjector>,\n    pub expected:      ExpectedBehavior,\n    pub timeout_s:     u32,\n    pub platforms:     Vec<PlatformKind>,\n}\n\npub trait FaultInjector: Send + Sync {\n    async fn inject(&self, env: &TestEnvironment) -> Result<(), ChaosError>;\n    async fn cleanup(&self, env: &TestEnvironment);\n}\n\npub struct ExpectedBehavior {\n    pub max_data_loss_events:  u32,     // 0 = zero data loss required\n    pub max_recovery_time_s:   u32,\n    pub min_mesh_nodes_active: u32,\n    pub ui_degraded_ok:        bool,    // Nếu false: UI phải fully functional\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Core Chaos Scenarios (subset — 8 của 28):"
+                },
+                {
+                  "type": "code",
+                  "language": "rust",
+                  "code": "// SC-01: Network partition + rejoin\nChaosScenario {\n    id: \"SC-01\",\n    name: \"Network partition 30 minutes then rejoin\",\n    fault_inject: Box::new(NetworkPartitionInjector {\n        duration_s: 1800,\n        partition_type: PartitionType::AllNodes,\n    }),\n    expected: ExpectedBehavior {\n        max_data_loss_events: 0,\n        max_recovery_time_s: 120,\n        min_mesh_nodes_active: 2,\n        ui_degraded_ok: true,  // Mesh mode UI là acceptable\n    },\n    timeout_s: 2100,\n    platforms: vec![iOS, Android, Desktop],\n}\n\n// SC-02: iOS Tactical Relay TTL expiry — tất cả desktop offline\nChaosScenario {\n    id: \"SC-02\",\n    name: \"EMDP: Desktop offline, iOS-only mesh, TTL expiry at T+60min\",\n    fault_inject: Box::new(EmdpTtlExpiryInjector {\n        desktop_offline: true,\n        ios_node_count: 2,\n        run_to_expiry: true,\n    }),\n    expected: ExpectedBehavior {\n        max_data_loss_events: 0,    // Buffered messages không được mất\n        max_recovery_time_s: 30,    // Sau khi desktop reconnect\n        min_mesh_nodes_active: 2,\n        ui_degraded_ok: true,\n    },\n    timeout_s: 4200,\n    platforms: vec![iOS],\n}\n\n// SC-03: Relay restart với 1000 STAGED events\nChaosScenario {\n    id: \"SC-03\",\n    name: \"Relay restart: 1000 in-flight STAGED events\",\n    fault_inject: Box::new(RelayRestartInjector {\n        staged_events_count: 1000,\n        restart_type: RestartType::SIGKILL,  // Hard kill — không graceful\n    }),\n    expected: ExpectedBehavior {\n        max_data_loss_events: 0,    // WAL staging guarantee: zero loss\n        max_recovery_time_s: 60,\n        min_mesh_nodes_active: 0,   // Online-only scenario\n        ui_degraded_ok: false,      // UI phải fully recover\n    },\n    timeout_s: 300,\n    platforms: vec![Server],\n}\n\n// SC-06: Dead Man Switch lockout trong active CallKit session\nChaosScenario {\n    id: \"SC-06\",\n    name: \"Dead Man Switch fires during active CallKit voice call\",\n    fault_inject: Box::new(DeadManSwitchInjector {\n        during_active_call: true,\n        grace_hours: 0,   // Immediate lockout\n    }),\n    expected: ExpectedBehavior {\n        // Core_Spec §5.1: lockout deferred until call ends\n        max_data_loss_events: 0,\n        max_recovery_time_s: 10,    // 10s sau khi call kết thúc\n        min_mesh_nodes_active: 0,\n        ui_degraded_ok: false,\n    },\n    timeout_s: 180,\n    platforms: vec![iOS],\n}"
+                },
+                {
+                  "type": "paragraph",
+                  "text": "CI Integration (staging environment):"
+                },
+                {
+                  "type": "code",
+                  "language": "yaml",
+                  "code": "# .github/workflows/chaos-tests.yml\nname: Chaos Engineering Suite\non:\n  schedule:\n    - cron: '0 2 * * *'  # Hàng ngày lúc 2:00 AM UTC\n  workflow_dispatch:\n    inputs:\n      scenario_filter:\n        description: 'Run specific scenario (e.g. SC-01) or \"all\"'\n        default: 'all'\n\njobs:\n  chaos-test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 180\n    steps:\n      - name: Start staging environment (docker-compose)\n        run: docker-compose -f ops/chaos/docker-compose.staging.yml up -d\n\n      - name: Run chaos suite\n        run: |\n          cargo run --bin chaos-runner -- \\\n            --scenario ${{ inputs.scenario_filter || 'all' }} \\\n            --parallel 4 \\\n            --report-format junit \\\n            --output chaos-results.xml\n\n      - name: Publish results\n        uses: actions/upload-artifact@v4\n        with:\n          name: chaos-results\n          path: chaos-results.xml"
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "githubworkflowschaos-testsyml",
+      "level": 1,
+      "heading": ".github/workflows/chaos-tests.yml",
+      "content_blocks": [
+        {
+          "type": "paragraph",
+          "text": "name: Chaos Engineering Suite"
+        },
+        {
+          "type": "paragraph",
+          "text": "on:"
+        },
+        {
+          "type": "paragraph",
+          "text": "schedule:"
         },
         {
           "type": "list",
           "data": [
-            "MLS cryptographic internals, CRDT algorithms, server infrastructure → TERA-CORE (Core_Spec.md)",
-            "UI animation, glassmorphism state machine → TERA-DESIGN (Design.md)",
-            "Plugin publishing, Marketplace review, .tapp signing → TERA-MKT (Web_Marketplace.md)",
-            "Combined-failure chaos test scenarios → TERA-TEST (TestMatrix.md)",
-            "Code signing pipeline, certificate rotation → ops/signing-pipeline.md",
-            "PostgreSQL PITR recovery, Shamir ceremony → ops/db-recovery.md, ops/shamir-bootstrap.md"
+            "cron: '0 2   *'  # Hàng ngày lúc 2:00 AM UTC"
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "workflow_dispatch:"
+        },
+        {
+          "type": "paragraph",
+          "text": "inputs:"
+        },
+        {
+          "type": "paragraph",
+          "text": "scenario_filter:"
+        },
+        {
+          "type": "paragraph",
+          "text": "description: 'Run specific scenario (e.g. SC-01) or \"all\"'"
+        },
+        {
+          "type": "paragraph",
+          "text": "default: 'all'"
+        },
+        {
+          "type": "paragraph",
+          "text": "jobs:"
+        },
+        {
+          "type": "paragraph",
+          "text": "chaos-test:"
+        },
+        {
+          "type": "paragraph",
+          "text": "runs-on: ubuntu-latest"
+        },
+        {
+          "type": "paragraph",
+          "text": "timeout-minutes: 180"
+        },
+        {
+          "type": "paragraph",
+          "text": "steps:"
+        },
+        {
+          "type": "list",
+          "data": [
+            "name: Start staging environment (docker-compose)"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "run: docker-compose -f ops/chaos/docker-compose.staging.yml up -d"
+        },
+        {
+          "type": "list",
+          "data": [
+            "name: Run chaos suite"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "run: |"
+        },
+        {
+          "type": "paragraph",
+          "text": "cargo run --bin chaos-runner -- \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--scenario ${{ inputs.scenario_filter || 'all' }} \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--parallel 4 \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--report-format junit \\"
+        },
+        {
+          "type": "paragraph",
+          "text": "--output chaos-results.xml"
+        },
+        {
+          "type": "list",
+          "data": [
+            "name: Publish results"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "uses: actions/upload-artifact@v4"
+        },
+        {
+          "type": "paragraph",
+          "text": "with:"
+        },
+        {
+          "type": "paragraph",
+          "text": "name: chaos-results"
+        },
+        {
+          "type": "paragraph",
+          "text": "path: chaos-results.xml"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n---\n\n## 5. FEATURE ↔ CORE MAPPING (CRITICAL)\n\n> Every feature maps to one or more modules in Core_Spec.md.\n> A feature with no Core mapping is an **orphan — blocker, do not ship**.\n> Mappings verified against TERA-CORE v2.0.\n\n| Feature ID | Feature Name | Primary Core Modules | TERA-CORE References |\n| --- | --- | --- | --- |\n| F-01 | Secure E2EE Messaging | `crypto/mls_engine.rs`, `crdt/dag.rs` | §5.3, §7.1, §8.1, §4.2, §4.3 |\n| F-02 | Push Notification Delivery | `crypto/push_ratchet.rs` | §5.5, §8.3, §4.2 |\n| F-03 | IPC Bridge & State Sync | `ffi/ipc_bridge.rs`, `ffi/token_protocol.rs` | §4.2, §4.3, §2.2 |\n| F-04 | Local Storage Management | `crdt/dag.rs`, `crdt/snapshot.rs` | §7.1, §7.4, §12.2 (DB-01, DB-02, DB-03) |\n| F-05 | Survival Mesh Networking | `mesh/` (all six modules) | §6.1, §6.2, §6.3, §6.4, §6.5, §6.6, §6.7 |\n| F-06 | Voice and Video Calls | `infra/relay.rs` (TURN), host adapters | §10.4, §6.4, §9.2, §5.3 |\n| F-07 | WASM Plugin Sandbox | `ffi/token_protocol.rs`, platform WASM adapter | §4.1, §4.4, §3.2 (Table §3.1) |\n| F-08 | Inter-`.tapp` IPC | `ffi/ipc_bridge.rs` | §4.2, §4.3, §3.2 |\n| F-09 | Media and File Transfer | `crypto/mls_engine.rs`, `infra/relay.rs` | §5.3, §9.5, §7.1, §8.1 |\n| F-10 | AI / SLM Integration | `infra/relay.rs` (VPS Enclave) | §3.3, §3.6, §4.4 |\n| F-11 | Device Security | `crypto/hkms.rs`, `crypto/zeroize.rs` | §5.1, §5.2, §12.4 (PLT-04) |\n| F-12 | Identity and Onboarding | `crypto/hkms.rs`, `crypto/mls_engine.rs` | §5.1, §5.2, §5.3 |\n| F-13 | Admin Console | `infra/federation.rs`, `infra/metrics.rs` | §3.2, §5.1, §9.5, §9.6 |\n| F-14 | Adaptive Network Management | `infra/relay.rs` | §9.2, §4.2 |\n| F-15 | Crash-Safe WAL Management | `crdt/dag.rs`, `infra/wal_staging.rs` | §4.4, §7.1, §9.3, §12.2 |\n\n**Orphan Feature Verification:** All 15 features have verified Core mappings. Zero orphan features in this document.\n\n---\n\n## 6. USER FLOW & INTERACTION MODEL\n\n### 6.1 Message Send → Render Lifecycle\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "[User input]"
+        },
+        {
+          "type": "paragraph",
+          "text": "│  UICommand::SendMessage { recipient_did, plaintext }"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "[Rust Core]"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Lookup Epoch_Key (RAM, ZeroizeOnDrop)",
+            "AES-256-GCM encrypt plaintext",
+            "Build CRDT_Event with Ed25519 signature (biometric gate)",
+            "Append to hot_dag.db WAL (durable before network dispatch)"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Online: TLS 1.3 + mTLS → VPS → wal_staging → pub/sub"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── Offline: BLE Control Plane → Mesh Store-and-Forward"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Emit CoreSignal::StateChanged { table: \"messages\", version }"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "[UI]"
+        },
+        {
+          "type": "list",
+          "data": [
+            "Issue UICommand::ScrollViewport",
+            "Core: tera_buf_acquire → Data Plane buffer write",
+            "UI reads via token → renders 20 messages",
+            "UICommand::ReleaseBuffer → Core ZeroizeOnDrop"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n### 6.2 Network Mode Transition\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Internet available"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── QUIC OK  → ONLINE_QUIC"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── gRPC OK  → ONLINE_GRPC"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── WSS OK   → ONLINE_WSS"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── All fail → MESH_MODE"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── BLE + Wi-Fi Direct active"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── F-07 WASM: terminate + sled snapshot"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── F-10 AI: disabled"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── F-06 Voice: suspended"
+        },
+        {
+          "type": "paragraph",
+          "text": "Internet restored"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── ALPN renegotiation → highest available tier"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── F-07 WASM: restore from sled snapshot (< 50 ms)"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── F-05 DAG sync: CRDT merge via Dictator Election"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── F-01 MLS: Peer-Assisted Epoch Re-induction if needed"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n### 6.3 Device Enrollment Flow\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Admin generates enrollment token (mTLS cert, TTL 12–24 h)"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "New device scans QR / enters token"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "DeviceIdentityKey generated in Secure Enclave / StrongBox (biometric required)"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "Proof_of_Identity_and_Device submitted → server → mTLS cert issued"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "MLS Welcome_Packet received → Company_Key available"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "Device operational"
+        },
+        {
+          "type": "paragraph",
+          "text": "cold_state.db hydration begins in background (F-04 Hydration flow)"
+        },
+        {
+          "type": "code",
+          "language": "",
+          "code": "\n### 6.4 iOS Push Notification Flow (Versioned Key Ladder)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "APNs delivers push payload"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Version match → NSE Arena decrypt → OS notification → ZeroizeOnDrop"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── Version mismatch"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Cache ciphertext to nse_staging.db"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Set main_app_decrypt_needed = true (Shared Keychain)"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── Send content-available:1"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "▼"
+        },
+        {
+          "type": "paragraph",
+          "text": "Main App wakes"
+        },
+        {
+          "type": "paragraph",
+          "text": "│"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Rotate Push_Key"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Decrypt nse_staging.db entry"
+        },
+        {
+          "type": "paragraph",
+          "text": "├── Display notification"
+        },
+        {
+          "type": "paragraph",
+          "text": "└── Clear nse_staging.db"
         }
       ],
       "subsections": []

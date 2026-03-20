@@ -10,7 +10,7 @@
         {
           "type": "code",
           "language": "yaml",
-          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-DESIGN\"\ntitle:    \"TeraChat — Product Requirements Document (Design)\"\nversion:  \"2.0\"\naudience: \"Designer, Frontend Developer, Product Manager\"\npurpose:  \"Đặc tả hệ thống thiết kế UI/UX Glassmorphism, component library, UI state machine và animation specs.\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về UI design, Glassmorphism, animation, components, hoặc các trạng thái (states) của UI.\""
+          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-DESIGN\"\ntitle:    \"TeraChat — Product Requirements Document (Design)\"\nversion:  \"0.2.6\"\naudience: \"Designer, Frontend Developer, Product Manager\"\npurpose:  \"Đặc tả hệ thống thiết kế UI/UX Glassmorphism, component library, UI state machine và animation specs.\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về UI design, Glassmorphism, animation, components, hoặc các trạng thái (states) của UI.\""
         },
         {
           "type": "blockquote",
@@ -42,22 +42,22 @@
           ],
           "rows": [
             [
-              "v0.3.5",
+              "0.2.6",
               "2026-03-13",
               "Add §37 Adaptive Glassmorphism State Machine & Survival HUD"
             ],
             [
-              "v0.3.0",
+              "0.2.3",
               "2026-03-11",
               "Add §30–36 Memory pressure UI · Byzantine fault indicators · Crypto-Shred animation"
             ],
             [
-              "v0.2.9",
+              "0.2.1",
               "2026-03-05",
               "Add §28 Self-Destruct Visualization · §29 Memory Zeroization overlay"
             ],
             [
-              "v0.2.8",
+              "0.1.1",
               "2026-03-04",
               "Add §25 Magnetic Collapse animation · §26 FCP Red Border overlay"
             ],

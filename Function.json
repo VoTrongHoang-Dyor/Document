@@ -3,98 +3,198 @@
   "generated_at": "2026-02-23",
   "sections": [
     {
-      "id": "functionmd-khả-năng-hành-động-của-từng-vai-trò",
+      "id": "terachat-function-capability-blueprint",
       "level": 1,
-      "heading": "Function.md — Khả năng Hành động của Từng Vai trò",
+      "heading": "TeraChat — Function & Capability Blueprint",
       "content_blocks": [
         {
-          "type": "blockquote",
-          "alert_type": "note",
-          "lines": [
-            "*\"Bảo mật thực sự không bắt người dùng thay đổi hành vi. Nó bảo vệ họ ngầm, trong khi họ tiếp tục làm việc nhanh hơn, hiệu quả hơn so với bất kỳ công cụ nào họ từng dùng.\"*",
-            "— CEO, TeraChat"
-          ]
-        },
-        {
           "type": "paragraph",
-          "text": "TeraChat không chỉ là ứng dụng nhắn tin — đây là Hệ điều hành Công việc cho doanh nghiệp đòi hỏi Bảo mật không thỏa hiệp. Mỗi vai trò trong tổ chức — từ Admin, đến nhân viên, đến đối tác liên tổ chức — được trao đúng quyền, đúng công cụ, và đúng mức độ kiểm soát. Không ai có nhiều hơn những gì họ cần. Không ai có ít hơn những gì họ đòi hỏi."
+          "text": "TERA-FUNC v0.2.5 · March 2026 · Internal Document"
         }
       ],
       "subsections": [
         {
-          "id": "1-flow-chức-năng-dành-cho-quản-trị-viên-admin",
+          "id": "tóm-tắt-điều-hành",
           "level": 2,
-          "heading": "1. [FLOW] Chức năng dành cho Quản trị viên (Admin)",
+          "heading": "Tóm Tắt Điều Hành",
           "content_blocks": [
             {
               "type": "paragraph",
-              "text": "Admin nắm giữ đặc quyền cấu hình, quản lý vòng đời dữ liệu và thiết lập các hàng rào bảo mật. Các chức năng chính bao gồm:"
+              "text": "TeraChat không phải là ứng dụng nhắn tin. Đây là Hệ điều hành Công việc Chủ quyền (Sovereign Work OS) — nền tảng cộng tác doanh nghiệp được bảo vệ bằng toán học, nơi không có bất kỳ máy chủ, nhà cung cấp hay đối thủ nào có thể đọc được dữ liệu mà TeraChat truyền tải."
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Giá Trị Cốt Lõi",
+                "Cơ Chế Thực Thi"
+              ],
+              "rows": [
+                [
+                  "Bảo mật bằng Toán học",
+                  "Zero-Knowledge: server chỉ định tuyến ciphertext, không bao giờ plaintext"
+                ],
+                [
+                  "Sinh tồn Offline",
+                  "BLE 5.0 + Wi-Fi Direct Mesh — hoạt động khi không có Internet"
+                ],
+                [
+                  "Kiểm soát Doanh nghiệp",
+                  "Admin-owned keys, HSM-backed KMS, OPA Zero-Trust enforcement"
+                ],
+                [
+                  "Nền tảng Mở rộng",
+                  ".tapp WASM sandbox Marketplace với chữ ký mật mã học"
+                ],
+                [
+                  "Kết nối Liên tổ chức",
+                  "Federation Bridge mTLS + Sealed Sender Protocol"
+                ],
+                [
+                  "AI Ưu tiên Riêng tư",
+                  "SLM trên thiết bị + PII redaction trước mọi cuộc gọi LLM bên ngoài"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Biểu tượng platform:"
             },
             {
               "type": "list",
               "data": [
-                "Quản lý Khóa và Định danh (KMS & Identity):",
-                "Thiết lập ban đầu với KMS Bootstrap, trong đó Admin phải quản lý Master Key (in ra giấy / lưu file .terakey / YubiKey) để tránh thảm họa \"Zero-Access\" (→ TERA-CORE).",
-                "☁️ Phát hành Invite Token (Signed JWT) cho nhân viên mới và thực hiện thu hồi quyền (Revoke), tự động kích hoạt Epoch Rotation và Remote Wipe (xóa dữ liệu từ xa) trên thiết bị nhân viên nghỉ việc.",
-                "🗄️ Nắm giữ Enterprise Escrow Key (Recovery Key) để giải mã dữ liệu phục vụ điều tra nội bộ hoặc tuân thủ pháp lý.",
-                "Thu hồi & Cấp lại Định danh (HR Recovery Delegation): Admin có thể ủy quyền cấp phát thiết bị mới cho bộ phận HR thông qua SCIM 2.0. HR được cấp role HR_Recovery_Officer.",
-                "Offline Recovery Flow: Nhân viên mất máy cầm thiết bị mới đến phòng HR hoặc liên hệ Admin trực tuyến. Admin xác thực Biometric trên thiết bị của chính mình và tạo Admin-approved QR Key Exchange (Recovery Ticket đã ký của Ed25519). Người dùng quét QR bằng thiết bị mới, Lõi Rust xác minh Ticket và giải mã cold_state.db tải về từ Cloud — không cần mạng Internet hay phần cứng ngoại vi. Nếu không tiếp cận được Admin, dùng Recovery Phrase (BIP-39 Mnemonic) làm fallback."
+                "📱 iOS / Android / Huawei (Mobile)",
+                "💻 Laptop / macOS",
+                "🖥️ Desktop / Windows / Linux",
+                "🗄️ Bare-metal Server",
+                "☁️ VPS Cluster / Cloud"
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Chế độ hoạt động:"
+            },
+            {
+              "type": "list",
+              "data": [
+                "☀️ Online Mode — Giao diện Sáng, kết nối Cloud/Server",
+                "🌑 Mesh Mode — Giao diện Tối, hoạt động offline P2P"
+              ]
+            }
+          ],
+          "subsections": []
+        },
+        {
+          "id": "module-1-lõi-mật-mã-quản-lý-khóa",
+          "level": 2,
+          "heading": "Module 1 — Lõi Mật Mã & Quản lý Khóa",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Nguyên tắc bất biến:** Khóa riêng tư không bao giờ rời khỏi phần cứng. Plaintext không bao giờ tồn tại ngoài phạm vi. Không có ngoại lệ."
               ]
             }
           ],
           "subsections": [
             {
-              "id": "11-security-quy-trình-xử-lý-khủng-hoảng-thiết-bị-device-loss-scenarios",
+              "id": "11-hệ-thống-quản-lý-khóa-phân-tầng-hkms",
               "level": 3,
-              "heading": "1.1 [SECURITY] Quy trình Xử lý Khủng hoảng Thiết bị (Device Loss Scenarios)",
+              "heading": "1.1 Hệ thống Quản lý Khóa Phân tầng (HKMS)",
               "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[Master Key] — HSM FIPS 140-3 L3 / Secure Enclave / TPM 2.0 (không bao giờ xuất ra ngoài)\n      │\n      └──► [Company_Key] — mã hóa toàn bộ dữ liệu workspace\n                 │\n                 ├──► [Epoch_Key] — khóa phiên MLS, ZeroizeOnDrop khi rotation\n                 ├──► [Push_Key] — chuỗi HKDF một chiều, cô lập khỏi TreeKEM\n                 └──► [Escrow_Key] — Shamir SSS M-of-N, tồn tại trong RAM < 100ms"
+                },
                 {
                   "type": "list",
                   "data": [
-                    "💻 TH1 (Mất CẢ Laptop & Điện thoại) - Multi-Sig Shamir's Secret Sharing Quorum:",
-                    "🗄️ HSM Quorum M-of-N (mặc định 3/5): Enterprise_Escrow_Key được chia thành 5 mảnh Shamir's SSS. Mỗi mảnh giao cho 1 C-Level khác nhau. Cần đúng 3 mảnh hợp lệ mới tái tạo được Escrow_Key.",
-                    "📱 BLE Physical Presence Verification: Khi CEO khởi tạo Break-glass, thiết bị CEO phát BreakglassRequest BLE beacon (Ed25519 signed). Ít nhất 2 thiết bị C-Level khác phải xác thực sinh trắc học và phát BreakglassApproval beacon trong phạm vi < 2m.",
-                    "📱💻 Quorum Timer (10 phút): Tất cả approvals phải hoàn tất trong 10 phút. Hết timeout → hủy session. Ngăn replay attack.",
-                    "🗄️ HSM Lagrange Reconstruction (Secure Arena): Sau khi đủ 3 mảnh, Lõi Rust chạy Lagrange Interpolation trong mlock-protected arena.",
-                    "📱 Thiết bị mới phát Remote Wipe: Phát lệnh {Remote_Wipe, Revoke} tới 2 thiết bị đã mất — ZeroizeOnDrop khi chúng chạm mạng.",
-                    "📱💻 TH2 (Chỉ mất Điện thoại, Laptop vẫn còn an toàn) - Kiến trúc Cấp phép:",
-                    "Bước 1 (Báo cáo & Khởi chạy Thu hồi): 💻 Laptop nhân viên báo mất điện thoại. Lõi Rust phát lệnh Crypto-Shredding qua Gossip. Device_Key cũ bị phế truất khỏi MLS Group.",
-                    "Bước 2 (Yêu cầu Ghép nối): 📱 Điện thoại mới sinh khóa mới, hiển thị QR. 💻 Laptop quét QR, đóng gói thông tin + Chữ ký đẩy lên ☁️ VPS là Pending Approval.",
-                    "Bước 3 (Xác thực Định danh): 💻/🖥️ HR nhận cảnh báo, xác minh nhân viên bằng Voice/Video nội bộ trên Laptop. HR Approve bằng cách ký điện tử, tạo Authorization Ticket đẩy OPA Policy xuống mạng.",
-                    "Bước 4 (Bơm Khóa An toàn): 💻 Laptop nhận Ticket, \"mở khóa\" hàm xuất Company_Key. 📱💻 Kênh P2P (BLE/Wi-Fi Direct) mở, truyền Company_Key sang máy mới."
+                    "Shamir Secret Sharing (mặc định 3-of-5): Enterprise_Escrow_Key chia thành 5 mảnh cho 5 C-Level. Cần đúng 3 mảnh mới tái tạo được.",
+                    "ZeroizeOnDrop: Mọi struct chứa plaintext tự xóa bộ nhớ (ghi đè 0x00) khi hết phạm vi.",
+                    "Dead Man Switch: Bộ đếm monotonic TPM 2.0 giới hạn offline TTL (Consumer 24h / Enterprise configurable / GovMilitary 30 ngày)."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "12-security-kỹ-thuật-opa-engine-dlp-data-loss-prevention",
+              "id": "12-mã-hóa-nhóm-mls-rfc-9420",
               "level": 3,
-              "heading": "1.2 [SECURITY] Kỹ thuật: OPA Engine & DLP (Data Loss Prevention)",
+              "heading": "1.2 Mã hóa Nhóm MLS RFC 9420",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "☁️ VPS Cluster / Cloud (Control Plane): Nơi CISO/Admin định nghĩa các file chính sách Rego. Đẩy chính sách xuống mạng lưới qua kết nối mTLS.",
-                    "💻📱 Laptop / Mobile (Policy Enforcement Point): Lõi Rust đóng vai trò \"Cảnh sát chốt chặn\" (Enforcer). Giao diện phải xin phép Lõi Rust trước khi hoạt động.",
-                    "📱💻 Giới hạn tốc độ (Rate Limiting): Áp dụng Token Bucket trên RAM Client. Nếu cố tình kéo dữ liệu (Data Exfiltration), Lõi Rust tự block socket Egress, ngắt mạng cục bộ.",
-                    "📱💻 Thời gian lưu trữ tin nhắn (TTL): Khi hết hạn, Lõi Rust kích hoạt Crypto-Shredding. Ghi đè 0x00 lên khóa giải mã của tin nhắn trong SQLite WAL."
+                    "📱💻🖥️ Hỗ trợ tới 10.000 thành viên trong một nhóm E2EE.",
+                    "TreeKEM: phân phối khóa O(log n) — hiệu quả băng thông ngay cả nhóm lớn.",
+                    "Epoch Rotation: kích hoạt khi thành viên rời nhóm, Admin yêu cầu, hoặc theo lịch 24h.",
+                    "Batched Update_Path: nhóm ≤1.000: cửa sổ 60s; ≤5.000: 300s — ngăn bão mạng.",
+                    "Post-Quantum Hybrid (ML-KEM-768 + X25519): tuân thủ CNSA 2.0 / NIST FIPS 203."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "13-ui-cấu-hình-hiển-thị-launchpad-uiux-glassmorphism",
+              "id": "13-phần-cứng-bảo-vệ-khóa",
               "level": 3,
-              "heading": "1.3 [UI] Cấu hình Hiển thị Launchpad (UI/UX Glassmorphism)",
+              "heading": "1.3 Phần cứng Bảo vệ Khóa",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Nơi lưu trữ Khóa",
+                    "Cổng Xác thực"
+                  ],
+                  "rows": [
+                    [
+                      "📱 iOS / macOS",
+                      "Secure Enclave Processor (SEP)",
+                      "Face ID / Touch ID — bắt buộc"
+                    ],
+                    [
+                      "📱 Android",
+                      "StrongBox Keymaster HAL",
+                      "BiometricPrompt — bắt buộc"
+                    ],
+                    [
+                      "📱 Huawei",
+                      "TrustZone TEE via HMS",
+                      "HMS Biometric — bắt buộc"
+                    ],
+                    [
+                      "💻🖥️ Windows",
+                      "TPM 2.0 — CNG Platform Provider",
+                      "Windows Hello"
+                    ],
+                    [
+                      "🖥️ Linux",
+                      "TPM 2.0 — tpm2-pkcs11",
+                      "PIN — bắt buộc"
+                    ],
+                    [
+                      "🗄️ Bare-metal",
+                      "HSM FIPS 140-3 L3 (PKCS#11)",
+                      "Physical presence + Shamir quorum"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "14-cryptographic-self-destruct",
+              "level": 3,
+              "heading": "1.4 Cryptographic Self-Destruct",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "📱💻 Cơ chế Mapping Policy - UI: Ẩn/hiện .tapp dựa trên OPA Policy. Frontend (Tauri/React Native) truy vấn Lõi Rust, nhận ma trận quyền truy cập.",
-                    "Trạng thái Cấp quyền (Sáng): .tapp nổi khối (Neumorphism), sẵn sàng tương tác.",
-                    "Trạng thái Vô hiệu hóa (Glassmờ): Nếu không có quyền, đổi sang màu đơn sắc, phủ kính mờ (backdrop-filter: blur(8px) brightness(0.5)). Nút bấm bị vô hiệu hóa, hiện tooltip viền Hổ phách: \"🔒 OPA Policy: Phân quyền truy cập bị từ chối bởi CISO\" (→ TERA-DESIGN)."
+                    "📱💻 PIN thất bại 5 lần: Crypto-Shredding toàn bộ DB nội địa + factory reset. Bộ đếm HMAC-xác thực chống giả mạo.",
+                    "📱💻 Remote Wipe: Xóa DeviceIdentityKey khỏi phần cứng, drop mọi bảng DB, xóa WASM sandbox storage. Không thể bị người dùng ngắt.",
+                    "📱💻 Cryptographic Erasure (GDPR): Hết TTL → Crypto-Shredding khóa giải mã; ciphertext vĩnh viễn không đọc được."
                   ]
                 }
               ],
@@ -103,141 +203,149 @@
           ]
         },
         {
-          "id": "2-flow-chức-năng-dành-cho-người-dùng-cuối-usernhân-viên",
+          "id": "module-2-nhắn-tin-cộng-tác-ux",
           "level": 2,
-          "heading": "2. [FLOW] Chức năng dành cho Người dùng cuối (User/Nhân viên)",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "📱💻 Giao tiếp và Nhắn tin Cốt lõi: Nhắn tin, gọi thoại/video HD (WebRTC) mã hóa đầu cuối (E2EE) qua chuẩn MLS và Signal. Tìm kiếm toàn văn (SQLite FTS5) siêu tốc độ tại máy trạm (Zero-Knowledge Search).",
-                "💻📱 Tài liệu thông minh (Smart Document):",
-                "Quy trình: Người sửa (Editor) điều chỉnh nội dung . Người duyệt (Chấp nhận / Từ chối / Gộp).",
-                "🗄️ RBAC: Viewer (Chỉ xem), Commenter (Bôi đen ghi chú), Editor (Tạo Shadow Branch).",
-                "📱💻 Làm việc Ngoại tuyến & Mạng Lưới (Survival Mesh):",
-                "Kích hoạt mạng Mesh qua BLE/Wi-Fi Direct khi rớt Internet. Quét QR bắt tay (Offline X3DH) truyền file tốc độ cao (50-100MB/s).",
-                "📱 iOS Alert: Yêu cầu quyền \"Local Network\" theo chính sách Apple. Nếu từ chối, Mesh thu hẹp xuống BLE-only.",
-                "📱💻 Quản lý Cây thư mục (TeraVault): Kéo thả file từ khung chat vào Virtual File System, không nhân bản file. Xem trước tài liệu nhờ Zero-Byte Stub (~5KB).",
-                "📱 iOS Background Transfer: Tải file lớn qua NSURLSession Background Transfer, Lõi Rust giải mã ngầm. Xem video không độ trễ qua Native-to-Rust Media DataSource Bridge, chạy được ở Background.",
-                "📱💻 Sử dụng Tiện ích (.tapp) và Phê duyệt: Tương tác AI Bot (@mention) qua ISDM. Dùng Mini-App (độ trễ <50ms, Time-Travel Undo/Redo). Ký số tài liệu Smart Approval với sinh trắc học."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "3-implementation-chức-năng-tích-hợp-mở-rộng-dành-cho-developer",
-          "level": 2,
-          "heading": "3. [IMPLEMENTATION] Chức năng Tích hợp & Mở rộng (Dành cho Developer)",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "☁️ Hệ sinh thái API Đa tầng: REST API, WebSocket, Webhook quy hoạch từ Tier 1 đến Tier 4.",
-                "☁️ Đồng bộ Nhân sự Tự động (SCIM 2.0 Identity Sync): Lắng nghe Azure AD/Google Workspace. Khi nghỉ việc → khóa tài khoản trong < 30s. Race Condition Guard đảm bảo Device_Key sinh ra đúng chuẩn thời gian OIDC.",
-                "📱💻 1-Tap Magic Deep-Link: magic_deep_link gửi qua SMS/Email. App tự chuyển pre_authenticated, Lõi Rust sinh Device_Key nối với pre_auth_token trước khi OIDC xong. 📱 (iOS Native OIDC PKCE prompt=none).",
-                "☁️ Cổng Tích hợp Đồng thuận (Consent-Driven Bridge): Egress Worker bot trung gian giao tiếp Jira, Salesforce. Yêu cầu Consent của Admin trước khi phân tích qua RAM.",
-                "🖥️ ChatOps & Secure Tunneling: Luồng hầm bảo mật kĩ sư ssh/rdp vào mạng nội bộ không cần VPN."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "4-flow-chức-năng-vận-hành-cứu-hộ-dành-cho-devopssecops",
-          "level": 2,
-          "heading": "4. [FLOW] Chức năng Vận hành & Cứu hộ (Dành cho DevOps/SecOps)",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "📱 Graceful Degradation (Quá tải RAM NSE): Bảo vệ trần RAM 24MB của tiến trình ngầm (iOS NSE/Android FCM). Kích hoạt Circuit Breaker chặn giải mã ngầm nếu payload > 20MB, gọi app qua Foreground.",
-                "☁️ Khôi phục PostgreSQL (PITR): WAL Archiving có thể tua ngược Database về thời điểm cụ thể nếu cấu hình lỗi.",
-                "📱 Auto-Healing VMS (Cứu staging desync): nse_staging.db gặp \"PENDING\" do app bị force kill, Lõi Rust tự kiểm tra PRAGMA quick_check(1). Chấp nhập hoặc Drop file và Gossip Re-hydration kéo lại dữ liệu từ Super Node mượt mà.",
-                "🗄️ Lưu trữ Tự chủ (BYOS): Tương thích S3 (MinIO), lưu trữ cục bộ (Infinite Retention)."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "5-architecture-chức-năng-tàng-hình-của-lõi-rust-cấp-hệ-thống",
-          "level": 2,
-          "heading": "5. [ARCHITECTURE] Chức năng \"Tàng hình\" của Lõi Rust (Cấp Hệ thống)",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "📱💻 Truyền tải Đa đường (TeraLink Multipath): Gửi song song gói CRDT qua 4G, Wi-Fi LAN, BLE Mesh. Đạt độ trễ 0ms khi Roaming (→ TERA-CORE).",
-                "📱💻 Trạm Trung chuyển Dữ liệu AI (Predictive Data Mules): Edge ML phân tích thói quen di chuyển mạng Offline để chuyển tin.",
-                "☁️ Bẫy Hắc Ín chống DDoS (Infinite Tarpit): Cầm chân kết nối sai TLS Fingerprint, nhả byte chậm cạn kiệt RAM kẻ phá hoại.",
-                "📱💻 Puncturing Stream (Phục hồi luồng tệp): Đánh dấu đoạn truyền file hỏng (Punctured), tiếp tục nhận và tự vá đoạn hỏng cuối luồng.",
-                "💻 FFI Pointer Freezing (Authorization Gateway): Khóa hàm FFI với Role giới hạn (Viewer). Chỉ cấp phép ffi_propose_change cho Editor. Trái phép lập tức gọi ZeroizeOnDrop để dọn sạch (→ TERA-FEAT)."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "6-flow-chức-năng-cho-hệ-thống-liên-tổ-chức-federation",
-          "level": 2,
-          "heading": "6. [FLOW] Chức năng cho hệ thống Liên tổ chức (Federation)",
+          "heading": "Module 2 — Nhắn tin, Cộng tác & UX",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "61-architecture-kiến-trúc-độc-lập-và-cầu-nối-zone-2-routing",
+              "id": "21-engine-nhắn-tin-cốt-lõi",
               "level": 3,
-              "heading": "6.1 [ARCHITECTURE] Kiến trúc Độc lập và Cầu nối (Zone 2 Routing)",
+              "heading": "2.1 Engine Nhắn tin Cốt lõi",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Tổng công ty (Org_ID_HQ) và Chi nhánh (Org_ID_Sub) có Private Cluster riêng.",
-                    "Giao tiếp qua Federation Bridge (Zone 2) bằng mTLS và Sealed Sender."
+                    "📱💻🖥️ E2EE đa phương thức: Văn bản, tệp tin, thoại, video — mã hóa và giải mã tại thiết bị.",
+                    "📱💻 CRDT DAG: Nhật ký sự kiện append-only đảm bảo nhất quán trên mọi thiết bị không cần điều phối trung tâm.",
+                    "📱💻 Hybrid Logical Clock (HLC): Sắp xếp toàn phần sự kiện phân tán — không cần timestamp authority phía server.",
+                    "📱💻 Full-text Search Zero-Knowledge: SQLite FTS5 tại thiết bị — server không bao giờ thấy nội dung tìm kiếm.",
+                    "📱💻 Message TTL: Hết hạn → Crypto-Shredding tự động.",
+                    "📱💻 TeraLink Multipath: Gửi song song qua 4G + Wi-Fi LAN + BLE Mesh — 0ms latency khi roaming."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "62-flow-quá-trình-kết-nối-chi-nhánh-cross-cluster",
+              "id": "22-thoại-video-webrtc",
               "level": 3,
-              "heading": "6.2 [FLOW] Quá trình Kết nối Chi nhánh (Cross-Cluster)",
+              "heading": "2.2 Thoại & Video (WebRTC)",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Bước 1: Admin HQ tạo Federation Invite Token (Signed JWT) chuyển cho nhánh.",
-                    "Bước 2: Admin nhánh nạp Token → Gửi Kết nối (kèm Public Key).",
-                    "Bước 3: HQ Phê duyệt. Hai server trao đổi vào federation_trust_registry."
+                    "📱💻 HD Voice & Video qua WebRTC DTLS-SRTP, E2EE đầu cuối.",
+                    "💻 ICE Pool Pre-warming: Kết nối thiết lập trước khi người dùng nhấn \"Gọi\" — không có màn hình chờ.",
+                    "💻 Failover tự động < 3s: P2P Direct → Internal TURN relay. Badge \"P2P (Direct)\" hoặc \"Relayed (E2EE)\".",
+                    "📱 CallKit Integration (iOS): Dead Man Switch lockout hoãn cho đến khi cuộc gọi kết thúc."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "63-security-kiểm-soát-đặc-quyền-và-chống-làm-phiền",
+              "id": "23-tài-liệu-smart-approval",
               "level": 3,
-              "heading": "6.3 [SECURITY] Kiểm soát Đặc quyền và Chống làm phiền",
+              "heading": "2.3 Tài liệu & Smart Approval",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "☁️ Giới hạn OPA Role. Token Bucket Group-Based Rate Limit — VPS drop ngay lập tức các gói PROPOSE_CHANGE bất hợp lý ở trạm trung chuyển để chống tấn công DoS diện rộng."
+                    "📱💻 Smart Document với RBAC: Viewer → Commenter → Editor (Shadow Branch).",
+                    "💻🖥️ Smart Approval Workflow: Ký số với sinh trắc học (Ed25519), phân giai đoạn phê duyệt.",
+                    "📱💻 Conflict Resolution: Merge/Discard khi sửa song song — không bao giờ silent LWW trên CONTRACT/POLICY/APPROVAL.",
+                    "📱💻 TeraVault (Virtual File System): Kéo thả file từ chat vào VFS, không nhân bản. Preview qua Zero-Byte Stub (~5KB)."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "64-security-thu-hồi-quyền-liên-tổ-chức",
+              "id": "24-hệ-thống-ux-glassmorphism",
               "level": 3,
-              "heading": "6.4 [SECURITY] Thu hồi quyền liên tổ chức",
+              "heading": "2.4 Hệ thống UX Glassmorphism",
               "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Trạng thái",
+                    "Chế độ UI",
+                    "Màu Viền",
+                    "Indicator"
+                  ],
+                  "rows": [
+                    [
+                      "☀️ Online",
+                      "Light Frosted Glass",
+                      "Xanh lam #24A1DE",
+                      "\"E2EE Active · Key Epoch N\""
+                    ],
+                    [
+                      "🌑 Mesh Fallback",
+                      "Dark Navy #0F172A",
+                      "Radar Pulse",
+                      "\"📡 Survival Mesh Active\""
+                    ],
+                    [
+                      "⚠️ Warning",
+                      "Amber Glow",
+                      "#F59E0B",
+                      "Warning banner"
+                    ],
+                    [
+                      "🔴 Containment",
+                      "Red Border 4px",
+                      "#EF4444",
+                      "FCP pulse overlay"
+                    ],
+                    [
+                      "☠️ Kill-Switch",
+                      "Blood-Red Frosted",
+                      "Đỏ máu",
+                      "Shatter animation + Shield"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Security Event Animations (bắt buộc):"
+                },
                 {
                   "type": "list",
                   "data": [
-                    "SCIM thu hồi nhánh → Vô hiệu mTLS HQ < 30 giây. Tổng bộ không cần can thiệp."
+                    "Self-Destruct: Timer ring collapse → fragment dissolve (400ms)",
+                    "Crypto-Shred: Pixel noise → wipe (350ms)",
+                    "Memory Purge: \"SECURE MEMORY PURGE\" overlay + progress bar"
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "GPU Capability Fallback:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tier",
+                    "Điều kiện",
+                    "Rendering"
+                  ],
+                  "rows": [
+                    [
+                      "Tier A",
+                      "Hardware compositing",
+                      "`backdrop-filter: blur(16–24px)`"
+                    ],
+                    [
+                      "Tier B",
+                      "Software compositing",
+                      "`blur(8px)`, opacity 0.85"
+                    ],
+                    [
+                      "Tier C",
+                      "No compositing (legacy)",
+                      "Flat solid + border accent — full functionality"
+                    ]
                   ]
                 }
               ],
@@ -246,72 +354,177 @@
           ]
         },
         {
-          "id": "7-security-kiểm-soát-ai-privacy-shield",
+          "id": "module-3-survival-mesh-network",
           "level": 2,
-          "heading": "7. [SECURITY] Kiểm soát AI Privacy Shield",
+          "heading": "Module 3 — Survival Mesh Network",
           "content_blocks": [
             {
-              "type": "paragraph",
-              "text": "Admin / CISO thống trị dòng dữ liệu sang AI (@ai) qua 3 mức:"
-            },
-            {
-              "type": "list",
-              "data": [
-                "Mức 1 (Strict Compliance): AI Shield bật vĩnh viễn (allow: false cho toggle). Thêm mức con 1b (Nework Mode): Chạy thẳng gRPC over HTTP/2 qua tcp 443 bỏ qua thăm dò UDP nhằm thích ứng Firewall mạnh.",
-                "Mức 2 (Role-Based Acceptance): Cấp quyền Mkt/C-Level. Nếu tắt Shield để lấy full context, Rust Core ghi Audit Chain (Non-Repudiation Audit, ký Ed25519) nhằm truy vết sai phạm pháp lý sau này.",
-                "Mức 3 (DLP Threshold - Bắt buộc): Ngay cả khi Shield OFF, Rust Core luôn chặn cứng (hard-block) Egress nếu payload > 4KB.",
-                "📱💻 ECRP — AI Context Switch: Gọi số lượng lớn Log cho AI, lõi Rust xử lý Dual-Masking PII (gắn token [MASK_01]), đóng gói TLS 1.3 rồi đẩy Sandbox AI, sau khi có dữ liệu sẽ dịch ngược MASK này mà không hề persist xuống vùng disk."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "8-performance-trải-nghiệm-giao-tiếp-thích-ứng-không-gian-3-tier-adaptive",
-          "level": 2,
-          "heading": "8. [PERFORMANCE] Trải nghiệm Giao tiếp Thích ứng Không gian (3-Tier Adaptive)",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "📱💻 Fallback Voice Recording:",
-                "Tier 1 (Online): Opus 128kbps Stereo.",
-                "Tier 2 (Wi-Fi Mesh): AMR-NB 4.75kbps Mono (~35KB/phút).",
-                "Tier 3 (BLE Long Range): Vô hiệu Mic UI. Rust Whisper AI translate cục bộ rồi gửi text.",
-                "📱💻 Auto-Pause Media (Tier 3): Lõi Rust phát MediaUnavailable(tier=3). UI xóa luôn nút Upload File/Camera."
-              ]
-            }
-          ],
-          "subsections": []
-        },
-        {
-          "id": "9-security-quản-trị-agentic-tuân-thủ-khôi-phục-dữ-liệu",
-          "level": 2,
-          "heading": "9. [SECURITY] Quản trị Agentic, Tuân thủ & Khôi Phục Dữ Liệu",
-          "content_blocks": [
-            {
-              "type": "list",
-              "data": [
-                "🗄️ Cài Agent toàn hệ thống: Admin có quyền Deploy .tapp qua Federation Console.",
-                "💻📱 Redaction Rules (Bôi đỏ tin đi lọt AI): Rust Core chạy Local ML để bôi dãy số CC ([REDACTED_CC]), Địa chỉ IP nội ra khỏi Prompt gửi LLMs.",
-                "🗄️ Signed Audit Log (Ed25519) Egress: Egress Telemetry log tuân thủ ISO 27001 (A.13.1) ký bằng BLAKE3. CISO nhận biết ngay lập tức Client nào rò rỉ mà không thấy rõ Log. Chống thất thoát dữ liệu (Byte-Quota Circuit Breaker) khoá Egress trong 24h nếu quá 100% dung lượng.",
-                "☁️ Poisoned Agent Remote Alerting (PARA): Trạm SASB rớt Token Taint báo hiệu Incident Hash E2EE về CISO Dashboard. Tự khóa luồng App (Suspension Agent Protocol) không phải đợi update.",
-                "🗄️ OPA Banned Lexicon Policy: List từ khóa cấm. Rust inject MUTE_LOCK xuống UI khoá Session và đòi Admin.",
-                "🗄️☁️ Anti-Remanence Policy (ARP): Ghi đè TTL xoá CSDL. CISO lệnh Wipe, Rust shredder checkpoints Zero-fill bằng signature.",
-                "📱💻 Sealing Conversation (SSA): Khi rò AI Taint, session đóng băng chỉ xem viền Hazard-Stripe. Lập Quarantined_Record trình CISO phê duyệt giả mạo (Release) hay Cứu hỏa."
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Cam kết:** Khi Internet sụp đổ, TeraChat không suy giảm. Nó kích hoạt mạng P2P tự tổ chức, bảo mật mật mã học, không cần server trung tâm."
               ]
             }
           ],
           "subsections": [
             {
-              "id": "91-flow-the-red-pill-fcp-admin-flow",
+              "id": "31-mô-hình-kết-nối-4-tầng",
               "level": 3,
-              "heading": "9.1 [FLOW] \"The Red Pill\" — FCP Admin Flow",
+              "heading": "3.1 Mô hình Kết nối 4 Tầng",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tầng",
+                    "Transport",
+                    "Throughput",
+                    "Kích hoạt khi"
+                  ],
+                  "rows": [
+                    [
+                      "☀️ Tier 1 — Online",
+                      "QUIC / gRPC / WSS",
+                      "> 100 Mbps",
+                      "Bình thường"
+                    ],
+                    [
+                      "🌑 Tier 2 — Wi-Fi Mesh",
+                      "AWDL / Wi-Fi Direct",
+                      "250–500 MB/s",
+                      "LAN, không Internet"
+                    ],
+                    [
+                      "🌑 Tier 3 — BLE Control",
+                      "BLE 5.0 (< 15 mW)",
+                      "~50ms latency",
+                      "Control plane"
+                    ],
+                    [
+                      "🌑 Tier 4 — BLE Emergency",
+                      "BLE Long Range",
+                      "Text-only",
+                      "EMDP active"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "Adaptive Voice Codec:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Tier 1 → Opus 128kbps Stereo",
+                    "Tier 2 → AMR-NB 4.75kbps Mono",
+                    "Tier 3 → Whisper local transcription → text only (tắt mic UI)"
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "32-vai-trò-mesh-node",
+              "level": 3,
+              "heading": "3.2 Vai trò Mesh Node",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Vai trò",
+                    "Platform",
+                    "Lưu trữ",
+                    "Trách nhiệm"
+                  ],
+                  "rows": [
+                    [
+                      "**Super Node**",
+                      "💻🖥️ Desktop (AC)",
+                      "500MB–1GB / 48–72h",
+                      "Backbone, DAG merge dictator"
+                    ],
+                    [
+                      "**Relay Node**",
+                      "📱 Android (RAM ≥ 3GB)",
+                      "100MB / 24h",
+                      "Intermediate relay"
+                    ],
+                    [
+                      "**Tactical Relay (EMDP)**",
+                      "📱 iOS (emergency)",
+                      "1MB / 60 phút",
+                      "Text-only CRDT buffer"
+                    ],
+                    [
+                      "**Leaf Node**",
+                      "📱 iOS (luôn luôn)",
+                      "50MB receive-only",
+                      "Nhận tin, không định tuyến"
+                    ],
+                    [
+                      "**Border Node**",
+                      "Bất kỳ (Internet + BLE)",
+                      "N/A",
+                      "Bridge TCP/IP ↔ BLE Mesh"
+                    ]
+                  ]
+                },
+                {
+                  "type": "blockquote",
+                  "alert_type": "note",
+                  "lines": [
+                    "**Quy tắc kiến trúc bất biến:** `iOS election_weight = 0` — iOS không bao giờ là Merge Dictator."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "33-ble-stealth-beaconing",
+              "level": 3,
+              "heading": "3.3 BLE Stealth Beaconing",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Cắm Hard-Token (YubiKey) → Gõ chính xác \"I_ACCEPT_LIABILITY_FOR_THIRD_PARTY_AI_LLM_EGRESS\". Nới vòng FCP giới hạn với On-Premise Agents do doanh nghiệp làm chủ. UI nổi Modal Cảnh báo + Màn hình Đỏ Red Border → Nhập FaceID xác nhận."
+                    "📱💻 31-byte BLE PDU: không chứa device identifier. Scanner thụ động chỉ thấy entropy.",
+                    "📱💻 HMAC-BLAKE3 commitment với slot rotation 5 phút. MAC rotation: iOS mỗi 15 phút, Android/Desktop mỗi 5 phút.",
+                    "📱💻 Duty cycle: 200ms active / 800ms sleep (20%). Standby: 1 beacon / 5 phút."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "34-split-brain-dictator-election",
+              "level": 3,
+              "heading": "3.4 Split-Brain & Dictator Election",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "Bầu cử xác định, không bỏ phiếu: BLAKE3 hash Node ID quyết định người thắng. Handover < 10ms.",
+                    "🌑 DAG Merge O(N log N): Rayon parallel — chỉ trên Desktop. Mobile nhận Materialized_Snapshot → áp dụng O(1).",
+                    "Chính sách xung đột: MESSAGE → giữ cả hai phiên bản. CONTRACT/POLICY/APPROVAL → yêu cầu giải quyết thủ công."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "35-emergency-mobile-dictator-protocol-emdp",
+              "level": 3,
+              "heading": "3.5 Emergency Mobile Dictator Protocol (EMDP)",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Kích hoạt khi: không có Desktop + không có Internet + ≥ 2 iOS pin > 20%."
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "📱 Text-only Store-and-Forward. Không merge DAG, không MLS Epoch rotation.",
+                    "📱 Key Escrow: Desktop chuyển session key sang iOS qua ECIES/Curve25519 trước khi offline.",
+                    "📱 TTL 60 phút. Extension ở phút 50: chuyển giao sang peer pin cao hơn."
                   ]
                 }
               ],
@@ -320,48 +533,391 @@
           ]
         },
         {
-          "id": "10-security-cơ-chế-mở-rộng-chống-nội-gián",
+          "id": "module-4-ai-privacy-shield",
           "level": 2,
-          "heading": "10. [SECURITY] Cơ chế Mở Rộng & Chống Nội gián",
+          "heading": "Module 4 — AI Privacy Shield",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Cam kết:** AI worker không bao giờ trực tiếp truy cập database tin nhắn. PII luôn được redact trước bất kỳ cuộc gọi ra ngoài."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "41-pipeline-ai-cô-lập",
+              "level": 3,
+              "heading": "4.1 Pipeline AI Cô lập",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "User Prompt\n    ↓ (bắt buộc)\nMicro-NER PII Detection (ONNX < 1MB trên thiết bị)\n    → Phát hiện: Tên, SĐT, Email, CMND, Tài khoản ngân hàng, Địa chỉ\n    ↓\nSanitizedPrompt (newtype — không thể tạo nếu không qua redaction)\n    ↓\nSessionVault { [MASK_01] → real@email.com } — ZeroizeOnDrop < 100ms\n    ↓\nAI Worker Process (cô lập OS — crash không ảnh hưởng Rust Core)\n    → On-device SLM (CoreML / ONNX) hoặc External LLM (nếu Admin cho phép)\n    ↓\nResponse Vec<ASTNode> (HTML/Markdown raw bị reject bởi AST Sanitizer)\n    ↓\nSessionVault.restore_and_drop() — alias map zeroized"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "42-mức-kiểm-soát-ai-admin-configured",
+              "level": 3,
+              "heading": "4.2 Mức Kiểm soát AI (Admin-Configured)",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tier",
+                    "AI Shield",
+                    "Egress Limit",
+                    "Audit"
+                  ],
+                  "rows": [
+                    [
+                      "**Tier 1 — Strict**",
+                      "Vĩnh viễn BẬT (không thể toggle)",
+                      "0",
+                      "N/A"
+                    ],
+                    [
+                      "**Tier 1b — Network**",
+                      "BẬT, gRPC direct (bypass UDP probe)",
+                      "0",
+                      "N/A"
+                    ],
+                    [
+                      "**Tier 2 — Role-Based**",
+                      "C-Level / Marketing có thể tắt",
+                      "4KB hard",
+                      "Ed25519-signed"
+                    ],
+                    [
+                      "**Tier 3 — DLP**",
+                      "Tắt cho phép, hard block vẫn active",
+                      "4KB tối đa",
+                      "Bắt buộc"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "43-ai-runtime",
+              "level": 3,
+              "heading": "4.3 AI Runtime",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Runtime",
+                    "Model tối đa",
+                    "Ghi chú"
+                  ],
+                  "rows": [
+                    [
+                      "📱 iOS",
+                      "CoreML (.mlmodelc)",
+                      "74MB / 39MB",
+                      "W^X: không dynamic WASM AI"
+                    ],
+                    [
+                      "📱 Android",
+                      "ONNX Runtime",
+                      "39MB",
+                      "HiAI fallback Huawei"
+                    ],
+                    [
+                      "📱 Huawei",
+                      "HiAI / ONNX",
+                      "39MB",
+                      "AOT bundle only"
+                    ],
+                    [
+                      "💻 macOS",
+                      "CoreML / ONNX",
+                      "74MB",
+                      "Isolated XPC Worker"
+                    ],
+                    [
+                      "🖥️ Windows/Linux",
+                      "ONNX Runtime",
+                      "74MB",
+                      "CPU; GPU optional"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "module-5-hệ-sinh-thái-plugin-tapp",
+          "level": 2,
+          "heading": "Module 5 — Hệ sinh thái Plugin (.tapp)",
+          "content_blocks": [
+            {
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Lập trường:** Không có .tapp nào được phép yêu cầu exception khỏi Sandbox. Mọi capability khai báo tường minh trong manifest, OPA Policy kiểm soát. Không có ngoại lệ."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "51-vòng-đời-tapp",
+              "level": 3,
+              "heading": "5.1 Vòng đời .tapp",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[Submit] → [WASM Static Scan] → [Manifest Audit] → [LLVM IR Heuristics]\n    ↓\n[Ed25519 Bundle Signing bởi Marketplace CA]\n    ↓\n[Client: BLAKE3 verify → Sandbox Launch]\n    ↓\n[Execute: OPA + Egress Circuit Breaker] ↔ [Suspend: AES-256-GCM Snapshot]\n    ↓\n[Terminate: RAM freed · Capability Tokens revoked · KV-Cache cleared]"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "52-publisher-trust-tiers",
+              "level": 3,
+              "heading": "5.2 Publisher Trust Tiers",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Tier",
+                    "Yêu cầu",
+                    "Egress",
+                    "Badge"
+                  ],
+                  "rows": [
+                    [
+                      "**Unverified**",
+                      "Ed25519 key",
+                      "HTTP GET < 1KB, no file",
+                      "🔵 Community"
+                    ],
+                    [
+                      "**Verified**",
+                      "KYC + Key + Review",
+                      "File < 10MB",
+                      "✅ Verified"
+                    ],
+                    [
+                      "**Enterprise**",
+                      "SOC2 / ISO27001",
+                      "Full egress + custom consent",
+                      "🏢 Enterprise"
+                    ],
+                    [
+                      "**TeraChat Native**",
+                      "First-party",
+                      "Unrestricted (subject to OPA)",
+                      "⭐ Native"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "53-wasm-sandbox-constraints",
+              "level": 3,
+              "heading": "5.3 WASM Sandbox Constraints",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 RAM: ≤ 64MB softcap — vượt → OOM-kill không cảnh báo.",
+                    "📱💻 CPU: ≤ 10% sustained — spike ≤ 500ms.",
+                    "📱💻 Egress Circuit Breaker: 4.096 bytes/call hard limit. 3 vi phạm/session → terminate + quarantine.",
+                    "☁️ Session Quota: 512KB tổng egress/session — vượt → suspend + Admin alert.",
+                    "📱💻 No Persistent Storage Egress: storage.read → network.write yêu cầu user consent mỗi lần.",
+                    "💻🖥️ Timing Defense: 5ms Fixed-Interval Dispatch Metronome + ChaCha20 noise padding."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "54-capability-declaration",
+              "level": 3,
+              "heading": "5.4 Capability Declaration",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Capability",
+                    "Grant Condition",
+                    "Default"
+                  ],
+                  "rows": [
+                    [
+                      "`network.egress`",
+                      "Chỉ domain khai báo trong manifest",
+                      "❌ Blocked"
+                    ],
+                    [
+                      "`clipboard.read`",
+                      "User consent per-session",
+                      "❌ Blocked"
+                    ],
+                    [
+                      "`file.read`",
+                      "Explicit user file picker",
+                      "❌ Blocked"
+                    ],
+                    [
+                      "`crypto.sign`",
+                      "Publisher Ed25519 proof",
+                      "❌ Blocked"
+                    ],
+                    [
+                      "`push.notify`",
+                      "Admin whitelist per-tenant",
+                      "❌ Blocked"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "55-host-function-abi-versioning",
+              "level": 3,
+              "heading": "5.5 Host Function ABI Versioning",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "json",
+                  "code": "{ \"host_api_version\": \"1.3.0\", \"min_host_api_version\": \"1.0.0\", \"max_host_api_version\": \"2.0.0\" }"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Breaking changes chỉ trong major version. Minor: additive-only.",
+                    "Support 2 major versions đồng thời (deprecation window 12 tháng)."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "module-6-identity-rbac-quản-trị",
+          "level": 2,
+          "heading": "Module 6 — Identity, RBAC & Quản trị",
           "content_blocks": [],
           "subsections": [
             {
-              "id": "101-security-pcab-privilege-based-context-aware-bypass",
+              "id": "61-role-based-access-control",
               "level": 3,
-              "heading": "10.1 [SECURITY] PCAB (Privilege-Based Context-Aware Bypass)",
+              "heading": "6.1 Role-Based Access Control",
               "content_blocks": [
                 {
-                  "type": "list",
-                  "data": [
-                    "OPA đánh giá Vị trí truy cập. Áp xác thực Argon2id nếu cố mở vùng Acrylic. Chết Màn hình Vỡ."
+                  "type": "table",
+                  "headers": [
+                    "Vai trò",
+                    "Năng lực",
+                    "Ràng buộc"
+                  ],
+                  "rows": [
+                    [
+                      "**CISO / Admin**",
+                      "Toàn quyền: KMS, policy, revocation, federation, audit",
+                      "HSM quorum cho policy changes"
+                    ],
+                    [
+                      "**HR Recovery Officer**",
+                      "Device re-provisioning, identity recovery",
+                      "Không thể đọc nội dung tin nhắn"
+                    ],
+                    [
+                      "**Editor**",
+                      "Tạo/sửa tài liệu, `ffi_propose_change`",
+                      "Không có quyền key ceremony"
+                    ],
+                    [
+                      "**Commenter**",
+                      "Ghi chú shadow branch",
+                      "Read + comment only"
+                    ],
+                    [
+                      "**Viewer**",
+                      "Chỉ đọc, FFI pointer frozen",
+                      "`ZeroizeOnDrop` khi thoát"
+                    ]
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "102-security-mạng-chính-sách-phân-phối-tệp-format-whitelist",
+              "id": "62-opa-policy-engine",
               "level": 3,
-              "heading": "10.2 [SECURITY] Mạng chính sách phân phối Tệp (Format Whitelist)",
+              "heading": "6.2 OPA Policy Engine",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Format được phép [.pdf, .txt, .jpg]. Lọc Macro độc hại .vbs."
+                    "📱💻☁️ Mọi hành động phải qua OPA Rego Policy. Không có bypass.",
+                    "🗄️☁️ M-of-N HSM Quorum (2-of-3: CISO + CTO + Legal): Không một cá nhân đơn lẻ nào có thể thay đổi production policy.",
+                    "☁️ Policy Rollback Protection: Monotonic version counter — client từ chối bundle version thấp hơn.",
+                    "📱💻 Local enforcement: OPA WASM build tại thiết bị. Không round-trip server."
                   ]
                 }
               ],
               "subsections": []
             },
             {
-              "id": "103-security-anti-insider-key-ceremony",
+              "id": "63-device-recovery",
               "level": 3,
-              "heading": "10.3 [SECURITY] Anti-Insider Key Ceremony",
+              "heading": "6.3 Device Recovery",
+              "content_blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "TH1 — Mất CẢ thiết bị:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "CEO khởi tạo Break-glass → BLE beacon đến C-Level trong phạm vi < 2m.",
+                    "≥ 3-of-5 C-Level xác thực sinh trắc học trong 10 phút (Quorum Timer).",
+                    "Lagrange Interpolation tái tạo Escrow_Key trong mlock-protected arena < 100ms → zeroize.",
+                    "Thiết bị cũ nhận Remote Wipe khi chạm mạng."
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "TH2 — Mất Điện thoại, Laptop còn:"
+                },
+                {
+                  "type": "list",
+                  "data": [
+                    "Laptop → Gossip Crypto-Shredding Device_Key cũ.",
+                    "Điện thoại mới sinh khóa, QR → Laptop quét → Pending Approval trên VPS.",
+                    "HR xác minh qua video call → ký Authorization Ticket.",
+                    "Company_Key truyền qua P2P (BLE/Wi-Fi Direct). Zero cloud exposure."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "64-scim-20-identity-sync",
+              "level": 3,
+              "heading": "6.4 SCIM 2.0 & Identity Sync",
               "content_blocks": [
                 {
                   "type": "list",
                   "data": [
-                    "Thập diện ngáng trở Cảnh Xấu trong đội ngũ DevOps/Admin cố sửa Master Key: HSM cần 2/N lệnh từ điện thoại các C-Level đứng trong vòng 5m (BLE Beacons), kèm quét Biometric. Khóa băng USB Port."
+                    "☁️ Azure AD / Google Workspace: nghỉ việc → tài khoản khóa trong < 30 giây.",
+                    "☁️ Federation Revocation: cross-org mTLS vô hiệu trong < 30 giây.",
+                    "📱💻 1-Tap Magic Deep-Link: App tự chuyển pre_authenticated, Device_Key sinh trước OIDC hoàn tất."
                   ]
                 }
               ],
@@ -370,143 +926,510 @@
           ]
         },
         {
-          "id": "11-flow-quản-lý-sự-cố-và-khôi-phục-incident-response",
+          "id": "module-7-federation-cross-org-communication",
           "level": 2,
-          "heading": "11. [FLOW] Quản lý Sự cố và Khôi phục (Incident Response)",
+          "heading": "Module 7 — Federation & Cross-Org Communication",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "71-kiến-trúc",
+              "level": 3,
+              "heading": "7.1 Kiến trúc",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "Mỗi tổ chức vận hành Private Cluster độc lập với ranh giới mã hóa riêng.",
+                    "☁️ Federation Bridge (Zone 2): mTLS + Sealed Sender — server nhận không thể xác định người gửi.",
+                    "🗄️ Trust Registry: append-only SQLite — không dùng public CA.",
+                    "Schema Version: ±1 minor → read-only federation. ±1 major → SCHEMA_INCOMPATIBLE, rejected."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "72-quy-trình-kết-nối",
+              "level": 3,
+              "heading": "7.2 Quy trình Kết nối",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "Admin HQ → Federation Invite Token (Signed JWT)\n    ↓\nAdmin Branch → nạp Token → gửi kết nối kèm Public Key\n    ↓\nHQ approve → key exchange vào federation_trust_registry\n    ↓\nOPA Rate Limiting ngăn cross-org DoS\n    ↓\nSCIM offboarding → mTLS vô hiệu < 30s tự động"
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "module-8-compliance-dlp-audit",
+          "level": 2,
+          "heading": "Module 8 — Compliance, DLP & Audit",
           "content_blocks": [
             {
-              "type": "list",
-              "data": [
-                "🖥️ Mesh Mode Hard-lock UI (#0F172A Amber Glow): Khi có tấn công lớn, Device khoác áo Darkness + Amber viền (#0F172A), chặn truy xuất ngoại trừ luồng cứu hộ.",
-                "🖥️ Live Sanitization Stream: Gửi Egress dưới bộ lọc Regex để không văng tên/địa chỉ.",
-                "💻 Hardware Biometric Validation: In TouchID / Windows Hello vào Audit Log để truy cứu."
+              "type": "blockquote",
+              "alert_type": "note",
+              "lines": [
+                "**Nguyên tắc:** Tuân thủ thực thi bằng toán học, không phải hợp đồng. Không Admin nào có thể thay đổi lịch sử mà không phá vỡ Merkle chain."
+              ]
+            }
+          ],
+          "subsections": [
+            {
+              "id": "81-data-loss-prevention",
+              "level": 3,
+              "heading": "8.1 Data Loss Prevention",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "📱💻 OPA Egress Whitelist: Egress đến domain không khai báo → bị chặn tại OS.",
+                    "📱💻 Byte-Quota Circuit Breaker: 4KB/call. Vượt 100% session quota → Egress khóa 24h, CISO alert.",
+                    "📱💻 Format Whitelist: [.pdf, .txt, .jpg]. .vbs, .xlsm bị chặn.",
+                    "💻📱 Redaction Rules: Rust Core local ML redact CC numbers, nội bộ IP khỏi AI prompt.",
+                    "🗄️ Anti-Remanence Policy (ARP): TTL Crypto-Shredding. CISO-initiated Wipe → zero-fill với Ed25519-signed checkpoint."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "82-tamper-proof-audit-log",
+              "level": 3,
+              "heading": "8.2 Tamper-Proof Audit Log",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "🗄️ Mọi entry mang chữ ký Ed25519. Entry không ký → reject khi ghi, không bao giờ lưu.",
+                    "🗄️ Merkle Chain: Xóa bất kỳ entry nào → phá vỡ chain ngay lập tức, audit độc lập được.",
+                    "☁️ Marketplace Transparency Log: append-only, Merkle-proofed.",
+                    "☁️ Prometheus metrics delay 30 giây vs event time — ngăn timing correlation."
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "83-incident-response",
+              "level": 3,
+              "heading": "8.3 Incident Response",
+              "content_blocks": [
+                {
+                  "type": "list",
+                  "data": [
+                    "☁️ PARA: AI agent/tapp Token Taint → CISO nhận E2EE incident hash. Suspension không cần app update.",
+                    "📱💻 Sealing Conversation (SSA): Taint → session read-only với hazard-stripe overlay. CISO approve Release.",
+                    "🗄️ OPA Banned Lexicon: Keyword → MUTE_LOCK. Admin unlock bắt buộc."
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "module-9-infrastructure-deployment",
+          "level": 2,
+          "heading": "Module 9 — Infrastructure & Deployment",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "91-server-topology",
+              "level": 3,
+              "heading": "9.1 Server Topology",
+              "content_blocks": [
+                {
+                  "type": "code",
+                  "language": "",
+                  "code": "[GeoDNS]\n    ├──► Zone 1: VPS Relay (Rust Blind Relay · SQLite WAL · NATS JetStream)\n    ├──► Zone 2: Federation Bridge (mTLS · Sealed Sender)\n    └──► Zone 0: Bare-metal HSM (HSM FIPS 140-3 · PostgreSQL · MinIO EC+4)"
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "92-scale-tiers",
+              "level": 3,
+              "heading": "9.2 Scale Tiers",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Quy mô",
+                    "Topology",
+                    "Hardware Tối thiểu"
+                  ],
+                  "rows": [
+                    [
+                      "≤ 10.000 users",
+                      "Single-node Rust relay",
+                      "512MB VPS"
+                    ],
+                    [
+                      "≤ 100.000 users",
+                      "Geo-federated clusters",
+                      "PostgreSQL HA + MinIO"
+                    ],
+                    [
+                      "≥ 1.000.000 users",
+                      "Multi-cloud active-active",
+                      "PostgreSQL Geo-Partitioning"
+                    ]
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "text": "TCO Reference:"
+                },
+                {
+                  "type": "table",
+                  "headers": [
+                    "Users",
+                    "Storage/năm",
+                    "Min VPS",
+                    "DR RTO"
+                  ],
+                  "rows": [
+                    [
+                      "1.000",
+                      "~500GB",
+                      "4 vCPU, 8GB RAM, 100GB SSD",
+                      "< 15 phút"
+                    ],
+                    [
+                      "5.000",
+                      "~2.5TB",
+                      "8 vCPU, 16GB RAM, 250GB SSD",
+                      "< 15 phút"
+                    ],
+                    [
+                      "10.000",
+                      "~5TB",
+                      "16 vCPU, 32GB RAM, 1TB SSD",
+                      "< 15 phút"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "93-performance-targets",
+              "level": 3,
+              "heading": "9.3 Performance Targets",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Operation",
+                    "Target",
+                    "Platform"
+                  ],
+                  "rows": [
+                    [
+                      "ALPN negotiation (full fallback)",
+                      "< 50ms",
+                      "All"
+                    ],
+                    [
+                      "MLS encrypt (single message)",
+                      "< 5ms",
+                      "All"
+                    ],
+                    [
+                      "Push notification decrypt (NSE)",
+                      "< 500ms",
+                      "📱 iOS"
+                    ],
+                    [
+                      "End-to-end relay delivery",
+                      "< 200ms",
+                      "All"
+                    ],
+                    [
+                      "TURN failover",
+                      "< 3s",
+                      "WebRTC"
+                    ],
+                    [
+                      "VPS concurrent WebSocket",
+                      "~500.000",
+                      "☁️ 4GB VPS"
+                    ],
+                    [
+                      "AES-256-GCM (hardware)",
+                      "4–8 GB/s",
+                      "AES-NI / ARM NEON"
+                    ],
+                    [
+                      "Wi-Fi Direct file transfer",
+                      "250–500 MB/s",
+                      "📱 Mesh"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "licensing-service-tiers",
+          "level": 2,
+          "heading": "Licensing & Service Tiers",
+          "content_blocks": [
+            {
+              "type": "table",
+              "headers": [
+                "Feature",
+                "Community",
+                "Enterprise",
+                "GovMilitary"
+              ],
+              "rows": [
+                [
+                  "Offline TTL",
+                  "24 giờ",
+                  "7 ngày",
+                  "**30 ngày**"
+                ],
+                [
+                  "EMDP Tactical Relay",
+                  "❌",
+                  "✅",
+                  "✅"
+                ],
+                [
+                  "Air-Gapped License",
+                  "❌",
+                  "✅",
+                  "✅"
+                ],
+                [
+                  "Compliance Retention",
+                  "❌",
+                  "90 ngày",
+                  "**7 năm**"
+                ],
+                [
+                  "TEE Enclaves (SGX)",
+                  "❌",
+                  "❌",
+                  "✅"
+                ],
+                [
+                  "Chaos Engineering",
+                  "❌",
+                  "Optional",
+                  "**Bắt buộc**"
+                ],
+                [
+                  "Federation",
+                  "❌",
+                  "✅",
+                  "✅ Air-gapped"
+                ],
+                [
+                  "AI Token Quota",
+                  "10K/giờ",
+                  "Unlimited",
+                  "Unlimited + local-only"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Open-Core Boundary:"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Component",
+                "License",
+                "Auditable by"
+              ],
+              "rows": [
+                [
+                  "`terachat-core` (Crypto, MLS, CRDT, Mesh)",
+                  "AGPLv3",
+                  "Gov, Bank, Public"
+                ],
+                [
+                  "`terachat-license-guard`",
+                  "BSL",
+                  "Không public"
+                ],
+                [
+                  "`terachat-ui` (Tauri, Flutter)",
+                  "Apache 2.0",
+                  "Public"
+                ]
               ]
             }
           ],
           "subsections": []
         },
         {
-          "id": "12-implementation-đặc-tả-logic-wasm-và-mạng-lưới-network-function-specifications",
+          "id": "constraints-open-items",
           "level": 2,
-          "heading": "12. [IMPLEMENTATION] Đặc tả Logic WASM và Mạng lưới (Network Function Specifications)",
+          "heading": "Constraints & Open Items",
+          "content_blocks": [],
+          "subsections": [
+            {
+              "id": "platform-hard-constraints",
+              "level": 3,
+              "heading": "Platform Hard Constraints",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Platform",
+                    "Ràng buộc",
+                    "Giải pháp"
+                  ],
+                  "rows": [
+                    [
+                      "📱 iOS",
+                      "W^X: không WASM JIT",
+                      "wasm3 + AOT .dylib trong XPC Worker"
+                    ],
+                    [
+                      "📱 iOS",
+                      "NSE RAM: 20MB ceiling",
+                      "Ghost Push + Main App decrypt"
+                    ],
+                    [
+                      "📱 iOS",
+                      "AWDL tắt khi Hotspot/CarPlay",
+                      "Auto-downgrade BLE Tier 3"
+                    ],
+                    [
+                      "📱 Android",
+                      "FCM throttled 10/h Restricted battery",
+                      "FCM high-priority + Companion Device Manager"
+                    ],
+                    [
+                      "📱 Huawei",
+                      "Không có content-available background push",
+                      "Foreground polling; CRL ≤ 4h"
+                    ],
+                    [
+                      "🖥️ Linux",
+                      "Flatpak không tương thích seccomp-bpf",
+                      ".deb / .rpm / AppImage Cosign"
+                    ],
+                    [
+                      "☁️ VPS",
+                      "eBPF/XDP yêu cầu bare-metal",
+                      "Tokio Token Bucket userspace"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            },
+            {
+              "id": "blocker-items-phải-hoàn-thành-trước-production",
+              "level": 3,
+              "heading": "Blocker Items (Phải hoàn thành trước production)",
+              "content_blocks": [
+                {
+                  "type": "table",
+                  "headers": [
+                    "Item",
+                    "Mức độ"
+                  ],
+                  "rows": [
+                    [
+                      "CI/CD code signing pipeline (5 platform)",
+                      "**BLOCKER**"
+                    ],
+                    [
+                      "WasmParity CI gate (wasm3 vs wasmtime)",
+                      "**BLOCKER**"
+                    ],
+                    [
+                      "Dart FFI NativeFinalizer Clippy lint",
+                      "**BLOCKER**"
+                    ],
+                    [
+                      "AppArmor / SELinux postinstall (Linux)",
+                      "HIGH"
+                    ],
+                    [
+                      "Gossip PSK rotation runbook (90 ngày)",
+                      "MEDIUM"
+                    ],
+                    [
+                      "PostgreSQL PITR recovery runbook",
+                      "MEDIUM"
+                    ],
+                    [
+                      "Shamir ceremony runbook (Admin turnover)",
+                      "MEDIUM"
+                    ]
+                  ]
+                }
+              ],
+              "subsections": []
+            }
+          ]
+        },
+        {
+          "id": "document-navigation-map",
+          "level": 2,
+          "heading": "Document Navigation Map",
           "content_blocks": [
             {
-              "type": "paragraph",
-              "text": "(Mô tả chi tiết kỹ thuật phân luồng Lõi Rust → Xem thêm TERA-CORE & TERA-FEAT)"
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-01: terachat_proxy_request"
+              "type": "table",
+              "headers": [
+                "Audience",
+                "Document",
+                "Content"
+              ],
+              "rows": [
+                [
+                  "Developer",
+                  "`Feature_Spec.md` → TERA-FEAT",
+                  "IPC, OS hooks, platform behavior"
+                ],
+                [
+                  "System Architect",
+                  "`Core_Spec.md` → TERA-CORE",
+                  "MLS, CRDT, Mesh, server infrastructure"
+                ],
+                [
+                  "Designer",
+                  "`Design.md` → TERA-DESIGN",
+                  "UI state machine, Glassmorphism, animations"
+                ],
+                [
+                  "Ecosystem Builder",
+                  "`Web_Marketplace.md` → TERA-MKT",
+                  ".tapp lifecycle, WASM, Marketplace"
+                ],
+                [
+                  "Investor / Executive",
+                  "`BusinessPlan.md` → TERA-BIZ",
+                  "GTM, pricing, licensing"
+                ],
+                [
+                  "New Team Member",
+                  "`Introduction.md` → TERA-INTRO",
+                  "Vision, architecture overview, terminology"
+                ]
               ]
             },
             {
               "type": "paragraph",
-              "text": "Validate Protocol + Rate Limit 50 req/s. Quản lý lỗi NETWORK_MESH_RESTRICTED, PAYLOAD_TOO_LARGE."
+              "text": "TeraChat — Hệ điều hành Công việc Sinh tồn. Trao lại chủ quyền số cho người tiên phong."
             },
             {
-              "type": "list",
-              "data": [
-                "FUNC-02: Message TTL Lifecycle (Bitchat Store-and-Forward)"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Desktop giữ 48-72 giờ (Super Node), Mobile (Light) 24h. Gossip mạng cục bộ rồi dọn dẹp."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-03: Sync Logic khi Device Reconnect"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "LAN Sync ưu tiên → VPN → Cloud. Auto-healing khi MAC mismatch bằng Epoch Ratchet ZKP."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-04: WebRTC Fallback & ICE Pool Management"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Host Rust duy trì ICE Pool (5 phút lấy 1 lần). Bị chặn mDNS → Fallback nội bộ DMZ TURN."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-05: Mesh Graceful Super Node Handover Flow"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Mobile báo Jetsam OOM Pressure → Nhường ghế qua BLE (MeshRoleHandover) cho Desktop đang Online đón cờ chạy tiếp mạng Relay."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-06: AWDL Hotspot Conflict User Flow"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "IOS vướng tần số Mesh vs Hotspot mạng cá nhân → Tự Downgrade về sóng BLE (Tier 3). Lên cảnh báo 30s."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-07: Offline Conflict Resolution Flow"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Sửa văn bản độc lập không mạng → Chạm kết nối sẽ bật Bảng đối chiếu 2 cột Bản của họ - Bản của mình (Merge/Discard)."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-08: Huawei Notification Flow (HMS Push)"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Nhận Data Message, Rust Core FFI Wake up App lấy khoá giải mã. Cache Push <4h vòng đời Huawei OS Push Kit."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-09: GPU Tier C User Flow (Flat Mode)"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "GPU không có năng lực đánh bóng Blur (backdrop-filter) → Bật giao diện \"Flat Solid\". Full tính năng."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-10: FCP Trust Boundary Declaration"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Phòng Hờ Trách Nhiệm từ YubiKey đối với máy chủ của Đối Tác AI thứ 3."
-            },
-            {
-              "type": "list",
-              "data": [
-                "FUNC-11: AES-NI Performance Fallback User Flow"
-              ]
-            },
-            {
-              "type": "paragraph",
-              "text": "Hệ thống chạy trên Server/Máy tính đời cũ không tập lệnh vi xử lý phần cứng AES → Tự lui về kiến trúc phần mềm ChaCha20-Poly1305."
-            },
-            {
-              "type": "paragraph",
-              "text": "TeraChat — Hệ điều hành Công việc Sinh tồn."
+              "type": "code",
+              "language": "yaml",
+              "code": "# CHANGELOG\n- version:  \"0.2.6\"\n  date: \"2026-03-19\"\n  changes:\n    - \"Complete rewrite from CEO/CTO perspective — removed low-level technical noise\"\n    - \"Synthesized from Core_Spec.md, Design.md, Web_Marketplace.md, BusinessPlan.md, Introduction.md\"\n    - \"Added Module 3 (Survival Mesh), Module 4 (AI Shield), Module 5 (.tapp) as standalone sections\"\n    - \"Added TCO Reference, Performance Targets, Platform Constraints tables\"\n    - \"Standardized platform icons and Online/Mesh mode indicators throughout\"\n    - \"Full Licensing Tiers table (Community / Enterprise / GovMilitary)\"\n    - \"Consolidated Recovery flows into Module 6; removed duplicate content\""
             }
           ],
           "subsections": []

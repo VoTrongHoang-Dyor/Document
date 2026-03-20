@@ -10,7 +10,7 @@
         {
           "type": "code",
           "language": "yaml",
-          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-MKT\"\ntitle:    \"TeraChat — Web Marketplace & Extensions\"\nversion:  \"2.0\"\naudience: \"Platform Engineer, Plugin Developer, Security Auditor\"\npurpose:  \"Đặc tả vòng đời plugin .tapp, sandbox WASM, cơ chế bảo mật (OPA, Egress Circuit Breaker) và quy trình phát hành (Publishing).\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về phát triển tiện ích .tapp, WASM sandbox, Marketplace, cơ chế bảo mật plugin, hoặc quản lý extension.\""
+          "code": "# DOCUMENT IDENTITY\nid:       \"TERA-MKT\"\ntitle:    \"TeraChat — Web Marketplace & Extensions\"\nversion:  \"0.2.6\"\naudience: \"Platform Engineer, Plugin Developer, Security Auditor\"\npurpose:  \"Đặc tả vòng đời plugin .tapp, sandbox WASM, cơ chế bảo mật (OPA, Egress Circuit Breaker) và quy trình phát hành (Publishing).\"\n\nai_routing_hint: |\n  \"AI mở file này khi người dùng hỏi về phát triển tiện ích .tapp, WASM sandbox, Marketplace, cơ chế bảo mật plugin, hoặc quản lý extension.\""
         },
         {
           "type": "blockquote",
@@ -40,22 +40,22 @@
               ],
               "rows": [
                 [
-                  "v0.3.5",
+                  "0.2.6",
                   "2026-03-13",
                   "(Section Deprecated: Decentralized SLA & Centralized Reports removed); §4.2 Heuristics Scanner"
                 ],
                 [
-                  "v0.3.0",
+                  "0.2.3",
                   "2026-03-11",
                   "Add §4 Automated Static Scan & Security Manifest Audit; Publisher Trust Tier table"
                 ],
                 [
-                  "v0.2.9",
+                  "0.2.1",
                   "2026-03-05",
                   "Add §3 WASM Sandbox resource limits (CPU 10%, RAM 64MB cap); egress rate limiting"
                 ],
                 [
-                  "v0.2.8",
+                  "0.1.1",
                   "2026-03-03",
                   "Initial spec: §1 Decentralized Provisioning; §2 Ed25519 Signature flow; §3 OPA injection"
                 ]

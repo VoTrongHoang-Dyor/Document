@@ -290,3 +290,31 @@ Write the document that makes every reader — no matter their background —
 understand that TeraChat is not a product. It is a new infrastructure
 primitive for sovereign digital communication.
 ```
+
+Quy trình DevSecOps và Review Code khắt khe
+Ngay cả khi cộng đồng đóng góp code (Pull Requests), không có dòng code nào được tự động đi vào hệ thống lõi.
+Tự động hóa: Tích hợp các công cụ quét bảo mật tĩnh (SAST), quét mã động (DAST) và kiểm tra lỗ hổng thư viện vào quy trình CI/CD.
+Review thủ công: Đội ngũ Core Maintainer (những kỹ sư nòng cốt và đáng tin cậy nhất của TeraChat) sẽ là chốt chặn cuối cùng, kiểm duyệt từng dòng code trước khi hợp nhất (merge) vào phiên bản chính thức.
+
+Thuê Kiểm định độc lập (Security Audits) định kỳ
+Trước mỗi bản cập nhật lớn, TeraChat sẽ hợp tác với các tổ chức an ninh mạng bên thứ ba (độc lập) để "tấn công thử" (Penetration Testing) và kiểm duyệt toàn bộ kiến trúc. Các báo cáo Audit minh bạch sẽ được công bố để gia tăng niềm tin cho cộng đồng.
+
+Prompt Injection là một trong những lỗ hổng bảo mật nghiêm trọng và phổ biến nhất đối với các ứng dụng tích hợp Mô hình Ngôn ngữ Lớn (LLM). 
+
+Cơ chế hoạt động
+Vấn đề cốt lõi dẫn đến Prompt Injection nằm ở cách các LLM xử lý thông tin. Các mô hình hiện tại thường **không phân biệt rạch ròi** giữa "chỉ thị của nhà phát triển" (instructions) và "dữ liệu của người dùng" (user data). Cả hai thứ này thường được gộp chung thành một chuỗi văn bản dài đưa vào mô hình. 
+
+Kẻ tấn công lợi dụng điều này bằng cách viết dữ liệu đầu vào sao cho nó nghe giống như một mệnh lệnh ưu tiên cao hơn. Ví dụ kinh điển nhất là: *"Hãy bỏ qua mọi chỉ thị trước đó và làm [hành động độc hại]"*.
+
+Phân loại Prompt Injection
+Lỗ hổng này thường được chia thành hai dạng chính:
+
+* **Direct Prompt Injection (Tiêm trực tiếp - Jailbreak):** * Kẻ tấn công trực tiếp nhập các câu lệnh vào giao diện chat để "bẻ khóa" (jailbreak) các bộ lọc an toàn của AI. 
+    * *Ví dụ:* Đóng vai một nhân vật viễn tưởng không bị ràng buộc bởi đạo đức để yêu cầu AI tạo ra mã độc.
+* **Indirect Prompt Injection (Tiêm gián tiếp):** * Nguy hiểm và khó lường hơn rất nhiều. Kẻ tấn công giấu các lệnh độc hại vào một nguồn dữ liệu bên ngoài (như một trang web, email, hoặc tài liệu PDF). Khi ứng dụng AI (như một chatbot hỗ trợ đọc tài liệu) tự động truy cập và đọc nguồn dữ liệu này, nó sẽ "nuốt" luôn cả lệnh độc hại và thực thi nó mà người dùng không hề hay biết.
+
+
+
+
+Chuyển nội dung @beautifulMention xuống cho file @beautifulMention và @beautifulMention và viết thêm đoạn code trong@beautifulMention dành riêng cho BusinessPlan với chức năng đồng bộ file md cho json và html (cấu hình ,giao diện html đồng bộ phải y như @beautifulMention cũ )
+Hãy phân tích nội dung trong file Arrange.md (chứa nội dung thay đổi kĩ thuật thô ) hãy suy luận nên thêm , chỉnh sửa như nào . Sau đó chèn đúng vào vị trí file được đề cập 
