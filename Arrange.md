@@ -1,1982 +1,2699 @@
-
-### 1. Bỏ vào file `BusinessPlan.md` (Pháp lý, SLA & Niềm tin khách hàng)
-
-**Vị trí đề xuất:** Thêm vào cuối mục **"2.6 AI Risk Governance (Lợi thế Quản trị Rủi ro AI)"** hoặc tạo một mục mới **"2.10 Trách nhiệm Pháp lý & Quản trị Rủi ro AI Tự trị"**.
-
-**Nội dung bổ sung:**
-
-```markdown
-### 2.10 Trách nhiệm Pháp lý & Quản trị Rủi ro AI Tự trị (Autonomous AI Liability)
-Khi AI trở thành lực lượng lao động chính và xử lý dữ liệu nhạy cảm (tài chính, hệ thống),TeraChat giải quyết bài toán niềm tin của ban lãnh đạo doanh nghiệp bằng nguyên tắc: **"TeraChat xây dựng rào cản, Doanh nghiệp giữ chùm chìa khóa."**
-
-* **Ranh giới Trách nhiệm (Liability Shift):** TeraChat không cam kết AI hoàn hảo 100% (bởi AI không có tư cách pháp nhân). TeraChat chịu trách nhiệm cung cấp nền tảng Zero-Trust không có lỗ hổng lõi. Tuy nhiên, nếu Admin chủ động cấp quyền tối cao (root) cho AI bỏ qua các cảnh báo của hệ thống, trách nhiệm thuộc về pháp nhân doanh nghiệp.
-* **Yêu cầu Tuân thủ Khách hàng:** Khuyến nghị các khách hàng Enterprise (Đặc biệt khối Tài chính/Ngân hàng) tham gia các gói Bảo hiểm An ninh mạng (Cyber Insurance) đối với các rủi ro ủy quyền AI ngoài ý muốn.
-* **Hợp đồng SLA & ToS Minh bạch:** Mọi điều khoản SLA đều làm rõ: AI là một "Siêu trợ lý" bị giới hạn bởi OPA Policy. Các hành động mang tính phá hủy (xóa dữ liệu, chuyển tiền) nếu không đi qua luồng MFA do con người duyệt sẽ bị TeraChat Core từ chối ở cấp độ hệ thống.
-```
-
-### 2. Bỏ vào file `Function.md` (Quy trình vận hành & Tính năng)
-
-**Vị trí đề xuất:** Bổ sung vào mục **"1. Chức năng dành cho Quản trị viên (Admin) -> Thiết lập Chính sách Bảo mật (OPA Policy & DLP)"** và mục **"2. Chức năng dành cho Người dùng cuối -> Quản lý Tin nhắn và Tài liệu"**.
-
-**Nội dung bổ sung:**
-
-```markdown
-* **Quy trình "Human-in-the-Loop" (Con người trong vòng lặp) cho AI:**
-  * **Smart Proposal:** AI tự trị (ClawBot/OpenClaw) có thể tự động soạn thảo hợp đồng, tổng hợp hóa đơn hoặc thiết lập lệnh chuyển tiền. Tuy nhiên, AI **không có quyền** thực thi cuối cùng (Execution).
-  * **Mandatory Biometric Approval:** Mọi quyết định nhạy cảm do AI đề xuất bắt buộc phải tạo thành một thẻ `Smart Approval`. Một nhân sự cấp cao (VD: Kế toán trưởng) phải bấm nút "Duyệt" kèm xác thực sinh trắc học (FaceID/TouchID) hoặc mã PIN/YubiKey.
-* **Nguyên tắc Đặc quyền Tối thiểu (Principle of Least Privilege cho AI):**
-  * Quản trị viên thiết lập OPA Policy giới hạn quyền của từng AI Agent (Ví dụ: AI CSKH chỉ được đọc lịch sử mua hàng, tuyệt đối mù (blind) với số thẻ tín dụng).
-  * **Thiết lập Hạn mức (Anomaly Detection Thresholds):** Admin buộc phải thiết lập hạn mức rủi ro cho các Agent có quyền tự trị. Ví dụ: Khóa quyền thực thi nếu AI giải ngân vượt 1,000,000 VNĐ/giao dịch hoặc tần suất lệnh vượt quá 50 lệnh/phút.
-```
-
-### 3. Bỏ vào file `Core_Spec.md` (Lõi Kỹ thuật & Dấu vết Kiểm toán)
-
-**Vị trí đề xuất:** Thêm vào mục **"8. Non-Repudiation Egress Telemetry & Signed Audit Logs"** và mục **"3.2 Backend Services -> OPA/ABAC Policy Engine"**.
-
-**Nội dung bổ sung:**
-
-```markdown
-#### Kiến trúc "Cầu dao tự động" đối với AI Tự trị (AI Autonomous Circuit Breaker)
-* ☁️🗄️ **Anomaly Detection (Cảnh báo Bất thường Lõi):** Lõi Rust duy trì một state machine theo dõi tần suất và khối lượng API call của các `.tapp` AI. Bất kỳ giao dịch nào có dấu hiệu bất thường (như AI cố tình gọi lệnh API thanh toán liên tục, hoặc chuyển tiền khác dải IP thông thường) sẽ lập tức bị Circuit Breaker đóng băng (Freeze) toàn bộ tiến trình của AI đó và bắn cảnh báo đỏ (Priority 0) về máy của CISO.
-* 🗄️ **Tamper-Proof AI Audit Logging (Nhật ký không thể chối bỏ):** - Mọi thao tác "Trao chìa khóa" (Cấp quyền API cho AI) từ Admin đều phải được ký bằng `Device_Key` (Ed25519).
-  - Mọi luồng suy luận và lệnh gọi của AI Agent đều được băm (BLAKE3) và lưu vào chuỗi CRDT Audit Log cục bộ không thể sửa xóa.
-  - **Mục đích pháp lý:** Nếu một sự cố xảy ra (VD: Hacker thao túng AI), CISO có thể trích xuất chính xác theo mili-giây: Ai là người đã cấp quyền, AI đã lấy dữ liệu từ đâu, và con người nào đã bấm "Approve" cho lệnh đó. Log này đủ tiêu chuẩn làm bằng chứng số (Digital Forensics).
-```
-
----
-
-## Mục Mới: Hybrid Infrastructure Client Behavior [ARCHITECTURE] [PLATFORM]
-
-### HYBRID-01: Client-Side Relay Discovery & Connection Logic
-
-> **Nguyên tắc:** Client không biết sự tồn tại của dedicated Core server. Client chỉ biết VPS relay endpoints. Toàn bộ routing logic nằm trong Lõi Rust — UI không tham gia.
-
-- 📱💻🖥️ **Relay Endpoint Discovery:** Lõi Rust đọc relay endpoint list từ `config.yaml` (on-premise) hoặc từ DNS SRV record `_terachat._udp.relay.terachat.io` (cloud). Endpoint list được ký Ed25519 bởi `TeraChat_Internal_CA` — client verify signature trước khi sử dụng.
-- 📱💻🖥️ **QUIC Connection Establishment:**
-
-```text
-  Client Rust Core
-       │ 1. Resolve relay endpoint (DNS SRV / config.yaml)
-       │ 2. QUIC 0-RTT handshake tới VPS node gần nhất
-       │ 3. ALPN: "terachat/1.0" — từ chối nếu server không hỗ trợ
-       │ 4. Certificate verify: SPKI pin vs bundled hash
-       │ 5. Gửi E2EE ciphertext stream — không biết VPS forward sang đâu
-       ▼
-  VPS Relay (transparent to client)
-       │ WireGuard + mTLS tunnel → Dedicated Core
-```
-
-- 📱💻🖥️ **SPKI Pin cho Relay Endpoint:** `manifest.yaml` / hardcoded trong binary chứa `sha256(SubjectPublicKeyInfo)` của relay TLS cert. Rustls từ chối kết nối nếu pin không match — ngay cả CA-signed cert hợp lệ cũng bị reject nếu không match pin.
-- 📱💻🖥️ **Relay Failover (Client-Side):** Lõi Rust maintain ordered list relay endpoints theo RTT đo được. Nếu endpoint hiện tại trả về lỗi (503 `RELAY_CORE_UNREACHABLE` hoặc TCP reset):
-  1. Thử relay endpoint tiếp theo trong list (< 100ms)
-  2. Nếu tất cả relay fail → ALPN fallback state machine (§4.3 gRPC → WSS)
-  3. Nếu tất cả transports fail → Survival Mesh Mode (BLE/Wi-Fi Direct)
-
-### HYBRID-02: Circuit Breaker UX — Transparent Failure Handling
-
-> **Nguyên tắc:** Khi Core unreachable (Circuit Breaker OPEN), client không được trải nghiệm silent failure. Lỗi phải rõ ràng và actionable.
-
-- 📱💻🖥️ **503 Response Handling:** Khi VPS relay trả về `RELAY_CORE_UNREACHABLE`:
-  - Lõi Rust emit `NetworkEvent::RelayCircuitOpen { retry_after_ms: u64 }`
-  - UI hiển thị: banner amber *"Máy chủ đang khởi động lại. Tin nhắn sẽ gửi sau ~30 giây."*
-  - Lõi Rust queue outgoing messages vào `hot_dag.db` local với trạng thái `PENDING_RELAY`
-  - Auto-retry sau `retry_after_ms` — không cần user action
-- 📱💻🖥️ **Message Queue trong Circuit Open Window:**
-
-```rust
-  // core/src/relay/circuit_breaker.rs
-  pub enum MessageQueueBehavior {
-      /// Tin nhắn text: queue vào hot_dag.db, retry khi relay phục hồi
-      QueueForRetry { max_queue_size_kb: usize },
-      /// File > 10MB: block và hiện thông báo, không queue
-      BlockLargePayload,
-      /// Emergency SOS: bypass circuit breaker, thử mọi path kể cả Mesh
-      EmergencyBypass,
-  }
-```
-
-- 📱💻🖥️ **UI State Mapping:**
-
-```
-  NetworkEvent::RelayCircuitOpen   → Banner amber "Đang kết nối lại..."
-  NetworkEvent::RelayCircuitHalfOpen → Banner amber mờ "Đang kiểm tra..."  
-  NetworkEvent::RelayCircuitClosed  → Banner tắt, flush pending queue
-  NetworkEvent::AllRelaysFailed     → Kích hoạt Survival Mesh prompt
-```
-
-### HYBRID-03: WireGuard/mTLS Cert Lifecycle — Client-Transparent
-
-> **Phần này đặc tả hành vi của relay daemon và Core — không có client-facing behavior. Ghi vào đây để developer relay daemon tham chiếu.**
-
-- ☁️ **Relay Daemon Cert Auto-Renewal:**
-
-```bash
-  # /etc/terachat/relay/renew_certs.sh
-  # Chạy hàng ngày lúc 02:00 UTC qua systemd timer
-  
-  CERT_DAYS_REMAINING=$(openssl x509 -noout -enddate -in /etc/terachat/relay/client.pem \
-    | awk -F= '{print $2}' | xargs -I{} date -d {} +%s \
-    | xargs -I{} echo "( {} - $(date +%s) ) / 86400" | bc)
-  
-  if [ "$CERT_DAYS_REMAINING" -lt 30 ]; then
-    # Request new cert từ Vault PKI engine của Core
-    vault write pki/issue/relay-nodes \
-      common_name="relay-${REGION}.internal.terachat.io" \
-      ttl="90d" \
-      > /tmp/new_cert.json
-    
-    # Atomic swap: không restart daemon, sử dụng SIGHUP reload
-    jq -r .data.certificate /tmp/new_cert.json > /etc/terachat/relay/client.pem
-    jq -r .data.private_key /tmp/new_cert.json > /etc/terachat/relay/client.key
-    kill -HUP $(cat /var/run/terachat-relay.pid)
-    
-    # Verify new cert loaded
-    openssl s_client -connect core.internal:8443 -cert /etc/terachat/relay/client.pem 2>&1 \
-      | grep "Verify return code: 0" || { echo "CERT_RELOAD_FAILED" | logger; exit 1; }
-  fi
-```
-
-- ☁️ **Zero-Downtime Cert Reload:** Relay daemon hỗ trợ `SIGHUP` để reload TLS config mà không drop existing connections. QUIC connections đang active tiếp tục dùng old cert cho đến khi kết thúc gracefully. New connections dùng cert mới ngay sau reload.
-
-### HYBRID-04: Sovereign Deployment Mode — Client Configuration
-
-> **Khi enterprise tự host toàn bộ infrastructure (không có TeraChat cloud VPS), client cần cấu hình để trỏ về internal relay nodes.**
-
-- 💻🖥️ **Admin-provided `config.yaml`:**
+# Arrange.md — Ánh xạ Chỉnh sửa Chính xác vào 8 File Nguồn
 
 ```yaml
-  # /etc/terachat/config.yaml — on-premise sovereign deployment
-  
-  relay_endpoints:
-    - address: "relay-01.corp.acme.vn:443"
-      spki_pin: "sha256/BASE64_OF_SPKI_HASH"
-      region: "HAN"
-      priority: 1
-    - address: "relay-02.corp.acme.vn:443"
-      spki_pin: "sha256/BASE64_OF_SPKI_HASH_2"
-      region: "HCM"
-      priority: 2
-  
-  # Bắt buộc đặt false nếu relay internal không có Internet access
-  telemetry_enabled: false
-  
-  # CRL update: manual import thay vì auto-fetch
-  crl_update_mode: "manual"  # hoặc "auto" (default, cần Internet)
-  
-  # Sovereign: tắt hoàn toàn DNS SRV discovery
-  relay_discovery_mode: "static"  # hoặc "dns_srv" (default)
-  
-  # Offline TTL override cho GovMilitary tier
-  offline_ttl_hours: 720  # 30 ngày
+# §0 DOCUMENT IDENTITY
+id:                   "TERA-ARRANGE"
+title:                "TeraChat — Conflict Resolution & Edit Mapping Specification"
+version:              "2.0.0"
+status:               "ACTIVE — Sprint Reference"
+date:                 "2026-03-21"
+audience:             "Tech Lead, Platform Engineer, Security Engineer, Sprint Planner"
+purpose:              >
+  Nguồn sự thật duy nhất cho tất cả chỉnh sửa cần áp dụng vào 8 file tài liệu nguồn
+  của TeraChat. Mỗi chỉnh sửa có: ID duy nhất, file đích, section mục tiêu,
+  loại thay đổi, nội dung cụ thể (find/replace hoặc append), conflict ID liên kết,
+  và sprint assignment.
+
+scope:                >
+  Tất cả thay đổi cần thiết cho TeraChat Alpha v0.3.0 trước platform release.
+  Bao gồm: bug/conflict fixes (C-xx, M-xx, T-xx, B-xx, D-xx, O-xx),
+  enhancement additions (C-12 đến C-21, F-xx, D-xx), và technical debt (TD-xx).
+
+non_goals:
+  - "Implement code thực tế — đây là spec, không phải implementation"
+  - "Thay đổi kiến trúc cốt lõi — chỉ clarify, fix, và extend"
+  - "Thay đổi Function.md ngoài FUNC-12 đến FUNC-14"
+
+assumptions:
+  - "Core_Spec.md v3.0 là nguồn sự thật cho crypto/infra — Arrange.md chỉ patch vào đó"
+  - "Feature_Spec.md hiện tại rỗng hoàn toàn — cần tạo mới"
+  - "ops/signing-pipeline.md chưa tồn tại — cần tạo mới"
+  - "Introduction.md tồn tại nhưng không được list trong 8 file chính thức"
+
+constraints_global:
+  - "KHÔNG làm mất bất kỳ nội dung kỹ thuật nào từ source"
+  - "KHÔNG thay đổi TERA-ID, section numbering, hoặc cross-reference trong source files"
+  - "Mọi thay đổi PHẢI backward-compatible với WAL replay (DB schema changes)"
+  - "Mọi code snippet PHẢI nhất quán với ring crate / RustCrypto (không self-implement crypto)"
+  - "ZeroizeOnDrop bắt buộc cho mọi struct mới giữ key material"
+
+breaking_changes_policy: >
+  Edit nào thay đổi: MLS epoch format, CRDT schema, Crypto Host ABI, Host Function API
+  → Phải ghi chú [BREAKING] và yêu cầu major version bump tương ứng.
+  Minor edit = additive only, không breaking. Deprecation window: 12 tháng.
+
+files_covered:
+  - "Core_Spec.md        (TERA-CORE)"
+  - "Feature_Spec.md     (TERA-FEAT) — TẠO MỚI"
+  - "Design.md           (TERA-DESIGN)"
+  - "Function.md         (TERA-FUNC)"
+  - "BusinessPlan.md     (TERA-BIZ)"
+  - "Web_Marketplace.md  (TERA-MKT)"
+  - "TestMatrix.md       (TERA-TEST)"
+  - "ops/signing-pipeline.md — TẠO MỚI"
+
+depends_on:
+  - "Core_Spec.md v3.0 (TERA-CORE)"
+  - "Conflict Analysis Report 2026-03-21 (input để tạo EDIT C-01 đến C-11)"
 ```
 
-- 💻🖥️ **Enterprise MDM Distribution:** `config.yaml` được push qua MDM (Microsoft Intune, Jamf) đến tất cả thiết bị trong organization. Lõi Rust đọc `config.yaml` tại startup, verify Ed25519 signature của file (ký bởi `Enterprise_Config_Signing_Key`) trước khi áp dụng.
-- 📱 **Mobile (iOS/Android) — MDM Profile:**
+---
 
-```xml
-  <!-- MDM profile: com.terachat.relay-config -->
-  <key>TeraChat_RelayConfig</key>
-  <dict>
-    <key>relay_endpoint_1</key>
-    <string>relay-01.corp.acme.vn:443</string>
-    <key>spki_pin_1</key>
-    <string>sha256/BASE64_OF_SPKI_HASH</string>
-    <key>discovery_mode</key>
-    <string>static</string>
-    <key>offline_ttl_hours</key>
-    <integer>720</integer>
-  </dict>
-```
+## §1 EXECUTIVE SUMMARY
 
-### HYBRID-05: Observability Client-Side Hooks
+### 1.1 Mục tiêu
 
-- 📱💻🖥️ **Trace ID Propagation:** Lõi Rust sinh `trace_id = UUID_v7()` cho mỗi outgoing message. `trace_id` được embed vào QUIC stream header (không vào QUIC payload — để tránh làm phình ciphertext). VPS relay và Core forward `trace_id` trong OTLP span. Admin Console có thể tìm message theo `trace_id` để debug latency.
-- 📱💻🖥️ **Client-Side Relay Metrics (Local Only):**
+Arrange.md là **master edit mapping document** — nguồn sự thật duy nhất cho tất cả thay đổi cần áp dụng vào 8 file tài liệu nguồn của TeraChat trước bất kỳ platform release nào.
 
-```rust
-  // Metrics được giữ local, không gửi về TeraChat cloud
-  // Chỉ available trong Admin Console của chính tenant
-  pub struct RelayMetrics {
-      pub current_relay_endpoint: String,
-      pub current_relay_latency_ms: f64,
-      pub circuit_breaker_state: CircuitBreakerState,
-      pub pending_messages_count: usize,   // queue khi circuit open
-      pub last_successful_forward_at: HLC,
-      pub fallback_transport: Option<Transport>, // gRPC/WSS nếu QUIC blocked
-  }
-```
+**Hai loại thay đổi:**
 
-- 📱💻🖥️ **UI Indicator — Relay Health Badge:**
-  - Online (relay healthy): indicator xanh bình thường — không hiển thị relay detail
-  - Circuit Half-Open: indicator amber nhỏ (dot, không phải banner)
-  - Circuit Open: banner amber (xem HYBRID-02)
-  - Sovereign mode: indicator xanh với badge nhỏ *"Private"* — cho user biết đang dùng on-prem relay
-
-### HYBRID-06: Cost Cap Enforcement — Relay Tier
-
-- ☁️ **Admin Console — Infrastructure Budget:**
-  Admin có thể đặt `max_relay_nodes: 10` trong Admin Console. Khi Terraform auto-scaling chạm limit → alert + block provision thêm node. Đảm bảo không có "runaway scaling" do traffic spike bất thường.
-- ☁️ **Traffic-based Auto-Scale Policy:**
-
-```hcl
-  # terraform/modules/autoscale/policy.tf
-  resource "terachat_autoscale_policy" "relay" {
-    min_nodes     = 2   # Tối thiểu 2 node HA
-    max_nodes     = 10  # Giới hạn từ Admin Console
-    scale_up_at   = 0.70  # 70% CPU hoặc bandwidth saturation
-    scale_down_at = 0.30
-    cooldown_minutes = 10
-    
-    # Cost guard
-    monthly_budget_usd = 600
-    on_budget_exceeded = "alert_and_hold"  # không scale thêm, chỉ alert
-  }
-```
-
-### HYBRID-07: Dart FFI / JSI — Relay-Aware IPC Changes
-
-> **Thay đổi so với kiến trúc trước:** Client IPC giờ có thêm `relay_status` field trong Control Plane signal. UI phải xử lý trạng thái này để hiển thị banner đúng.
-
-- 📱💻🖥️ **Updated `terachat_ipc.proto` — Control Plane:**
-
-```protobuf
-  // Bổ sung vào terachat_ipc.proto
-  
-  message NetworkStatusUpdate {
-    enum RelayState {
-      RELAY_HEALTHY = 0;
-      RELAY_DEGRADED = 1;    // latency cao nhưng vẫn forward được
-      RELAY_CIRCUIT_OPEN = 2; // Core unreachable, queueing messages
-      RELAY_ALL_FAILED = 3;  // Tất cả relay fail, chuyển Mesh
-    }
-    
-    RelayState relay_state = 1;
-    string active_relay_endpoint = 2;  // e.g. "relay-HCM.terachat.io"
-    uint32 relay_latency_ms = 3;
-    uint32 pending_message_count = 4;  // số message đang queue
-    uint64 retry_after_ms = 5;         // khi relay_state = CIRCUIT_OPEN
-    Transport fallback_transport = 6;  // QUIC / GRPC / WSS / MESH
-  }
-```
-
-- 📱 **Flutter Dart — Relay State Handler:**
-
-```dart
-  // Dart layer: xử lý NetworkStatusUpdate từ Rust Core
-  void _handleNetworkStatusUpdate(NetworkStatusUpdate update) {
-    switch (update.relayState) {
-      case RelayState.RELAY_HEALTHY:
-        _networkBannerController.hide();
-        break;
-      case RelayState.RELAY_CIRCUIT_OPEN:
-        _networkBannerController.showAmber(
-          message: 'Đang kết nối lại máy chủ... (${update.pendingMessageCount} tin nhắn đang chờ)',
-          retryAfterMs: update.retryAfterMs,
-        );
-        break;
-      case RelayState.RELAY_ALL_FAILED:
-        _networkBannerController.showMeshPrompt();
-        // Đề xuất kích hoạt Survival Mesh
-        break;
-    }
-  }
-```
-
-- 📱💻🖥️ **Backward Compatibility:** Nếu client version cũ (không có relay state handling) kết nối vào relay tier, relay daemon không gửi `NetworkStatusUpdate` — chỉ gửi standard error codes. Client cũ fallback về ALPN state machine bình thường. Không có breaking change.
-
-### HYBRID-08: WasmParity Gate — Relay-Transparent (Không thay đổi)
-
-> **Xác nhận:** WasmParity CI gate (→ `PLATFORM-02`) không bị ảnh hưởng bởi relay tier. `.tapp` WASM execution xảy ra hoàn toàn tại client-side — relay chỉ forward ciphertext stream của `.tapp` egress sau khi đã qua `tera_egress_daemon`. Không cần thay đổi WasmParity spec.
-
-### HYBRID-09: Dart FFI NativeFinalizer — Relay Buffer Safety
-
-> **Vấn đề kế thừa từ `PLATFORM-14`:** Khi Circuit Breaker OPEN, Lõi Rust buffer outgoing messages trong `PENDING_RELAY` queue. Nếu Dart GC collect `TeraSecureBuffer` handle trước khi message được flush, có thể tạo dangling reference sang Rust-side queue.
-
-- 📱 **Giải pháp — Relay Queue Keepalive:**
-
-```dart
-  class PendingRelayMessage {
-    final TeraSecureBuffer _payloadBuffer;
-    final String messageId;
-    bool _flushed = false;
-    
-    // Keepalive: buffer không được release đến khi relay ACK
-    void markFlushed() {
-      _flushed = true;
-      _payloadBuffer.releaseNow();  // explicit release sau khi relay ACK
-    }
-    
-    // Finalizer chỉ là safety net, KHÔNG phải primary release path
-    // Primary: Rust Core emit RelayACK → Dart gọi markFlushed()
-  }
-```
-
-- 📱 **Rust Core — Relay ACK Signal:**
-
-```rust
-  // Khi relay thực sự forward message thành công:
-  // Emit qua IPC Control Plane:
-  // StateChanged { table: "pending_relay", version: new_v, event: RelayACK { message_id } }
-  // Dart layer nhận và gọi message.markFlushed()
-```
-
-# TeraChat — High Latency Resolution for Remote Users
-
-## Problem Analysis
-
-Khi user ở xa VPS công ty (ví dụ: Hà Nội → TP.HCM, hoặc Vietnam → Singapore), có 4 root causes chính:
-
-| Root Cause | Tác động | Severity |
+| Loại | Mô tả | Số lượng |
 |---|---|---|
-| **Geographic RTT** | VPS đặt tại công ty → user phải route qua nhiều hop ISP | 🔴 Khẩn cấp |
-| **Single-VPS SPOF** | Không có edge relay → mọi traffic dồn về 1 điểm | 🔴 Khẩn cấp |
-| **Mobile Network Jitter** | 4G/5G packet loss cao → QUIC chưa tận dụng multipath | 🟡 Vừa |
-| **WebRTC ICE Cold Start** | ICE Pool không được pre-warm cho vùng địa lý xa | 🟡 Vừa |
-| **MLS TreeKEM Epoch Sync** | Epoch rotation cần round-trip về VPS gốc | 🟢 Nhẹ |
+| **Bug / Conflict Fix** | Resolve xung đột kỹ thuật cross-platform đã được phân tích | 12 conflicts → 22 edits |
+| **Enhancement Addition** | Thêm nội dung còn thiếu vào docs hiện có hoặc tạo docs mới | 25 edits |
+| **Technical Debt** | Tracked items cho post-Beta | 4 items |
 
-**Latency baseline ước tính:**
+### 1.2 Tóm tắt 5 Conflict Quan trọng nhất
 
-```
-User (Di Linh) → Company VPS (HCM):  ~80ms RTT (lý tưởng)
-User (Hà Nội)  → Company VPS (HCM):  ~40ms RTT (lý tưởng)
-Thực tế mobile 4G với jitter:         ×3-5 = 120-400ms perceived
-WebRTC ICE cold start:                +300-800ms additional
-```
-
----
-
-## Technical Solutions
-
-### Solution A — GeoDNS + Lightweight Edge Relay (Khuyến nghị)
-
-Triển khai **Micro-Relay Node** (~512MB VPS) tại các vùng địa lý chiến lược (Hà Nội, Đà Nẵng, Singapore). Node này chỉ là **Blind Relay** — không decrypt, không lưu trữ, chỉ forward ciphertext.
-
-```
-[User Mobile — Di Linh]
-        │
-        ▼ QUIC/UDP:443 (nearest edge)
-[Edge Micro-Relay — Đà Nẵng]  ←── 20ms RTT
-        │
-        ▼ mTLS gRPC tunnel (persistent)
-[Company VPS — HCM]           ←── 15ms RTT (backbone)
-        │
-        ▼
-[Boss/Team Devices]
-```
-
-**Ưu điểm:** Giảm perceived latency ~60-70%. Edge node không cần HSM hay full crypto stack.
-**Nhược điểm:** Chi phí thêm ~$10-20/tháng/node. Cần certificate pinning cho edge.
-
----
-
-### Solution B — QUIC Multipath + Adaptive Codec
-
-Tận dụng QUIC Connection Migration để bind nhiều network path đồng thời (4G + Wi-Fi khi có). Kết hợp adaptive codec cho voice.
-
-```rust
-// Rust Core: Multipath QUIC config
-QuicConfig {
-    multipath: true,
-    path_probing_interval_ms: 500,
-    initial_max_streams_bidi: 32,
-    enable_0rtt: true,
-}
-```
-
-**Voice Codec Ladder:**
-
-| Network Condition | Codec | Bitrate | Latency |
+| ID | Conflict | Impact nếu không fix | File |
 |---|---|---|---|
-| 4G Strong (>10Mbps) | Opus 128kbps | 128kbps | 20ms |
-| 4G Moderate (2-10Mbps) | Opus 32kbps | 32kbps | 30ms |
-| 4G Weak (<2Mbps) | AMR-NB | 4.75kbps | 40ms |
-| BLE Mesh fallback | Text-only | N/A | 200ms |
+| RC-03 | NSE RAM additive overflow (20MB ceiling violated) | Jetsam kill → notification mất silently | Core_Spec.md |
+| PB-01 | Feature_Spec.md rỗng hoàn toàn | 34+ TERA-CORE references không resolve | Feature_Spec.md |
+| RC-02 | Android Doze + mlock() gap | Key material exposed mid-freeze | Core_Spec.md |
+| BL-02 | EMDP Shun → MLS epoch causal deadlock | iOS Mesh frozen, cannot evict compromised node | Core_Spec.md |
+| NI-01 | QUIC parallel probe race → NetworkProfile corruption | `strict_compliance=true` set incorrectly | Core_Spec.md |
 
----
-
-### Solution C — Priority Message Queue + Offline-First Sync
-
-Tin nhắn khẩn cấp (tagged `PRIORITY_URGENT`) được xử lý trước trong bounded MPSC channel, bypass queue thông thường.
-
----
-
-## Product/UX Enhancements
-
-### Feature: TeraSprint Mode (Chế độ Di chuyển Khẩn cấp)
-
-Khi Rust Core phát hiện latency > 300ms sustained 10s → tự động kích hoạt:
-
-1. **Auto-Relay Selection:** Ping tất cả known relay endpoints → chọn lowest RTT
-2. **Message Priority Escalation:** Tin nhắn từ `PRIORITY_CONTACTS` list lên P0 queue
-3. **Adaptive Media Quality:** Voice tự downgrade codec, video tự giảm resolution
-4. **Predictive Pre-fetch:** Khi có kết nối mạnh (WiFi sân bay), pre-fetch 50 tin nhắn pending
-
-### Feature: Network Resilience HUD
-
-UI hiển thị real-time:
+### 1.3 Kiến trúc tổng quan của quá trình edit
 
 ```
-📍 Relay: Đà Nẵng Edge  |  RTT: 45ms  |  Path: 4G + WiFi  |  Mode: TeraSprint
+Arrange.md (nguồn sự thật)
+    │
+    ├── SPRINT 1 (Blocker)
+    │   ├── Core_Spec.md     ← EDIT C-01 đến C-11 (fix) + C-12 đến C-21 (enhance)
+    │   └── Feature_Spec.md  ← Tạo mới hoàn toàn (§1–§8)
+    │
+    ├── SPRINT 2 (High Priority)
+    │   ├── Design.md        ← EDIT D-01 đến D-07
+    │   ├── Web_Marketplace.md ← EDIT M-01 đến M-06
+    │   ├── Function.md      ← EDIT FUNC-01 đến FUNC-05
+    │   ├── TestMatrix.md    ← EDIT T-01 đến T-03
+    │   ├── BusinessPlan.md  ← EDIT B-01 đến B-04
+    │   └── ops/signing-pipeline.md ← Tạo mới (COSIGN-01 đến 05)
+    │
+    └── SPRINT 3 (Technical Debt)
+        ├── Core_Spec.md     ← TD-01 đến TD-03
+        └── Web_Marketplace.md ← TD-04
 ```
 
 ---
 
-## Recommended Architecture
+## §2 SYSTEM OVERVIEW
+
+### 2.1 Sơ đồ phụ thuộc giữa 8 file nguồn
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    TERACHAT GEO-RESILIENT TOPOLOGY                  │
-│                                                                     │
-│  📱 Remote User                                                      │
-│  (Di Linh/4G)                                                       │
-│      │                                                              │
-│      │ QUIC Multipath (4G primary + WiFi secondary)                 │
-│      ▼                                                              │
-│  ┌────────────────────┐   GeoDNS         ┌──────────────────────┐  │
-│  │  Edge Relay Node   │ ─────────────── ▶│  Edge Relay Node     │  │
-│  │  (Đà Nẵng / HN)   │                  │  (Singapore)         │  │
-│  │  ~512MB RAM        │                  │  for intl roaming    │  │
-│  │  Blind Relay Only  │                  └──────────────────────┘  │
-│  └─────────┬──────────┘                                             │
-│            │ mTLS Persistent Tunnel                                 │
-│            ▼                                                        │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │              Company VPS (HCM) — Control Plane              │    │
-│  │  MLS Backbone · PostgreSQL · TURN HA · OPA Engine           │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│            │                                                        │
-│            ▼                                                        │
-│  💻🖥️ Boss + Team Devices (LAN — <5ms internal)                      │
-└─────────────────────────────────────────────────────────────────────┘
+Core_Spec.md (TERA-CORE)     ← ROOT — không phụ thuộc file nào
+    │
+    ├──► Feature_Spec.md (TERA-FEAT)     ← phụ thuộc TERA-CORE
+    │        │
+    │        ├──► Design.md (TERA-DESIGN) ← đọc CoreSignal từ TERA-FEAT
+    │        └──► Web_Marketplace.md (TERA-MKT) ← đọc WASM constraints từ TERA-FEAT
+    │
+    ├──► Function.md (TERA-FUNC)         ← phụ thuộc TERA-CORE + TERA-FEAT
+    │
+    ├──► TestMatrix.md (TERA-TEST)       ← phụ thuộc tất cả để viết test scenarios
+    │
+    ├──► BusinessPlan.md (TERA-BIZ)      ← phụ thuộc TERA-CORE cho technical claims
+    │
+    └──► ops/signing-pipeline.md         ← độc lập, referenced by TERA-FEAT §16
 ```
 
-**WebRTC Call Path (TeraSprint Active):**
+### 2.2 Quy tắc lan truyền edit
 
-```
-📱 Remote User
-    │ SRTP via Edge TURN Relay (Đà Nẵng)
-    ▼
-[Edge TURN — Đà Nẵng]  ──── mTLS ────▶  [HA TURN — Company VPS]
-                                                 │
-                                         💻 Boss Device
-```
+- Edit vào `Core_Spec.md` → có thể cần update cross-reference trong tất cả file phụ thuộc.
+- Edit vào `Feature_Spec.md` → chỉ ảnh hưởng `Design.md` và `Web_Marketplace.md`.
+- Edit vào `TestMatrix.md` → không ảnh hưởng file khác (leaf node).
+- Edit vào `ops/signing-pipeline.md` → được referenced bởi `Feature_Spec.md §16` và `BusinessPlan.md`.
+
+### 2.3 Deployment model của edits
+
+Edits được apply theo thứ tự strict:
+
+1. `Core_Spec.md` (root — không phụ thuộc)
+2. `Feature_Spec.md` (phụ thuộc Core_Spec)
+3. Các file còn lại song song (không phụ thuộc lẫn nhau trong sprint này)
+
+**Không** apply Feature_Spec.md edits trước khi Core_Spec.md edits đã merge và stable.
 
 ---
 
-## Document Changes
+## §3 DATA MODEL
 
-Dưới đây là nội dung bổ sung dạng Markdown cho từng file:
+### 3.1 ConflictRecord
 
----
-
-### `Core_Spec.md` — Bổ sung §3.6 và §5.43
-
-````markdown
-### 3.6 [ARCHITECTURE] [IMPLEMENTATION] Geo-Resilient Edge Relay Network
-
-> **Bài toán:** User di chuyển xa VPS công ty gặp latency cao (>300ms), ảnh hưởng nghiêm trọng đến voice call và real-time messaging trong tình huống khẩn cấp.
-
-#### Edge Micro-Relay Node Architecture
-
-- ☁️ **Blind Relay Only:** Edge node KHÔNG decrypt, KHÔNG lưu trữ persistent data. Chỉ forward TLS ciphertext blob giữa client và Company VPS. Zero-Knowledge tuyệt đối tại edge.
-- ☁️ **Single-Binary Rust Daemon (Edge Profile):** Build riêng binary `terachat-edge-relay` với `feature = ["relay_only"]` — loại bỏ MLS Backbone, PostgreSQL, OPA Engine. RAM footprint < 128MB trên VPS $10/tháng.
-- ☁️ **GeoDNS Routing (Latency-Based):** DNS resolver trả về IP của edge node gần nhất dựa trên Anycast latency measurement. Fallback về Company VPS nếu tất cả edge node offline.
-- ☁️ **mTLS Persistent Tunnel (Edge → Company VPS):** Edge node duy trì 1 kết nối mTLS gRPC persistent tới Company VPS — tránh TLS handshake overhead mỗi message. Connection re-established tự động với exponential backoff.
-- ☁️ **Edge TURN Relay:** Edge node chạy coturn instance nhẹ cho WebRTC relay. SRTP traffic được forward qua mTLS tunnel về HA TURN cluster tại Company VPS.
-
-#### Edge Node Deployment Topology
-
-```text
-[GeoDNS — latency-based routing]
-         │
-         ├──▶ [Edge Node — Hà Nội]    (~$10/mo VPS, 1 vCPU, 512MB RAM)
-         │       └─ Blind Relay + coturn-lite
-         ├──▶ [Edge Node — Đà Nẵng]   (~$10/mo VPS)
-         │       └─ Blind Relay + coturn-lite  
-         ├──▶ [Edge Node — Singapore] (~$15/mo VPS — cho roaming quốc tế)
-         │       └─ Blind Relay + coturn-lite
-         └──▶ [Company VPS — HCM]     (fallback, Control Plane chính)
-                  └─ Full Stack
-```
-
-#### Edge Node Security Contract
-
-- ☁️ **Certificate Pinning:** Lõi Rust trên client hard-code SPKI hash của Edge Node certificate. Edge node không thể impersonate Company VPS.
-- ☁️ **No Persistent Storage:** Edge node chạy với `--no-disk-write` flag. Mọi buffer chỉ tồn tại trong RAM ephemeral pipe. Restart edge → không mất data (data đã ở Company VPS).
-- ☁️ **Rate Limiting tại Edge:** Token Bucket per client-IP tại edge layer — chống DDoS trước khi traffic chạm Company VPS.
-- ☁️ **Health Check & Auto-failover:** Company VPS ping edge nodes mỗi 10s. Edge node không respond trong 30s → GeoDNS tự remove khỏi rotation.
-
----
-
-### 5.44 [SECURITY] [IMPLEMENTATION] TeraSprint Mode — Adaptive Network Resilience Engine
-
-> **Bài toán:** User di chuyển xa, mạng không ổn định, cần duy trì liên lạc khẩn cấp với sếp/team mà không cần cấu hình thủ công.
-
-#### Latency Detection & TeraSprint Trigger
-
-- 📱💻🖥️ **Continuous RTT Monitoring:** Rust Core gửi QUIC PING frame mỗi 5s tới active relay endpoint, đo RTT. Kết quả lưu trong sliding window 30s (6 samples). `avg_rtt = sum(samples) / 6`.
-- 📱💻🖥️ **TeraSprint Activation Threshold:**
-  - `avg_rtt > 300ms` sustained 10s → kích hoạt `TeraSprint::Degraded`
-  - `avg_rtt > 500ms` hoặc `packet_loss > 5%` → kích hoạt `TeraSprint::Critical`
-  - `connection_timeout` → kích hoạt `TeraSprint::Survival` (Mesh Mode)
-- 📱💻🖥️ **Relay Re-selection (Sub-50ms):** Khi TeraSprint kích hoạt, Rust Core parallel-probe tất cả known edge endpoints với TTL 200ms. Chọn endpoint có RTT thấp nhất. Swap kết nối trong < 50ms — UI không cảm nhận gián đoạn.
-
-#### QUIC Multipath Binding
-
-- 📱💻 **Simultaneous Path Probing:** Rust Core (sử dụng `quinn` crate) mở QUIC connection trên cả 4G interface và WiFi interface đồng thời. Path có RTT thấp hơn được dùng cho P0/P1 traffic. Path còn lại giữ warm làm standby.
-- 📱💻 **QUIC Connection Migration:** Khi user chuyển từ WiFi → 4G (lên tàu, xe), QUIC Connection ID không đổi — kết nối migrate seamlessly. Không cần re-handshake. Latency spike < 100ms.
-- 📱 **iOS Network.framework Integration:** Sử dụng `NWConnection` với `NWParameters.multipathServiceType = .handover` để iOS OS quản lý multipath tại system level, Rust Core nhận DataStream qua FFI.
-
-#### Priority Message Queue (P0 Escalation)
-
-```rust
-pub enum MessagePriority {
-    P0,  // Key Updates, SOS, Emergency — bypass all queues
-    P1,  // Text từ PRIORITY_CONTACTS — latency < 200ms target  
-    P2,  // Media, file transfer — best effort
-}
-
-pub struct TeraSprint {
-    pub mode: TeraSprinted,
-    pub active_relay: RelayEndpoint,
-    pub rtt_ms: u32,
-    pub priority_contacts: Vec<UserId>,  // pre-configured by user
-}
-```
-
-- 📱💻🖥️ **PRIORITY_CONTACTS List:** User pre-configure danh sách (Boss, HR, Emergency contacts). Tin nhắn từ/đến list này tự động escalate lên P1. Admin có thể push PRIORITY_CONTACTS list qua OPA Policy cho toàn tenant.
-- 📱💻🖥️ **P0 Bypass:** Tin nhắn tagged `EMERGENCY_FLAG` (SOS, Key Update, Critical Alert) bypass hoàn toàn rate limiting và queue — trực tiếp vào network socket. Consistent với §5.2 `EMERGENCY_SOS_FLAG QoS Bypass`.
-````
-
----
-
-### `Feature_Spec.md` — Bổ sung §PLATFORM-17 và §8.26
-
-````markdown
-### PLATFORM-17: TeraSprint Mode — Client Behavior
-
-- 📱💻🖥️ **Auto-Relay Selection UI:** Khi TeraSprint kích hoạt, Network HUD trong status bar cập nhật:
-  ```
-  📍 Relay: Đà Nẵng Edge  |  RTT: 45ms  |  TeraSprint: Active
-  ```
-  Không có dialog — user tiếp tục làm việc không bị gián đoạn.
-
-- 📱 **iOS QUIC Multipath (Network.framework FFI):**
-  ```swift
-  // Swift layer: expose multipath config xuống Rust
-  let params = NWParameters.quic(alpn: ["h3"])
-  params.multipathServiceType = .handover
-  // FFI bridge: Rust nhận NWConnection handle, quản lý QUIC streams
-  ```
-
-- 📱 **Codec Auto-Downgrade (Voice Call):**
-  - `rtt < 150ms` → Opus 128kbps (full quality)
-  - `150ms < rtt < 300ms` → Opus 32kbps (acceptable)
-  - `rtt > 300ms` || `packet_loss > 3%` → AMR-NB 4.75kbps (survival)
-  - `TeraSprint::Survival` → Text-only, Whisper AI transcription nếu có RAM
-
-- 📱 **Pre-fetch on Strong Connection:** Khi user kết nối WiFi mạnh (airport, hotel), Rust Core detect `rtt < 50ms` && `bandwidth > 5Mbps` → trigger background pre-fetch 100 pending messages + file stubs vào `hot_dag.db`. Chuẩn bị cho lúc di chuyển.
-
-- 📱💻🖥️ **TeraSprint Persistent Config:** User setting "TeraSprint Priority Contacts" lưu trong `cold_state.db` (SQLCipher), sync qua E2EE Cloud Backup. Cấu hình một lần, hoạt động trên mọi thiết bị.
-
----
-
-### 8.26 [IMPLEMENTATION] Predictive Network Switching & Relay Warm-up
-
-> **Bài toán:** Khi user đang trên tàu/xe, mạng thay đổi liên tục. Cold start kết nối tới relay mới tốn 200-500ms — không chấp nhận được trong cuộc họp khẩn cấp.
-
-- 📱💻 **Proactive Relay Warm-up:** Rust Core duy trì QUIC connection "warm" tới top-3 relay endpoints (theo RTT ranking). Connection idle nhưng alive — khi cần switch, không cần handshake mới. Cost: ~3 QUIC PING frames/30s per relay = negligible bandwidth.
-
-- 📱 **NWPathMonitor Integration:** Lắng nghe `NWPathMonitor` để phát hiện network change trước khi latency tăng:
-  ```swift
-  pathMonitor.pathUpdateHandler = { path in
-      if path.status == .satisfied {
-          // Notify Rust Core qua FFI: new path available
-          terachat_core_network_hint(path.availableInterfaces)
-      }
-  }
-  ```
-  Rust Core nhận hint → proactively probe relay endpoints trên interface mới → sẵn sàng migrate trước khi connection cũ drop.
-
-- 📱💻 **Optimistic Message Send (Store-and-Forward Hybrid):** Trong TeraSprint mode, text message được commit vào `hot_dag.db` local NGAY LẬP TỨC (optimistic write) và hiển thị "Sent" trên UI. Rust Core retry gửi lên relay với exponential backoff. Khi deliver thành công → update delivery receipt. User không thấy "pending" spinner — UX liền mạch.
-
-- 📱💻 **WebRTC ICE Pre-warming (TeraSprint):** Khi TeraSprint active, Rust Core proactively gather ICE candidates từ edge TURN server (không cần user initiate call). Khi user bấm "Call Boss", ICE candidates đã sẵn sàng → connection time < 500ms thay vì 2-3s.
-````
-
----
-
-### `Design.md` — Bổ sung §DESIGN-TERASPRINT-01
-
-````markdown
-### DESIGN-TERASPRINT-01: TeraSprint Mode Visual System
-
-#### Network Resilience HUD (Status Bar Component)
-
-| TeraSprint State | HUD Display | Color | Animation |
-|---|---|---|---|
-| **Inactive** (RTT < 150ms) | `● Online — 45ms` | `#24A1DE` Blue | Static dot |
-| **Degraded** (150-300ms) | `⚡ TeraSprint — Đà Nẵng Edge — 180ms` | `#F59E0B` Amber | Pulse 1s |
-| **Critical** (>300ms) | `⚡ TeraSprint Critical — 420ms` | `#EF4444` Red | Pulse 0.5s |
-| **Switching Relay** | `↻ Finding best route...` | `#94A3B8` Gray | Spinner |
-| **Survival (Mesh)** | `📡 Survival Mesh Active` | `#0F172A` Dark | Radar pulse |
-
-```css
-/* TeraSprint HUD Component */
-.terasprint-hud {
-  backdrop-filter: blur(8px);
-  background: rgba(245, 158, 11, 0.15);  /* Amber glass */
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-}
-
-.terasprint-pulse {
-  animation: terasprint-pulse 1s ease-in-out infinite;
-}
-
-@keyframes terasprint-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-```
-
-#### Voice Call Quality Indicator (In-Call UI)
-
-Trong màn hình call, hiển thị codec hiện tại:
-
-| Codec | Badge | Màu |
+| Field | Type | Mô tả |
 |---|---|---|
-| Opus 128kbps | `HD Voice` | Xanh lục |
-| Opus 32kbps | `Standard` | Xanh lam |
-| AMR-NB | `Low Bandwidth` | Cam |
-| Degraded | `⚠ Unstable` | Đỏ + pulse |
+| `conflict_id` | String (`RC-xx`, `PB-xx`, `BL-xx`, `NI-xx`) | ID duy nhất của conflict |
+| `layer` | Enum `L1\|L2\|L3\|L4\|L5` | Lớp conflict (Runtime / Packaging / Logic / Network / Emergent) |
+| `severity` | Enum `Blocker\|High\|Medium` | Mức độ ưu tiên |
+| `platforms_affected` | `Vec<Platform>` | Platforms bị ảnh hưởng |
+| `source_file` | String | File nguồn chứa conflict |
+| `impact_if_unresolved` | String | Hậu quả nếu không fix |
+| `edit_ids` | `Vec<EditId>` | Danh sách edits để resolve |
 
-#### Priority Contact Indicator
+### 3.2 EditRecord
 
-Tin nhắn từ PRIORITY_CONTACTS hiển thị badge nhỏ:
+| Field | Type | Mô tả |
+|---|---|---|
+| `edit_id` | String (`C-xx`, `F-xx`, `D-xx`, `M-xx`, `T-xx`, `B-xx`, `FUNC-xx`, `O-xx`) | ID duy nhất |
+| `conflict_id` | `Option<String>` | Conflict liên kết (None nếu là enhancement) |
+| `target_file` | String | File đích để apply |
+| `target_section` | String | Section trong file đích |
+| `change_type` | Enum `Append\|Replace\|CreateNew` | Loại thay đổi |
+| `find` | `Option<String>` | Chuỗi cần tìm (cho Replace) |
+| `content` | String | Nội dung cần thêm/thay thế |
+| `sprint` | Enum `Sprint1\|Sprint2\|Sprint3` | Sprint assignment |
+| `status` | Enum `TODO\|InProgress\|Done\|Verified` | Trạng thái hiện tại |
+
+### 3.3 TechnicalDebtItem
+
+| Field | Type | Mô tả |
+|---|---|---|
+| `debt_id` | String (`TD-xx`) | ID duy nhất |
+| `target_file` | String | File đích |
+| `target_section` | String | Section cần update |
+| `description` | String | Mô tả debt |
+| `priority` | String | Sprint 3 / Post-Beta |
+| `blocking` | `Vec<EditId>` | Edits khác bị block bởi debt này |
+
+---
+
+## §4 FEATURE MODEL
+
+> Mỗi edit là một "feature" của Arrange.md — có Description, Target, User Flow (= procedure áp dụng), Dependencies, và Content đầy đủ.
+> Tổ chức theo: Sprint → File → Edit ID.
+
+---
+
+### SPRINT 1 — BLOCKER
+
+---
+
+#### FILE 1: `Core_Spec.md`
+
+---
+
+##### EDIT C-01
+
+```yaml
+edit_id:       "C-01"
+conflict_id:   "RC-01"
+target_file:   "Core_Spec.md"
+target_section: "§3.1 Platform Matrix (hoặc §7 Platform Matrix)"
+change_type:   "Replace + Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Tìm dòng:**
 
 ```
-🔴 [Priority]  Boss Nguyen Van A
-   "Họp 3h chiều nay confirm chưa?"
-   14:32  ✓✓
+| 📱 Huawei HarmonyOS | `wasmtime` JIT (Cranelift) | Không bị W^X như iOS |
 ```
 
-Badge `🔴 [Priority]` chỉ hiện khi TeraSprint active — không làm noise khi mạng bình thường.
-````
-
----
-
-### `Function.md` — Bổ sung §FUNC-12
-
-````markdown
-### FUNC-12: TeraSprint Emergency Communication Flow
-
-**Kịch bản:** Nhân viên đang trên xe khách Hà Nội → Đà Nẵng, cần tham gia cuộc họp video khẩn cấp với sếp tại HCM.
-
-**Luồng tự động:**
-
-1. **T-0: Detect high latency**
-   - Rust Core phát hiện `avg_rtt = 340ms` (sustained 10s)
-   - Kích hoạt `TeraSprint::Degraded`
-   - Parallel-probe 3 edge endpoints
-
-2. **T+50ms: Relay selected**
-   - Edge Đà Nẵng: 45ms RTT ← winner
-   - Edge Hà Nội: 65ms RTT
-   - Company VPS HCM: 340ms RTT ← bypass
-   - HUD update: `⚡ TeraSprint — Đà Nẵng Edge — 45ms`
-
-3. **T+100ms: ICE pre-warm triggered**
-   - WebRTC ICE candidates gathered từ edge TURN Đà Nẵng
-   - Candidates cached — ready for instant call
-
-4. **T+?: User initiates video call**
-   - ICE candidates already warm → connection < 500ms
-   - Codec: Opus 32kbps (phù hợp 4G trên đường)
-   - Video: 360p (adaptive — có thể 720p nếu mạng cho phép)
-
-5. **T+?: Network drops (tunnel)**
-   - QUIC Connection Migration triggered
-   - Brief spike 50-100ms → auto-recover
-   - User thấy slight glitch, không bị disconnect
-
-6. **T+?: WiFi available (quán cà phê dừng chân)**
-   - NWPathMonitor detect WiFi interface
-   - QUIC migrate sang WiFi path
-   - Codec upgrade: Opus 128kbps
-   - HUD: `● Online — 18ms` (TeraSprint deactivated)
-````
-
----
-
-### `BusinessPlan.md` — Bổ sung §BIZ-EDGE-08
-
-````markdown
-### BIZ-EDGE-08: Edge Relay Network — Cost Model & Competitive Moat
-
-**Infrastructure Cost (Edge Network):**
-
-| Deployment Scale | Edge Nodes | Monthly Cost | Latency Improvement |
-|---|---|---|---|
-| Vietnam Only | 3 nodes (HN, ĐN, HCM) | ~$30/mo | 60-70% reduction |
-| SEA Coverage | +Singapore, +Bangkok | +$25/mo | International roaming |
-| Enterprise Custom | On-premise edge at client site | $0 (client hardware) | <10ms for internal |
-
-**Competitive Differentiation:**
-
-Đây là lợi thế cạnh tranh không thể copy nhanh của Slack/Teams:
-- Slack/Teams phụ thuộc vào AWS/Azure multi-region (chi phí cao, data leaves Vietnam)
-- TeraChat Edge Relay: **data stays encrypted, node có thể đặt tại data center Viettel/VNPT** — đáp ứng yêu cầu data residency của Gov/Banking Việt Nam
-
-**Sales Pitch cho Enterprise:**
-> *"Nhân viên field sales của bạn ở Tây Nguyên vẫn họp video HD với sếp ở HCM — không lag, không mất kết nối, không cần VPN phức tạp."*
-
-**TeraSprint như một Premium Feature:**
-- Community: GeoDNS routing (best-effort)
-- Enterprise: Dedicated edge relay + priority queue + SLA 99.9% uptime
-- GovMilitary: On-premise edge node deployment + air-gapped support
-````
-
----
-Dưới đây là phân tích kiến trúc trước khi viết spec. Ba vấn đề có một gốc rễ chung: **state boundary violation** — mỗi câu hỏi đều xuất phát từ việc một component cố gắng giữ state mà theo design nó không nên giữ. Giải pháp đúng là đẩy state về đúng owner của nó.
-
-Giải pháp Q1 dùng `tokio::sync::watch` (không phải broadcast hay CancellationToken đơn lẻ) vì watch là single-value channel — đúng với semantics "cert generation hiện tại là gì". Q2 từ chối VPS journal hoàn toàn, đẩy EMDP state về client (đúng owner) và dùng Survival Mesh làm courier. Q3 tái kích hoạt eBPF/XDP trên dedicated server (đã deprecated chỉ cho shared VPS, không phải cho bare-metal), kết hợp mTLS device certificate làm primary cryptographic allowlist.---
-
-## Nội dung bổ sung vào `Core_Spec.md`
+**Thay bằng:**
 
 ```markdown
+| 📱 Huawei HarmonyOS | `wasmtime` JIT (Cranelift) — Primary; AOT `.waot` fallback khi JIT unavailable | Distribution: AOT `.waot` bundle bắt buộc cho AppGallery review. Runtime: `WasmRuntime::HarmonyOS { mode: JitWithAotFallback }`. JIT không bị W^X. |
+```
+
+**Append footnote cuối bảng:**
+
+```markdown
+> **Huawei Dual-Path Note:** AppGallery policy yêu cầu AOT-precompiled `.waot` bundle để pass review.
+> Runtime vẫn dùng wasmtime JIT làm primary. Fallback sang AOT chỉ khi JIT detection fails.
+> Cross-reference: → Web_Marketplace.md MARKETPLACE-07
+```
+
 ---
 
-## 18. [SECURITY] [IMPLEMENTATION] QUIC Cert Generation Watch Protocol — Emergency Revocation in <500ms
+##### EDIT C-02
 
-> **Phạm vi:** Giải quyết vấn đề long-lived QUIC connections tồn tại với cert đã bị revoke sau `SIGHUP` reload. Áp dụng cho VPS Relay Daemon (→ §16). Không liên quan đến client-side cert hay `DeviceIdentityKey`.
->
-> **Quyết định kiến trúc:** Dùng `tokio::sync::watch` (không phải `broadcast` hay `CancellationToken` đơn lẻ). Lý do: `watch` là single-value channel — semantics chính xác cho "cert generation hiện tại là gì". `broadcast` có thể drop messages khi receiver lag. `CancellationToken` không mang state (generation nào bị revoke). `AtomicU64` đơn lẻ không wake sleeping tasks.
+```yaml
+edit_id:       "C-02"
+conflict_id:   "RC-03"
+target_file:   "Core_Spec.md"
+target_section: "§8.2 Memory (bảng RAM Budget có dòng 'NSE Process | ≤24MB')"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
 
-### 18.1 [IMPLEMENTATION] Cert Generation State Machine
+**Thêm dòng ngay sau row `NSE Micro-Crypto`:**
+
+```markdown
+| NSE Micro-NER ONNX | **PROHIBITED** | 📱 iOS | `NsePolicy::ProhibitOnnxLoad` — KHÔNG bao giờ load ONNX trong NSE process. Lý do: NSE Arena 10MB + decrypt 2MB + MLS 2MB = 14MB → không còn margin để load 8MB Micro-NER. Dùng regex-only PII detection trong NSE. Full NER defer sang Main App qua `main_app_decrypt_needed=true`. |
+```
+
+**Append warning box sau bảng:**
+
+```markdown
+> ⚠️ **NSE RAM Ceiling Additive Rule:**
+> NSE Arena (10MB) + MLS Decrypt (~2MB) + system overhead (~2MB) = 14MB baseline.
+> Hard margin còn lại: 6MB. ONNX Micro-NER (8MB) vi phạm ceiling → Jetsam kill → notification mất.
+> **Invariant:** `NsePolicy::ProhibitOnnxLoad` là non-negotiable. Không exception.
+> Cross-reference: → §5.5 NSE RAM Budget Protocol
+```
+
+---
+
+##### EDIT C-03
+
+```yaml
+edit_id:       "C-03"
+conflict_id:   "RC-03"
+target_file:   "Core_Spec.md"
+target_section: "§9.4 AI Safety — phần mô tả ISDM / Micro-NER / ONNX"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append sau đoạn mô tả Micro-NER:**
+
+```markdown
+**NSE Context Restriction:**
+- 📱 iOS NSE: `NsePolicy::ProhibitOnnxLoad` — **ONNX model load trong NSE process bị cấm tuyệt đối**.
+- NSE chỉ được dùng regex-based PII detection (Aho-Corasick pattern matching, no neural model).
+- Full Micro-NER scan (ONNX) chỉ chạy trong Main App context sau khi NSE set `main_app_decrypt_needed=true`.
+- Lý do: NSE 20MB hard ceiling bị vi phạm khi ONNX (8MB) + Arena (10MB) + overhead cộng lại.
+- Cross-reference: → §8.2 RAM Budget, → §5.5 NSE RAM Budget Protocol
+```
+
+---
+
+##### EDIT C-04
+
+```yaml
+edit_id:       "C-04"
+conflict_id:   "BL-01"
+target_file:   "Core_Spec.md"
+target_section: "§5.1 HKMS (Dead Man Switch) hoặc §F-04 Key Management System"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append ngay sau đoạn mô tả CallKit exemption:**
 
 ```rust
-// core/src/relay/cert_revocation.rs
-
-use std::sync::atomic::{AtomicU64, Ordering};
-use tokio::sync::watch;
-
-/// Thế hệ cert hiện đang hợp lệ. Tăng mỗi lần rotate hoặc revoke.
-/// AtomicU64 cho phép per-packet check O(1) không cần lock.
-pub static CURRENT_VALID_CERT_GEN: AtomicU64 = AtomicU64::new(1);
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum CertRevocationEvent {
-    /// Cert bình thường — giá trị là generation hợp lệ hiện tại
-    Valid { generation: u64 },
-    /// Cert bị revoke — generation cũ bị vô hiệu, generation mới đã load
-    /// old_gen: generation bị compromise
-    /// deadline_ms: thời gian drain tối đa (mặc định 450ms)
-    Revoked { old_gen: u64, new_gen: u64, deadline_ms: u64 },
+/// Bắt buộc log khi Dead Man Switch bị DEFER do active session.
+/// CISO cần entry này để distinguish legitimate deferral vs compromise.
+#[derive(Debug, Serialize, Ed25519Signed)]
+pub struct DeadManDeferralEntry {
+    pub event_type:      AuditEventType,   // = DeadManDeferral
+    pub device_id:       DeviceId,
+    pub call_id:         Uuid,             // CallKit session ID
+    pub reason:          DeferralReason,
+    pub device_counter:  u64,              // TPM monotonic counter tại thời điểm defer
+    pub server_counter:  u64,              // Server's last known valid counter
+    pub deferred_at:     HLC_Timestamp,
+    pub expected_resume: Option<HLC_Timestamp>,
+    pub ed25519_sig:     Ed25519Signature, // Ký bằng DeviceIdentityKey
 }
 
-/// Sender nằm trong relay daemon main thread.
-/// Receivers được clone cho mỗi connection task khi spawn.
-pub struct CertRevocationBroadcaster {
-    sender: watch::Sender<CertRevocationEvent>,
-}
-
-impl CertRevocationBroadcaster {
-    pub fn new() -> (Self, watch::Receiver<CertRevocationEvent>) {
-        let (tx, rx) = watch::channel(CertRevocationEvent::Valid { generation: 1 });
-        (Self { sender: tx }, rx)
-    }
-
-    /// Gọi khi nhận SIGUSR2 (emergency revoke — khác SIGHUP rotate bình thường).
-    /// Atomic update đảm bảo mọi task thấy new_gen ngay lập tức sau watch notify.
-    pub fn emergency_revoke(&self, old_gen: u64, new_gen: u64) {
-        CURRENT_VALID_CERT_GEN.store(new_gen, Ordering::SeqCst);
-        // watch::send() wake tất cả receivers đang pending đồng thời — O(receivers)
-        let _ = self.sender.send(CertRevocationEvent::Revoked {
-            old_gen,
-            new_gen,
-            deadline_ms: 450,
-        });
-        tracing::warn!(
-            security_event = "CERT_EMERGENCY_REVOKED",
-            old_gen, new_gen,
-            "Cert revocation broadcast to all connection tasks"
-        );
-    }
+pub enum DeferralReason {
+    ActiveCallKitSession { call_id: Uuid },
+    ActiveEmdpSession    { ttl_expires_at: u64 },
+    AdminOverride        { admin_device_id: DeviceId },
 }
 ```
 
-### 18.2 [IMPLEMENTATION] Connection Task — Drain Protocol
+```markdown
+**Audit Obligation:** Mọi Dead Man Switch deferral event **bắt buộc** tạo `DeadManDeferralEntry`
+và append vào Audit Log trước khi deferral có hiệu lực.
+Counter delta (`server_counter - device_counter`) phải được log để CISO assess risk.
+```
+
+---
+
+##### EDIT C-05
+
+```yaml
+edit_id:       "C-05"
+conflict_id:   "RC-02"
+target_file:   "Core_Spec.md"
+target_section: "§5.2 Hardware Root of Trust (hoặc §F-01) — sau iOS Double-Buffer Zeroize Protocol"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append section mới "Android Doze Mitigation":**
+
+```markdown
+#### Android Doze Mitigation — StrongBox Wrap-on-Derive Pattern
+
+📱 Android: `mlock()` không khả dụng (StrongBox/TrustZone không expose `mlock` API).
+Risk: Doze-triggered process freeze có thể xảy ra mid-`ZeroizeOnDrop`, để key material
+trong RAM page chưa được zero-fill.
+
+**Mitigation — Wrap-on-Derive (bắt buộc cho mọi sensitive key trên Android):**
+```
 
 ```rust
-// core/src/relay/connection_handler.rs
+pub fn derive_and_wrap_android(
+    input_key_material: &[u8],
+    context: &KeyDerivationContext,
+) -> Result<WrappedKey, KeyError> {
+    // Step 1: Derive key trong local scope
+    let plaintext_key = hkdf_sha256(input_key_material, &context.info)?;
 
-use tokio::time::{timeout, Duration};
-use zeroize::ZeroizeOnDrop;
+    // Step 2: NGAY LẬP TỨC wrap vào StrongBox trước khi bất kỳ await point nào
+    // Không có async operation giữa derive và wrap — Doze không thể freeze giữa 2 bước
+    let wrapped = android_keystore::wrap(
+        &plaintext_key,
+        &context.wrapping_key_alias,
+        KeyProtection::StrongBox,
+    )?;
 
-/// State của một QUIC connection trong relay daemon.
-/// cert_gen_at_spawn bất biến — gắn với cert đã dùng khi handshake.
-pub struct RelayConnection {
-    quic_conn: quinn::Connection,
-    cert_gen_at_spawn: u64,
-    revocation_rx: watch::Receiver<CertRevocationEvent>,
-    // TLS session material: zeroize khi connection đóng
-    tls_session_key: ZeroizingSessionKey,
-}
-
-#[derive(ZeroizeOnDrop)]
-struct ZeroizingSessionKey(Vec<u8>);
-
-impl RelayConnection {
-    pub async fn run(mut self) {
-        loop {
-            tokio::select! {
-                // Nhánh 1: xử lý QUIC packet bình thường
-                result = self.quic_conn.accept_bi() => {
-                    match result {
-                        Ok((send, recv)) => {
-                            // Per-packet validation: check AtomicU64 trước khi process
-                            // Không cần lock — O(1) memory fence
-                            let current_gen = CURRENT_VALID_CERT_GEN.load(Ordering::Acquire);
-                            if current_gen != self.cert_gen_at_spawn {
-                                // Cert đã bị rotate bình thường (SIGHUP)
-                                // Connection này vẫn valid — tiếp tục với cert cũ
-                                // cho đến khi drain hoặc client reconnect tự nhiên
-                            }
-                            tokio::spawn(forward_stream(send, recv));
-                        }
-                        Err(e) => {
-                            tracing::debug!("QUIC connection closed: {}", e);
-                            break;
-                        }
-                    }
-                }
-
-                // Nhánh 2: watch channel — wakes NGAY KHI sender update
-                _ = self.revocation_rx.changed() => {
-                    let event = self.revocation_rx.borrow().clone();
-                    if let CertRevocationEvent::Revoked { old_gen, deadline_ms, .. } = event {
-                        if old_gen == self.cert_gen_at_spawn {
-                            // Cert của connection này bị revoke — bắt đầu drain
-                            self.drain_and_close(Duration::from_millis(deadline_ms)).await;
-                            break;
-                        }
-                        // old_gen khác cert_gen_at_spawn: revocation không liên quan
-                        // Connection này dùng cert khác — tiếp tục bình thường
-                    }
-                }
-            }
-        }
-        // ZeroizeOnDrop tự động ghi đè 0x00 lên tls_session_key khi self drop
-    }
-
-    /// Drain: dừng nhận stream mới, chờ stream cũ hoàn thành, force-close sau deadline.
-    /// "Gracefully" = không corrupt in-flight ciphertext đang forward về Core.
-    async fn drain_and_close(&mut self, deadline: Duration) {
-        tracing::warn!(
-            security_event = "CERT_REVOKE_DRAIN_START",
-            cert_gen = self.cert_gen_at_spawn,
-            deadline_ms = deadline.as_millis(),
-        );
-
-        // Phase 1: Đóng direction nhận — không accept stream mới
-        // Streams đang mở (in-flight) vẫn tiếp tục forward
-        self.quic_conn.close(
-            0u32.into(),
-            b"cert_revoked_draining",
-        );
-
-        // Phase 2: Chờ in-flight streams tự hoàn thành với deadline
-        // Forward stream rất nhanh (chỉ cần đẩy bytes sang Core)
-        // Thực tế: hầu hết drain xong trong <50ms
-        let drain_result = timeout(deadline, async {
-            // Tokio task tracker theo dõi active forward_stream tasks
-            // Khi tất cả forward tasks done -> drain complete
-            ACTIVE_FORWARD_TASKS.wait().await;
-        }).await;
-
-        match drain_result {
-            Ok(_) => tracing::info!(
-                security_event = "CERT_REVOKE_DRAIN_COMPLETE",
-                "All in-flight packets forwarded before deadline"
-            ),
-            Err(_) => tracing::warn!(
-                security_event = "CERT_REVOKE_DRAIN_TIMEOUT",
-                "Drain deadline exceeded — forcing close. Some in-flight packets may be lost."
-            ),
-        }
-
-        // Phase 3: ZeroizeOnDrop chạy tự động khi self drop sau break
-        // tls_session_key bị ghi đè 0x00 trước khi OS reclaim memory
-    }
+    // Step 3: ZeroizeOnDrop plaintext ngay sau wrap
+    drop(plaintext_key); // ZeroizeOnDrop triggered
+    Ok(wrapped)
 }
 ```
 
-### 18.3 [IMPLEMENTATION] Signal Handling — SIGUSR2 vs SIGHUP Phân biệt
-
-> **Nguyên tắc phân vai:** `SIGHUP` = rotate cert bình thường (zero-downtime, không force-close connection cũ). `SIGUSR2` = emergency revoke (force-close tất cả connections dùng cert cũ trong 500ms).
-
-```rust
-// core/src/relay/signal_handler.rs
-
-pub async fn run_signal_handler(broadcaster: Arc<CertRevocationBroadcaster>) {
-    use tokio::signal::unix::{signal, SignalKind};
-
-    let mut sighup  = signal(SignalKind::hangup()).unwrap();
-    let mut sigusr2 = signal(SignalKind::user_defined2()).unwrap();
-
-    loop {
-        tokio::select! {
-            _ = sighup.recv() => {
-                // Rotate bình thường: load cert mới, connections cũ tiếp tục
-                // Không broadcast revocation — connection cũ tự nhiên kết thúc
-                let old_gen = CURRENT_VALID_CERT_GEN.load(Ordering::SeqCst);
-                let new_gen = old_gen + 1;
-                reload_tls_config(new_gen).await;
-                CURRENT_VALID_CERT_GEN.store(new_gen, Ordering::SeqCst);
-                tracing::info!(event = "CERT_ROTATED", old_gen, new_gen);
-                // Không gọi broadcaster.emergency_revoke()
-            }
-
-            _ = sigusr2.recv() => {
-                // Emergency revoke: private key bị compromise
-                // PHẢI force-close tất cả connections dùng cert cũ
-                let old_gen = CURRENT_VALID_CERT_GEN.load(Ordering::SeqCst);
-                let new_gen = old_gen + 1;
-                reload_tls_config(new_gen).await;
-                // Broadcast → wake tất cả connection tasks đồng thời
-                broadcaster.emergency_revoke(old_gen, new_gen);
-                // 500ms sau: audit log confirm tất cả connections closed
-                tokio::time::sleep(Duration::from_millis(550)).await;
-                log_revocation_complete(old_gen).await;
-            }
-        }
-    }
-}
+```markdown
+**Invariant:** Plaintext key window tồn tại < 1ms (derive → wrap → zeroize đồng bộ, không await).
+Doze kill chỉ có thể xảy ra trước hoặc sau window này — không thể vào giữa.
 ```
 
-### 18.4 [SECURITY] Budget Phân Tích — 500ms Deadline
+---
 
-| Phase | Cơ chế | Thời gian |
+##### EDIT C-06
+
+```yaml
+edit_id:       "C-06"
+conflict_id:   "NI-02"
+target_file:   "Core_Spec.md"
+target_section: "§5.4 Hybrid PQ-KEM — sau đoạn 'Survival Mesh Fragmentation'"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append paragraph:**
+
+```markdown
+**BLE Channel Disambiguation — ML-KEM Key Exchange:**
+
+> ⚠️ **Quan trọng:** ML-KEM key exchange **KHÔNG** sử dụng BLE Advertising channel (31-byte beacon).
+
+| BLE Channel | MTU | Mục đích trong TeraChat |
 |---|---|---|
-| Signal nhận + watch update | OS signal delivery + `watch::send()` | ~0ms |
-| Tokio scheduler wake tất cả tasks | Tokio runtime scheduling | 0-10ms |
-| Stop accepting new QUIC streams | `conn.close()` | ~1ms |
-| Drain in-flight streams (ciphertext forward) | Bytes đã buffered trong QUIC → Core | 10-100ms |
-| Force-close timeout | `tokio::time::timeout(450ms)` | 0-450ms |
-| `ZeroizeOnDrop` TLS session keys | SIMD ghi đè 0x00 | <2ms |
-| **Tổng worst case** | | **~453ms < 500ms** |
+| **Advertising (ADV_EXT_IND)** | 31 bytes | Peer discovery ONLY — `BLE_Stealth_Beacon` (§6.3) |
+| **GATT Connected (ATT MTU negotiated)** | 512 bytes | Data transfer — ML-KEM, CRDT events, key material |
 
-- ☁️ **Audit Log Entry (Ed25519 signed):** Mỗi `CERT_EMERGENCY_REVOKED` event được ghi vào append-only audit log với: `{event_type, old_gen, new_gen, timestamp_hlc, connections_at_revoke: u32, connections_drained: u32, connections_force_closed: u32, relay_node_id}`, ký bằng relay node's `DeviceIdentityKey`.
+ML-KEM Kyber768 payload (~1.18KB) sử dụng **BLE GATT connected mode** với RaptorQ FEC
+fragmentation (RFC 6330) thành các fragments ≤ 400 bytes để đảm bảo reliable delivery
+qua GATT ATT MTU 512 bytes.
 
----
-
-## 19. [SECURITY] [IMPLEMENTATION] EMDP Zero-Loss Architecture — Client-Side Journal + Mesh Courier
-
-> **Quyết định kiến trúc: KHÔNG dùng VPS-side EMDP journal.** Ba lý do không thể bỏ qua:
->
-> 1. Vi phạm stateless invariant của VPS Relay Tier (→ §16.1). Thêm state vào VPS = tăng attack surface, phức tạp hóa ops.
-> 2. Metadata leakage không thể ngăn: dù payload E2EE, traffic pattern "VPS đang buffer N entries" tiết lộ thời điểm failover và volume EMDP operations cho adversary quan sát network.
-> 3. EMDP là low-frequency operation (device recovery scenario, ~1 lần/tháng/user) — không cần buffering optimization. Cost của VPS journal không tương xứng với lợi ích.
->
-> **Giải pháp đúng:** Client đã có `hot_dag.db` với pattern `PENDING_RELAY` cho outgoing messages. EMDP_Journal là một table trong cùng database, cùng pattern, cùng SQLCipher protection.
-
-### 19.1 [IMPLEMENTATION] EMDP_Journal Schema
-
-```sql
--- Thêm vào hot_dag.db migration v2
-
-CREATE TABLE IF NOT EXISTS emdp_journal (
-    tx_id           TEXT PRIMARY KEY,           -- UUID v7 (monotonic, sortable)
-    operation_type  TEXT NOT NULL,              -- 'KEY_ESCROW_SHARD' | 'EPOCH_RE_INDUCTION' | 'DEVICE_REVOKE'
-    payload_enc     BLOB NOT NULL,              -- AES-256-GCM(DeviceIdentityKey-derived, serialized_emdp_op)
-    recipient_device_pubkey BLOB NOT NULL,      -- Curve25519 pubkey của device nhận Welcome_Packet
-    hlc_created     TEXT NOT NULL,              -- HLC timestamp khi tạo
-    hlc_expires     TEXT NOT NULL,              -- HLC TTL: 30 ngày cho GovMilitary, 72h cho Standard
-    status          TEXT NOT NULL DEFAULT 'PENDING_REPLAY',
-                                                -- 'PENDING_REPLAY' | 'PENDING_MESH' | 'REPLAYED' | 'EXPIRED'
-    ed25519_sig     BLOB NOT NULL,              -- Sign(DeviceIdentityKey, hash(tx_id || payload_enc || hlc_created))
-    retry_count     INTEGER NOT NULL DEFAULT 0,
-    last_attempt_hlc TEXT
-);
-
--- Index cho replay order và TTL cleanup
-CREATE INDEX IF NOT EXISTS idx_emdp_status_hlc ON emdp_journal(status, hlc_created);
-CREATE INDEX IF NOT EXISTS idx_emdp_expires    ON emdp_journal(hlc_expires, status);
-```
-
-### 19.2 [IMPLEMENTATION] Write Path — Ghi Journal khi Core Unreachable
-
-```rust
-// core/src/emdp/journal.rs
-
-pub struct EmdpJournal<'db> {
-    db: &'db SqlCipherConnection,
-}
-
-impl EmdpJournal<'_> {
-    /// Gọi khi Core tunnel circuit breaker đang OPEN
-    /// và có EMDP operation cần thực hiện.
-    pub fn enqueue(
-        &self,
-        op: EmdpOperation,
-        recipient_pubkey: &Curve25519PublicKey,
-        device_key: &DeviceIdentityKey,  // Never leaves Secure Enclave — only used for KDF + sign
-        ttl_profile: OfflineTTLProfile,
-    ) -> Result<Uuid, EmdpError> {
-        let tx_id = Uuid::now_v7();
-        let hlc_now = HybridLogicalClock::now();
-        let hlc_expires = hlc_now + ttl_profile.emdp_ttl_duration();
-
-        // Derive encryption key từ DeviceIdentityKey — không lưu key, chỉ dùng để encrypt
-        // Secure Enclave thực hiện KDF operation, không export private key
-        let enc_key = secure_enclave::derive_key(
-            device_key,
-            &format!("emdp-journal-{}", tx_id),
-        )?;
-        let payload_enc = aes_256_gcm_encrypt(&enc_key, &op.serialize()?)?;
-        enc_key.zeroize(); // ZeroizeOnDrop — key tồn tại < 1ms
-
-        // Sign để chống tamper khi replay
-        let sig_input = blake3::hash(&[
-            tx_id.as_bytes(),
-            &payload_enc,
-            hlc_now.as_bytes(),
-        ].concat());
-        let ed25519_sig = secure_enclave::sign(device_key, sig_input.as_bytes())?;
-
-        self.db.execute(
-            "INSERT INTO emdp_journal
-             (tx_id, operation_type, payload_enc, recipient_device_pubkey,
-              hlc_created, hlc_expires, status, ed25519_sig)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'PENDING_REPLAY', ?7)",
-            rusqlite::params![
-                tx_id.to_string(),
-                op.type_name(),
-                payload_enc,
-                recipient_pubkey.as_bytes(),
-                hlc_now.to_string(),
-                hlc_expires.to_string(),
-                ed25519_sig.as_bytes(),
-            ],
-        )?;
-
-        tracing::info!(
-            event = "EMDP_JOURNAL_ENQUEUED",
-            tx_id = %tx_id,
-            op_type = op.type_name(),
-            expires = %hlc_expires,
-        );
-        Ok(tx_id)
-    }
-}
-```
-
-### 19.3 [IMPLEMENTATION] Replay Path — Gửi lại khi Core Kết nối lại
-
-```rust
-// core/src/emdp/replay.rs
-
-/// Chạy tự động khi NetworkEvent::RelayCircuitClosed được emit.
-/// Replay theo thứ tự HLC để đảm bảo causality.
-pub async fn replay_pending_journal(
-    db: &SqlCipherConnection,
-    core_client: &CoreRelayClient,
-    device_key: &DeviceIdentityKey,
-) -> Result<ReplayReport, EmdpError> {
-    let pending = db.query_map(
-        "SELECT tx_id, operation_type, payload_enc, recipient_device_pubkey,
-                hlc_created, ed25519_sig
-         FROM emdp_journal
-         WHERE status = 'PENDING_REPLAY'
-           AND hlc_expires > ?1
-         ORDER BY hlc_created ASC",
-        rusqlite::params![HybridLogicalClock::now().to_string()],
-        EmdpJournalRow::from_row,
-    )?;
-
-    let mut report = ReplayReport::default();
-
-    for row in pending {
-        // Bước 1: Verify Ed25519 signature trước khi làm bất cứ điều gì
-        let sig_input = blake3::hash(&[
-            row.tx_id.as_bytes(),
-            &row.payload_enc,
-            row.hlc_created.as_bytes(),
-        ].concat());
-        if !device_key.verify_signature(&row.ed25519_sig, sig_input.as_bytes())? {
-            // Entry bị tamper — đánh dấu FAILED và audit log
-            db.execute("UPDATE emdp_journal SET status='TAMPERED' WHERE tx_id=?1",
-                rusqlite::params![row.tx_id])?;
-            report.tampered += 1;
-            continue;
-        }
-
-        // Bước 2: Decrypt payload — key tồn tại trong RAM < 5ms
-        let dec_key = secure_enclave::derive_key(device_key, &format!("emdp-journal-{}", row.tx_id))?;
-        let plaintext = {
-            let result = aes_256_gcm_decrypt(&dec_key, &row.payload_enc)?;
-            dec_key.zeroize();
-            result
-        }; // ZeroizeOnDrop khi plaintext ra khỏi scope sau khi gửi
-
-        // Bước 3: Gửi về Core qua tunnel
-        match core_client.send_emdp_operation(&plaintext).await {
-            Ok(ack) => {
-                // Bước 4: Cập nhật status + ZeroizeOnDrop plaintext
-                db.execute(
-                    "UPDATE emdp_journal SET status='REPLAYED', last_attempt_hlc=?2 WHERE tx_id=?1",
-                    rusqlite::params![row.tx_id, HybridLogicalClock::now().to_string()],
-                )?;
-                plaintext.zeroize(); // Explicit: không để plaintext tồn tại sau ACK
-                report.replayed += 1;
-            }
-            Err(e) => {
-                db.execute(
-                    "UPDATE emdp_journal SET retry_count=retry_count+1, last_attempt_hlc=?2 WHERE tx_id=?1",
-                    rusqlite::params![row.tx_id, HybridLogicalClock::now().to_string()],
-                )?;
-                plaintext.zeroize();
-                report.failed += 1;
-                tracing::warn!(event = "EMDP_REPLAY_FAILED", tx_id = %row.tx_id, error = %e);
-            }
-        }
-    }
-    Ok(report)
-}
-```
-
-### 19.4 [SECURITY] [IMPLEMENTATION] Mesh Courier — GovMilitary Fallback
-
-> **Bài toán:** Core unreachable kéo dài (>72h, ví dụ: natural disaster, siege scenario). Client A cần thực hiện EMDP Key Escrow nhưng cả Core lẫn Internet đều không khả dụng. Tuy nhiên, Client B trong cùng khu vực VẪN có đường kết nối về Core qua đường truyền khác (satellite, backup ISP).
-
-```text
-Client A (Core unreachable)
-    │
-    │ EMDP op in emdp_journal (status=PENDING_MESH)
-    │
-    │ BLE/Wi-Fi Direct — Survival Mesh (§5.2)
-    ▼
-Client B (has Core connectivity)
-    │ Nhận EmdpMeshCourierPacket — verify signature
-    │ Forward về Core thay cho A
-    ▼
-Dedicated Core
-    │ ACK → relay qua Mesh về A
-    ▼
-Client A: update status='REPLAYED', ZeroizeOnDrop
-```
-
-- 📱💻🖥️ **EmdpMeshCourierPacket:** Đây là một CRDT event đặc biệt, được xử lý qua Survival Mesh bình thường. Packet chứa: `{tx_id, payload_enc_for_core, recipient_pubkey, courier_ed25519_sig}`. `payload_enc_for_core` được mã hóa bằng Core's public key (không thể đọc bởi courier). Courier B chỉ forward blob — không thể đọc nội dung.
-- 📱💻🖥️ **Courier Accountability:** Mỗi lần một device làm courier, event được ghi vào CRDT audit log với chữ ký Ed25519 của courier device. Non-repudiation cho cả A (requester) và B (courier).
-- 📱 **iOS/Android Lifecycle Safe:** `PENDING_MESH` operations được giữ trong `emdp_journal` qua các app restarts. Không có in-memory state cần bảo tồn — chỉ cần `hot_dag.db` survive.
-
-### 19.5 [IMPLEMENTATION] TTL GC và EXPIRED Handling
-
-```rust
-// Chạy trong BGProcessingTask (iOS) / WorkManager (Android) — hàng ngày
-pub fn garbage_collect_expired_emdp(db: &SqlCipherConnection) -> Result<usize> {
-    let now = HybridLogicalClock::now().to_string();
-    // Expired entries: không thể replay, không thể mesh courier
-    // Mark EXPIRED — không DELETE vật lý (audit trail yêu cầu)
-    let affected = db.execute(
-        "UPDATE emdp_journal SET status='EXPIRED'
-         WHERE status IN ('PENDING_REPLAY', 'PENDING_MESH')
-           AND hlc_expires < ?1",
-        rusqlite::params![now],
-    )?;
-    if affected > 0 {
-        tracing::warn!(
-            event = "EMDP_JOURNAL_ENTRIES_EXPIRED",
-            count = affected,
-            "EMDP operations expired before Core reconnection. Manual recovery required."
-        );
-        // Emit SecurityEvent::EmdpExpired → Admin Console alert
-    }
-    Ok(affected)
-}
+**Prohibit:** Không bao giờ fragment PQ key material vào ADV_EXT_IND PDU frames.
+Beacon frames chỉ carry HMAC commitment để peer discovery — không carry bất kỳ key bytes nào.
+Cross-reference: → §6.3 BLE Stealth Beaconing
 ```
 
 ---
 
-## 20. [SECURITY] [ARCHITECTURE] [IMPLEMENTATION] Sovereign Core Direct-Access Defense Protocol
+##### EDIT C-07
 
-> **Context:** Khi enterprise/gov client triển khai full sovereign mode (không có VPS Relay Tier), client devices kết nối thẳng đến Dedicated Core Server. Toàn bộ DDoS shield, IP masking của VPS tier biến mất. Spec này định nghĩa các lớp bảo vệ được thiết kế cho bare-metal dedicated server — không phụ thuộc cloud infrastructure.
->
-> **Lưu ý về eBPF/XDP:** `CHANGELOG v0.3.6` deprecated eBPF/XDP để giải quyết deployment bottleneck trên **shared VPS** (không có `CAP_SYS_ADMIN`, noisy neighbor, shared NIC). Trên **dedicated bare-metal sovereign server** do enterprise sở hữu, eBPF/XDP là valid và được RE-ENABLE trong spec này. Hai trường hợp hoàn toàn khác nhau.
-
-### 20.1 [ARCHITECTURE] Defense-in-Depth: 4 Lớp
-
-```text
-Internet / Client Devices
-         │
-         ▼
-[Lớp 1] XDP Hook tại NIC driver — drop trước kernel TCP/IP stack
-         │ Chỉ cho qua: QUIC/UDP từ IP có valid Proof-of-Work
-         ▼
-[Lớp 2] mTLS Client Certificate — cryptographic allowlist
-         │ Chỉ cho qua: DeviceIdentityKey cert ký bởi Enterprise_CA (trong HSM)
-         ▼
-[Lớp 3] Tokio Application Rate Limiter — per-device token bucket
-         │ Ngăn enrolled-but-compromised device flood
-         ▼
-[Lớp 4] QUIC Connection Migration Validator — chống IP spoofing
-         │ Validate path challenge bằng DeviceIdentityKey signature
-         ▼
-Dedicated Core — hot_dag.db / MLS / KMS
+```yaml
+edit_id:       "C-07"
+conflict_id:   "NI-02"
+target_file:   "Core_Spec.md"
+target_section: "§6.3 BLE Stealth Beaconing (hoặc §F-12 Mesh) — sau mô tả 31-byte PDU format"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
 ```
 
-### 20.2 [IMPLEMENTATION] Lớp 1 — eBPF/XDP Packet Filter (Re-enabled cho Sovereign)
+**Append:**
 
-> **Điều kiện bật:** `config.yaml` có `deployment_mode: "sovereign_direct"`. Relay mode (có VPS) không cần XDP vì VPS đã là shield.
+```markdown
+**Beacon Content Restriction (HARD RULE):**
+- ✅ Beacon carries: `HMAC(R, PK_identity)[0:8]` — identity commitment (8 bytes)
+- ✅ Beacon carries: `slot_rotation_counter` — replay protection (4 bytes)
+- ✅ Beacon carries: `capability_flags` — mesh role indicators (2 bytes)
+- ❌ **PROHIBITED:** Key material, PQ keys, MLS epoch data, CRDT payloads trong beacon frame.
 
-```c
-// bpf/xdp_quic_guard.c
-// Biên dịch: clang -O2 -target bpf -c xdp_quic_guard.c -o xdp_quic_guard.o
-// Load: ip link set dev eth0 xdp obj xdp_quic_guard.o
+Mọi key exchange (ML-KEM, X25519, MLS KeyPackage) đi qua **BLE GATT connected channel**
+sau khi peer discovery hoàn tất qua beacon. Beacon là discovery-only.
+Cross-reference: → §5.4 Hybrid PQ-KEM, BLE Channel Disambiguation
+```
 
-#include <linux/bpf.h>
-#include <linux/if_ether.h>
-#include <linux/ip.h>
-#include <linux/udp.h>
-#include <bpf/bpf_helpers.h>
+---
 
-// Map: IP → token bucket state (refill rate, current tokens)
-struct {
-    __uint(type, BPF_MAP_TYPE_LRU_HASH);
-    __uint(max_entries, 65536); // Tối đa 65536 unique source IPs
-    __type(key, __u32);         // Source IP (IPv4)
-    __type(value, struct token_bucket);
-} ip_rate_map SEC(".maps");
+##### EDIT C-08
 
-// Map: IP → deny (True/False) — admin-managed denylist
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __uint(max_entries, 4096);
-    __type(key, __u32);
-    __type(value, __u8);
-} ip_denylist SEC(".maps");
+```yaml
+edit_id:       "C-08"
+conflict_id:   "BL-02"
+target_file:   "Core_Spec.md"
+target_section: "§6.7 EMDP (hoặc §12 EMDP) — sau constraints 'KHÔNG merge DAG, KHÔNG rotate MLS Epoch'"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
 
-struct token_bucket {
-    __u64 last_refill_ns;
-    __u32 tokens;
-    __u32 refill_rate; // tokens per second
-};
+**Append EMDP Shun Exception Protocol:**
 
-SEC("xdp")
-int xdp_quic_guard(struct xdp_md *ctx) {
-    // 1. Parse Ethernet + IP + UDP
-    // (standard BPF parsing — elided for brevity)
-    __u32 src_ip = iph->saddr;
+```markdown
+#### EMDP Shun Exception Protocol
 
-    // 2. Bogon space validation — drop RFC1918 spoofed packets từ Internet
-    // (không áp dụng nếu sovereign server trong private network)
-    if (is_bogon(src_ip) && !is_internal_subnet(src_ip)) {
-        return XDP_DROP;
-    }
+Trong điều kiện bình thường, EMDP prohibit MLS Epoch rotation. Exception bắt buộc
+khi Byzantine Shun xảy ra trong all-iOS EMDP mesh:
 
-    // 3. Admin denylist — drop ngay tại NIC
-    __u8 *denied = bpf_map_lookup_elem(&ip_denylist, &src_ip);
-    if (denied && *denied) return XDP_DROP;
+```
 
-    // 4. Token bucket rate limiting — 1000 packets/s per IP (configurable)
-    struct token_bucket *bucket = bpf_map_lookup_elem(&ip_rate_map, &src_ip);
-    if (!bucket) {
-        struct token_bucket new_bucket = {
-            .last_refill_ns = bpf_ktime_get_ns(),
-            .tokens = 1000,
-            .refill_rate = 1000,
-        };
-        bpf_map_update_elem(&ip_rate_map, &src_ip, &new_bucket, BPF_ANY);
-    } else {
-        // Refill tokens theo thời gian đã qua
-        __u64 now = bpf_ktime_get_ns();
-        __u64 elapsed_ns = now - bucket->last_refill_ns;
-        __u32 new_tokens = (elapsed_ns * bucket->refill_rate) / 1000000000ULL;
-        bucket->tokens = min(bucket->tokens + new_tokens, bucket->refill_rate);
-        bucket->last_refill_ns = now;
-
-        if (bucket->tokens == 0) return XDP_DROP; // Rate limit exceeded
-        bucket->tokens--;
-    }
-
-    // 5. Pass sang kernel — mTLS sẽ xử lý tiếp
-    return XDP_PASS;
+```
+EMDP_SHUN_EXCEPTION = {
+    trigger:      Shun Record nhận được trong EMDP active state,
+    condition_A:  poisoned_node != tactical_relay → Proceed với limited re-key,
+    condition_B:  poisoned_node == tactical_relay → Emergency handover IMMEDIATELY
 }
 ```
 
-- 🗄️ **Admin Denylist Management:** Rust Core quản lý `ip_denylist` BPF map qua `libbpf-rs`. Khi phát hiện anomaly tại Lớp 3 hoặc 4, tự động thêm IP vào denylist với TTL 15 phút.
-- 🗄️ **Throughput:** XDP drop trước kernel TCP/IP stack → ~10-15M packets/s trên NIC 10Gbps. Volumetric DDoS dưới 10Gbps bị absorb tại NIC mà không ảnh hưởng CPU hay memory của Rust Core.
+```markdown
+**Case A — Poisoned node là regular member (không phải Tactical Relay):**
+1. Loại poisoned node khỏi EMDP text buffer ngay lập tức.
+2. Derive temporary group key:
+   `TempGroupKey = HKDF(EmdpKeyEscrow.relay_session_key, "shun-rekey" || poisoned_node_id || HLC_now)`.
+   - ⚠️ Security note: Nếu poisoned node đã nhận `EmdpKeyEscrow` trước khi bị Shun,
+     `TempGroupKey` này bị tainted. Accepted risk: (a) TTL còn tối đa 60 phút,
+     (b) EMDP chỉ carry text messages, không carry key material.
+     Desktop sẽ re-key hoàn toàn khi reconnect.
+3. Subsequent messages encrypt bằng `TempGroupKey`.
+4. Log `EmdpShunEvent { poisoned_node_id, hlc, tainted_escrow: bool }` vào local append buffer.
 
-### 20.3 [SECURITY] [IMPLEMENTATION] Lớp 2 — mTLS Cryptographic Allowlist
+**Case B — Tactical Relay bị Shun:**
+1. Terminate EMDP session NGAY LẬP TỨC (không chờ TTL).
+2. Trigger new Tactical Relay election từ iOS nodes còn lại.
+3. Nếu không đủ nodes (< 2 iOS với battery > 20%): enter `CAUSAL_FREEZE` mode.
+4. Emit `CoreSignal::EmdpTerminated { reason: TacticalRelayCompromised }`.
 
-> **Đây là primary defense quan trọng nhất trong sovereign mode.** Kẻ tấn công không có `DeviceIdentityKey` cert được ký bởi `Enterprise_CA` (stored in HSM FIPS 140-3) không thể hoàn thành QUIC/TLS handshake — bị reject trước khi bất kỳ byte application data nào được xử lý.
+**Invariant — Post-Desktop-Reconnect:**
+1. Desktop kiểm tra `tainted_escrow` flag trong EMDP log.
+2. Nếu `true`: treat toàn bộ EMDP window messages như potentially compromised.
+3. Full MLS Epoch rotation bắt buộc trước khi merge EMDP messages vào main DAG.
+```
+
+---
+
+##### EDIT C-09
+
+```yaml
+edit_id:       "C-09"
+conflict_id:   "NI-03"
+target_file:   "Core_Spec.md"
+target_section: "§7.1 DAG Storage (hoặc §F-14 CRDT) — đoạn 'VACUUM INTO hot_dag_tmp.db'"
+change_type:   "Replace"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Tìm:** Đoạn pseudocode/comment về `VACUUM INTO hot_dag_tmp.db` + atomic rename.
+
+**Thay bằng:**
 
 ```rust
-// core/src/sovereign/mtls_verifier.rs
+/// SAFE VACUUM pattern cho hot_dag.db — tránh concurrent write race condition.
+///
+/// Prefer WAL checkpoint thay vì VACUUM cho append-only DB:
+/// hot_dag.db không có deleted rows (INV-08: append-only),
+/// nên VACUUM chỉ có ích khi WAL file quá lớn.
+pub async fn compact_hot_dag(db: &SqlitePool) -> Result<(), StorageError> {
+    // Option A (PREFERRED): WAL checkpoint — không cần exclusive lock
+    db.execute("PRAGMA wal_checkpoint(TRUNCATE)").await?;
 
-use rustls::{ServerConfig, server::ClientCertVerifier};
+    // Option B: Nếu VACUUM INTO thực sự cần (e.g., fragmentation analysis):
+    // BẮT BUỘC acquire exclusive lock trước khi VACUUM
+    // db.execute("BEGIN EXCLUSIVE TRANSACTION").await?;
+    // db.execute("VACUUM INTO 'hot_dag_tmp.db'").await?;
+    // db.execute("COMMIT").await?;
+    // tokio::fs::rename("hot_dag_tmp.db", "hot_dag.db").await?;
 
-pub struct EnterpriseDeviceCertVerifier {
-    /// Enterprise CA cert — loaded từ HSM, verify bằng SPKI pin
-    enterprise_ca: CertificateDer<'static>,
-    /// CRL cache — update 4h một lần hoặc khi nhận GOSSIP_CRL event
-    crl_cache: Arc<RwLock<RevocationList>>,
-}
-
-impl ClientCertVerifier for EnterpriseDeviceCertVerifier {
-    fn verify_client_cert(
-        &self,
-        end_entity: &CertificateDer,
-        _intermediates: &[CertificateDer],
-        _now: UnixTime,
-    ) -> Result<ClientCertVerified, rustls::Error> {
-        // Bước 1: Verify chain về Enterprise_CA (không phải public CA)
-        let cert = parse_cert(end_entity)?;
-        verify_cert_chain(&cert, &self.enterprise_ca)?;
-
-        // Bước 2: Check CRL — device có bị revoke không?
-        let crl = self.crl_cache.read();
-        if crl.is_revoked(cert.serial_number()) {
-            tracing::warn!(
-                security_event = "DEVICE_CERT_REVOKED_AT_HANDSHAKE",
-                serial = %cert.serial_number(),
-            );
-            return Err(rustls::Error::General("device certificate revoked".into()));
-        }
-
-        // Bước 3: Verify DeviceIdentityKey binding
-        // Cert phải chứa extension OID 1.3.6.1.4.1.99999.1 (TeraChat DeviceID)
-        // giá trị = Blake3(DeviceIdentityKey.public_bytes)
-        let device_id_ext = cert.extension(TERACHAT_DEVICE_ID_OID)
-            .ok_or(rustls::Error::General("missing device ID extension".into()))?;
-        // Verify binding này trong Core — đảm bảo cert khớp với device đã enroll
-        verify_device_id_binding(device_id_ext)?;
-
-        Ok(ClientCertVerified::assertion())
-    }
-}
-
-/// Tích hợp vào quinn (QUIC library)
-pub fn build_sovereign_server_config(
-    verifier: Arc<EnterpriseDeviceCertVerifier>,
-    server_cert: CertificateDer,
-    server_key: PrivateKeyDer,
-) -> Result<ServerConfig> {
-    ServerConfig::builder()
-        .with_client_cert_verifier(verifier)  // Require client cert — no anonymous
-        .with_single_cert(vec![server_cert], server_key)
-}
-```
-
-- 🗄️ **CRL Update trong Sovereign Air-Gapped:** CRL được push từ HSM Admin Console vào Core qua authenticated IPC. Không cần Internet OCSP. Admin HSM ký CRL mới với `Enterprise_CA` private key — Core verify signature trước khi update `crl_cache`.
-- 🗄️ **Enrollment:** New device enrollment yêu cầu Admin approve bằng YubiKey + Biometric tại HSM terminal. `DeviceIdentityKey` cert được HSM ký, deliver về device qua QR Key Exchange (→ Function.md §1 Offline Recovery Flow). Kẻ tấn công không thể self-enroll.
-
-### 20.4 [IMPLEMENTATION] Lớp 3 — Tokio Application Rate Limiter (Sovereign Mode Config)
-
-```rust
-// core/src/sovereign/rate_limiter.rs
-// Extends §3.5 Lightweight Micro-Core Relay với sovereign-specific config
-
-pub struct SovereignRateLimiter {
-    // Per-DeviceIdentityKey token bucket (không phải per-IP — mTLS đã verify identity)
-    device_buckets: DashMap<DeviceId, TokenBucket>,
-    config: SovereignRateLimitConfig,
-}
-
-pub struct SovereignRateLimitConfig {
-    // Enrolled device: generous limit
-    enrolled_device_rps: u32,       // default: 500 requests/s
-    enrolled_device_burst: u32,     // default: 2000 burst
-
-    // Anomaly threshold: enrolled nhưng behaving suspicious
-    anomaly_rps_threshold: u32,     // default: 1000 rps trong 10s window
-    anomaly_action: AnomalyAction,  // ADD_TO_XDP_DENYLIST | LOG_ONLY
-
-    // Emergency: tất cả device limits được tighten khi phát hiện attack
-    emergency_mode_rps: u32,        // default: 100 rps
-    emergency_mode_trigger: u32,    // default: 5 devices hit anomaly trong 60s
-}
-
-impl SovereignRateLimiter {
-    /// Gọi sau mTLS verify, trước khi route QUIC stream về Core
-    pub fn check_and_consume(
-        &self,
-        device_id: &DeviceId,
-        now: Instant,
-    ) -> Result<(), RateLimitError> {
-        let mut bucket = self.device_buckets.entry(device_id.clone())
-            .or_insert_with(|| TokenBucket::new(self.config.enrolled_device_rps));
-
-        if !bucket.try_consume(1, now) {
-            // Rate limit hit — log và optionally add to XDP denylist
-            self.handle_rate_limit_exceeded(device_id);
-            return Err(RateLimitError::Throttled);
-        }
-
-        // Anomaly detection: moving average RPS
-        if bucket.current_rps() > self.config.anomaly_rps_threshold as f64 {
-            self.trigger_anomaly_action(device_id);
-        }
-
-        Ok(())
-    }
-}
-```
-
-### 20.5 [SECURITY] [IMPLEMENTATION] Lớp 4 — QUIC Connection Migration Validation
-
-> **Attack surface:** QUIC Connection Migration cho phép client đổi IP/port mà không teardown connection (ví dụ: WiFi → 4G). Kẻ tấn công có thể gửi PATH_CHALLENGE với IP giả mạo để hijack connection của victim device.
-
-```rust
-// core/src/sovereign/quic_migration_guard.rs
-
-/// Gắn vào quinn connection event handler
-pub async fn validate_migration(
-    conn: &quinn::Connection,
-    new_path: SocketAddr,
-    device_key: &DevicePublicKey,
-    pending_challenge: &[u8; 8], // PATH_CHALLENGE data
-) -> Result<(), MigrationError> {
-    // Bước 1: Gửi PATH_CHALLENGE tới new_path
-    // (quinn tự động làm theo RFC 9000 §9.3)
-
-    // Bước 2: Yêu cầu device ký PATH_CHALLENGE bằng DeviceIdentityKey
-    // Đây là extension của TeraChat trên top of standard QUIC migration
-    let challenge_sig_request = ChallengeSignRequest {
-        challenge_bytes: *pending_challenge,
-        new_path_addr: new_path,
-        hlc_timestamp: HybridLogicalClock::now(),
-    };
-    // Gửi qua existing QUIC stream (vẫn active trên old path)
-    send_migration_sig_request(conn, &challenge_sig_request).await?;
-
-    // Bước 3: Nhận signature từ device
-    let sig_response = timeout(
-        Duration::from_millis(500),
-        recv_migration_sig_response(conn),
-    ).await??;
-
-    // Bước 4: Verify — chỉ DeviceIdentityKey thật mới ký được
-    device_key.verify_signature(
-        &sig_response.signature,
-        &challenge_sig_request.serialize(),
-    ).map_err(|_| {
-        tracing::warn!(
-            security_event = "QUIC_MIGRATION_SPOOFING_ATTEMPT",
-            claimed_new_path = %new_path,
-        );
-        MigrationError::InvalidSignature
-    })?;
-
-    // Bước 5: Verify địa chỉ mới không phải bogon/spoofed
-    if is_bogon_or_blocked(new_path.ip()) {
-        return Err(MigrationError::BlockedAddress);
-    }
-
-    tracing::info!(
-        event = "QUIC_MIGRATION_VALIDATED",
-        new_path = %new_path,
-        device_id = %device_key.device_id(),
-    );
     Ok(())
 }
 ```
 
-### 20.6 [ARCHITECTURE] Defense Matrix — Sovereign vs Hybrid Mode
-
-| Threat | Hybrid Mode (VPS tier có) | Sovereign Mode (direct connect) |
-|---|---|---|
-| Volumetric DDoS | VPS IP absorbs, Core ẩn | eBPF/XDP drop tại NIC (Lớp 1) |
-| Unauthenticated flood | VPS stateless forward | mTLS reject tại TLS handshake (Lớp 2) |
-| Enrolled device abuse | VPS Token Bucket | Tokio rate limiter (Lớp 3) |
-| QUIC migration hijack | Minimal risk (VPS shield) | Challenge-sign validation (Lớp 4) |
-| Core IP enumeration | Core IP ẩn hoàn toàn | Admin network policy: QUIC port 443 chỉ từ known subnets |
-| BGP hijacking | Anycast mitigates | Enterprise BGP-sec (out-of-scope TeraChat) |
-
-- 🗄️ **Network Policy khuyến nghị:** Trên sovereign server, `iptables`/`nftables` rule: chỉ accept UDP/443 (QUIC) từ IP range của employee network (VPN, office, known mobile APN). Không accept từ Internet chung. XDP handle traffic từ authorized range — DDoS từ ngoài range bị firewall block trước khi chạm NIC rule.
-- 🗄️ **Deployment flag:** `config.yaml`:
-
-  ```yaml
-  deployment_mode: "sovereign_direct"  # Bật eBPF/XDP, bắt buộc mTLS client cert
-  xdp_enabled: true                    # Yêu cầu: dedicated server, CAP_SYS_ADMIN
-  mtls_require_device_cert: true       # KHÔNG tắt trong sovereign mode
-  rate_limit_config: "sovereign"       # Tighter limits so với relay mode
-  ```
-
-```
-
----
-
-## Nội dung bổ sung vào `Feature_Spec.md`
+**Append rule:**
 
 ```markdown
----
+**VACUUM INTO Locking Rule (bắt buộc):**
+Mọi `VACUUM INTO` operation trên `hot_dag.db` phải được bao bọc trong
+`BEGIN EXCLUSIVE TRANSACTION ... COMMIT` để prevent concurrent Tokio writer
+swap incomplete DB qua atomic `rename()`.
 
-## Mục Mới: Cert Revocation, EMDP Journal & Sovereign Defense — Client Behavior [SECURITY] [PLATFORM]
-
-### HYBRID-10: Cert Revocation — Client-Side Reconnection Protocol
-
-> **Client không biết về cert generation hay SIGUSR2.** Client chỉ thấy: connection bị đóng với QUIC error code `0x0` và message `cert_revoked_draining`. Spec này định nghĩa behavior của Lõi Rust trên client khi nhận disconnect này.
-
-- 📱💻🖥️ **Phân biệt QUIC disconnect types:**
-  ```rust
-  // core/src/relay/client_connection.rs
-  pub fn classify_disconnect(error: quinn::ConnectionError) -> DisconnectReason {
-      match error {
-          // Relay gửi close với message "cert_revoked_draining"
-          quinn::ConnectionError::ApplicationClosed(app_close)
-              if app_close.reason.as_ref() == b"cert_revoked_draining"
-          => DisconnectReason::CertRevocation,
-
-          // Relay gửi close với message "cert_revoked_draining" + code 0
-          quinn::ConnectionError::ApplicationClosed(app_close)
-              if app_close.reason.as_ref() == b"relay_core_unreachable"
-          => DisconnectReason::CircuitBreakerOpen,
-
-          // Mất kết nối thông thường
-          quinn::ConnectionError::TimedOut |
-          quinn::ConnectionError::Reset     => DisconnectReason::NetworkLoss,
-
-          _ => DisconnectReason::Unknown,
-      }
-  }
-  ```
-
-- 📱💻🖥️ **Reconnect behavior theo disconnect reason:**
-
-  ```rust
-  match classify_disconnect(err) {
-      DisconnectReason::CertRevocation => {
-          // Relay đang drain và load cert mới.
-          // Chờ 600ms (drain deadline 450ms + buffer) rồi reconnect với cert mới.
-          // SPKI pin sẽ được fetch fresh từ DNS TXT record.
-          tokio::time::sleep(Duration::from_millis(600)).await;
-          reconnect_with_pin_refresh().await;
-      }
-      DisconnectReason::CircuitBreakerOpen { retry_after_ms } => {
-          // Core unreachable — KHÔNG reconnect ngay, activate EMDP Journal
-          activate_emdp_journal_mode().await;
-          tokio::time::sleep(Duration::from_millis(retry_after_ms)).await;
-          try_reconnect().await;
-      }
-      DisconnectReason::NetworkLoss => {
-          // Standard ALPN fallback (§4.3 ALPN State Machine)
-          run_alpn_fallback().await;
-      }
-  }
-  ```
-
-- 📱💻🖥️ **SPKI Pin Refresh khi cert rotate:** Khi relay cert được rotate (SIGHUP bình thường), SPKI pin cũ vẫn valid trong grace period 7 ngày (→ §HYBRID-03). Khi cert bị revoke (SIGUSR2 emergency), pin mới được publish vào DNS TXT record `_terachat-pin.relay.<region>.terachat.io` bởi TeraChat Ops (ký Ed25519). Client fetch pin mới qua DoH sau khi reconnect.
-
-- 📱💻🖥️ **UI signal:** `DisconnectReason::CertRevocation` KHÔNG hiển thị error banner cho user — xảy ra và reconnect trong <1 giây, transparent. Nếu reconnect thất bại sau 3 lần → hiện banner amber "Đang kết nối lại..." như `CircuitBreakerOpen`.
-
-### HYBRID-11: EMDP_Journal — Client Platform Implementation
-
-> **Extension của §19 (Core_Spec.md):** Spec client-side cho từng platform.
-
-- 📱💻🖥️ **Trigger conditions — khi nào ghi journal:**
-
-  ```rust
-  // EMDP operation cần ghi journal nếu:
-  pub fn should_queue_to_journal(
-      relay_state: &RelayCircuitState,
-      op: &EmdpOperation,
-  ) -> bool {
-      matches!(relay_state, RelayCircuitState::Open | RelayCircuitState::HalfOpen)
-      // Không journal khi circuit CLOSED — gửi thẳng về Core
-  }
-  ```
-
-- 📱 **iOS — Journal persistence qua app restart:**
-  - `emdp_journal` nằm trong `hot_dag.db` (SQLCipher). File này có `NSFileProtectionCompleteUntilFirstUserAuthentication` — accessible sau unlock lần đầu dù app background.
-  - Replay trigger: `UIApplicationDidBecomeActiveNotification` + `NetworkEvent::RelayCircuitClosed`.
-  - Background replay: đăng ký `BGProcessingTaskRequest` với identifier `com.terachat.emdp-replay`. iOS schedule khi device idle + sạc.
-
-- 📱 **Android — Foreground Service cho replay:**
-
-  ```kotlin
-  // EMDP replay chạy trong WorkManager với constraint NetworkType.CONNECTED
-  val replayWork = OneTimeWorkRequestBuilder<EmdpReplayWorker>()
-      .setConstraints(Constraints.Builder()
-          .setRequiredNetworkType(NetworkType.CONNECTED)
-          .build())
-      .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-      .build()
-  WorkManager.getInstance(context).enqueueUniqueWork(
-      "emdp_replay",
-      ExistingWorkPolicy.KEEP,  // Không duplicate nếu đang chạy
-      replayWork
-  )
-  ```
-
-- 💻🖥️ **Desktop — Daemon-level replay:** `terachat-daemon` (§6.3 Desktop Native OS) xử lý EMDP replay độc lập với Tauri UI. Khi daemon detect tunnel reconnect, trigger replay ngay mà không cần UI mở.
-
-- 📱💻🖥️ **UI indicator cho EMDP pending state:**
-
-  ```
-  Trạng thái journal           → UI signal
-  ─────────────────────────────────────────
-  0 PENDING_REPLAY entries     → Không hiển thị gì
-  1-5 PENDING_REPLAY entries   → Dot nhỏ màu amber trên account avatar
-  >5 PENDING_REPLAY entries    → Banner amber: "X thao tác đang chờ đồng bộ"
-  EXPIRED entries xuất hiện    → Banner đỏ: "X thao tác hết hạn, cần Admin hỗ trợ"
-  ```
-
-- 📱💻🖥️ **Mesh Courier Request — UI flow:**
-  Khi `PENDING_MESH` entries tồn tại và có Mesh peer khả dụng:
-  1. Lõi Rust detect peer B có Core connectivity (qua Mesh heartbeat)
-  2. Hỏi user: modal "Yêu cầu [Tên thiết bị B] chuyển tiếp thao tác bảo mật về máy chủ?"
-  3. User approve → gửi `EmdpMeshCourierRequest` qua Survival Mesh
-  4. Khi ACK nhận được: update status 'REPLAYED', ZeroizeOnDrop, banner biến mất
-
-### HYBRID-12: Sovereign Mode — Client Detection & Adaptation
-
-> **Client tự phát hiện sovereign mode từ `config.yaml` hoặc MDM profile — không phải từ server signal.** Thay đổi behavior dựa trên detection.
-
-- 📱💻🖥️ **Sovereign Mode Detection:**
-
-  ```rust
-  pub enum DeploymentMode {
-      /// VPS Relay + Dedicated Core — cloud/hybrid
-      HybridCloud {
-          relay_endpoints: Vec<RelayEndpoint>,
-          spki_pins: HashMap<String, SpkiPin>,
-      },
-      /// Direct connect — enterprise sovereign on-premise
-      SovereignDirect {
-          core_endpoint: SocketAddr,
-          // mTLS: present DeviceIdentityKey cert trực tiếp cho Core
-          require_device_cert: bool,  // luôn true trong sovereign mode
-          // XDP protection ở server side — client không cần làm gì khác
-          // nhưng cần biết để disable relay-specific retry logic
-          xdp_server_side: bool,
-      },
-  }
-  ```
-
-- 📱💻🖥️ **mTLS Client Certificate Presentation (Sovereign Mode):**
-
-  Trong hybrid mode, client connect đến VPS relay — không cần present device cert (VPS không verify). Trong sovereign mode, client connect thẳng đến Core — Core REQUIRES client cert (Lớp 2 §20.3).
-
-  ```rust
-  // core/src/sovereign/client_tls.rs
-  pub fn build_sovereign_client_config(
-      device_cert: CertificateDer,
-      device_key_ref: SecureEnclaveKeyRef, // Key không rời Secure Enclave
-  ) -> Result<ClientConfig> {
-      // Sử dụng hardware-backed key signing — private key ở Secure Enclave/TPM
-      let signing_key = HardwareBackedSigningKey::new(device_key_ref);
-
-      ClientConfig::builder()
-          .with_root_certificates(enterprise_ca_store())
-          .with_client_auth_cert(vec![device_cert], signing_key)
-  }
-  ```
-
-- 📱 **iOS — Secure Enclave Key cho mTLS:** Trên iOS, `device_key_ref` là reference đến key trong Secure Enclave (không export raw bytes). TLS handshake yêu cầu biometric authentication lần đầu mỗi 12h (`kSecAccessControlBiometryCurrentSet`).
-
-- 📱 **Android — StrongBox Keymaster cho mTLS:** Tương tự — `device_key_ref` là `KeyStore.PrivateKey` từ StrongBox. TLS signing xảy ra trong StrongBox hardware.
-
-- 💻🖥️ **Desktop — TPM 2.0 NCrypt cho mTLS:** `NCryptSignHash` với `Microsoft Platform Crypto Provider`. Key bound với device TPM.
-
-- 📱💻🖥️ **QUIC Migration Validation — Client Side:**
-
-  Khi client thực hiện QUIC Connection Migration (đổi IP/port):
-
-  ```rust
-  // Nhận ChallengeSignRequest từ Core (§20.5)
-  pub async fn handle_migration_challenge(
-      request: ChallengeSignRequest,
-      device_key: &SecureEnclaveKeyRef,
-  ) -> Result<MigrationSigResponse> {
-      // Verify request hợp lệ: timestamp HLC trong 5s window
-      let age = HybridLogicalClock::now() - request.hlc_timestamp;
-      if age > Duration::from_secs(5) {
-          return Err(MigrationError::StaleChallenge);
-      }
-
-      // Ký bằng DeviceIdentityKey trong Secure Enclave
-      let signature = secure_enclave::sign(
-          device_key,
-          &request.serialize(),
-      )?;
-
-      Ok(MigrationSigResponse { signature })
-  }
-  ```
-
-- 📱💻🖥️ **Sovereign Mode UI Indicator:** Settings > Network > chế độ kết nối hiển thị badge **"Private (Sovereign)"** thay vì cloud endpoint. Admin Console hiển thị topology diagram xác nhận zero external hops. Không có UI thay đổi cho user thông thường — trải nghiệm giống hệt hybrid mode.
-
-- 📱💻🖥️ **Fallback khi mTLS cert expire trong Sovereign Mode:**
-
-  Trong hybrid mode, cert expire chỉ ảnh hưởng relay tunnel — client vẫn connect được (cert chỉ là identity proof cho relay). Trong sovereign mode, cert expire = client bị lock out khỏi Core.
-
-  ```rust
-  // Kiểm tra cert expiry mỗi 6h — emit warning sớm
-  pub fn check_device_cert_expiry(cert: &CertificateDer) -> CertExpiryStatus {
-      let days_remaining = cert_days_until_expiry(cert);
-      match days_remaining {
-          d if d < 0  => CertExpiryStatus::Expired,
-          d if d < 7  => CertExpiryStatus::Critical(d),  // Admin PHẢI renew
-          d if d < 30 => CertExpiryStatus::Warning(d),   // Nên renew
-          d           => CertExpiryStatus::Ok(d),
-      }
-  }
-  // Critical → Admin Console RSOD-style alert + block non-admin operations
-  // Warning  → Banner vàng: "Chứng chỉ thiết bị hết hạn sau X ngày. Liên hệ Admin."
-  ```
-
+**Ưu tiên:** Dùng `PRAGMA wal_checkpoint(TRUNCATE)` thay VACUUM cho append-only DB.
+Không có deleted rows để reclaim → WAL checkpoint hiệu quả hơn và không cần exclusive lock.
 ```
 
 ---
 
-## Bảng định vị — 3 giải pháp, 2 file, mapping đầy đủ
+##### EDIT C-10
 
-| Vấn đề | Core_Spec.md section | Feature_Spec.md section |
-|---|---|---|
-| Q1 — QUIC Cert Revocation <500ms | §18 — protocol, watch channel, drain state machine | HYBRID-10 — client disconnect classification, reconnect logic, UI |
-| Q2 — EMDP Zero-Loss (no VPS journal) | §19 — schema, write path, replay path, Mesh Courier, GC | HYBRID-11 — iOS/Android/Desktop trigger, Mesh courier UI flow |
-| Q3 — Sovereign Core Defense | §20 — eBPF XDP, mTLS verifier, rate limiter, QUIC migration guard | HYBRID-12 — client detection, cert presentation per-platform, migration challenge |
-Excellent. Now I have a thorough understanding of both the OpenClaw/NemoClaw analysis and all 8 TeraChat documents. Let me synthesize this into a comprehensive strategic response.
-
----
-
-# 🦀 TeraChat × OpenClaw × NemoClaw — Chief AI Architect Innovation Brief
-
-## Tổng quan Chiến lược: Điểm Hội tụ Lịch sử
-
-Sau khi đọc toàn bộ báo cáo phân tích, tôi nhận ra một điều: **TeraChat không cần "tích hợp" OpenClaw hay NemoClaw — TeraChat cần *hấp thụ* triết lý của cả hai và trở thành tầng điều phối tác tử duy nhất mà không ai khác trên thị trường có thể làm được.**
-
-OpenClaw giải quyết bài toán *linh hoạt*. NemoClaw giải quyết bài toán *kiểm soát*. TeraChat đã có sẵn cái mà cả hai thiếu: **kênh giao tiếp được mã hóa đầu cuối, mạng Mesh sinh tồn, và Hardware Root of Trust.** Đây là vũ khí chiến lược không thể sao chép.
-
----
-
-## 🔑 Key Ideas (Ý tưởng Cốt lõi)
-
-### Cluster A — Agentic Mesh: AI Agents chạy trên Survival Network
-
-- **Zero-Internet Agent Execution:** Tác tử AI hoạt động hoàn toàn trong mạng BLE/Wi-Fi Direct Mesh — không cần Cloud, không cần VPS. Khả năng này là **độc nhất vô nhị** trên thị trường. Không OpenClaw, không NemoClaw, không Slack AI, không Teams Copilot nào có thể làm điều này.
-- **Soul.md → Encrypted soul.db:** Thay vì file `soul.md` plaintext của OpenClaw, TeraChat lưu agent context trong `soul.db` — một SQLite được mã hóa AES-256-GCM bằng `Device_Key`, ZeroizeOnDrop, và đồng bộ qua CRDT DAG. Agent "nhớ" mọi thứ mà không rò rỉ ra ngoài.
-- **Tapp-Agent Fusion:** File `.tapp` không còn chỉ là "mini-app UI" — nó trở thành **autonomous agent** có vòng đời riêng. `.tapp` có thể chạy background tasks (cron jobs), watch triggers, và tự khởi tạo hành động mà không cần user `@mention`.
-
-### Cluster B — TeraShell: NemoClaw nhưng native trong Rust Core
-
-- **TeraShell = NemoClaw Done Right:** Thay vì Docker container của NemoClaw (cần 8GB RAM, Linux only, NVIDIA lock-in), TeraShell là một WASM Sandbox tích hợp sẵn trong Lõi Rust — chạy trên mọi platform (iOS, Android, Huawei, Desktop), không cần VM, không cần container.
-- **Policy-as-Code trong manifest.json:** Thay vì `openclaw-sandbox.yaml` của NemoClaw phải cấu hình thủ công, TeraShell biên dịch manifest `.tapp` thành OPA Rego rules tại publish time. Agent tự biết được phép làm gì.
-- **Hardware-Attested Agent Identity:** Mỗi tác tử chạy trong TeraShell được gắn một `Agent_DID` được ký bởi `DeviceIdentityKey` trong Secure Enclave. Không thể giả mạo agent, không thể replay agent session.
-
-### Cluster C — Multi-Agent Orchestration trong Chat
-
-- **Agent Conversation:** Thay vì chỉ user chat với AI, TeraChat cho phép **nhiều agent chat với nhau** trong một MLS group — mỗi agent là một MLS member với Epoch Key riêng. Human supervisor chỉ cần `@approve` hoặc `@reject` kết quả.
-- **Causal Agent Chain:** Dùng CRDT DAG để ghi lại toàn bộ chuỗi quyết định của multi-agent workflow. Mỗi action được ký Ed25519 — không thể phủ nhận, không thể rewrite lịch sử. Đây là **Non-Repudiation cho AI Actions** — thứ mà không một nền tảng nào có hiện nay.
-- **Blind Agent Execution:** Agent xử lý dữ liệu nhạy cảm mà không bao giờ thấy plaintext. Lõi Rust decrypt → mask PII → đưa vào agent context. Agent trả về kết quả → Lõi Rust de-tokenize → ghi vào DAG. Agent chỉ là một "black box xử lý" — Zero-Knowledge Agent Architecture.
-
-### Cluster D — Edge AI Native
-
-- **Survival Agent Mode:** Khi Internet mất, các tác tử không bị tắt — chúng chuyển sang **Mesh Agent Mode**, tiếp tục thực hiện tasks được cache sẵn, đồng bộ kết quả khi có kết nối trở lại qua CRDT merge.
-- **PicoClaw-inspired TeraAgent Nano:** Lấy cảm hứng từ PicoClaw (<10MB RAM), xây dựng **TeraAgent Nano** — một agent runtime <5MB viết thuần Rust, có thể chạy trên Raspberry Pi, industrial IoT gateway, hay băng thông satellite. Target: nhà máy, khu mỏ, tàu biển.
-- **NPU-Accelerated Local Inference:** Tận dụng Apple Neural Engine (iOS), Qualcomm Hexagon (Android), MediaTek APU — chạy mô hình SLM 7B tại biên với latency <100ms mà không cần GPU server.
-
----
-
-## 🏗️ Architecture Vision
-
+```yaml
+edit_id:       "C-10"
+conflict_id:   "NI-01"
+target_file:   "Core_Spec.md"
+target_section: "§9.2 Micro-Core Relay — ALPN Probe Learning pseudocode"
+change_type:   "Replace"
+sprint:        "Sprint1"
+status:        "TODO"
 ```
 
-╔══════════════════════════════════════════════════════════════════╗
-║              TERACHAT AGENTIC ARCHITECTURE v2.0                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  ┌─────────────────────────────────────────────────────────┐    ║
-║  │              AGENT ORCHESTRATION LAYER                   │    ║
-║  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │    ║
-║  │  │ Agent A  │  │ Agent B  │  │ Agent C  │  (MLS Members)│    ║
-║  │  │ DID:xxx  │  │ DID:yyy  │  │ DID:zzz  │              │    ║
-║  │  └────┬─────┘  └────┬─────┘  └────┬─────┘              │    ║
-║  │       └──────────────┴──────────────┘                   │    ║
-║  │                      │ CRDT DAG (Causal Chain)           │    ║
-║  └──────────────────────┼──────────────────────────────────┘    ║
-║                         │                                        ║
-║  ┌──────────────────────▼──────────────────────────────────┐    ║
-║  │                  TERASHELL (WASM Sandbox)                 │    ║
-║  │  Manifest → OPA Policy │ Landlock LSM │ Egress Control   │    ║
-║  │  Capability-Based Sandboxing │ Network Namespace          │    ║
-║  │  BLAKE3 Integrity │ Ed25519 Agent Identity                │    ║
-║  └──────────────────────┬──────────────────────────────────┘    ║
-║                         │                                        ║
-║  ┌──────────────────────▼──────────────────────────────────┐    ║
-║  │              RUST CORE (Crypto Engine)                    │    ║
-║  │  MLS E2EE │ ZeroizeOnDrop │ PII Masking (NER)            │    ║
-║  │  soul.db (Encrypted) │ CRDT DAG │ Hardware Root of Trust  │    ║
-║  │  Blind Agent Execution │ Non-Repudiation Audit            │    ║
-║  └──────────────────────┬──────────────────────────────────┘    ║
-║                         │                                        ║
-║  ┌───────────┬───────────┴──────────────────────────────────┐   ║
-║  │  ONLINE   │         SURVIVAL MESH                         │   ║
-║  │  QUIC/gRPC│  BLE 5.0 + Wi-Fi Direct + AWDL              │   ║
-║  │  VPS Relay│  Agent tasks: cached & deferred              │   ║
-║  └───────────┴──────────────────────────────────────────────┘   ║
-╚══════════════════════════════════════════════════════════════════╝
+**Tìm:** Logic có pattern `profile.probe_fail_count += 1;` đứng TRƯỚC `tokio::select!`.
 
-```
+**Thay bằng:**
 
-### 3 lớp kỹ thuật then chốt cần xây dựng mới:
-
-**Lớp 1 — Agent Identity & Lifecycle Manager (Rust)**
 ```rust
-pub struct TeraAgent {
-    did: AgentDID,              // gắn với DeviceIdentityKey
-    soul_db: EncryptedSoulDB,   // thay soul.md
-    epoch_key: EpochKey,        // MLS member
-    sandbox: TeraShellInstance, // WASM runtime
-    capabilities: OPAPolicy,    // từ manifest
-    status: AgentStatus,        // Active/Suspended/MeshMode
+/// BUGFIX: probe_fail_count phải increment SAU KHI connection race resolve,
+/// không phải khi probe bắt đầu.
+pub async fn negotiate_alpn_adaptive(
+    profile: &mut NetworkProfile,
+) -> Result<AlpnResult, NetworkError> {
+    // Parallel probe — QUIC và gRPC cùng lúc
+    let result = tokio::select! {
+        quic_res = probe_quic() => AlpnResult { protocol: Quic, inner: quic_res },
+        grpc_res = probe_grpc() => AlpnResult { protocol: GrpcTcp, inner: grpc_res },
+    };
+
+    // ✅ CORRECT: Chỉ increment nếu QUIC CONFIRMED failed VÀ không phải winner
+    match result.protocol {
+        Quic => {
+            // QUIC won — reset fail count (successful probe)
+            profile.probe_fail_count = 0;
+            profile.strict_compliance = false;
+        }
+        GrpcTcp | Wss => {
+            // gRPC/WSS won — QUIC failed, increment counter
+            profile.probe_fail_count += 1;
+            if profile.probe_fail_count >= 3 {
+                profile.strict_compliance = true;
+                emit_admin_notification("Auto-switched to TCP-strict on this network.");
+            }
+        }
+    }
+
+    db.save_network_profile(profile).await?;
+    Ok(result)
+}
+
+// ❌ BUG (pattern cũ — KHÔNG dùng):
+// profile.probe_fail_count += 1;  // ← incremented BEFORE race resolves
+// let result = tokio::select! { ... };
+```
+
+---
+
+##### EDIT C-11
+
+```yaml
+edit_id:       "C-11"
+conflict_id:   "BL-03"
+target_file:   "Core_Spec.md"
+target_section: "§9.4 Federation Bridge (hoặc §F-18) — sau section về read-only federation mode"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**OPA Policy Distribution — Federation Mode Exception:**
+
+> ⚠️ **Rule:** OPA Policy bundle distribution **EXEMPT** khỏi federation schema restrictions.
+
+| Federation State | Data sync | OPA Policy sync |
+|---|---|---|
+| `SCHEMA_COMPATIBLE` | ✅ Full read/write | ✅ Full |
+| `READ_ONLY` (±1 minor delta) | ⛔ Data write blocked | ✅ **Policy write ALLOWED** |
+| `SCHEMA_INCOMPATIBLE` (±1 major) | ⛔ All blocked | ✅ **Policy write ALLOWED** |
+
+**Rationale:** Security policy updates (CRL, permission changes, user revocation) phải đến được
+Branch cluster bất kể schema version gap. Khóa policy channel khi schema mismatch tạo ra
+stale OPA state indefinitely — security risk nghiêm trọng hơn schema incompatibility.
+
+**Implementation:** `federation_policy_sync` channel dùng endpoint riêng biệt, độc lập
+với data federation channel. mTLS mutual auth vẫn bắt buộc. OPA bundle signature verify trước apply.
+Cross-reference: → §9.4 Federation Bridge, → Web_Marketplace.md §7.2
+```
+
+---
+
+##### EDIT C-12
+
+```yaml
+edit_id:       "C-12"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§2.1 Shared Core Philosophy — sau đoạn 'Unidirectional State Sync'"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+#### Formal IPC Memory Ownership Contract (Token Protocol)
+
+Rust Core xuất 2 FFI primitive thay vì raw pointer:
+
+1. `tera_buf_acquire(id)` → trả handle opaque (`u64` token), không phải raw pointer.
+2. `tera_buf_release(token)` → Rust mới được phép zeroize.
+
+iOS JSI và Android Dart FFI đều gọi `tera_buf_release()` trong destructor/finalizer.
+Rust Core có reference counter per-token: `ZeroizeOnDrop` chỉ thực thi khi `ref_count == 0`.
+
+**CI lint rule:** Cấm FFI endpoint trả `Vec<u8>/ptr` trực tiếp không qua Token Protocol.
+Cross-reference: → TERA-FEAT §1 IPC Signal/Command Contract
+```
+
+---
+
+##### EDIT C-13
+
+```yaml
+edit_id:       "C-13"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§5.2 Hardware Root of Trust (hoặc §F-01) — sau mô tả Biometric-Bound Cryptographic Handshake"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+#### iOS Key Protection — Double-Buffer Zeroize Protocol
+
+📱 **Double-Buffer:** Phân bổ key vào 2 page liền kề `MAP_ANONYMOUS|MAP_PRIVATE`.
+Ngay sau decrypt xong: ghi đè `0x00` vào page 1 TRƯỚC KHI dùng key. Dùng key từ page 2.
+Sau `ZeroizeOnDrop`: ghi đè cả 2 page.
+Nếu Jetsam kill trước Drop: page 1 đã clean, page 2 còn key nhưng là 1 page đơn lẻ
+khó exploit hơn so với madvise đơn lẻ.
+```
+
+---
+
+##### EDIT C-14
+
+```yaml
+edit_id:       "C-14"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§5.9 (sau đoạn Gossip Broadcast + iBeacon) hoặc §12 EMDP — nếu chưa có EMDP section"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+note:          "C-08 đã add EMDP Shun Exception. C-14 add EMDP State Machine nếu chưa có §12."
+```
+
+**Append nếu §12 EMDP chưa tồn tại:**
+
+```markdown
+### §12 Emergency Mobile Dictator Protocol (EMDP)
+
+> **Bài toán:** Khi tất cả peer là iOS Leaf Node (không có Desktop/Android Super Node),
+> BLAKE3 Hash Election không tìm được Dictator → Causal Freeze → không gửi được tin nhắn SOS.
+
+**EMDP State Machine:**
+
+| Trạng thái | Điều kiện | Hành vi |
+|---|---|---|
+| `Normal` | Có Desktop hoặc Android Super Node | BLAKE3 Hash Election bình thường |
+| `EmergencyMobileOnly` | Toàn bộ peer là iOS Leaf Node | Bầu iOS có battery cao nhất làm Tactical Relay |
+| `SoloAppendOnly` | Chỉ 1 thiết bị | Append-Only, không cần election |
+
+**Tactical Relay ≠ Super Node:** Chỉ `Append-Only CRDT` đơn giản, store-and-forward text.
+KHÔNG merge DAG, KHÔNG rotate MLS Epoch. Auto-expire sau 60 phút.
+```
+
+```rust
+pub enum DictatorElectionMode { Normal, EmergencyMobileOnly, SoloAppendOnly }
+// Selection: battery_score (battery_pct * 100) + ble_rssi_score (rssi + 100)
+// TacticalRelayMode::TextOnlyForward, ttl_minutes: 60
+```
+
+**EMDP Key Escrow Handshake:**
+
+```rust
+pub struct EmdpKeyEscrow {
+    relay_session_key: AesKey256,
+    emdp_start_epoch:  u64,
+    emdp_expires_at:   u64, // now() + 3600
+}
+// Desktop xuất EMDP Escrow Key trước khi offline/handover:
+// 1. Sinh EmdpKeyEscrow
+// 2. ECIES encrypt với iOS device pubkey
+// 3. Gửi qua BLE Control Plane
+// Khi Desktop reconnect:
+// → nhận lại escrow từ iOS → decrypt relay messages → merge vào DAG với đúng epoch context
+// → Không có orphan messages.
+```
+
+---
+
+##### EDIT C-15
+
+```yaml
+edit_id:       "C-15"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§5.11 (sau đoạn WebRTC TURN) hoặc §F-06 Voice/Video"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+#### iOS WebRTC TURN — CallKit Integration
+
+📱 **Vấn đề:** iOS cho app Background tối đa 30s network. TURN failover 3s + SRTP renegotiate
+có thể vượt window.
+📱 **Giải pháp:** Sử dụng CallKit — iOS treat TeraChat calls như native calls, không bị background kill.
+```
+
+```swift
+class TeraCallKitProvider: NSObject, CXProviderDelegate {
+    // CXProvider giữ audio session active dù app background
+    // TURN failover xảy ra trong CallKit context → không bị suspend
+    // Dual TURN preconnect: khi call active và app sắp vào Background,
+    // Rust proactively connect tới TURN server dự phòng.
 }
 ```
 
-**Lớp 2 — Multi-Agent Conversation Protocol (MCP over MLS)**
+```markdown
+#### iOS AWDL Monitor — Hotspot/CarPlay Conflict
 
-Agent giao tiếp với nhau qua Model Context Protocol (MCP) được wrap trong MLS E2EE channel. Mỗi agent message là một CRDT event được ký và persist vào `hot_dag.db`. Human supervisor có thể audit toàn bộ decision chain.
+📱 **Vấn đề:** iOS tự tắt AWDL khi bật Personal Hotspot hoặc CarPlay
+→ voice call drop không giải thích.
+```
 
-**Lớp 3 — TeraShell Security Boundary**
+```swift
+class AWDLMonitor {
+    // NWPathMonitor detect AWDL interface + bridge (hotspot/CarPlay)
+    // Callback → Rust Core downgrade Tier 2 → Tier 3 (BLE only)
+    // Emit UIEvent::TierChanged với message giải thích
+    // Queue voice packets TTL 30s chờ AWDL phục hồi
+}
+```
 
-| Capability | OpenClaw | NemoClaw (OpenShell) | TeraShell |
+---
+
+##### EDIT C-16
+
+```yaml
+edit_id:       "C-16"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§5.19 (hoặc §F-14 CRDT) — thay đoạn 'Shadow DAG bị loại bỏ hoàn toàn'"
+change_type:   "Replace"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Tìm:** `"Giao thức Shadow DAG bị loại bỏ hoàn toàn khỏi bộ định tuyến P2P Mesh"`
+
+**Thay bằng:**
+
+```markdown
+**Tiered Conflict Resolution Protocol:**
+
+| Tier | Môi trường | Cơ chế | Cam kết |
 |---|---|---|---|
-| Filesystem | Full OS access | Read-only except /sandbox | WASM Linear Memory only |
-| Network egress | Unrestricted | Whitelist via yaml | OPA Manifest-compiled rules |
-| Platform | Any Node.js | Linux only (Docker) | iOS/Android/Desktop/HarmonyOS |
-| RAM overhead | ~50MB | ~8GB+ | ~64MB (WASM sandbox) |
-| Hardware attestation | ❌ | Partial (DCAP) | ✅ Secure Enclave/StrongBox |
-| Offline support | ❌ | ❌ | ✅ Survival Mesh Agent Mode |
+| 1 | Online | Shadow DAG đầy đủ | User thấy conflict, chọn merge |
+| 2 | Mesh P2P | Lightweight Conflict Marker | Desktop Super Node mediator |
+| 3 | Solo offline | Optimistic Append | WARNING "Bản này có thể bị ghi đè" |
+
+**Ràng buộc cứng:** Không bao giờ silent LWW trên document có `content_type = CONTRACT | POLICY | APPROVAL`.
+Bắt buộc hiển thị Conflict Resolution UI trước khi ghi khi reconnect phát hiện conflict.
+```
 
 ---
 
-## 📦 Product Strategy
+##### EDIT C-17
 
-### Tier 1 — Consumer: "Your Sovereign AI Assistant"
+```yaml
+edit_id:       "C-17"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§3.4.2 (sau 'SQLite WAL Autocheckpoint') hoặc §F-07 Infrastructure"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
 
-**Target:** Chuyên gia, freelancer, nhà quản lý muốn AI assistant không rò rỉ dữ liệu.
+**Append:**
 
-**Killer Features:**
+```markdown
+#### XPC Transaction Journal Protocol (macOS)
+```
 
-- **TeraAssist** — AI assistant chạy 100% local trên thiết bị, đồng bộ qua E2EE. Không một byte nào lên Cloud của OpenAI hay Anthropic nếu user không muốn.
-- **Persistent Memory** — `soul.db` được mã hóa. Assistant "nhớ" sở thích, lịch làm việc, ngữ cảnh dự án — không bao giờ bị reset dù đổi thiết bị.
-- **Offline-First Agent** — Đặt lịch, phân tích tài liệu, gửi tin nhắn theo schedule — tất cả chạy khi không có Internet nhờ Mesh Agent Mode.
-
-**Pricing:** Bao gồm trong Standard tier ($15/tháng). AI token usage minh bạch, user tự quyết BYOM (Bring Your Own Model).
-
-### Tier 2 — Enterprise: "The Secure Agentic Workspace"
-
-**Target:** Ngân hàng, chính phủ, bệnh viện, doanh nghiệp sản xuất (Manufacturing).
-
-**Killer Features:**
-
-- **Compliance-Ready Agent Orchestration** — Multi-agent workflows với Causal Audit Chain. Mỗi quyết định của AI được ký Ed25519, không thể xóa, không thể chối bỏ. Đáp ứng HIPAA, SOC2, ISO 27001, Nghị định 13/VN.
-- **TeraShell Enterprise** — Agent sandbox với Landlock LSM + OPA Policy + Hardware Attestation. Mạnh hơn NemoClaw (không cần Docker, không cần Linux chuyên dụng, không lock-in NVIDIA).
-- **Blind Agent Processing** — Agent xử lý data nhạy cảm (hợp đồng, hồ sơ bệnh nhân, giao dịch tài chính) mà không bao giờ thấy plaintext. Zero-Knowledge Agent Architecture.
-
-**Pricing:** Enterprise $500-$8,000/tháng. Professional Services: $50K-200K/deployment.
-
-### Tier 3 — Telecom / Edge AI: "Intelligence at the Network Node"
-
-**Target:** Nhà mạng viễn thông (Viettel, VNPT, Mobifone), nhà máy, cảng biển, khu mỏ.
-
-**Killer Features:**
-
-- **TeraAgent Edge** — Agent runtime <5MB (inspired by PicoClaw) chạy trực tiếp trên edge gateway, industrial router, hay Raspberry Pi. Không cần Cloud inference.
-- **AI-RAN Agent** — Tác tử quản lý phân bổ tài nguyên phổ tần 5G theo thời gian thực — đây chính xác là use case mà NemoClaw nhắm đến nhưng TeraChat có thể làm tốt hơn với Mesh redundancy.
-- **Disaster Recovery Mesh** — Khi cơ sở hạ tầng mạng sập (thiên tai, tấn công), các agent tiếp tục điều phối thông tin liên lạc khẩn cấp qua BLE/Wi-Fi Direct Mesh — use case mà không có nền tảng nào khác có thể làm.
+```rust
+// hot_dag.db journal trước khi dispatch sang XPC Worker
+// States: PENDING → VERIFIED → COMMITTED
+// Crash in PENDING  → abort + notify user "Phiên ký bị gián đoạn. Vui lòng ký lại."
+// Crash in VERIFIED → commit from journal (idempotent)
+pub struct XpcTransactionJournal { /* tx_id, status, payload_hash */ }
+```
 
 ---
 
-## 🏰 Competitive Moat (Lợi thế Cạnh tranh Bền vững)
+##### EDIT C-18
 
-### Moat 1: Hardware-Bound Agent Identity (Bất khả xâm phạm)
+```yaml
+edit_id:       "C-18"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§11 Huawei HarmonyOS Stack — sau §11.5 hoặc thêm mục §11.6"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
 
-OpenClaw agent có thể bị clone, bị giả mạo. NemoClaw phụ thuộc DCAP attestation phức tạp. **TeraAgent DID được neo vào Secure Enclave/StrongBox — không thể tách khỏi phần cứng**. Đây là lợi thế không thể sao chép bằng phần mềm thuần túy.
+**Append:**
 
-### Moat 2: Offline Agent Execution (Độc quyền thực tế)
+```markdown
+#### §11.6 Huawei CRL Polling Fallback
 
-Không một nền tảng AI nào — không Slack AI, không Teams Copilot, không OpenClaw — có khả năng thực thi agent tasks khi không có Internet. **TeraChat là nền tảng duy nhất** có thể cam kết "AI không bao giờ ngừng hoạt động dù cơ sở hạ tầng sập." Đây là lợi thế tuyệt đối với Chính phủ, Quân đội, và các ngành Critical Infrastructure.
+📱 **Vấn đề:** HMS không có equivalent APNs `content-available` background push cho CRL updates.
+📱 **Giải pháp:** CRL refresh 4h polling khi Foreground + HMS Data Message khi Background.
+**Acknowledged limitation:** Huawei CRL update có thể delay tối đa 4h so với iOS/Android 30 phút.
+Phải được disclosed trong Enterprise SLA documentation.
+```
 
-### Moat 3: Causal Non-Repudiation Audit Chain (Pháp lý không thể phủ nhận)
+---
 
-CRDT DAG + Ed25519 signing tạo ra một chuỗi bằng chứng mật mã cho mọi quyết định AI. Khi AI agent gây ra một quyết định sai trong giao dịch tài chính, TeraChat có thể **chứng minh trước tòa** rằng quyết định đó được thực hiện bởi AI nào, do người dùng nào authorize, vào lúc nào. Không một nền tảng nào có điều này.
+##### EDIT C-19
 
-### Moat 4: Zero-Knowledge Agent Processing
+```yaml
+edit_id:       "C-19"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§13 License Architecture — thêm §13.6"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
 
-Agent không bao giờ thấy dữ liệu gốc — chỉ thấy tokenized output từ INES (Integrated NER Engine). Đây là **triển khai Zero-Knowledge AI đầu tiên trên thế giới** ở cấp độ production-ready. Đáp ứng trực tiếp yêu cầu GDPR Article 25 (Privacy by Design).
+**Append:**
 
-### Moat 5: WASM-Native TeraShell vs Docker-based NemoClaw
+```markdown
+### §13.6 Offline TTL Profile (Dynamic — không hardcode 24h)
+```
 
-| | NemoClaw | TeraShell |
+```rust
+pub enum OfflineTTLProfile {
+    Consumer    { ttl_hours: 24 },
+    Enterprise  { ttl_hours: u32 },    // configurable bởi Admin, default 168 (7 ngày)
+    GovMilitary { ttl_hours: 720 },    // 30 ngày
+    AirGapped   { revocation_only: bool },
+}
+```
+
+```markdown
+TTL được cấu hình bởi Admin trong Admin Console và baked vào License JWT field `offline_ttl_hours`.
+**Lý do:** Hardcode 24h mâu thuẫn với Survival Mesh promise cho Gov/Military deployment kéo dài nhiều ngày.
+```
+
+---
+
+##### EDIT C-20
+
+```yaml
+edit_id:       "C-20"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§14 Network Layer — thêm §14.8"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+### §14.8 AES-NI / ARM NEON — Software Fallback
+```
+
+```rust
+pub fn init_crypto_backend() -> CryptoBackend {
+    if is_cpu_feature_detected!("aes") && is_cpu_feature_detected!("sse2") {
+        CryptoBackend::HardwareAccelerated
+    } else {
+        tracing::warn!("AES-NI not available, using software backend. Expect ~3x slower.");
+        CryptoBackend::Software
+    }
+}
+```
+
+```markdown
+Admin Console hiển thị warning khi thiết bị dùng software backend:
+*"Thiết bị này không có hardware crypto. Mã hóa chậm hơn 3x bình thường."*
+```
+
+---
+
+##### EDIT C-21
+
+```yaml
+edit_id:       "C-21"
+conflict_id:   null
+target_file:   "Core_Spec.md"
+target_section: "§14 Network Layer — thêm §14.9"
+change_type:   "Append"
+sprint:        "Sprint1"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+### §14.9 Shadow DB Write Lock Protocol
+```
+
+```rust
+pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
+// NSURLSession completion check lock → queue to hot_dag.db nếu migration đang chạy
+// Đảm bảo không race giữa shadow rename và NSURLSession background write
+impl ShadowMigrationLock {
+    pub fn is_migration_in_progress(&self) -> bool { self.migration_in_progress.load(Ordering::SeqCst) }
+}
+```
+
+---
+
+#### FILE 2: `Feature_Spec.md` — TẠO MỚI HOÀN TOÀN
+
+```yaml
+conflict_id:  "PB-01"
+target_file:  "Feature_Spec.md"
+change_type:  "CreateNew"
+sprint:       "Sprint1"
+status:       "TODO"
+reason:       "34+ references trong Core_Spec.md trỏ đến TERA-FEAT — file rỗng là critical gap"
+```
+
+**Tạo file mới với header:**
+
+```yaml
+# Feature_Spec.md — TeraChat TERA-FEAT v0.1.0-mvp
+id:       "TERA-FEAT"
+version:  "0.1.0-mvp"
+status:   "IN PROGRESS — Sprint 1 Priority"
+depends:  "TERA-CORE (Core_Spec.md)"
+```
+
+##### EDIT F-01 — §1 IPC Signal/Command Contract
+
+```yaml
+edit_id:       "F-01"
+conflict_id:   null
+target_file:   "Feature_Spec.md"
+target_section: "§1 — Tạo mới"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §1:**
+
+```markdown
+## §1 IPC Signal/Command Contract
+
+> Cross-reference: → Core_Spec.md §4.2 (CoreSignals và UICommands catalog)
+
+### §1.1 Token Protocol
+
+Rust Core xuất 2 FFI primitive thay vì raw pointer (→ Core_Spec.md §2.1):
+```
+
+```dart
+class TeraSecureBuffer {
+  final TeraBufferToken _token;
+  final Finalizer<TeraBufferToken> _finalizer;
+  bool _released = false;
+
+  // Mọi TeraSecureBuffer PHẢI được wrap bởi useInTransaction hoặc explicit releaseNow()
+  void releaseNow() {
+    if (!_released) {
+      _released = true;
+      _finalizer.detach(this);
+      tera_buf_release(_token);
+    }
+  }
+
+  T useInTransaction<T>(T Function(Pointer<Uint8> ptr) action) {
+    try { return action(_token.toPointer()); }
+    finally { releaseNow(); } // Always release kể cả exception
+  }
+}
+```
+
+```markdown
+**CI lint rule:** `tera_buf_acquire` phải có matching `releaseNow()` trong cùng scope
+hoặc `useInTransaction` wrapper. Violation → CI block.
+
+### §1.2 Data Plane Transport Per-Platform
+
+| Platform | Mechanism | Throughput |
 |---|---|---|
-| Nền tảng | Linux only | iOS/Android/Desktop/Huawei |
-| RAM tối thiểu | 8GB | 64MB |
-| Khởi động | 30-60s (Docker) | <50ms (WASM AOT) |
-| Hardware | NVIDIA GPU preferred | Mọi chip (ARM, x86, RISC-V) |
-| Offline | ❌ | ✅ Mesh Mode |
+| 📱 iOS | JSI C++ `std::unique_ptr` + Custom Deleter | ~400MB/s |
+| 📱 Android / Huawei | Dart FFI TypedData (C ABI static buffer) | ~400MB/s |
+| 💻🖥️ Desktop | `SharedArrayBuffer` (mmap physical) | ~500MB/s |
+| All | Protobuf over Control Plane (<50 bytes) | N/A |
+```
 
 ---
 
-## 🚀 Future Roadmap
+##### EDIT F-02 — §2 OS Hook Matrix Per-Platform
 
-### Year 1 (2026): Foundation — "TeraAgent Alpha"
+```yaml
+edit_id:       "F-02"
+conflict_id:   null
+target_file:   "Feature_Spec.md"
+target_section: "§2 — Tạo mới"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
 
-**Q2 2026:**
+**Nội dung §2:**
 
-- `soul.db` Encrypted Agent Memory — thay thế soul.md của OpenClaw
-- TeraShell v1.0 — WASM Sandbox với OPA Policy Engine
-- Tapp-Agent Fusion — `.tapp` có thể chạy background cron jobs
-- MCP (Model Context Protocol) integration trong MLS E2EE channel
+```markdown
+## §2 OS Hook Matrix Per-Platform
 
-**Q3 2026:**
+### §2.1 iOS OS Hooks
 
-- Multi-Agent Conversation Protocol — nhiều agent trong cùng MLS group
-- Blind Agent Execution Pipeline (NER → Mask → Agent → De-tokenize)
-- Causal Audit Chain UI — visualize decision chain trong chat
-
-**Q4 2026:**
-
-- TeraAgent Nano — agent runtime <5MB cho Edge/IoT
-- Marketplace `.tapp-agent` tier — publisher có thể submit autonomous agents
-- OpenClaw Skills compatibility layer — import skills từ ClawHub vào TeraShell
-
-### Year 2 (2027): Scale — "Agentic Enterprise OS"
-
-- **TeraAgent Enterprise Console** — Admin dashboard quản lý fleet of agents
-- **AI-RAN Agent Module** — telecom use case với NDA pilot với Viettel/VNPT
-- **Multi-Region Agent Federation** — agent tasks sync qua federated clusters
-- **Agent Marketplace Revenue** — 30% cut trên agent subscriptions (B2B)
-- **Confidential Computing Integration** — agent tasks trong Intel TDX/AMD SEV cho Elite tier
-
-### Year 3 (2028): Moonshots — "Sovereign AI Infrastructure"
-
-**Moonshot 1 — TeraAgent swarm trong thiên tai:**
-Triển khai fleet of TeraAgent Nano trên drone/UAV phân phối kết nối Mesh cho khu vực thảm họa. Agents điều phối cứu hộ, phân bổ nguồn lực, liên lạc với gia đình nạn nhân — hoàn toàn offline. **Market: UN, FEMA, Quân đội Việt Nam.**
-
-**Moonshot 2 — Causal AI Contracts:**
-Smart Contracts được thực thi bởi AI agents với Non-Repudiation Audit Chain. Không cần blockchain — chỉ cần CRDT DAG + Ed25519 signatures. **Agent ký hợp đồng thay con người, với bằng chứng mật mã không thể phủ nhận.** Market: FinTech, Legal Tech, Real Estate.
-
-**Moonshot 3 — Zero-Knowledge AI Healthcare:**
-Agent xử lý hồ sơ bệnh nhân mà không bao giờ expose plaintext — ngay cả với bác sĩ đang sử dụng agent. Chỉ output summary và recommendations được hiển thị. **Đây là HIPAA compliance tuyệt đối đầu tiên trên thế giới.** Market: Hospital Systems toàn cầu.
-
----
-
-## 📊 Risk Classification Matrix
-
-| Rủi ro | Mức độ | Mitigation |
+| Hook | API | Mục đích |
 |---|---|---|
-| OpenClaw Skills import tạo attack surface mới | **Khẩn cấp 🔴** | EMIP scanning + static analysis bắt buộc cho mọi import |
-| soul.db sync qua CRDT tạo ra privacy leak nếu DAG bị compromise | **Vừa 🟡** | ZeroizeOnDrop + Epoch-bound encryption của soul.db |
-| Multi-agent decision chain quá phức tạp, user mất kiểm soát | **Vừa 🟡** | Human-in-the-loop mandatory cho critical actions (Smart Approval) |
-| TeraAgent Nano trên IoT bị physical attack | **Vừa 🟡** | Hardware Monotonic Counter + Poison Pill Mesh Revocation |
-| Agent WASM sandbox escape trên iOS (wasm3 interpreter) | **Nhẹ 🟢** | EMIP boot-time check + Linear Memory Isolation + CFI |
-| NVIDIA lock-in nếu dùng NemoClaw API trực tiếp | **Nhẹ 🟢** | Không cần dùng NemoClaw API — TeraShell tự làm được |
-| OpenClaw community skills có malware (tỷ lệ 20%) | **Khẩn cấp 🔴** | Zero-trust: mọi skill phải pass Ed25519 CA + WASM static scan trước khi load |
+| Push (NSE) | `UNNotificationServiceExtension` | E2EE decrypt push trước khi display |
+| Voice call | `CXProvider` (CallKit) | Giữ network active khi background |
+| AWDL monitor | `NWPathMonitor` | Detect Hotspot/CarPlay conflict |
+| Background task | `BGProcessingTask` | VACUUM + CRDT compaction khi sạc |
+| Memory pressure | `UIApplication.didReceiveMemoryWarning` | ZeroizeOnDrop vector caches |
+
+### §2.2 Android OS Hooks
+
+| Hook | API | Mục đích |
+|---|---|---|
+| Push | `FirebaseMessagingService` | E2EE decrypt FCM Data Message |
+| Battery bucket | `CompanionDeviceManager` | Bypass Doze throttle (→ C-03) |
+| Memory | `onTrimMemory(TRIM_MEMORY_RUNNING_CRITICAL)` | ZeroizeOnDrop + flush WAL |
+| Background upload | `WorkManager` | Chunked file upload khi offline |
+
+**Android 14+ FCM Throttle:**
+```kotlin
+<uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+// Request REQUEST_COMPANION_RUN_IN_BACKGROUND via CompanionDeviceManager
+```
+
+### §2.3 Huawei HarmonyOS OS Hooks
+
+| Hook | API | Mục đích |
+|---|---|---|
+| Push | HMS Push Kit Data Message | Background wakeup (delay ≤ 4h — xem C-18) |
+| Biometric | HMS Biometric API | Key signing gate |
+| BLE | HarmonyOS BLE API | Mesh discovery |
+
+### §2.4 macOS OS Hooks
+
+| Hook | API | Mục đích |
+|---|---|---|
+| Background daemon | `launchd` LaunchAgent `terachat-daemon` | Push decrypt + notifications |
+| WASM worker | XPC Service `terachat-wasm-worker` | JIT-isolated sandbox (allow-jit) |
+| Entitlements | Main: NO `allow-jit`; Worker: `allow-jit=true` | W^X compliance |
+
+**macOS Process Layout:**
+
+```
+TeraChat.app/
+├── Contents/MacOS/
+│   ├── terachat              ← Main process, NO allow-jit
+│   └── terachat-wasm-worker  ← XPC child, allow-jit only
+```
+
+### §2.5 Windows OS Hooks
+
+| Hook | API | Mục đích |
+|---|---|---|
+| Background service | Windows Service API | `terachat-daemon` |
+| Notifications | WNS (Windows Notification Service) | OS native notifications |
+| Crypto | CNG + TPM 2.0 NCrypt | Key storage |
+
+### §2.6 Linux OS Hooks
+
+**Linux Multi-Init Daemon Support:**
+
+```bash
+# Install script detect: systemd / openrc / runit / s6 / launchd
+if systemctl --version &>/dev/null 2>&1; then
+    systemctl enable --now terachat-daemon.service
+elif command -v rc-service &>/dev/null; then
+    rc-update add terachat-daemon default
+elif command -v runit &>/dev/null; then
+    ln -sf /etc/sv/terachat-daemon /var/service/
+else
+    install -m644 terachat-daemon.desktop ~/.config/autostart/
+fi
+# terachat-daemon viết PID file → bất kỳ init nào có thể monitor
+```
+
+**Wayland Clipboard Backend Detection:**
+
+```rust
+let clipboard_backend = if std::env::var("WAYLAND_DISPLAY").is_ok() {
+    ClipboardBackend::WlClipboard  // wl-clipboard — Wayland native
+} else {
+    ClipboardBackend::Xclip        // xclip/xsel — X11
+};
+```
+
+```
 
 ---
+
+##### EDIT F-03 — §3 Storage & Hydration Lifecycle
+
+```yaml
+edit_id:       "F-03"
+conflict_id:   null
+target_file:   "Feature_Spec.md"
+target_section: "§3 — Tạo mới"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §3:**
+
+```markdown
+## §3 Storage & Hydration Lifecycle
+
+Cross-reference: → Core_Spec.md §7.1 (hot_dag.db), §5.1 (cold_state.db + Hydration_Checkpoint)
+
+### §3.1 hot_dag.db WAL Compaction
+
+Dùng WAL checkpoint thay VACUUM (INV-08: append-only, không có deleted rows → C-09):
+```rust
+db.execute("PRAGMA wal_checkpoint(TRUNCATE)").await?;
+```
+
+### §3.2 cold_state.db Shadow Paging
+
+1. Download snapshot → `cold_state_shadow.db`
+2. Verify `SHA-256(content) == cas_uuid`
+3. Atomic rename: `cold_state_shadow.db → cold_state.db`
+4. `ShadowMigrationLock` prevent race với NSURLSession background write (→ C-21)
+
+### §3.3 Schema Migration Runbook
+
+```rust
+const CURRENT_HOT_DAG_SCHEMA_VERSION: u32 = 1;
+// 1. db.backup(DatabaseName::Main, &backup_path)?
+// 2. BEGIN EXCLUSIVE TRANSACTION
+// 3. migration.up(db)?
+// 4. PRAGMA user_version = target_version
+// 5. COMMIT
+// Safety net: cold_state.db có thể rebuild từ hot_dag.db bất kỳ lúc nào
+```
+
+```
+
+---
+
+##### EDIT F-04 — §4 WASM Runtime Behavior Per-Platform
+
+```yaml
+edit_id:       "F-04"
+conflict_id:   "RC-01"
+target_file:   "Feature_Spec.md"
+target_section: "§4 — Tạo mới"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §4:**
+
+```markdown
+## §4 WASM Runtime Behavior Per-Platform
+
+| Platform | Runtime | Mode | Notes |
+|---|---|---|---|
+| 📱 iOS | `wasm3` pure interpreter | Interpreter only | W^X compliant. +15-20ms latency/call. AOT `.dylib` trong XPC Worker (macOS only). |
+| 📱 Android | `wasmtime` JIT | Cranelift backend | CFI enforcement, sandbox |
+| 📱 Huawei | `wasmtime` JIT + AOT fallback | `JitWithAotFallback` | AOT `.waot` bundle bắt buộc cho AppGallery review (→ C-01) |
+| 💻 macOS | `wasmtime` JIT trong XPC Worker | Child process isolated | Main App: NO `allow-jit`. XPC Worker: `allow-jit=true`. |
+| 💻🖥️ Win/Linux | `wasmtime` JIT | Cranelift backend | Maximum throughput |
+
+Switch condition: `#[cfg(target_os = "ios")]` tại compile-time.
+
+### §4.1 WasmParity CI Gate (→ §5)
+
+Cross-reference bắt buộc: → §5 WasmParity CI Gate Specification
+```
+
+---
+
+##### EDIT F-05 — §5 WasmParity CI Gate Specification
+
+```yaml
+edit_id:       "F-05"
+conflict_id:   "PB-01"
+target_file:   "Feature_Spec.md"
+target_section: "§5 — Tạo mới (Referenced Core_Spec §11.4 as Blocker, Not implemented)"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §5:**
+
+```markdown
+## §5 WasmParity CI Gate Specification
+
+**Status:** Referenced by Core_Spec §11.4 as "Blocker, Not implemented" → Sprint 1 priority.
+
+### §5.1 Input
+
+Identical test vectors chạy trên cả 2 runtimes:
+- `wasm3` (iOS — reference runtime): output semantic là ground truth
+- `wasmtime` (Desktop — optimized runtime): phải match wasm3 output
+
+### §5.2 Acceptance Criteria
+
+| Criterion | Threshold | Fail action |
+|---|---|---|
+| Output semantic identity | 100% identical | Block merge |
+| Latency delta | ≤ 20ms | Block merge |
+| Memory delta | ≤ 5MB | Block merge |
+
+### §5.3 CI Command
+
+```bash
+cargo test --test wasm_parity -- --timeout 60
+```
+
+Failure → block merge + notify Marketplace team.
+
+### §5.4 Runtime Parity Rule
+
+| Runtime | Platform | Role |
+|---|---|---|
+| `wasm3` (interpreter) | iOS (W^X mandatory) | **Reference runtime** — output semantic là ground truth |
+| `wasmtime` JIT | Android, Desktop, Huawei | **Optimized runtime** — phải match wasm3 output |
+
+```
+
+---
+
+##### EDIT F-06 — §6 Protected Clipboard Bridge
+
+```yaml
+edit_id:       "F-06"
+conflict_id:   null
+target_file:   "Feature_Spec.md"
+target_section: "§6 — Tạo mới"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §6:**
+
+```markdown
+## §6 Protected Clipboard Bridge
+
+| Platform | Backend | Mechanism |
+|---|---|---|
+| 📱 iOS | `UIPasteboard` | Auto-clear sau 60s |
+| 📱 Android | `ClipboardManager` + `FLAG_SECURE` | Kernel Compositor blocks screenshot |
+| 📱 Huawei | HarmonyOS PasteBoard | Equivalent Android FLAG_SECURE |
+| 💻 macOS | `NSPasteboard` | Hook via Rust |
+| 💻🖥️ Windows | Win32 `SetClipboardData` | Rust hook |
+| 🖥️ Linux Wayland | `wl-clipboard` (`wl-copy`/`wl-paste`) | Runtime detect WAYLAND_DISPLAY |
+| 🖥️ Linux X11 | `xclip` / `xsel` | Fallback khi WAYLAND_DISPLAY absent |
+
+**Detection (Linux):** → Core_Spec.md §2.1 (EDIT C-12) hoặc code snippet tại C-22 (Feature_Spec §2.6).
+```
+
+---
+
+##### EDIT F-07 — §7 AI Worker Process Isolation
+
+```yaml
+edit_id:       "F-07"
+conflict_id:   "RC-03"
+target_file:   "Feature_Spec.md"
+target_section: "§7 — Tạo mới"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §7:**
+
+```markdown
+## §7 AI Worker Process Isolation
+
+`terachat-ai-worker` chạy như **separate OS process** — không share RAM với Rust Core.
+`catch_unwind` boundary tại mọi AI worker entry point.
+
+### §7.1 Memory Ceilings
+
+| Context | Ceiling | Enforcement |
+|---|---|---|
+| Desktop ONNX worker | 150MB | OOM-kill worker process, không crash Core |
+| Mobile ONNX pipeline | 8MB heap | Custom allocator returns `AllocError` on overflow |
+| NSE process (iOS) | **ONNX PROHIBITED** | `NsePolicy::ProhibitOnnxLoad` — KHÔNG bao giờ load ONNX |
+
+**NSE Restriction:** → Core_Spec.md C-02, C-03. NSE chỉ dùng regex-only PII detection.
+Full Micro-NER defer sang Main App qua `main_app_decrypt_needed=true`.
+
+### §7.2 Whisper AI Memory Budget Protocol
+
+```rust
+pub enum WhisperModelTier {
+    Tiny,     // 39MB, WER ~25% tiếng Việt
+    Base,     // 74MB, WER ~15% tiếng Việt
+    Disabled, // fallback text-only BLE
+}
+
+pub fn select_whisper_tier(available_ram_mb: u32, battery_pct: u8) -> WhisperModelTier {
+    if battery_pct < 20     { return WhisperModelTier::Disabled; }
+    if available_ram_mb > 200 { return WhisperModelTier::Base;  }
+    if available_ram_mb > 100 { return WhisperModelTier::Tiny;  }
+    WhisperModelTier::Disabled
+}
+// Khi Disabled: UI hiển thị "Thiết bị đang tiết kiệm RAM — Voice tạm chuyển sang text."
+```
+
+**Constraint:** Whisper chỉ load khi `available_ram > 100MB` && `battery > 20%`.
+
+```
+
+---
+
+##### EDIT F-08 — §8 Build Target Matrix + §16 AppArmor/SELinux Postinstall
+
+```yaml
+edit_id:       "F-08"
+conflict_id:   "PB-02"
+target_file:   "Feature_Spec.md"
+target_section: "§8 + §16 — Tạo mới (§16 referenced Core_Spec §11.4 as High, Not implemented)"
+change_type:   "CreateNew"
+sprint:        "Sprint1"
+```
+
+**Nội dung §8:**
+
+```markdown
+## §8 Build Target Matrix
+
+```
+
+x86_64-apple-darwin        → macOS Intel
+aarch64-apple-darwin       → macOS Apple Silicon
+x86_64-pc-windows-msvc     → Windows x64
+aarch64-pc-windows-msvc    → Windows ARM64 (MỚI — Surface Pro X, Copilot+ PCs)
+x86_64-unknown-linux-gnu   → Linux x64 (.deb/.rpm/AppImage)
+aarch64-unknown-linux-gnu  → Linux ARM64 (server deployment)
+aarch64-apple-ios          → iOS
+aarch64-linux-android      → Android + Huawei HarmonyOS (OHOS SDK)
+
+```
+
+**Windows ARM64 note:** Cần test SAB behavior trên ARM64 WebView2 riêng trước release (→ TD-03).
+
+**Linux Packaging Strategy:**
+
+| Format | memfd_create | seccomp-bpf | Gov Enterprise |
+|---|---|---|---|
+| **Signed .deb/.rpm** | ✅ | ✅ | ✅ GPG signed |
+| **AppImage (fallback)** | ✅ | ✅ | ⚠️ Cosign |
+| ~~Flatpak~~ | ❌ blocked by bubblewrap | ❌ conflict | ❌ không dùng |
+```
+
+**Nội dung §16:**
+
+```markdown
+## §16 AppArmor / SELinux Postinstall Script
+
+**Status:** Referenced by Core_Spec §11.4 as "High, Not implemented" → Sprint 1 priority.
+Without this script: startup crash trên `memfd_create` và `ipc_lock` denial trên enforcing systems.
+
+### §16.1 Detection Logic
+
+```bash
+#!/bin/bash
+if command -v apparmor_parser &>/dev/null; then
+    apparmor_parser -r -W /etc/apparmor.d/usr.bin.terachat
+    apparmor_parser -r -W /etc/apparmor.d/terachat-daemon
+elif command -v semodule &>/dev/null; then
+    semodule -i /usr/share/terachat/terachat.pp
+fi
+# Verify: terachat --check-permissions (built-in self-test)
+```
+
+### §16.2 AppArmor Profile (Ubuntu 20.04+)
+
+Profile phải allow: `memfd_create`, `ipc_lock`, restrict `ptrace`.
+
+### §16.3 SELinux Policy Module (RHEL 8+)
+
+`.pp` module compiled từ `.te` + `.fc` files: `semodule -i terachat.pp`.
+
+### §16.4 Self-test
+
+`terachat --check-permissions` exit code 0 = OK, exit code 1 = MAC profile missing.
+
+```
+
+---
+
+---
+
+### SPRINT 2 — HIGH PRIORITY
+
+---
+
+#### FILE 3: `Design.md`
+
+---
+
+##### EDIT D-01
+```yaml
+edit_id:       "D-01"
+conflict_id:   "BL-01, BL-02"
+target_file:   "Design.md"
+target_section: "§17 IPC Signal Mapping (hoặc DESIGN-GPU-02)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append rows vào bảng IPC Signal → UI Response:**
+
+```markdown
+| `dead_man_deferral` | `DeadManDeferralEntry` logged; subtle amber badge ở status bar "⚠ Bảo mật tạm hoãn" (không interrupt call). Sau call kết thúc: modal "Phiên bảo mật đã được khôi phục." | 📱 iOS |
+| `emdp_shun_exception_a` | Toast ngắn "Thiết bị [name] đã bị loại khỏi nhóm tạm thời." Mesh UI hiển thị node màu đỏ nhạt trong topology view. | 📱 iOS Mesh |
+| `emdp_shun_exception_b` | Modal cảnh báo: "Relay tạm thời đã bị xâm phạm. Đang chọn relay mới..." + spinner. Nếu không có relay mới: "Mesh tạm dừng — vui lòng chờ thiết bị khác vào phạm vi." | 📱 iOS Mesh |
+```
+
+---
+
+##### EDIT D-02
+
+```yaml
+edit_id:       "D-02"
+conflict_id:   null
+target_file:   "Design.md"
+target_section: "§DESIGN-GPU-01 (đã có) — cuối section"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**Bổ sung §DESIGN-GPU-01 — GPU Capability Signal:**
+
+Rust Core emit `GpuCapability { has_backdrop_filter: bool, compositing_tier: u8 }` qua IPC lúc init.
+UI chọn Glass variant tương ứng:
+- `compositing_tier = 2` → Tier A: Full Glass `backdrop-filter: blur(16-24px)`
+- `compositing_tier = 1` → Tier B: Frosted Lite `blur(8px)`
+- `compositing_tier = 0` → Tier C: Flat Solid `rgba(255,255,255,0.75)`
+
+Flat variant (Tier C) phải được Designer approve spec riêng — đảm bảo brand identity TeraChat nhận diện được.
+```
+
+---
+
+##### EDIT D-03
+
+```yaml
+edit_id:       "D-03"
+conflict_id:   null
+target_file:   "Design.md"
+target_section: "§DESIGN-GPU-03 (đã có) — mở rộng XPC Recovery UI"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**Mở rộng §DESIGN-GPU-03 — XPC Worker Crash Recovery:**
+
+Khi XPC Worker crash giữa Smart Approval → Modal:
+- Title: "Phiên ký bị gián đoạn"
+- Body: "Vui lòng ký lại."
+- Primary: [Ký lại] | Secondary: [Bỏ qua]
+- Glass Modal border-color: `var(--color-warning)` (Amber)
+```
+
+---
+
+##### EDIT D-04
+
+```yaml
+edit_id:       "D-04"
+conflict_id:   null
+target_file:   "Design.md"
+target_section: "Thêm §DESIGN-CONFLICT-01 (mới)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+### §DESIGN-CONFLICT-01: Conflict Resolution UI States
+
+| Tier | UI Element | Visual |
+|---|---|---|
+| Online Conflict | Modal 2 cột | Glass card, "Phiên bản của [Bạn]" vs "Phiên bản của [Đồng nghiệp]" |
+| Mesh Conflict Marker | Badge trên document | ⚠️ amber badge, tooltip "Mâu thuẫn phát hiện" |
+| CONTRACT/POLICY/APPROVAL | Block interaction | Hazard stripe overlay + "Cần giải quyết xung đột trước khi tiếp tục" |
+
+**Hard rule:** Không bao giờ render merged result trực tiếp lên `content_type = CONTRACT | POLICY | APPROVAL`
+mà không có user confirmation.
+```
+
+---
+
+##### EDIT D-05
+
+```yaml
+edit_id:       "D-05"
+conflict_id:   null
+target_file:   "Design.md"
+target_section: "Thêm §DESIGN-AWDL-01 (mới)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+### §DESIGN-AWDL-01: AWDL/Hotspot Conflict Banner
+
+| Trạng thái | Banner | Duration |
+|---|---|---|
+| Hotspot detected → AWDL off | Amber bar: "📡 Hotspot đang bật — Mesh chuyển BLE. Voice tạm không khả dụng." | Persistent |
+| CarPlay connected → AWDL off | Amber bar: "🚗 CarPlay đang kết nối — Mesh BLE only." | Persistent |
+| Voice dropped (30s timeout) | Red toast: "Cuộc gọi bị ngắt do mất kết nối Mesh" | 5s auto-dismiss |
+| AWDL restored | Green toast: "Mesh khôi phục — Voice sẵn sàng" | 3s |
+```
+
+---
+
+##### EDIT D-06
+
+```yaml
+edit_id:       "D-06"
+conflict_id:   null
+target_file:   "Design.md"
+target_section: "Thêm §38 Swarm Workspace & Causal Decision Timeline (mới)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+### §38 Swarm Workspace & Causal Decision Timeline
+
+#### §38.1 Agent Member Indicators
+
+| Trạng thái Agent | Badge trong Member List | Tooltip |
+|---|---|---|
+| Online & Active | 🤖 Xanh neon | "Agent [tên] — đang xử lý" |
+| Idle | 🤖 Xám | "Agent [tên] — chờ task" |
+| Burner (TTL active) | ⏳ Cam countdown | "Ephemeral Agent — tự hủy sau Xm" |
+| Pending Remove | 🔴 Nhấp nháy | "Agent đang bị remove khỏi Group" |
+
+#### §38.2 Causal Decision Timeline View
+
+```
+
+[User] ──────────────────── [Timeline] ──────────────────────▶ t
+         │                               │
+         @AgentOrchestrator              ▼
+                         ┌───────────────────────────────────┐
+                         │ 🤖 [PROPOSE] Trích xuất dữ liệu  │ ← xanh
+                         │    agent: fin-analyst | 14:23:01  │
+                         └───────────────────────────────────┘
+                                         ▼
+                         ┌───────────────────────────────────┐
+                         │ ⚠️ [AWAIT APPROVAL] Chi tiêu>$50K│ ← amber pulse
+                         │ [Phê duyệt ▶] [Từ chối ✕]        │
+                         └───────────────────────────────────┘
+                                         ▼ (sau Biometric)
+                         ┌───────────────────────────────────┐
+                         │ ✅ [APPROVED] Nguyễn V. A | FaceID│ ← xanh lá
+                         │    14:23:45 · Ed25519 ✓           │
+                         └───────────────────────────────────┘
+                                         ▼
+                         ┌───────────────────────────────────┐
+                         │ 🔷 [EXECUTED] Transfer $52,400    │ ← tím
+                         │    BLAKE3: a3f9... · Audit #2847  │
+                         └───────────────────────────────────┘
+
+```
+
+- Glass Card mỗi node: `border-radius: 8px`, `backdrop-filter: blur(12px)`.
+- `AWAIT_APPROVAL` node: Amber Pulse animation (→ §26 pattern) + countdown timer.
+- Tap vào bất kỳ node → Expand xem full payload hash, parent DAG links, platform indicator.
+```
+
+---
+
+##### EDIT D-07
+
+```yaml
+edit_id:       "D-07"
+conflict_id:   null
+target_file:   "Design.md"
+target_section: "Thêm §39 Burner Agent Termination Ceremony (mới)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+### §39 Burner Agent Termination Ceremony
+
+Khi Burner Agent tự hủy:
+
+1. **Agent card** chạy Shatter Effect (→ §DESIGN-WASM-01 Kill-Switch animation)
+   với màu nền `rgba(239, 68, 68, 0.15)` thay vì Blood-Red
+   (Burner là intended termination, không phải security incident).
+2. Sau 400ms: card replace bằng **Termination Proof Badge**:
+   `🔐 Tác tử đã tự hủy · Xem bằng chứng`
+3. Tap vào Badge → Modal: `BurnerTerminationProof` — task_id, timestamp, BLAKE3 hash,
+   hai chữ ký CA với QR code để verify độc lập.
+4. Badge tồn tại trong conversation history vĩnh viễn (append-only) — không thể xóa.
+```
+
+---
+
+#### FILE 4: `Web_Marketplace.md`
+
+---
+
+##### EDIT M-01
+
+```yaml
+edit_id:       "M-01"
+conflict_id:   "RC-01"
+target_file:   "Web_Marketplace.md"
+target_section: "MARKETPLACE-07 — sau Huawei AOT requirement policy statement"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**Runtime Clarification:** `.waot` AOT bundle là yêu cầu của AppGallery review process —
+không có nghĩa là runtime phải chạy thuần AOT. Sau khi app được install, runtime sử dụng
+`WasmRuntime::HarmonyOS { mode: JitWithAotFallback }`:
+1. Primary: wasmtime JIT (performance)
+2. Fallback: AOT compiled bytecode (nếu JIT detection fails)
+
+Cross-reference: → Core_Spec.md §3.1 EDIT C-01
+```
+
+---
+
+##### EDIT M-02
+
+```yaml
+edit_id:       "M-02"
+conflict_id:   "BL-03"
+target_file:   "Web_Marketplace.md"
+target_section: "§7.2 — sau OPA bundle version monotonic counter"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**Federation Mode Exception:** OPA Policy distribution không bị block bởi federation
+schema read-only mode. Policy channel hoạt động độc lập với data sync channel.
+Cross-reference: → Core_Spec.md §9.4 EDIT C-11
+```
+
+---
+
+##### EDIT M-03
+
+```yaml
+edit_id:       "M-03"
+conflict_id:   null
+target_file:   "Web_Marketplace.md"
+target_section: "§MARKETPLACE-05 — mở rộng Publisher Migration Guide"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**SLA cam kết:**
+- TeraChat Foundation support **2 major ABI versions đồng thời**
+- Deprecation window: **12 tháng** từ ngày announce
+- Breaking changes chỉ trong major version — minor version là additive only
+
+**Rejection vs Warning:**
+- `host_api_version` ngoài `[min, max]` range → **Reject** (hard fail, block load)
+- `host_api_version` trong deprecated range → **Warning badge** ⚠️ trong Marketplace
+- `host_api_version` EOL → **Block load** + alert Admin Console
+```
+
+---
+
+##### EDIT M-04
+
+```yaml
+edit_id:       "M-04"
+conflict_id:   null
+target_file:   "Web_Marketplace.md"
+target_section: "§5 W^X Sandboxing — sau 'iOS AOT W^X Compliance'"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**WASM Runtime Behavioral Parity Rule:**
+
+| Runtime | Platform | Khi nào dùng |
+|---|---|---|
+| `wasm3` (interpreter) | iOS (W^X mandatory) | **Reference runtime** — output semantic là ground truth |
+| `wasmtime` JIT | Android, Desktop, Huawei | **Optimized runtime** — phải match wasm3 output |
+
+**WasmParity CI Gate:** Mọi `.tapp` submit Marketplace phải pass test vector giống nhau trên cả 2 runtime.
+Fail → block merge. Latency delta ≤ 20ms chấp nhận được, nhưng **output semantic phải identical**.
+Cross-reference: → Feature_Spec.md §5 WasmParity CI Gate
+```
+
+---
+
+##### EDIT M-05
+
+```yaml
+edit_id:       "M-05"
+conflict_id:   null
+target_file:   "Web_Marketplace.md"
+target_section: "Thêm §MARKETPLACE-10 Tapp-Agent Developer SDK (mới)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+### §MARKETPLACE-10: Tapp-Agent Developer SDK & ClawHub Discovery Registry
+
+**Agent Manifest Contract v2:**
+```json
+{
+  "tapp_id": "fin-analyst-agent-v1",
+  "tapp_type": "heavyweight",
+  "agent_did": "did:terachat:acme:fin-agent-001",
+  "runtime": "wasm3",
+  "capabilities": ["network.egress", "storage.read", "crypto.sign"],
+  "agent_behavior": {
+    "max_context_tokens": 8192,
+    "auto_invoke_on_mention": true,
+    "swarm_participant": true,
+    "ttl_seconds": 0
+  },
+  "host_api_version": "1.3.0"
+}
+```
+
+**ClawHub Agent Registry:** Discovery query không reveal User_ID — chỉ trả về `CAS_UUID` của bundle.
+**Revenue Share Engine:** 70% về Publisher wallet tự động mỗi 30 ngày sau khi Client xác nhận BLAKE3 hash.
+
+```
+
+---
+
+##### EDIT M-06
+```yaml
+edit_id:       "M-06"
+conflict_id:   null
+target_file:   "Web_Marketplace.md"
+target_section: "Thêm §MARKETPLACE-11 Swarm Agent Orchestration (mới)"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+note:          "Architecture detail → Function.md FUNC-03 đến FUNC-05"
+```
+
+**Append:** Cross-reference section mô tả Swarm Workspace — nội dung chi tiết tại Function.md §FUNC-13/14.
+
+---
+
+#### FILE 5: `Function.md`
+
+---
+
+##### EDIT FUNC-01
+
+```yaml
+edit_id:       "FUNC-01"
+conflict_id:   null
+target_file:   "Function.md"
+target_section: "§5 — sau FUNC-11, thêm FUNC-12"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**FUNC-12: FCP Trust Boundary Declaration**
+
+Phân biệt rõ 2 chế độ:
+
+| Chế độ | Server | AI Agent | Cam kết |
+|---|---|---|---|
+| **Default (Zero-Knowledge)** | Blind Relay | Nhận masked context | Server không đọc nội dung |
+| **FCP Mode (Admin-Opt-In)** | Vẫn Blind Relay | Nhận plaintext context | TLS bảo vệ transit; AI endpoint thấy plaintext |
+
+FCP Mode yêu cầu: YubiKey + typed consent + audit log signed.
+Phù hợp khi AI endpoint là on-premise model do doanh nghiệp tự host.
+```
+
+---
+
+##### EDIT FUNC-02
+
+```yaml
+edit_id:       "FUNC-02"
+conflict_id:   null
+target_file:   "Function.md"
+target_section: "§2 User Functions — sau 'Tài liệu thông minh'"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+📱💻 **Offline Conflict Resolution:** Khi sửa tài liệu offline và reconnect phát hiện conflict:
+1. Tier 2 (Mesh): Badge ⚠️ trên document — Desktop Super Node làm mediator
+2. Tier 3 (Solo): WARNING toast "Bản này có thể bị ghi đè khi đồng bộ"
+3. Khi reconnect: Bảng đối chiếu 2 cột bắt buộc hiện ra trước khi commit
+   — đặc biệt với `content_type = CONTRACT | POLICY | APPROVAL`
+```
+
+---
+
+##### EDIT FUNC-03
+
+```yaml
+edit_id:       "FUNC-03"
+conflict_id:   null
+target_file:   "Function.md"
+target_section: "Thêm FUNC-13 Burner Agent Cross-Org Flow"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**FUNC-13: Burner Agent Cross-Org Collaboration Flow**
+
+```text
+[Admin Org A]
+    │ Tạo FederationInviteToken (Signed JWT, scope: reconcile_invoices)
+    ▼
+[Admin Org B] nhận Token → xác nhận scope → counter-sign
+    │
+    ▼ [BurnerAgent.spawn() — cả hai Admin ký bằng YubiKey]
+    │
+[Burner Agent — Ephemeral sandbox, TTL=60min]
+    │ Đọc dữ liệu trong org_a_scope ∩ org_b_scope
+    │ Xử lý task
+    │ Emit kết quả vào MLS Group E2EE
+    ▼
+[Task hoàn thành / TTL hết]
+    │ ZeroizeOnDrop soul.db
+    │ Generate BurnerTerminationProof (cả hai CA ký)
+    ▼
+[Admin Org A + B nhận TerminationProof] → "Tác tử đã tự hủy. Xem bằng chứng mật mã."
+```
+
+```
+
+---
+
+##### EDIT FUNC-04
+```yaml
+edit_id:       "FUNC-04"
+conflict_id:   null
+target_file:   "Function.md"
+target_section: "Thêm FUNC-14 Swarm Workspace User Flow"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**FUNC-14: Swarm Workspace User Flow**
+
+```text
+[User] tạo Group Chat → bấm [+ Add Agent]
+    │ Consent Modal: "Agent này sẽ đọc: [scope list]"
+    │ User approve bằng Biometric
+    ▼
+[Agent join MLS Group như member — Agent_DID hiển thị trong member list]
+    │ User @mention Agent Orchestrator: "Phân tích Q1 report và tóm tắt top 5 risks"
+    ▼
+[Orchestrator phân công Worker Agents]
+    │ Worker 1: Data extraction
+    │ Worker 2: Risk classification
+    │ Worker 3: Vietnamese summary
+    ▼
+[Results stream về Group Chat qua Timeline View]
+    │ Items cần approval → Supervisor nhận Biometric prompt
+    ▼
+[User bấm [Remove Agent] → MLS remove_member → Epoch rotation]
+    → Agent không còn access kênh
+```
+
+```
+
+---
+
+##### EDIT FUNC-05
+```yaml
+edit_id:       "FUNC-05"
+conflict_id:   null
+target_file:   "Function.md"
+target_section: "Thêm FUNC-15 Causal Smart Approval — Agent-Backed Decision Flow"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**FUNC-15: Causal Smart Approval — Agent-Backed Decision Flow**
+
+Dùng cho: Phê duyệt chi tiêu, ký hợp đồng tự động, thực thi workflow có điều kiện.
+
+```text
+[Agent Worker phân tích request]
+    ↓ PROPOSE action (ghi DecisionNode vào DAG)
+    ↓
+[Lõi Rust check: action có trong "human-required" list?]
+    ├── Không → Agent EXECUTE trực tiếp
+    └── Có → Notification đến Supervisor
+              "Agent X đề xuất: [Tóm tắt action]. Approve?"
+              [Supervisor xác thực Biometric → ký HumanApprovalRecord]
+              ↓ EXECUTE (ghi DecisionNode(type=Execute))
+              ↓ Non-Repudiation Audit → Append-Only Log
+```
+
+```
+
+---
+
+#### FILE 6: `TestMatrix.md`
+
+---
+
+##### EDIT T-01
+```yaml
+edit_id:       "T-01"
+conflict_id:   "RC-02, RC-03, BL-01, BL-02, NI-01"
+target_file:   "TestMatrix.md"
+target_section: "§1 — cuối danh sách scenarios hiện tại"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append rows vào bảng scenarios:**
+
+```markdown
+| SC-08 | Android Doze mid-ZeroizeOnDrop | Force Android process freeze 50ms sau key derive, trước StrongBox wrap | Key material không tồn tại trong RAM sau resume; StrongBox wrap-on-derive đã hoàn thành | RC-02 |
+| SC-09 | NSE Micro-NER load attempt | Trigger ONNX load trong NSE process context | `NsePolicy::ProhibitOnnxLoad` reject; fallback to regex-only; no Jetsam kill | RC-03 |
+| SC-10 | Dead Man Switch during active CallKit | Trigger DMS lockout trong khi CallKit session active | `DeadManDeferralEntry` logged với call_id + counter delta; lockout deferred; call continues | BL-01 |
+| SC-11 | EMDP Shun received for regular member | Valid Shun Record → all-iOS EMDP mesh, non-relay member | Case A: member evicted, TempGroupKey derived, `tainted_escrow` logged | BL-02 |
+| SC-12 | EMDP Shun received for Tactical Relay | Valid Shun Record → all-iOS EMDP mesh, Tactical Relay | Case B: EMDP terminated, new election triggered, `EmdpTerminated` signal emitted | BL-02 |
+| SC-13 | QUIC + gRPC parallel probe both succeed | Both QUIC ACK và gRPC handshake succeed simultaneously | gRPC wins (tiebreak); `probe_fail_count` NOT incremented; `strict_compliance` unchanged | NI-01 |
+```
+
+---
+
+##### EDIT T-02
+
+```yaml
+edit_id:       "T-02"
+conflict_id:   null
+target_file:   "TestMatrix.md"
+target_section: "§2 Extended Scenarios — tạo mới nếu chưa có"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+## §2 Extended Scenarios
+
+| Scenario | Điều kiện | Expected behavior |
+|---|---|---|
+| SC-14 | Windows ARM64 + SAB unavailable | Fallback Tier 2 (Named Pipe ~200MB/s), log tier selection |
+| SC-15 | Linux Flatpak attempt (blocked) | Install script detect, redirect to .deb/.rpm, user notification |
+| SC-16 | AES-NI unavailable + high load crypto | Software fallback (ChaCha20), Admin Console warning, ~3x slower |
+| SC-17 | Dart FFI GC race: buffer released before releaseNow() | NativeFinalizer catches, ZeroizeOnDrop executes, no UAF, audit log |
+| SC-18 | EMDP 60min expire + iOS still only peer | Auto-transition SoloAppendOnly, UI banner "Chế độ chỉ đọc — chờ Desktop" |
+| SC-19 | Shadow DB rename race với NSURLSession chunk write | Write lock queues chunk to hot_dag.db, no data loss, no corruption |
+```
+
+---
+
+##### EDIT T-03
+
+```yaml
+edit_id:       "T-03"
+conflict_id:   null
+target_file:   "TestMatrix.md"
+target_section: "§3 Pre-Gov Go-Live Checklist — tạo mới nếu chưa có"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append section mới:**
+
+```markdown
+## §3 Pre-Gov Go-Live Checklist
+
+Ngoài tất cả scenarios, các hạng mục sau phải được verified bởi independent security auditor:
+
+- [ ] Ed25519 signature verification trên mọi OPA Policy bundle
+- [ ] HSM FIPS 140-3 Shamir's SSS ceremony (3-of-5 reconstruction test)
+- [ ] Air-gapped license JWT validation (no network, TPM monotonic counter check)
+- [ ] EMDP Key Escrow roundtrip (Desktop offline 60min → reconnect → DAG merge clean)
+- [ ] Crypto-shred verification (forensic tool xác nhận không recovery được sau wipe)
+- [ ] WasmParity CI Gate pass rate: 100% (→ Feature_Spec §5)
+- [ ] AppArmor/SELinux profiles verified on target Gov Linux distro (→ Feature_Spec §16)
+```
+
+---
+
+#### FILE 7: `BusinessPlan.md`
+
+---
+
+##### EDIT B-01
+
+```yaml
+edit_id:       "B-01"
+conflict_id:   "PB-02, PB-03"
+target_file:   "BusinessPlan.md"
+target_section: "§10.2 Use of Funds — 'Compliance & Certifications' section"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append rows vào budget breakdown:**
+
+```markdown
+| Windows EV Code Signing Certificate | $500/năm | Bắt buộc cho SmartScreen reputation — mua Month 1 | Month 1 |
+| Linux GPG Key + AppImage Cosign setup | $0 (internal) | → ops/signing-pipeline.md COSIGN-02, COSIGN-03 | Month 2 |
+| AppArmor/SELinux policy authoring | $5,000 (consultant) | → Feature_Spec §16 — High priority | Month 2–3 |
+```
+
+**Append rows vào §11.1 Risk Register:**
+
+```markdown
+| Linux enterprise deployment blocked by AppArmor | Medium | Medium | Feature_Spec §16 postinstall script — Sprint 1 priority |
+| Windows SmartScreen delay (30+ days reputation build) | Medium | Low | EV cert purchase Month 1; clean submissions from Day 1 |
+```
+
+---
+
+##### EDIT B-02
+
+```yaml
+edit_id:       "B-02"
+conflict_id:   null
+target_file:   "BusinessPlan.md"
+target_section: "§BIZ-LICENSE-03 — cuối section"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**Phân tách module để Gov/Bank audit:**
+
+| Module | License | Scope audit |
+|---|---|---|
+| `terachat-core` (Crypto, MLS, CRDT, Mesh) | AGPLv3 | Public — Gov/Bank tự compile và verify |
+| `terachat-license-guard` | BSL (Business Source) | Closed — không trong scope crypto audit |
+| `terachat-ui` (Tauri, Flutter) | Apache 2.0 | Public |
+
+**Sales pitch:** *"Toàn bộ cryptographic core có thể compile và audit độc lập.
+License validation là module riêng không ảnh hưởng security audit scope."*
+
+**Cryptographic Entanglement — Write-Only pattern:**
+`DeviceIdentityKey` không bao giờ ra khỏi Secure Enclave dưới dạng raw bytes.
+`License Guard` chỉ nhận `FeatureFlags` struct — không có raw key nào qua FFI.
+```
+
+---
+
+##### EDIT B-03
+
+```yaml
+edit_id:       "B-03"
+conflict_id:   null
+target_file:   "BusinessPlan.md"
+target_section: "§BIZ-TIER-05 — cập nhật tier table"
+change_type:   "Replace"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Tìm:** Bảng tier feature comparison có cột Community / Enterprise / GovMilitary.
+
+**Thêm rows vào bảng (hoặc replace nếu thiếu columns):**
+
+```markdown
+| **Offline TTL** | 24h | 7 ngày (configurable) | **30 ngày** |
+| EMDP Tactical Relay | ❌ | ✅ | ✅ |
+| Air-Gapped License | ❌ | ✅ | ✅ |
+| Compliance Retention | ❌ | 90 ngày | **7 năm** |
+| **Chaos Engineering** | ❌ | Optional | **Bắt buộc trước go-live** |
+| TEE License | ❌ | ❌ | Available |
+```
+
+---
+
+##### EDIT B-04
+
+```yaml
+edit_id:       "B-04"
+conflict_id:   null
+target_file:   "BusinessPlan.md"
+target_section: "§09/09 Licensing Strategy hoặc §10.2"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Append:**
+
+```markdown
+**License Distribution Channels:**
+
+| Channel | Delivery | Security |
+|---|---|---|
+| Online | JWT qua email bảo mật + `cosign verify-blob` | Supply chain attack prevention |
+| Air-Gapped (SCIF) | JWT trên USB AES-256, giao vật lý cho CISO | Không internet, không phone-home, không telemetry |
+
+**Graceful Degradation Timeline:**
+
+| T | Trạng thái | Impact |
+|---|---|---|
+| T-30 ngày | Banner vàng Admin Console | Không ảnh hưởng |
+| T-0 | Admin Console partial lock | Chat/Mesh bình thường; AI + add user bị khóa |
+| T+90 ngày | Refuse new bootstrap | App đang chạy OK; không restart được |
+| Gia hạn | JWT mới → restore <5s | Không restart cần |
+```
+
+---
+
+#### FILE 8: `ops/signing-pipeline.md` — TẠO MỚI
+
+```yaml
+conflict_id:  "PB-02, PB-03"
+target_file:  "ops/signing-pipeline.md"
+change_type:  "CreateNew"
+sprint:       "Sprint2"
+status:       "TODO"
+```
+
+**Nội dung file mới:**
+
+```markdown
+# ops/signing-pipeline.md — TeraChat Code Signing Pipeline
+
+## COSIGN-01: iOS / macOS
+- Tool: fastlane match + Apple Developer certificate
+- Command: `bundle exec fastlane match appstore`
+- Validation: `bundle exec fastlane match nuke --dry-run`
+- Note: Requires Apple Developer Program membership ($99/year)
+
+## COSIGN-02: Linux AppImage
+- Tool: Cosign (Sigstore)
+- Command: `cosign sign-blob --key release-key.pem --output-signature terachat.AppImage.sig terachat.AppImage`
+- Customer verify: `cosign verify-blob --key terachat-root.pub --signature terachat.AppImage.sig terachat.AppImage`
+
+## COSIGN-03: Linux .deb / .rpm
+- Tool: GPG (detached signature)
+- Command: `dpkg-sig --sign builder terachat_*.deb`
+- Key rotation: Annually, 4096-bit RSA minimum
+- APT/DNF repo: signed Release file
+
+## COSIGN-04: Windows
+- Tool: signtool.exe với EV Certificate
+- Prerequisite: EV Code Signing cert (Sectigo / DigiCert) — ~$500/năm
+- SmartScreen note: **30+ days clean submissions required for reputation**
+  → Purchase Month 1; start clean submissions immediately.
+- Command: `signtool sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /f cert.p12 terachat-setup.exe`
+- Validation: `signtool verify /pa terachat-setup.exe`
+
+## COSIGN-05: SBOM (CycloneDX 1.5)
+- Generate: `cargo cyclonedx --format json --output terachat-sbom.json`
+- Sign: `cosign sign-blob --key release-key.pem --output-signature terachat-sbom.json.sig terachat-sbom.json`
+- Customer verify: `cosign verify-blob --key https://releases.terachat.com/cosign-pub.pem --signature terachat-sbom.json.sig terachat-sbom.json`
+```
+
+---
+
+---
+
+### SPRINT 3 — TECHNICAL DEBT (Tracked)
+
+| Debt ID | File | Section | Mô tả | Ưu tiên |
+|---|---|---|---|---|
+| TD-01 | `Core_Spec.md` | §6.7 EMDP | Long-term fix cho tainted EmdpKeyEscrow sau Shun: Desktop pre-provision multiple escrow keys trước khi offline. Blocking: EDIT C-08 là accepted-risk workaround. | Post-Beta |
+| TD-02 | `Core_Spec.md` | §11.4 Known Gaps | Border Node auto-detection heuristics — algorithm undefined. Blocking: F-05 EMDP mesh topology. | Sprint 3 |
+| TD-03 | `Core_Spec.md` | §3.1 + §2.1 | Windows ARM64 SAB (SharedArrayBuffer) behavior validation on ARM64 WebView2. Blocking: Release on ARM64 Windows. | Sprint 3 |
+| TD-04 | `Web_Marketplace.md` | §MARKETPLACE-05 | `.tapp` stale epoch key handling khi re-activated sau 12-month deprecation window. | Sprint 3 |
+
+---
+
+## §5 STATE MACHINE
+
+### 5.1 Edit Item Lifecycle
+
+```
+States: TODO → IN_PROGRESS → PR_OPEN → REVIEWED → MERGED → VERIFIED
+
+Transitions:
+  TODO         ──sprint starts──────────────▶ IN_PROGRESS
+  IN_PROGRESS  ──PR created─────────────────▶ PR_OPEN
+  PR_OPEN      ──reviewer approved────────────▶ REVIEWED
+  REVIEWED     ──CI passes + lead approve─────▶ MERGED
+  MERGED       ──CI validation + smoke test───▶ VERIFIED
+
+  Any state    ──CI fails──────────────────────▶ IN_PROGRESS (back)
+  PR_OPEN      ──reviewer requests changes──────▶ IN_PROGRESS (back)
+```
+
+### 5.2 Conflict Lifecycle
+
+```
+States: OPEN → ADDRESSED → CLOSED
+
+Transitions:
+  OPEN       ──all linked edit_ids → MERGED──▶ ADDRESSED
+  ADDRESSED  ──verification test passes──────▶ CLOSED
+  CLOSED     ──regression detected────────────▶ OPEN (reopen)
+```
+
+### 5.3 Combo Fix Strategy (Sprint Planning Aid)
+
+Các edits sau share codebase và nên được thực hiện trong cùng PR để tránh double-touch:
+
+| Combo | Edits | Shared module | Rationale |
+|---|---|---|---|
+| **Combo A** — Mobile RAM Safety Net | C-02, C-03, C-04, C-05 | `crypto/zeroize.rs`, `nse_policy.rs` | Tất cả liên quan đến memory safety và audit logging trong mobile crypto lifecycle |
+| **Combo B** — Mesh Resilience | C-08, C-06, C-07, C-14 | `mesh/emdp.rs`, `mesh/ble_beacon.rs` | EMDP exception + BLE disambiguation — cùng sprint, cùng module |
+| **Combo C** — Network Integrity | C-09, C-10 | `infra/alpn.rs`, `crdt/dag.rs` | Cả hai là concurrency bugs — fix cùng PR với `tokio::sync` patterns |
+| **Combo D** — Policy Sovereignty | C-11, M-01, M-02 | Spec-only edits | Cross-document spec reconciliation — review cùng với CISO + Platform Lead |
+
+---
+
+## §6 API / IPC CONTRACT
+
+### 6.1 Find/Replace Protocol
+
+Mọi edit có `change_type: Replace` phải tuân theo:
+
+1. `find` string phải **unique trong file** — không được match nhiều hơn 1 occurrence.
+2. Nếu không unique: dùng thêm context (2–3 dòng xung quanh) trong `find`.
+3. Verify bằng `grep -n "<find_string>" <target_file>` — expected: exactly 1 match.
+
+### 6.2 Append Protocol
+
+Mọi edit có `change_type: Append` phải tuân theo:
+
+1. Xác định anchor: section header hoặc dòng cuối cùng của section đó.
+2. Thêm một dòng trống trước và sau nội dung append.
+3. Verify bằng cách đọc lại section sau khi append — đảm bảo flow logic không bị gián đoạn.
+
+### 6.3 Cross-Reference Contract
+
+Mọi edit thêm cross-reference phải dùng format chuẩn:
+
+```
+Cross-reference: → <FileName>.md §<SectionNumber> <DescriptiveName>
+```
+
+Không dùng relative path (`../`). Không dùng URL. Chỉ dùng file name và section ID.
+
+### 6.4 Code Snippet Contract
+
+Mọi code snippet trong edits phải:
+
+- Dùng `ring` crate hoặc `RustCrypto` — không self-implement crypto.
+- Có `#[derive(ZeroizeOnDrop)]` cho mọi struct giữ key material.
+- Không dùng `SystemTime::now()` cho ordering — dùng HLC.
+- Không trả raw pointer từ `pub extern "C"` — dùng Token Protocol.
+
+---
+
+## §7 PLATFORM MATRIX
+
+### 7.1 Conflict × Platform
+
+| Conflict ID | 📱 iOS | 📱 Android | 📱 Huawei | 💻 macOS | 💻🖥️ Win | 🖥️ Linux |
+|---|---|---|---|---|---|---|
+| RC-01 | — | — | ✅ Affected | — | — | — |
+| RC-02 | — | ✅ Primary | ✅ Affected | — | — | — |
+| RC-03 | ✅ Primary | — | — | — | — | — |
+| PB-01 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| PB-02 | — | — | — | — | — | ✅ Primary |
+| PB-03 | — | — | — | — | ✅ Primary | — |
+| BL-01 | ✅ Primary | — | — | — | — | — |
+| BL-02 | ✅ Primary | — | — | — | — | — |
+| BL-03 | — | — | — | ✅ | ✅ | ✅ |
+| NI-01 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| NI-02 | ✅ | ✅ | ✅ | ✅ | — | — |
+| NI-03 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### 7.2 Edit × Sprint × Platform
+
+| Sprint | Edits | Platform(s) |
+|---|---|---|
+| Sprint 1 | C-01 đến C-21, F-01 đến F-08 | Tất cả platforms (Core + Feature) |
+| Sprint 2 | D-01 đến D-07, M-01 đến M-06, FUNC-01 đến FUNC-05, T-01 đến T-03, B-01 đến B-04, O-01 (ops) | UI + Marketplace + Ops |
+| Sprint 3 | TD-01 đến TD-04 | Core: iOS Mesh, Windows ARM64 |
+
+---
+
+## §8 NON-FUNCTIONAL REQUIREMENTS
+
+### 8.1 Edit Quality
+
+| Requirement | Threshold | Verification |
+|---|---|---|
+| Zero content loss | 100% nội dung hiện tại preserved | Manual review before merge |
+| Cross-reference accuracy | Mọi `→ File.md §X` phải resolve | `grep -r "§X" <File.md>` |
+| Code snippet compilability | Mọi Rust snippet phải compile (conceptually) | Peer review |
+| ID uniqueness | Mỗi edit_id, conflict_id unique | Script check |
+
+### 8.2 Process Constraints
+
+| Constraint | Rule |
+|---|---|
+| Apply order | Core_Spec.md trước, Feature_Spec.md sau, rest parallel |
+| Rollback window | Mỗi edit có thể rollback độc lập trong 48h sau merge |
+| Review requirement | Sprint 1 edits cần ≥ 2 reviewers (Tech Lead + Security Lead) |
+| CI gate | WasmParity + Clippy + cargo audit phải pass trước merge |
+
+### 8.3 Performance Impact
+
+Không có edit nào trong document này thay đổi:
+
+- Hot path crypto operations
+- BLE duty cycle
+- SQLite WAL mode
+
+Edits chỉ thêm: audit logging (C-04), platform clarification (C-01, C-06, C-07), safeguards (C-02, C-03, C-05).
+
+---
+
+## §9 SECURITY MODEL
+
+### 9.1 Security-Critical Edits (ordered by risk)
+
+| Edit ID | Security Improvement | Risk nếu không apply |
+|---|---|---|
+| C-05 | Android key material protection khỏi Doze | Key exposure trên all Android devices |
+| C-08 | EMDP Shun exception — evict compromised relay | Compromised iOS Tactical Relay có thể ở trong EMDP mesh indefinitely |
+| C-04 | Dead Man Switch audit trail | CISO không detect legitimate vs compromised deferral |
+| C-03 | Explicit NSE ONNX prohibition | Jetsam kill → silent notification loss |
+| C-11 | OPA policy sync bypass federation schema lock | Branch cluster có thể stuck với stale (insecure) OPA policy |
+
+### 9.2 Không thay đổi Security Architecture
+
+Các edits trong Arrange.md KHÔNG thay đổi:
+
+- MLS E2EE core (RFC 9420)
+- ZeroizeOnDrop pattern
+- Hardware Root of Trust (Secure Enclave / StrongBox / TPM 2.0)
+- Audit Log append-only invariant
+- Token Protocol (no raw pointer across FFI)
+
+### 9.3 New Audit Events (từ edits)
+
+| Event | Edit Source | Struct |
+|---|---|---|
+| `DeadManDeferral` | C-04 | `DeadManDeferralEntry` |
+| `EmdpShunEvent` | C-08 | `EmdpShunEvent { poisoned_node_id, hlc, tainted_escrow }` |
+| `NsePolicyViolation` | C-03 | Log khi ONNX load attempt detected trong NSE context |
+
+---
+
+## §10 FAILURE MODEL
+
+### 10.1 Impact nếu Blocker edits không được apply
+
+| Conflict ID | Failure Mode | Detection | Impact |
+|---|---|---|---|
+| RC-03 (C-02, C-03) | NSE load ONNX → Jetsam kill | iOS Notification delivery failure, no error log | Tất cả iOS users không nhận push notifications silently |
+| PB-01 (Feature_Spec.md rỗng) | 34+ TERA-CORE references unresolved | Developer confusion, wrong implementation | Implementation drift → security gaps in client code |
+| RC-02 (C-05) | Android Doze freeze mid-ZeroizeOnDrop | Forensic memory analysis | Key material in RAM page → potential key extraction |
+| BL-02 (C-08) | EMDP deadlock khi Shun + no Desktop | All-iOS mesh frozen after any Byzantine event | SOS messaging disabled during critical incident |
+| NI-01 (C-10) | strict_compliance set incorrectly | ALPN always uses TCP, never QUIC | 30ms → 80ms RTT regression for all users on affected networks |
+
+### 10.2 Impact nếu High Priority edits không được apply
+
+| Conflict ID | Failure Mode | Impact |
+|---|---|---|
+| PB-02 (F-08 §16) | AppArmor/SELinux denial on Linux | Startup crash on Ubuntu/RHEL Gov deployments |
+| PB-03 (COSIGN-04) | No EV cert → SmartScreen blocks install | Enterprise Windows pilots fail before first demo |
+| BL-03 (C-11, M-02) | Branch cluster stale OPA state | Revoked users may retain access on Branch cluster |
+
+---
+
+## §11 VERSIONING & MIGRATION
+
+### 11.1 Document Version History
+
+| Version | Date | Summary |
+|---|---|---|
+| 1.0.0 | 2026-03-21 | Initial structured version — Sprint 1/2/3 structure, 12 conflict IDs, 22 fix edits |
+| 2.0.0 | 2026-03-21 | Full restructure — 14-section production-grade format; merge raw edits + conflict analysis; 47 total edit IDs |
+
+### 11.2 Edit ID Naming Convention
+
+| Prefix | Target File | Range |
+|---|---|---|
+| `C-` | Core_Spec.md | C-01 đến C-21 |
+| `F-` | Feature_Spec.md | F-01 đến F-08 |
+| `D-` | Design.md | D-01 đến D-07 |
+| `M-` | Web_Marketplace.md | M-01 đến M-06 |
+| `FUNC-` | Function.md | FUNC-01 đến FUNC-05 |
+| `T-` | TestMatrix.md | T-01 đến T-03 |
+| `B-` | BusinessPlan.md | B-01 đến B-04 |
+| `O-` | ops/signing-pipeline.md | O-01 (CreateNew), COSIGN-01 đến 05 |
+| `TD-` | Technical Debt (multi-file) | TD-01 đến TD-04 |
+
+### 11.3 Cách thêm Conflict mới
+
+1. Assign `conflict_id` theo pattern layer: RC-xx (Runtime), PB-xx (Packaging), BL-xx (Logic), NI-xx (Network), EU-xx (Emergent).
+2. Tạo EditRecord với edit_id mới (tiếp nối số cuối).
+3. Thêm vào §4 FEATURE MODEL theo sprint.
+4. Cập nhật §7.1 Platform Matrix.
+5. Cập nhật §10 Failure Model.
+6. Increment document version minor nếu additive, major nếu breaking.
+
+---
+
+## §12 OBSERVABILITY
+
+### 12.1 CI Gates bắt buộc sau khi apply edits
+
+| Gate | Command | Blocker |
+|---|---|---|
+| FFI-01: No raw pointer in `pub extern C` | `cargo clippy -- -D tera_ffi_raw_pointer` | Yes |
+| KEY-02: ZeroizeOnDrop verification | `cargo miri test --test zeroize_verification` | Yes |
+| WasmParity: wasm3 vs wasmtime | `cargo test --test wasm_parity` | Yes |
+| Dependency audit | `cargo audit --deny warnings` | Yes |
+| Secret scan | `gitleaks detect --source . --exit-code 1` | Yes |
+| SBOM signature | `cosign verify-blob --key terachat-root.pub ...` | Yes (Sprint 2) |
+
+### 12.2 Sprint Progress Tracking
+
+| Sprint | Total Edits | Files | Done | Remaining |
+|---|---|---|---|---|
+| Sprint 1 | 29 (C-01 đến C-21 + F-01 đến F-08) | Core_Spec.md, Feature_Spec.md | — | 29 |
+| Sprint 2 | 22 (D+M+FUNC+T+B+O edits) | 6 files | — | 22 |
+| Sprint 3 | 4 (TD-01 đến TD-04) | 2 files | — | 4 |
+
+### 12.3 Checklist Per Edit
+
+Trước khi mark edit là MERGED:
+
+- [ ] `find` string tìm được exactly 1 match trong file (nếu Replace)
+- [ ] Nội dung append không duplicate với content hiện có
+- [ ] Cross-references đúng format và resolve được
+- [ ] Code snippets nhất quán với `ring`/`RustCrypto` constraint
+- [ ] `ZeroizeOnDrop` present trên mọi struct mới giữ key material
+- [ ] CI gates pass
+
+---
+
+## §13 APPENDIX
+
+### 13.1 Conflict ID Glossary
+
+| ID | Layer | Description | Severity |
+|---|---|---|---|
+| RC-01 | L1 Runtime | Huawei WASM JIT vs AOT mandate — unreconciled dual-path | Blocker |
+| RC-02 | L1 Runtime | Android `mlock()` gap — no mitigation for Doze mid-ZeroizeOnDrop | Blocker |
+| RC-03 | L1 Runtime | NSE 20MB ceiling — ONNX + Arena + decrypt = overflow | Blocker |
+| PB-01 | L2 Packaging | Feature_Spec.md empty — 34+ TERA-CORE references unresolved | Blocker |
+| PB-02 | L2 Packaging | Linux Flatpak vs seccomp-bpf deadlock — no alternative specified | High |
+| PB-03 | L2 Packaging | Windows SmartScreen EV cert delay — GTM timing risk | High |
+| BL-01 | L3 Logic | Dead Man Switch + CallKit deferral — no audit trail | High |
+| BL-02 | L3 Logic | EMDP Shun + MLS epoch causal deadlock | High |
+| BL-03 | L3 Logic | OPA rollback protection vs Federation schema mismatch | High |
+| NI-01 | L4 Network | QUIC parallel probe race → probe_fail_count corrupted | High |
+| NI-02 | L4 Network | BLE channel confusion — Advertising vs GATT for PQ keys | High |
+| NI-03 | L4 Network | VACUUM INTO mid-write race — hot_dag.db integrity | High |
+
+### 13.2 Edit ID Quick Reference
+
+| Edit ID | File | Sprint | Conflict | Status |
+|---|---|---|---|---|
+| C-01 | Core_Spec.md | 1 | RC-01 | TODO |
+| C-02 | Core_Spec.md | 1 | RC-03 | TODO |
+| C-03 | Core_Spec.md | 1 | RC-03 | TODO |
+| C-04 | Core_Spec.md | 1 | BL-01 | TODO |
+| C-05 | Core_Spec.md | 1 | RC-02 | TODO |
+| C-06 | Core_Spec.md | 1 | NI-02 | TODO |
+| C-07 | Core_Spec.md | 1 | NI-02 | TODO |
+| C-08 | Core_Spec.md | 1 | BL-02 | TODO |
+| C-09 | Core_Spec.md | 1 | NI-03 | TODO |
+| C-10 | Core_Spec.md | 1 | NI-01 | TODO |
+| C-11 | Core_Spec.md | 1 | BL-03 | TODO |
+| C-12 | Core_Spec.md | 1 | — | TODO |
+| C-13 | Core_Spec.md | 1 | — | TODO |
+| C-14 | Core_Spec.md | 1 | — | TODO |
+| C-15 | Core_Spec.md | 1 | — | TODO |
+| C-16 | Core_Spec.md | 1 | — | TODO |
+| C-17 | Core_Spec.md | 1 | — | TODO |
+| C-18 | Core_Spec.md | 1 | — | TODO |
+| C-19 | Core_Spec.md | 1 | — | TODO |
+| C-20 | Core_Spec.md | 1 | — | TODO |
+| C-21 | Core_Spec.md | 1 | — | TODO |
+| F-01 | Feature_Spec.md | 1 | PB-01 | TODO |
+| F-02 | Feature_Spec.md | 1 | — | TODO |
+| F-03 | Feature_Spec.md | 1 | — | TODO |
+| F-04 | Feature_Spec.md | 1 | RC-01 | TODO |
+| F-05 | Feature_Spec.md | 1 | PB-01 | TODO |
+| F-06 | Feature_Spec.md | 1 | — | TODO |
+| F-07 | Feature_Spec.md | 1 | RC-03 | TODO |
+| F-08 | Feature_Spec.md | 1 | PB-02 | TODO |
+| D-01 | Design.md | 2 | BL-01/02 | TODO |
+| D-02 | Design.md | 2 | — | TODO |
+| D-03 | Design.md | 2 | — | TODO |
+| D-04 | Design.md | 2 | — | TODO |
+| D-05 | Design.md | 2 | — | TODO |
+| D-06 | Design.md | 2 | — | TODO |
+| D-07 | Design.md | 2 | — | TODO |
+| M-01 | Web_Marketplace.md | 2 | RC-01 | TODO |
+| M-02 | Web_Marketplace.md | 2 | BL-03 | TODO |
+| M-03 | Web_Marketplace.md | 2 | — | TODO |
+| M-04 | Web_Marketplace.md | 2 | — | TODO |
+| M-05 | Web_Marketplace.md | 2 | — | TODO |
+| M-06 | Web_Marketplace.md | 2 | — | TODO |
+| FUNC-01 | Function.md | 2 | — | TODO |
+| FUNC-02 | Function.md | 2 | — | TODO |
+| FUNC-03 | Function.md | 2 | — | TODO |
+| FUNC-04 | Function.md | 2 | — | TODO |
+| FUNC-05 | Function.md | 2 | — | TODO |
+| T-01 | TestMatrix.md | 2 | RC-02/03/BL-01/02/NI-01 | TODO |
+| T-02 | TestMatrix.md | 2 | — | TODO |
+| T-03 | TestMatrix.md | 2 | — | TODO |
+| B-01 | BusinessPlan.md | 2 | PB-02/03 | TODO |
+| B-02 | BusinessPlan.md | 2 | — | TODO |
+| B-03 | BusinessPlan.md | 2 | — | TODO |
+| B-04 | BusinessPlan.md | 2 | — | TODO |
+| O-01 | ops/signing-pipeline.md | 2 | PB-02/03 | TODO |
+| TD-01 | Core_Spec.md | 3 | BL-02 | TODO |
+| TD-02 | Core_Spec.md | 3 | — | TODO |
+| TD-03 | Core_Spec.md | 3 | — | TODO |
+| TD-04 | Web_Marketplace.md | 3 | — | TODO |
+
+### 13.3 File Summary
+
+| File | Trạng thái | Sprint 1 Edits | Sprint 2 Edits | Sprint 3 Debt |
+|---|---|---|---|---|
+| `Core_Spec.md` | Existing — patch | C-01 đến C-21 (21) | — | TD-01, TD-02, TD-03 |
+| `Feature_Spec.md` | **TẠO MỚI** | F-01 đến F-08 (8) | — | — |
+| `Design.md` | Existing — patch | — | D-01 đến D-07 (7) | — |
+| `Web_Marketplace.md` | Existing — patch | — | M-01 đến M-06 (6) | TD-04 |
+| `Function.md` | Existing — patch | — | FUNC-01 đến FUNC-05 (5) | — |
+| `TestMatrix.md` | Existing — patch | — | T-01 đến T-03 (3) | — |
+| `BusinessPlan.md` | Existing — patch | — | B-01 đến B-04 (4) | — |
+| `ops/signing-pipeline.md` | **TẠO MỚI** | — | O-01 / COSIGN-01 đến 05 | — |
+
+---
+
+*TeraChat Arrange.md v2.0.0 — Restructured 2026-03-21*
+*Dùng file này như master checklist trong sprint planning. Check-off từng EDIT ID khi VERIFIED.*
+*Mỗi edit độc lập — có thể rollback riêng lẻ trong 48h sau merge.*

@@ -296,11 +296,21 @@ TeraChat operates a **multi-stream SaaS + professional services model** with str
 **Stream 1: SaaS License (Recurring — 70% of revenue)**
 
 | Tier | Users | Price/month | Target Customer |
-|------|-------|-------------|-----------------|
+| --- | --- | --- | --- |
 | **Community** | Unlimited | Free (watermarked) | SME lead generation |
 | **Standard** | ≤ 100 | $500/month | Vietnamese SME |
 | **Enterprise** | ≤ 1,000 | $2,000/month | Regional bank branches, hospital groups |
 | **Gov/Military** | Unlimited | $8,000+/month | Ministry-level, defense units |
+
+*Pricing Tiers Feature Differentiators:*
+
+| Feature | Community | Enterprise | Gov/Military |
+|---------|-----------|------------|--------------|
+| Offline TTL | 24 hours | 7 days (configurable) | 30 days |
+| EMDP Tactical Relay | ❌ | ✅ | ✅ |
+| Air-Gapped License | ❌ | ✅ | ✅ |
+| Compliance Retention | ❌ | 90 days | 7 years |
+| TEE License (Intel SGX) | ❌ | ❌ | Available |
 
 *[Assumption: Pricing benchmarked against Rocket.Chat Enterprise ($5/user/month) and Matrix.org hosted ($4/user/month), at competitive parity with 2× security value proposition]*
 
@@ -422,19 +432,17 @@ This is not a feature that can be copied in a quarter.
 
 As the .tapp marketplace grows, enterprises build workflows on top of TeraChat's WASM sandbox. Every workflow deepens switching costs. This is the same flywheel that made Slack $27B — but with cryptographic lock-in instead of just social lock-in.
 
-### 6.3 Feature Comparison
+### 6.3 Head-to-Head Comparison
 
-| Feature | TeraChat | Slack/Teams | Matrix | Rocket.Chat | Wickr |
-|---------|----------|-------------|--------|-------------|-------|
-| Zero-Knowledge server | ✅ | ❌ | ✅ | ❌ | ✅ |
-| Offline mesh (BLE) | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 5-min self-deploy | ✅ | N/A | ❌ | ❌ | ❌ |
-| No IT expertise needed | ✅ | N/A | ❌ | ❌ | ❌ |
-| Vietnam data localization | ✅ | ❌ | ✅* | ✅* | ❌ |
-| Air-gapped deployment | ✅ | ❌ | ⚠️ | ⚠️ | ✅ |
-| MLS RFC 9420 | ✅ | ❌ | ⚠️ | ❌ | ❌ |
-| Plugin ecosystem | ✅ | ✅ | ⚠️ | ✅ | ❌ |
-| Infra cost/100 users | $7-48/mo | N/A SaaS | $150+ | $200+ | $500+ |
+| Capability | TeraChat | Slack | MS Teams | Signal (Enterprise) |
+|------------|----------|-------|----------|---------------------|
+| Zero-Knowledge Server | ✅ | ❌ | ❌ | ✅ |
+| Data Residency (On-Prem) | ✅ | ❌ | ❌ | ❌ |
+| Offline P2P Mesh | ✅ | ❌ | ❌ | ❌ |
+| Turnkey Deployment | ✅ | ✅ | ✅ | ❌ |
+| App Ecosystem | ✅ | ✅ | ✅ | ❌ |
+| Admin Audit & Governance | ✅ | ✅ | ✅ | ❌ |
+| Cost/100 users | $7-$48/mo | $1,500/mo | $1,200/mo | N/A |
 
 *Requires complex self-hosted setup
 
@@ -728,16 +736,29 @@ Operations & Reserve (12%)         $180,000
 
 ---
 
+### 10.5 Licensing Strategy
+
+**Module Separation for Auditability:**
+
+| Module | License | Description |
+|--------|---------|-------------|
+| **`terachat-core`** | 🔓 **Open Source — AGPLv3** | Cryptographic engine, MLS state machine, mesh networking. Guaranteed verifiable by any government or enterprise. |
+| **`terachat-license-guard`** | 💼 **Commercial — BSL** | Admin console, compliance hooks, AD/LDAP sync. Protects our business model while keeping crypto open. |
+
+---
+
 ## 11. Risk & Mitigation
 
 ### 11.1 Risk Register
 
 | Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
+| --- | --- | --- | --- |
+| AppArmor/SELinux blocking deployment | Medium | Medium | Post-install script auto-generates minimal SELinux policies (Sprint 1 Priority). |
+| Windows SmartScreen warning delay | Low | High | Purchase EV Code Signing Cert (Month 1); Clean binary submission from Day 1. |
 | Slow government procurement cycles | High | Medium | Parallel private sector track; procurement pre-qualification |
-| Competitor launches Zero-Knowledge product | Low | High | 18-month technical lead; patent key innovations |
+| Competitor launches Zero-Knowledge product | Low | High | 18-month technical lead on WASM architecture; patent key innovations. |
 | Key engineer departure | Medium | High | Equity vesting; documentation culture; hiring plan funded |
-| Regulatory change (data localization loosened) | Very Low | Medium | Value prop extends beyond compliance (security + offline) |
+| Regulatory change (data localization loosened) | Low | Medium | Value prop extends beyond compliance: mesh offline survival + AI privacy. |
 | VPS/infrastructure provider outage | Low | Medium | Multi-provider support; offline mesh = fallback |
 | Security vulnerability discovered | Low | Very High | Annual independent audit; bug bounty program; rapid response plan |
 | Series A not raised | Medium | High | Milestone-gated spending; revenue-first discipline from Day 1 |
