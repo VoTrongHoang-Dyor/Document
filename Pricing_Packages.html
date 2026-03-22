@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeraChat — Bảng Giá & Gói Dịch Vụ 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:   #07111f;
+  --navy2:  #0d1f36;
+  --blue:   #143254;
+  --accent: #0066cc;
+  --accent2:#0088ff;
+  --gold:   #c9a84c;
+  --gold2:  #e8c96a;
+  --green:  #4ade80;
+  --red:    #f87171;
+  --amber:  #fbbf24;
+  --light:  #dce8f5;
+  --mid:    #8aafd4;
+  --white:  #ffffff;
+  --muted:  #526880;
+  --glass:  rgba(255,255,255,0.055);
+  --gb:     rgba(255,255,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--navy);
+  color:var(--white);
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.35;
+}
+
+/* ── TOC SIDEBAR ── */
+.toc{
+  position:fixed;left:0;top:0;bottom:0;width:64px;
+  background:rgba(7,17,31,.94);
+  border-right:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;align-items:center;
+  padding:24px 0;gap:5px;z-index:100;
+  backdrop-filter:blur(20px);
+}
+.toc-brand{
+  font-family:'Playfair Display',serif;
+  font-size:11px;font-weight:900;color:var(--gold);
+  writing-mode:vertical-rl;text-orientation:mixed;
+  margin-bottom:22px;transform:rotate(180deg);letter-spacing:2px;
+}
+.nd{
+  width:7px;height:7px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.2);
+  cursor:pointer;transition:all .28s;position:relative;
+}
+.nd:hover,.nd.active{background:var(--gold);border-color:var(--gold);transform:scale(1.45);}
+.nd::after{
+  content:attr(data-label);
+  position:absolute;left:18px;top:50%;transform:translateY(-50%);
+  background:var(--navy2);border:1px solid var(--gb);
+  color:var(--white);font-size:10px;font-family:'DM Sans',sans-serif;
+  white-space:nowrap;padding:3px 9px;border-radius:4px;
+  opacity:0;pointer-events:none;transition:opacity .18s;
+}
+.nd:hover::after{opacity:1;}
+.toc-line{width:1px;flex:1;background:linear-gradient(to bottom,transparent,var(--gb),transparent);margin:6px 0;}
+.main{margin-left:64px;}
+
+/* ── PAGE WRAPPER ── */
+.page{max-width:1100px;margin:0 auto;padding:0 48px;}
+.divider{width:100%;height:1px;background:rgba(255,255,255,.07);margin:0;}
+
+/* ── COVER ── */
+.cover{
+  min-height:72vh;display:flex;flex-direction:column;
+  justify-content:center;padding:80px 64px;
+  position:relative;overflow:hidden;
+}
+.cover-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 90% 70% at 75% 40%, rgba(0,102,204,.14) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 15% 85%, rgba(201,168,76,.07) 0%, transparent 55%);
+}
+.cover-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 30%,transparent 100%);
+}
+.cover-inner{position:relative;z-index:1;}
+.badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(201,168,76,.1);
+  border:1px solid rgba(201,168,76,.4);
+  border-radius:100px;padding:5px 16px;
+  font-size:10px;font-weight:700;letter-spacing:2.5px;
+  color:var(--gold);text-transform:uppercase;
+  margin-bottom:40px;animation:fadeUp .8s ease both;
+}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.cover-eyebrow{
+  font-size:11px;font-weight:500;letter-spacing:4px;
+  color:var(--accent2);text-transform:uppercase;
+  margin-bottom:18px;animation:fadeUp .9s .05s ease both;
+}
+.cover-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(48px,7vw,88px);
+  font-weight:900;line-height:.95;
+  margin-bottom:24px;animation:fadeUp 1s .1s ease both;
+}
+.cover-title em{
+  background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 45%,var(--accent2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-style:normal;
+}
+.cover-tagline{
+  font-size:17px;font-weight:300;color:var(--mid);
+  max-width:580px;line-height:1.65;margin-bottom:52px;
+  animation:fadeUp 1s .15s ease both;
+}
+.cover-kpis{display:flex;gap:2px;animation:fadeUp 1s .2s ease both;}
+.kpi{
+  background:var(--glass);border:1px solid var(--gb);
+  backdrop-filter:blur(12px);padding:22px 28px;
+  flex:1;max-width:200px;
+}
+.kpi:first-child{border-radius:14px 0 0 14px;}
+.kpi:last-child{border-radius:0 14px 14px 0;}
+.kpi-val{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1;}
+.kpi-val em{color:var(--gold);font-style:normal;}
+.kpi-lbl{font-size:10px;color:var(--mid);margin-top:6px;letter-spacing:.4px;line-height:1.4;}
+.cover-meta{
+  position:absolute;bottom:40px;right:64px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:rgba(255,255,255,.25);letter-spacing:1.5px;
+  animation:fadeUp 1.2s .5s ease both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── SECTION ── */
+.sec{padding:80px 64px;position:relative;}
+.sec:nth-child(even){background:rgba(255,255,255,.016);}
+.sec-num{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:3px;color:var(--accent2);opacity:.65;margin-bottom:10px;}
+.sec-title{font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,36px);font-weight:700;line-height:1.2;margin-bottom:10px;}
+.sec-line{width:56px;height:3px;background:linear-gradient(to right,var(--gold),var(--accent2));border-radius:2px;margin-bottom:36px;}
+.sec-lead{font-size:14px;color:rgba(255,255,255,.65);line-height:1.8;max-width:680px;margin-bottom:32px;}
+
+/* ── PRICING CARDS ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0;}
+.pricing-card{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:20px;padding:32px 28px;
+  position:relative;overflow:hidden;
+  transition:transform .3s,border-color .3s;
+}
+.pricing-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(to right,rgba(255,255,255,.1),rgba(255,255,255,.05));
+  transition:opacity .3s;
+}
+.pricing-card:hover{transform:translateY(-5px);border-color:rgba(255,255,255,.2);}
+.pricing-card.featured{
+  background:linear-gradient(135deg,rgba(20,50,84,.7),rgba(0,102,204,.12));
+  border-color:rgba(0,136,255,.4);
+}
+.pricing-card.featured::before{background:linear-gradient(to right,var(--accent2),var(--gold));}
+.pricing-card.gold-card{
+  background:linear-gradient(135deg,rgba(50,35,10,.7),rgba(201,168,76,.1));
+  border-color:rgba(201,168,76,.5);
+}
+.pricing-card.gold-card::before{background:linear-gradient(to right,var(--gold),var(--gold2));}
+.pc-tag{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:2px;color:var(--accent2);text-transform:uppercase;margin-bottom:12px;}
+.gold-card .pc-tag{color:var(--gold);}
+.pc-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:8px;}
+.pc-desc{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:24px;min-height:40px;}
+.pc-price{margin-bottom:6px;}
+.pc-price .amount{font-family:'Playfair Display',serif;font-size:42px;font-weight:900;line-height:1;}
+.pc-price .amount em{color:var(--gold);font-style:normal;}
+.featured .pc-price .amount em{color:var(--accent2);}
+.pc-price .period{font-size:12px;color:var(--mid);margin-left:4px;}
+.pc-annual{font-size:11px;color:var(--green);margin-bottom:24px;font-weight:500;}
+.pc-cta{
+  display:block;width:100%;padding:12px;border-radius:10px;
+  text-align:center;font-size:13px;font-weight:600;
+  text-decoration:none;cursor:pointer;border:none;
+  transition:all .25s;margin-bottom:28px;
+}
+.pc-cta-outline{background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--white);}
+.pc-cta-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4);}
+.pc-cta-blue{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.pc-cta-blue:hover{filter:brightness(1.15);}
+.pc-cta-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);}
+.pc-cta-gold:hover{filter:brightness(1.1);}
+.pc-divider{width:100%;height:1px;background:rgba(255,255,255,.08);margin-bottom:20px;}
+.pc-features{list-style:none;}
+.pc-features li{
+  display:flex;gap:10px;align-items:flex-start;
+  font-size:12.5px;color:rgba(255,255,255,.75);
+  padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);
+  line-height:1.5;
+}
+.pc-features li::before{content:'✓';color:var(--green);font-size:11px;margin-top:2px;flex-shrink:0;font-weight:700;}
+.pc-badge{
+  position:absolute;top:20px;right:20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:9px;font-weight:700;letter-spacing:1.5px;
+  padding:4px 10px;border-radius:100px;text-transform:uppercase;
+}
+.gold-card .pc-badge{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);}
+
+/* ── FEATURE TABLE ── */
+.feat-table-wrap{overflow-x:auto;margin:24px 0;}
+.feat-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.feat-table thead tr{background:linear-gradient(135deg,var(--blue),var(--navy2));}
+.feat-table thead th{
+  padding:14px 16px;text-align:left;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;
+  color:var(--mid);text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.07);
+  white-space:nowrap;
+}
+.feat-table thead th:first-child{text-align:left;}
+.feat-table thead th:not(:first-child){text-align:center;min-width:110px;}
+.feat-table tbody tr{border-bottom:1px solid rgba(255,255,255,.05);transition:background .2s;}
+.feat-table tbody tr:hover{background:rgba(0,102,204,.06);}
+.feat-table tbody td{
+  padding:12px 16px;color:rgba(255,255,255,.75);
+  border:1px solid rgba(255,255,255,.04);line-height:1.4;
+}
+.feat-table tbody td:not(:first-child){text-align:center;}
+.feat-table .cat-header td{
+  background:rgba(255,255,255,.03);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;font-weight:600;letter-spacing:2px;
+  color:var(--accent2);text-transform:uppercase;
+  padding:8px 16px;
+}
+.feat-table .cat-header.gold-cat td{color:var(--gold);}
+.feat-table td:first-child{color:var(--white);font-weight:500;}
+.tok{color:var(--green)!important;font-size:15px;}
+.tno{color:rgba(255,255,255,.2)!important;font-size:15px;}
+.tlim{color:var(--amber)!important;font-size:11px;font-weight:600;}
+.thighlight td{background:rgba(0,136,255,.05)!important;}
+.thighlight td:first-child{color:var(--accent2)!important;}
+
+/* ── QUOTA TABLE ── */
+.quota-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0;}
+.quota-card{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:14px;padding:22px;
+}
+.quota-label{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:2px;color:var(--accent2);text-transform:uppercase;margin-bottom:16px;}
+.quota-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:12px;
+}
+.quota-row:last-child{border-bottom:none;}
+.quota-row span:first-child{color:rgba(255,255,255,.6);}
+.quota-row span:last-child{font-weight:600;color:var(--white);}
+.quota-row span.gold-val{color:var(--gold);}
+.quota-row span.blue-val{color:var(--accent2);}
+
+/* ── ADDON ── */
+.addon-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:24px 0;}
+.addon-card{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:14px;padding:22px;
+  display:flex;gap:16px;align-items:flex-start;
+}
+.addon-icon{font-size:22px;flex-shrink:0;}
+.addon-title{font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.addon-desc{font-size:12px;color:rgba(255,255,255,.55);line-height:1.55;margin-bottom:8px;}
+.addon-price{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--gold);}
+.addon-cond{font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;}
+
+/* ── ENTERPRISE ── */
+.ent-card{
+  background:linear-gradient(135deg,var(--navy2),rgba(20,50,84,.8));
+  border:1px solid rgba(201,168,76,.3);
+  border-radius:20px;padding:40px;
+  position:relative;overflow:hidden;margin:24px 0;
+}
+.ent-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(to right,var(--gold),var(--accent2),var(--gold2));
+}
+.ent-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.ent-col-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
+.ent-list{list-style:none;}
+.ent-list li{font-size:12.5px;color:rgba(255,255,255,.72);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px;align-items:flex-start;line-height:1.45;}
+.ent-list li::before{content:'→';color:var(--gold);font-size:11px;margin-top:1px;flex-shrink:0;}
+
+/* ── BILLING ── */
+.billing-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0;}
+.billing-card{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:14px;padding:24px;
+}
+.billing-title{font-size:12px;font-weight:700;color:var(--accent2);letter-spacing:.4px;margin-bottom:14px;}
+.billing-list{list-style:none;}
+.billing-list li{
+  font-size:12.5px;color:rgba(255,255,255,.68);
+  padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);
+  display:flex;gap:8px;align-items:flex-start;line-height:1.45;
+}
+.billing-list li::before{content:'·';color:var(--accent2);font-weight:900;flex-shrink:0;}
+
+/* ── COST CHART ── */
+.cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0;}
+.cw{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:16px;padding:24px 24px 18px;
+  position:relative;overflow:hidden;
+}
+.cw::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(to right,var(--accent2),var(--gold));opacity:.55;
+}
+.cl{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:2px;color:var(--accent2);opacity:.7;text-transform:uppercase;margin-bottom:4px;}
+.ct{font-size:13px;font-weight:600;color:var(--white);margin-bottom:2px;}
+.cd{font-size:11px;color:rgba(168,196,232,.65);margin-bottom:18px;}
+
+/* ── SAVINGS CALLOUT ── */
+.savings-box{
+  background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(0,136,255,.06));
+  border:1px solid rgba(74,222,128,.25);
+  border-radius:16px;padding:28px 32px;
+  display:flex;align-items:center;gap:24px;margin:24px 0;
+}
+.savings-val{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;color:var(--green);line-height:1;flex-shrink:0;}
+.savings-label{font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;}
+.savings-sub{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;}
+
+/* ── USE CASE ── */
+.uc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0;}
+.uc-card{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:14px;padding:24px;
+}
+.uc-icon{font-size:24px;margin-bottom:12px;}
+.uc-segment{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--accent2);text-transform:uppercase;margin-bottom:8px;}
+.uc-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:8px;}
+.uc-rec{
+  display:inline-block;
+  background:rgba(0,136,255,.12);border:1px solid rgba(0,136,255,.3);
+  color:var(--accent2);font-size:10px;font-weight:600;
+  padding:3px 10px;border-radius:100px;letter-spacing:.4px;
+  margin-bottom:10px;
+}
+.uc-rec.gold-rec{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.35);color:var(--gold);}
+.uc-rec.green-rec{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);color:var(--green);}
+.uc-list{list-style:none;}
+.uc-list li{font-size:12px;color:rgba(255,255,255,.6);padding:4px 0;display:flex;gap:6px;}
+.uc-list li::before{content:'▸';color:var(--accent2);font-size:10px;margin-top:2px;flex-shrink:0;}
+.uc-card.gold-uc .uc-segment{color:var(--gold);}
+.uc-card.gold-uc .uc-list li::before{color:var(--gold);}
+
+/* ── NOTES ── */
+.notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0;}
+.note-card{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:14px;padding:22px;
+}
+.note-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--mid);text-transform:uppercase;margin-bottom:12px;}
+.note-list{list-style:none;}
+.note-list li{font-size:12px;color:rgba(255,255,255,.62);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px;line-height:1.45;}
+.note-list li::before{content:'※';color:var(--amber);font-size:10px;flex-shrink:0;margin-top:1px;}
+
+/* ── CALLOUT ── */
+.callout{border-left:4px solid var(--gold);background:rgba(201,168,76,.07);border-radius:0 12px 12px 0;padding:18px 24px;margin:20px 0;}
+.callout p{font-size:13.5px;font-style:italic;color:rgba(255,255,255,.82);line-height:1.7;}
+.callout-blue{border-left-color:var(--accent2);background:rgba(0,136,255,.07);}
+.callout-green{border-left-color:var(--green);background:rgba(74,222,128,.06);}
+
+/* ── MROW ── */
+.mrow{display:flex;gap:14px;margin:28px 0;}
+.mc{
+  flex:1;background:linear-gradient(135deg,var(--navy2),rgba(20,50,84,.6));
+  border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:26px 20px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.mc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(to right,var(--accent2),var(--gold));}
+.mc .val{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;line-height:1;}
+.mc .val em{color:var(--gold);font-style:normal;}
+.mc .lbl{font-size:11px;color:var(--mid);margin-top:6px;}
+.mc .sub{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;font-style:italic;}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease;}
+.reveal.vis{opacity:1;transform:translateY(0);}
+
+/* ── FOOTER ── */
+.footer{
+  padding:40px 64px;border-top:1px solid rgba(255,255,255,.07);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.footer-brand{
+  font-family:'Playfair Display',serif;font-size:20px;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.footer-txt{font-size:11px;color:var(--muted);line-height:1.6;text-align:right;}
+
+.sh{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.4px;margin:32px 0 14px;display:flex;align-items:center;gap:10px;}
+.sh::before{content:'';width:18px;height:2px;background:var(--gold);border-radius:1px;}
+
+@media(max-width:900px){
+  .pricing-grid,.ent-grid,.quota-grid,.uc-grid{grid-template-columns:1fr;}
+  .cost-grid,.billing-grid,.notes-grid,.addon-grid{grid-template-columns:1fr;}
+  .sec{padding:60px 32px;}
+  .cover{padding:60px 32px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR TOC ── -->
+<nav class="toc">
+  <div class="toc-brand">TERACHAT</div>
+  <div class="nd" data-label="Tổng quan" onclick="scrollTo('cover')"></div>
+  <div class="nd" data-label="Bảng Giá" onclick="scrollTo('s1')"></div>
+  <div class="nd" data-label="Tính Năng" onclick="scrollTo('s2')"></div>
+  <div class="nd" data-label="Giới hạn" onclick="scrollTo('s3')"></div>
+  <div class="nd" data-label="Add-ons" onclick="scrollTo('s4')"></div>
+  <div class="nd" data-label="Enterprise" onclick="scrollTo('s5')"></div>
+  <div class="nd" data-label="Thanh Toán" onclick="scrollTo('s6')"></div>
+  <div class="nd" data-label="Chi Phí" onclick="scrollTo('s7')"></div>
+  <div class="nd" data-label="Use Cases" onclick="scrollTo('s8')"></div>
+  <div class="nd" data-label="Lưu Ý" onclick="scrollTo('s9')"></div>
+  <div class="toc-line"></div>
+</nav>
+
+<div class="main">
+
+<!-- ═══════════════ COVER ═══════════════ -->
+<section class="cover" id="cover">
+  <div class="cover-bg"></div>
+  <div class="cover-grid"></div>
+  <div class="cover-inner">
+    <div class="badge"><span class="badge-dot"></span>Pricing Guide · Q2 2026 · Bảo Mật Doanh Nghiệp</div>
+    <p class="cover-eyebrow">Bảng Giá & Gói Dịch Vụ — Sovereign Messaging Platform</p>
+    <h1 class="cover-title">Tera<em>Chat</em><br>Pricing</h1>
+    <p class="cover-tagline">Subscription theo workspace. Không tính phí theo đầu người. Không chi phí ẩn. Toàn quyền kiểm soát dữ liệu từ ngày đầu tiên.</p>
+    <div class="cover-kpis">
+      <div class="kpi">
+        <div class="kpi-val"><em>$49</em></div>
+        <div class="kpi-lbl">Gói Cơ Bản / tháng<br>Tối đa 100 người dùng</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val"><em>$149</em></div>
+        <div class="kpi-lbl">Gói Cao Cấp / tháng<br>Tối đa 500 người dùng</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val"><em>30%</em></div>
+        <div class="kpi-lbl">Tiết kiệm khi đăng ký<br>gói năm</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val"><em>Custom</em></div>
+        <div class="kpi-lbl">Gói Enterprise<br>Gov / Military / Custom</div>
+      </div>
+    </div>
+  </div>
+  <div class="cover-meta">PRICING PACKAGES · 2026 · v1.0</div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════ S1 — BẢNG GIÁ ═══════════════ -->
+<section class="sec reveal" id="s1">
+  <div class="sec-num">01 — BẢNG GIÁ</div>
+  <h2 class="sec-title">Pricing Overview</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">Mô hình subscription theo workspace — một mức giá cố định cho toàn bộ tổ chức, không nhân theo đầu người. Phù hợp với doanh nghiệp SME đến tập đoàn lớn.</p>
+
+  <div class="pricing-grid">
+    <!-- Community -->
+    <div class="pricing-card">
+      <div class="pc-tag">Miễn phí</div>
+      <div class="pc-name">Community</div>
+      <div class="pc-desc">Dùng thử không giới hạn thời gian. Có watermark thương hiệu TeraChat.</div>
+      <div class="pc-price">
+        <span class="amount"><em>$0</em></span>
+        <span class="period">/ tháng</span>
+      </div>
+      <div class="pc-annual" style="color: rgba(255,255,255,.3);">Mãi mãi miễn phí</div>
+      <button class="pc-cta pc-cta-outline">Bắt Đầu Ngay</button>
+      <div class="pc-divider"></div>
+      <ul class="pc-features">
+        <li>E2EE nhắn tin & gọi video</li>
+        <li>Tối đa 25 người dùng</li>
+        <li>Survival Mesh cơ bản</li>
+        <li>3 tiện ích tích hợp sẵn</li>
+        <li>Lưu trữ 5 GB</li>
+      </ul>
+    </div>
+
+    <!-- Cơ Bản -->
+    <div class="pricing-card featured">
+      <div class="pc-badge">Phổ Biến</div>
+      <div class="pc-tag">Gói Cơ Bản</div>
+      <div class="pc-name">Standard</div>
+      <div class="pc-desc">Dành cho SME, văn phòng đại diện, công ty 100–500 nhân viên.</div>
+      <div class="pc-price">
+        <span class="amount"><em>$49</em></span>
+        <span class="period">/ tháng</span>
+      </div>
+      <div class="pc-annual">$399 / năm — tiết kiệm $189</div>
+      <button class="pc-cta pc-cta-blue">Dùng Thử 30 Ngày</button>
+      <div class="pc-divider"></div>
+      <ul class="pc-features">
+        <li>Tất cả tính năng Community</li>
+        <li>Tối đa 100 người dùng</li>
+        <li>Nhắn tin offline (BLE &lt; 10m)</li>
+        <li>Đồng bộ Azure AD / Google Workspace</li>
+        <li>Khôi phục khẩn cấp (2 quản lý xác nhận)</li>
+        <li>Lưu trữ 100 GB</li>
+        <li>Hỗ trợ email trong giờ hành chính</li>
+      </ul>
+    </div>
+
+    <!-- Cao Cấp -->
+    <div class="pricing-card gold-card">
+      <div class="pc-badge">Cao Cấp</div>
+      <div class="pc-tag">Gói Cao Cấp</div>
+      <div class="pc-name">Premium</div>
+      <div class="pc-desc">Dành cho công ty 500+ người, tập đoàn, tổ chức tài chính & y tế.</div>
+      <div class="pc-price">
+        <span class="amount"><em>$149</em></span>
+        <span class="period">/ tháng</span>
+      </div>
+      <div class="pc-annual">$1.190 / năm — tiết kiệm $598</div>
+      <button class="pc-cta pc-cta-gold">Đặt Lịch Demo</button>
+      <div class="pc-divider"></div>
+      <ul class="pc-features">
+        <li>Tất cả tính năng Standard</li>
+        <li>Tối đa 500 người dùng</li>
+        <li>AI SLM với kiểm soát PII</li>
+        <li>Federation (kết nối chi nhánh)</li>
+        <li>Thu hồi quyền tự động (&lt; 30 giây)</li>
+        <li>Full API Access (4 loại)</li>
+        <li>Lưu trữ 1 TB</li>
+        <li>Hỗ trợ ưu tiên 24/7</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Metric summary -->
+  <div class="mrow">
+    <div class="mc">
+      <div class="val"><em>$399</em></div>
+      <div class="lbl">Gói Cơ Bản / năm</div>
+      <div class="sub">~$33/tháng hiệu quả</div>
+    </div>
+    <div class="mc">
+      <div class="val"><em>$1.190</em></div>
+      <div class="lbl">Gói Cao Cấp / năm</div>
+      <div class="sub">~$99/tháng hiệu quả</div>
+    </div>
+    <div class="mc">
+      <div class="val"><em>30%</em></div>
+      <div class="lbl">Tiết kiệm gói năm</div>
+      <div class="sub">Áp dụng cả 2 gói</div>
+    </div>
+    <div class="mc">
+      <div class="val"><em>Liên hệ</em></div>
+      <div class="lbl">Enterprise Custom</div>
+      <div class="sub">&gt; 500 users · Gov · Air-gapped</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ S2 — FEATURE BREAKDOWN ═══════════════ -->
+<section class="sec reveal" id="s2">
+  <div class="sec-num">02 — TÍNH NĂNG</div>
+  <h2 class="sec-title">Feature Breakdown</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">So sánh chi tiết tính năng theo từng nhóm chức năng giữa các gói.</p>
+
+  <div class="feat-table-wrap">
+    <table class="feat-table">
+      <thead>
+        <tr>
+          <th style="min-width:240px;">Tính năng</th>
+          <th>Community</th>
+          <th>Standard</th>
+          <th>Premium</th>
+          <th>Enterprise</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Core Messaging -->
+        <tr class="cat-header"><td colspan="5">CORE — Nhắn Tin & Gọi</td></tr>
+        <tr><td>Nhắn tin E2EE cá nhân & nhóm</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Gọi video HD E2EE (WebRTC)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Gửi file & chia sẻ tài liệu</td><td class="tlim">≤ 25MB</td><td class="tlim">≤ 100MB</td><td class="tok">≤ 1GB</td><td class="tok">Tuỳ chỉnh</td></tr>
+        <tr><td>Tìm kiếm tin nhắn toàn văn (local)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Lịch sử tin nhắn</td><td class="tlim">30 ngày</td><td class="tlim">90 ngày</td><td class="tok">1 năm</td><td class="tok">Tuỳ chỉnh</td></tr>
+        <tr class="thighlight"><td>Nhắn tin offline qua BLE Mesh (&lt; 10m)</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+
+        <!-- Security -->
+        <tr class="cat-header"><td colspan="5">SECURITY — Bảo Mật</td></tr>
+        <tr><td>Mã hoá đầu cuối MLS RFC 9420</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Khoá lưu trong phần cứng (Secure Enclave / TPM)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Xác thực sinh trắc học bắt buộc</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Remote Wipe (xoá từ xa)</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thighlight"><td>Khôi phục khẩn cấp (2 quản lý xác nhận)</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Thu hồi quyền tự động khi nghỉ việc (&lt; 30 giây)</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Audit Log bất biến (Ed25519)</td><td class="tno">✗</td><td class="tlim">Cơ bản</td><td class="tok">Đầy đủ</td><td class="tok">Đầy đủ + SIEM</td></tr>
+        <tr><td>Post-Quantum Encryption (ML-KEM-768)</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+
+        <!-- Integration -->
+        <tr class="cat-header gold-cat"><td colspan="5">INTEGRATION — Tích Hợp</td></tr>
+        <tr><td>Azure AD / Google Workspace đồng bộ nhân sự</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>SCIM 2.0 auto-offboarding</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Okta / OneLogin / SAML SSO</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thighlight"><td>API: Đồng bộ Định danh Nhân sự</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thighlight"><td>API: Bot Builder SDK</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thighlight"><td>API: Compliance Export</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thighlight"><td>API: Gửi Thông Báo (Webhook)</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Federation — kết nối chi nhánh / tổng công ty</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓ + air-gapped</td></tr>
+
+        <!-- AI -->
+        <tr class="cat-header gold-cat"><td colspan="5">AI — Trí Tuệ Nhân Tạo</td></tr>
+        <tr><td>AI SLM on-device (không cloud)</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thighlight"><td>PII Redaction tự động trước khi gửi AI</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Tìm kiếm ngữ nghĩa (semantic search)</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>AI Quota / giờ</td><td class="tno">—</td><td class="tno">—</td><td class="tlim">10K tokens</td><td class="tok">Không giới hạn</td></tr>
+
+        <!-- Admin -->
+        <tr class="cat-header"><td colspan="5">ADMIN — Quản Trị</td></tr>
+        <tr><td>Admin Console (web + mobile)</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Quản lý thiết bị (MDM lite)</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>OPA Policy tuỳ chỉnh</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Dashboard báo cáo bảo mật</td><td class="tno">✗</td><td class="tlim">Cơ bản</td><td class="tok">Đầy đủ</td><td class="tok">Custom + SIEM</td></tr>
+
+        <!-- Plugins -->
+        <tr class="cat-header"><td colspan="5">PLUGINS — Tiện Ích .tapp</td></tr>
+        <tr><td>3 tiện ích tích hợp (Lịch, Ghi chú, Công việc)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Marketplace .tapp</td><td class="tno">✗</td><td class="tlim">Xem</td><td class="tok">Đầy đủ</td><td class="tok">Private + Custom</td></tr>
+        <tr><td>Custom .tapp nội bộ</td><td class="tno">✗</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td></tr>
+
+        <!-- Deployment -->
+        <tr class="cat-header"><td colspan="5">DEPLOYMENT — Triển Khai</td></tr>
+        <tr><td>Self-hosted VPS (1 lệnh cài đặt)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>On-premise nội bộ</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Air-gapped (không cần Internet)</td><td class="tno">✗</td><td class="tno">✗</td><td class="tno">✗</td><td class="tok">✓</td></tr>
+        <tr><td>SLA uptime cam kết</td><td class="tno">—</td><td class="tlim">99.5%</td><td class="tlim">99.9%</td><td class="tok">99.99%</td></tr>
+
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ S3 — LIMITS & QUOTAS ═══════════════ -->
+<section class="sec reveal" id="s3">
+  <div class="sec-num">03 — GIỚI HẠN</div>
+  <h2 class="sec-title">Limits & Quotas</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">Giới hạn tài nguyên theo từng gói. Có thể nâng cấp qua add-on hoặc Enterprise plan.</p>
+
+  <div class="quota-grid">
+
+    <div class="quota-card">
+      <div class="quota-label">Community</div>
+      <div class="quota-row"><span>Người dùng</span><span>≤ 25</span></div>
+      <div class="quota-row"><span>Lưu trữ</span><span>5 GB</span></div>
+      <div class="quota-row"><span>File tối đa / lần gửi</span><span>25 MB</span></div>
+      <div class="quota-row"><span>Lịch sử tin nhắn</span><span>30 ngày</span></div>
+      <div class="quota-row"><span>API calls</span><span class="tno" style="font-size:13px;">✗</span></div>
+      <div class="quota-row"><span>AI Token / giờ</span><span class="tno" style="font-size:13px;">✗</span></div>
+      <div class="quota-row"><span>Số kênh / nhóm</span><span>20</span></div>
+      <div class="quota-row"><span>Offline TTL</span><span>24 giờ</span></div>
+    </div>
+
+    <div class="quota-card" style="border-color:rgba(0,136,255,.3);">
+      <div class="quota-label" style="color:var(--accent2);">Standard</div>
+      <div class="quota-row"><span>Người dùng</span><span class="blue-val">≤ 100</span></div>
+      <div class="quota-row"><span>Lưu trữ</span><span class="blue-val">100 GB</span></div>
+      <div class="quota-row"><span>File tối đa / lần gửi</span><span class="blue-val">100 MB</span></div>
+      <div class="quota-row"><span>Lịch sử tin nhắn</span><span class="blue-val">90 ngày</span></div>
+      <div class="quota-row"><span>API calls</span><span class="tno" style="font-size:13px;">✗</span></div>
+      <div class="quota-row"><span>AI Token / giờ</span><span class="tno" style="font-size:13px;">✗</span></div>
+      <div class="quota-row"><span>Số kênh / nhóm</span><span>Không giới hạn</span></div>
+      <div class="quota-row"><span>Offline TTL</span><span>7 ngày</span></div>
+    </div>
+
+    <div class="quota-card" style="border-color:rgba(201,168,76,.3);">
+      <div class="quota-label" style="color:var(--gold);">Premium</div>
+      <div class="quota-row"><span>Người dùng</span><span class="gold-val">≤ 500</span></div>
+      <div class="quota-row"><span>Lưu trữ</span><span class="gold-val">1 TB</span></div>
+      <div class="quota-row"><span>File tối đa / lần gửi</span><span class="gold-val">1 GB</span></div>
+      <div class="quota-row"><span>Lịch sử tin nhắn</span><span class="gold-val">1 năm</span></div>
+      <div class="quota-row"><span>API calls / tháng</span><span class="gold-val">500K</span></div>
+      <div class="quota-row"><span>AI Token / giờ</span><span class="gold-val">10.000</span></div>
+      <div class="quota-row"><span>Số kênh / nhóm</span><span>Không giới hạn</span></div>
+      <div class="quota-row"><span>Offline TTL</span><span class="gold-val">30 ngày</span></div>
+    </div>
+
+  </div>
+
+  <div class="callout callout-blue">
+    <p><strong>Lưu ý:</strong> Giới hạn lưu trữ tính trên tổng workspace (không phải per user). File xoá vẫn tính vào quota cho đến khi bị purge theo chính sách retention.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ S4 — ADD-ONS ═══════════════ -->
+<section class="sec reveal" id="s4">
+  <div class="sec-num">04 — ADD-ONS</div>
+  <h2 class="sec-title">Tính Năng Bổ Sung</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">Mở rộng gói hiện có theo nhu cầu thực tế. Có thể kích hoạt bất kỳ lúc nào.</p>
+
+  <div class="addon-grid">
+
+    <div class="addon-card">
+      <div class="addon-icon">💾</div>
+      <div>
+        <div class="addon-title">Mở rộng Lưu trữ</div>
+        <div class="addon-desc">Thêm dung lượng lưu trữ encrypted blob cho workspace. Áp dụng cho Standard và Premium.</div>
+        <div class="addon-price">+$15 / 100 GB / tháng</div>
+        <div class="addon-cond">Tối thiểu 100 GB · Áp dụng từ Standard trở lên</div>
+      </div>
+    </div>
+
+    <div class="addon-card">
+      <div class="addon-icon">👥</div>
+      <div>
+        <div class="addon-title">Mở rộng Người dùng</div>
+        <div class="addon-desc">Thêm slot người dùng vượt quá giới hạn gói hiện tại. Chưa đến ngưỡng Enterprise.</div>
+        <div class="addon-price">+$0.50 / user thêm / tháng</div>
+        <div class="addon-cond">Tối đa +50 users / tháng · Standard; +200 users / tháng · Premium</div>
+      </div>
+    </div>
+
+    <div class="addon-card">
+      <div class="addon-icon">🤖</div>
+      <div>
+        <div class="addon-title">AI Token Mở rộng</div>
+        <div class="addon-desc">Tăng quota AI cho toàn workspace. Chỉ áp dụng gói Premium (có AI SLM).</div>
+        <div class="addon-price">+$10 / 50.000 token / tháng</div>
+        <div class="addon-cond">Chỉ áp dụng Premium · Không rollover sang tháng sau</div>
+      </div>
+    </div>
+
+    <div class="addon-card">
+      <div class="addon-icon">🔌</div>
+      <div>
+        <div class="addon-title">API Quota Mở rộng</div>
+        <div class="addon-desc">Tăng số lượng API call / tháng cho tích hợp hệ thống bên thứ ba.</div>
+        <div class="addon-price">+$20 / 1M API calls / tháng</div>
+        <div class="addon-cond">Chỉ áp dụng Premium · Rate limit 100 req/s vẫn áp dụng</div>
+      </div>
+    </div>
+
+    <div class="addon-card">
+      <div class="addon-icon">🛡️</div>
+      <div>
+        <div class="addon-title">Security Audit Report</div>
+        <div class="addon-desc">Báo cáo kiểm toán bảo mật độc lập hàng năm cho compliance nội bộ.</div>
+        <div class="addon-price">$5.000 / lần · Hàng năm</div>
+        <div class="addon-cond">Tài liệu phục vụ ISO 27001 / SOC 2 / HIPAA · Lên lịch theo yêu cầu</div>
+      </div>
+    </div>
+
+    <div class="addon-card">
+      <div class="addon-icon">📊</div>
+      <div>
+        <div class="addon-title">Compliance Data Export</div>
+        <div class="addon-desc">Export lịch sử tin nhắn có chữ ký số phục vụ yêu cầu pháp lý hoặc kiểm toán.</div>
+        <div class="addon-price">$200 / lần export</div>
+        <div class="addon-cond">Ed25519 signed · Chỉ Admin thực hiện · Log bắt buộc</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ S5 — ENTERPRISE ═══════════════ -->
+<section class="sec reveal" id="s5">
+  <div class="sec-num">05 — ENTERPRISE</div>
+  <h2 class="sec-title">Enterprise & Custom Plan</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">Dành cho tổ chức &gt; 500 người dùng, cơ quan chính phủ, quốc phòng, hoặc môi trường air-gapped. Pricing tuỳ chỉnh theo quy mô và yêu cầu triển khai.</p>
+
+  <div class="ent-card">
+    <div class="ent-grid">
+      <div>
+        <div class="ent-col-title">Deployment Options</div>
+        <ul class="ent-list">
+          <li>Self-hosted VPS (single binary)</li>
+          <li>On-premise nội bộ (bare-metal)</li>
+          <li>Air-gapped hoàn toàn (không Internet)</li>
+          <li>Hybrid: on-prem + cloud relay</li>
+          <li>Multi-zone (geo-distributed)</li>
+        </ul>
+      </div>
+      <div>
+        <div class="ent-col-title">SLA & Support</div>
+        <ul class="ent-list">
+          <li>SLA uptime 99.99%</li>
+          <li>Hotline 24/7 dedicated</li>
+          <li>TAM (Technical Account Manager)</li>
+          <li>Onboarding &amp; deployment hỗ trợ</li>
+          <li>Quarterly security review</li>
+        </ul>
+      </div>
+      <div>
+        <div class="ent-col-title">Tính Năng Độc Quyền</div>
+        <ul class="ent-list">
+          <li>HSM FIPS 140-3 key management</li>
+          <li>Custom .tapp nội bộ</li>
+          <li>EMDP Tactical Relay (IoS mesh)</li>
+          <li>AI Quota không giới hạn</li>
+          <li>Offline TTL lên đến 30 ngày</li>
+          <li>Shamir Secret Sharing (M-of-N)</li>
+          <li>Intel SGX / TEE option</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="mrow">
+    <div class="mc">
+      <div class="val"><em>$8.000+</em></div>
+      <div class="lbl">Gov/Military / tháng</div>
+      <div class="sub">Hợp đồng tối thiểu 12 tháng</div>
+    </div>
+    <div class="mc">
+      <div class="val"><em>$50K</em>–<em>$200K</em></div>
+      <div class="lbl">Professional Services</div>
+      <div class="sub">Triển khai on-premise/air-gapped</div>
+    </div>
+    <div class="mc">
+      <div class="val"><em>3 năm</em></div>
+      <div class="lbl">Hợp đồng tối thiểu Gov</div>
+      <div class="sub">Điều khoản riêng · NDA required</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p>Mọi hợp đồng Enterprise đều bao gồm kiểm toán bảo mật độc lập trước khi go-live và cam kết <strong>SLA bằng văn bản</strong>.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ S6 — BILLING ═══════════════ -->
+<section class="sec reveal" id="s6">
+  <div class="sec-num">06 — THANH TOÁN</div>
+  <h2 class="sec-title">Billing & Payment Rules</h2>
+  <div class="sec-line"></div>
+
+  <div class="billing-grid">
+
+    <div class="billing-card">
+      <div class="billing-title">CHU KỲ & PHƯƠNG THỨC</div>
+      <ul class="billing-list">
+        <li>Thanh toán theo tháng hoặc năm (trả trước)</li>
+        <li>Chấp nhận: Thẻ quốc tế (Visa, Mastercard), chuyển khoản, PayPal</li>
+        <li>Doanh nghiệp VN: có thể thanh toán bằng VND qua chuyển khoản</li>
+        <li>Hoá đơn VAT xuất sau mỗi chu kỳ thanh toán</li>
+        <li>Enterprise: Payment terms NET 30 hoặc theo hợp đồng</li>
+      </ul>
+    </div>
+
+    <div class="billing-card">
+      <div class="billing-title">CHÍNH SÁCH GIẢM GIÁ</div>
+      <ul class="billing-list">
+        <li>Gói năm: giảm 30% so với gói tháng</li>
+        <li>Khách hàng giới thiệu: giảm 2 tháng cho cả hai bên</li>
+        <li>Tổ chức phi lợi nhuận / giáo dục: giảm 40% theo yêu cầu</li>
+        <li>Pilot Gov: 90 ngày miễn phí trước khi ký hợp đồng chính thức</li>
+        <li>Không có discount stacking — áp dụng mức cao nhất</li>
+      </ul>
+    </div>
+
+    <div class="billing-card">
+      <div class="billing-title">NÂNG / HẠ CẤP</div>
+      <ul class="billing-list">
+        <li>Upgrade: có hiệu lực ngay lập tức; tính phí theo ngày còn lại</li>
+        <li>Downgrade: có hiệu lực từ kỳ thanh toán tiếp theo</li>
+        <li>Khi downgrade: dữ liệu vượt quota được giữ 30 ngày trước khi purge</li>
+        <li>Chuyển từ tháng sang năm: tính theo số tháng còn lại</li>
+      </ul>
+    </div>
+
+    <div class="billing-card">
+      <div class="billing-title">HUỶ & HOÀN TIỀN</div>
+      <ul class="billing-list">
+        <li>Gói tháng: huỷ bất kỳ lúc nào; không hoàn phí tháng hiện tại</li>
+        <li>Gói năm: hoàn tiền theo tháng còn lại nếu huỷ trong 30 ngày đầu</li>
+        <li>Enterprise: theo điều khoản hợp đồng riêng</li>
+        <li>Dữ liệu giữ lại 90 ngày sau huỷ; xuất trước khi xoá</li>
+        <li>Không tính phí khi trial 30 ngày — huỷ không cần lý do</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ S7 — COST ADVANTAGE ═══════════════ -->
+<section class="sec reveal" id="s7">
+  <div class="sec-num">07 — LỢI THẾ CHI PHÍ</div>
+  <h2 class="sec-title">Cost Advantage & Positioning</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">So sánh tổng chi phí thực tế cho 500 nhân viên trong 12 tháng.</p>
+
+  <div class="cost-grid">
+    <div class="cw">
+      <div class="cl">CHART — 01</div>
+      <div class="ct">Tổng Chi Phí — 500 Nhân Viên / Năm (USD)</div>
+      <div class="cd">Slack Pro vs TeraChat Standard vs TeraChat Premium</div>
+      <canvas id="cCostBar" height="260"></canvas>
+    </div>
+    <div class="cw">
+      <div class="cl">CHART — 02</div>
+      <div class="ct">Phân Bổ Chi Phí TeraChat Standard</div>
+      <div class="cd">Bản quyền · Máy chủ · Lưu trữ</div>
+      <canvas id="cCostPie" height="260"></canvas>
+    </div>
+  </div>
+
+  <div class="sh">Bảng So Sánh Chi Phí Chi Tiết</div>
+
+  <div class="feat-table-wrap">
+    <table class="feat-table">
+      <thead>
+        <tr>
+          <th>Hạng mục</th>
+          <th>Slack Pro</th>
+          <th>TeraChat Standard</th>
+          <th>TeraChat Premium</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Phí bản quyền / năm</td><td style="text-align:center;color:var(--red);">~$43.500</td><td style="text-align:center;color:var(--accent2);">~$4.990</td><td style="text-align:center;color:var(--gold);">~$11.900</td></tr>
+        <tr><td>Chi phí máy chủ / năm</td><td style="text-align:center;color:var(--mid);">Đã bao gồm</td><td style="text-align:center;color:var(--accent2);">~$240</td><td style="text-align:center;color:var(--gold);">~$2.400</td></tr>
+        <tr><td>Chi phí lưu trữ / năm</td><td style="text-align:center;color:var(--mid);">Giới hạn</td><td style="text-align:center;color:var(--accent2);">~$600</td><td style="text-align:center;color:var(--gold);">~$600</td></tr>
+        <tr class="thighlight"><td><strong>Tổng cộng / năm</strong></td><td style="text-align:center;font-weight:700;color:var(--red);">~$43.500</td><td style="text-align:center;font-weight:700;color:var(--accent2);">~$5.830</td><td style="text-align:center;font-weight:700;color:var(--gold);">~$14.900</td></tr>
+        <tr><td>Zero-Knowledge Server</td><td style="text-align:center;" class="tno">✗</td><td style="text-align:center;" class="tok">✓</td><td style="text-align:center;" class="tok">✓</td></tr>
+        <tr><td>Offline Mesh Survival</td><td style="text-align:center;" class="tno">✗</td><td style="text-align:center;" class="tok">✓</td><td style="text-align:center;" class="tok">✓</td></tr>
+        <tr><td>Data Residency On-Prem</td><td style="text-align:center;" class="tno">✗</td><td style="text-align:center;" class="tok">✓</td><td style="text-align:center;" class="tok">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="savings-box">
+    <div class="savings-val">$37K</div>
+    <div>
+      <div class="savings-label">Tiết kiệm mỗi năm so với Slack Pro — với 500 nhân viên</div>
+      <div class="savings-sub">TeraChat Standard: ~$5.830/năm vs Slack Pro: ~$43.500/năm.<br>
+      Đồng thời đạt toàn quyền kiểm soát dữ liệu, tuân thủ Nghị định 13/2023/NĐ-CP và hoạt động khi mất Internet.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ S8 — USE CASE MAPPING ═══════════════ -->
+<section class="sec reveal" id="s8">
+  <div class="sec-num">08 — USE CASES</div>
+  <h2 class="sec-title">Use Case Mapping</h2>
+  <div class="sec-line"></div>
+  <p class="sec-lead">Gói nào phù hợp với nhóm khách hàng nào. Dựa trên quy mô, ngành và yêu cầu compliance.</p>
+
+  <div class="uc-grid">
+
+    <div class="uc-card">
+      <div class="uc-icon">🏢</div>
+      <div class="uc-segment">SME · Startup · Agency</div>
+      <div class="uc-title">Doanh Nghiệp Vừa & Nhỏ</div>
+      <div class="uc-rec">Gói Standard</div>
+      <ul class="uc-list">
+        <li>5–100 nhân viên</li>
+        <li>Cần E2EE mà không cần DevOps</li>
+        <li>Dùng Azure AD / Google Workspace</li>
+        <li>Budget: &lt; $500/tháng</li>
+        <li>Ưu tiên: dễ triển khai, offline cơ bản</li>
+      </ul>
+    </div>
+
+    <div class="uc-card gold-uc">
+      <div class="uc-icon">🏦</div>
+      <div class="uc-segment">Banking · Finance · Healthcare</div>
+      <div class="uc-title">Tổ Chức Tài Chính & Y Tế</div>
+      <div class="uc-rec gold-rec">Gói Premium</div>
+      <ul class="uc-list">
+        <li>100–500 nhân viên</li>
+        <li>Tuân thủ Thông tư 09 NHNN, HIPAA</li>
+        <li>Cần auto-offboarding SCIM</li>
+        <li>AI với kiểm soát PII bắt buộc</li>
+        <li>Audit log cho kiểm toán nội bộ</li>
+      </ul>
+    </div>
+
+    <div class="uc-card">
+      <div class="uc-icon">🏛️</div>
+      <div class="uc-segment">Government · Ministry · Defense</div>
+      <div class="uc-title">Cơ Quan Nhà Nước & Quốc Phòng</div>
+      <div class="uc-rec green-rec">Enterprise Custom</div>
+      <ul class="uc-list">
+        <li>&gt; 500 nhân viên</li>
+        <li>Air-gapped, không phụ thuộc Internet</li>
+        <li>HSM FIPS 140-3, Shamir M-of-N</li>
+        <li>Offline TTL 30 ngày (Gov tier)</li>
+        <li>Chaos Engineering 28 scenarios bắt buộc</li>
+      </ul>
+    </div>
+
+    <div class="uc-card">
+      <div class="uc-icon">🏭</div>
+      <div class="uc-segment">Manufacturing · Field Operations</div>
+      <div class="uc-title">Sản Xuất & Vận Hành Thực Địa</div>
+      <div class="uc-rec gold-rec">Gói Premium</div>
+      <ul class="uc-list">
+        <li>Nhân viên thường xuyên mất Internet</li>
+        <li>BLE Mesh offline hoạt động liên tục</li>
+        <li>File chia sẻ lớn (bản vẽ, tài liệu kỹ thuật)</li>
+        <li>Kết nối chi nhánh qua Federation</li>
+      </ul>
+    </div>
+
+    <div class="uc-card">
+      <div class="uc-icon">🌐</div>
+      <div class="uc-segment">Tập đoàn đa chi nhánh</div>
+      <div class="uc-title">Tổng Công Ty & Chi Nhánh</div>
+      <div class="uc-rec gold-rec">Gói Premium</div>
+      <ul class="uc-list">
+        <li>Tổng công ty &gt; 200 người</li>
+        <li>Nhiều chi nhánh / tỉnh thành</li>
+        <li>Federation E2EE giữa các cluster</li>
+        <li>Sealed Sender giữa các bộ phận</li>
+        <li>Cần API để tích hợp ERP / HR</li>
+      </ul>
+    </div>
+
+    <div class="uc-card">
+      <div class="uc-icon">🔬</div>
+      <div class="uc-segment">R&D · Legal · Consulting</div>
+      <div class="uc-title">Tổ Chức Tư Vấn & Pháp Lý</div>
+      <div class="uc-rec">Gói Standard → Premium</div>
+      <ul class="uc-list">
+        <li>Thông tin khách hàng cực kỳ nhạy cảm</li>
+        <li>Cần Zero-Knowledge tuyệt đối</li>
+        <li>Audit trail cho mọi thao tác</li>
+        <li>Smart Approval workflow tài liệu</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ S9 — NOTES ═══════════════ -->
+<section class="sec reveal" id="s9">
+  <div class="sec-num">09 — LƯU Ý</div>
+  <h2 class="sec-title">Notes & Constraints</h2>
+  <div class="sec-line"></div>
+
+  <div class="notes-grid">
+
+    <div class="note-card">
+      <div class="note-title">Điều Kiện Sử Dụng</div>
+      <ul class="note-list">
+        <li>Pricing theo workspace, không phải per user</li>
+        <li>Giới hạn người dùng = số tài khoản active đồng thời</li>
+        <li>Mỗi workspace = một tổ chức / một môi trường riêng biệt</li>
+        <li>Community có watermark thương hiệu TeraChat trên giao diện</li>
+        <li>Trial 30 ngày áp dụng cho Standard và Premium, không cần thẻ</li>
+        <li>Giá niêm yết bằng USD; có thể thanh toán VND theo tỷ giá ngày</li>
+      </ul>
+    </div>
+
+    <div class="note-card">
+      <div class="note-title">Giả Định Kỹ Thuật</div>
+      <ul class="note-list">
+        <li>VPS tự thuê: khách hàng chịu chi phí server (không kèm trong gói)</li>
+        <li>Tối thiểu VPS: 1 vCPU, 512 MB RAM, 20 GB SSD (~$6/tháng)</li>
+        <li>Lưu trữ blob thêm (MinIO/R2) không kèm trong gói cơ bản</li>
+        <li>Offline BLE Mesh yêu cầu Bluetooth 5.0 trên thiết bị</li>
+        <li>AI SLM yêu cầu thiết bị ≥ 4 GB RAM để hoạt động tối ưu</li>
+        <li>Federation yêu cầu mTLS cert riêng cho mỗi cluster</li>
+      </ul>
+    </div>
+
+    <div class="note-card">
+      <div class="note-title">Tuân Thủ & Pháp Lý</div>
+      <ul class="note-list">
+        <li>Dữ liệu lưu trên server do khách hàng kiểm soát (self-hosted)</li>
+        <li>TeraChat không có quyền truy cập nội dung (Zero-Knowledge)</li>
+        <li>Audit log Ed25519 phù hợp với yêu cầu Nghị định 13/2023</li>
+        <li>ISO 27001 certification dự kiến Q4 2026</li>
+        <li>SOC 2 Type I đang trong quá trình đánh giá</li>
+        <li>Doanh nghiệp tự chịu trách nhiệm compliance local</li>
+      </ul>
+    </div>
+
+    <div class="note-card">
+      <div class="note-title">Thay Đổi Pricing</div>
+      <ul class="note-list">
+        <li>Pricing có thể thay đổi; thông báo trước 60 ngày với khách hàng hiện tại</li>
+        <li>Hợp đồng năm được lock giá trong toàn bộ chu kỳ</li>
+        <li>Add-on pricing có thể điều chỉnh 30 ngày sau thông báo</li>
+        <li>Enterprise contract: pricing cố định theo hợp đồng đã ký</li>
+        <li>Pricing tại thời điểm ký là binding; không áp dụng retroactively</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="callout callout-green">
+    <p><strong>Cam kết:</strong> Mọi khách hàng hiện tại được bảo vệ giá trong 12 tháng từ ngày đăng ký. Không tăng giá bất ngờ giữa chu kỳ đã thanh toán.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-brand">TeraChat</div>
+  <div class="footer-txt">
+    Pricing Packages · Q2 2026 · v1.0<br>
+    Confidential — Internal Use · Sales & Marketing
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+/* ── SCROLL REVEAL ── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('vis'); });
+}, {threshold: 0.06});
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ── NAV DOTS ── */
+const nds = document.querySelectorAll('.nd');
+const sections = ['cover','s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+function scrollTo(id){ document.getElementById(id)?.scrollIntoView({behavior:'smooth'}); }
+const secObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      const idx = sections.indexOf(e.target.id);
+      nds.forEach((d,i) => d.classList.toggle('active', i===idx));
+    }
+  });
+}, {threshold:0.35});
+sections.forEach(id => { const el=document.getElementById(id); if(el) secObs.observe(el); });
+
+/* ── CHART DEFAULTS ── */
+Chart.defaults.color = 'rgba(168,196,232,0.75)';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+const NAVY='#0d1f36';
+const GOLD='#c9a84c';
+const BLUE='#0088ff';
+const GREEN='#4ade80';
+const RED='#f87171';
+
+/* ── COST BAR CHART ── */
+new Chart(document.getElementById('cCostBar'), {
+  type: 'bar',
+  data: {
+    labels: ['Slack Pro', 'TeraChat Standard', 'TeraChat Premium'],
+    datasets: [
+      {
+        label: 'Bản quyền',
+        data: [43500, 4990, 11900],
+        backgroundColor: ['rgba(248,113,113,.7)', 'rgba(0,136,255,.7)', 'rgba(201,168,76,.7)'],
+        borderRadius: 6, borderWidth: 0
+      },
+      {
+        label: 'Máy chủ + Lưu trữ',
+        data: [0, 840, 3000],
+        backgroundColor: ['rgba(248,113,113,.3)', 'rgba(0,136,255,.3)', 'rgba(201,168,76,.3)'],
+        borderRadius: 6, borderWidth: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {position: 'top', labels: {padding:14, boxWidth:10}},
+      tooltip: {callbacks: {label: ctx => `${ctx.dataset.label}: $${ctx.raw.toLocaleString()}`}}
+    },
+    scales: {
+      x: {stacked: true, grid:{display:false}},
+      y: {stacked: true, grid:{color:'rgba(255,255,255,.05)'}, ticks:{callback: v=>'$'+v.toLocaleString()}}
+    }
+  }
+});
+
+/* ── COST PIE ── */
+new Chart(document.getElementById('cCostPie'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Bản quyền ($4.990)', 'Máy chủ VPS ($240)', 'Lưu trữ ($600)'],
+    datasets: [{
+      data: [4990, 240, 600],
+      backgroundColor: ['rgba(0,136,255,.8)', 'rgba(201,168,76,.7)', 'rgba(74,222,128,.65)'],
+      borderColor: NAVY,
+      borderWidth: 3,
+      hoverOffset: 10
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '62%',
+    plugins: {
+      legend: {position: 'bottom', labels: {font:{size:11}, padding:14, boxWidth:12}},
+      tooltip: {callbacks: {label: ctx => `${ctx.label}: ${((ctx.raw/5830)*100).toFixed(1)}%`}}
+    }
+  }
+});
+</script>
+</body>
+</html>
