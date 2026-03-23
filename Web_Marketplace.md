@@ -1,343 +1,379 @@
-# Web_Marketplace.md — TeraChat Alpha v0.3.0
+# Web_Marketplace.md — TeraChat Enterprise Plugin Registry
 
 ```yaml
 # DOCUMENT IDENTITY
 id:       "TERA-MKT"
-title:    "TeraChat — Web Marketplace & Extensions"
-version:  "0.2.6"
-audience: "Platform Engineer, Plugin Developer, Security Auditor"
-purpose:  "Đặc tả vòng đời plugin .tapp, sandbox WASM, cơ chế bảo mật (OPA, Egress Circuit Breaker) và quy trình phát hành (Publishing)."
+title:    "TeraChat — Enterprise Plugin Registry & .tapp Ecosystem"
+version:  "0.3.7"
+status:   "ACTIVE — Implementation Reference"
+date:     "2026-03-23"
+audience: "Platform Engineer, Plugin Developer, IT Admin, Security Auditor"
+purpose:  "Đặc tả Enterprise Plugin Registry: vòng đời .tapp, kiểm duyệt bảo mật,
+           quy trình phê duyệt IT Admin, WASM sandbox constraints, và developer guidelines."
 
 ai_routing_hint: |
-  "AI mở file này khi người dùng hỏi về phát triển tiện ích .tapp, WASM sandbox, Marketplace, cơ chế bảo mật plugin, hoặc quản lý extension."
+  "Mở file này khi hỏi về phát triển plugin .tapp, Enterprise Plugin Registry,
+   WASM sandbox, kiểm duyệt bảo mật plugin, hoặc quy trình IT Admin phê duyệt."
+
+depends_on:
+  - id: "TERA-CORE"
+    sections: ["§4.1 (Token Protocol)", "§5.24 (EMIP Plugin Integrity)", "§F-11 (WASM Runtime)"]
+  - id: "TERA-FEAT"
+    sections: ["§F-07 (WASM Plugin Sandbox)", "§F-08 (Inter-.tapp IPC)"]
 ```
 
+---
 
-> **Status:** `ACTIVE — Implementation Reference`
-> **Audience:** Platform Engineer · Plugin/App Dev · Security Auditor
-> **Scope:** `.tapp` Plugin Lifecycle, Signature Verification, OPA Policy Distribution, WASM Runtime Limits
-> **Last Updated:** 2026-03-11
-> **Depends On:** → TERA-CORE §5.24 (EMIP Plugin Integrity), → TERA-FEAT §8.1 (WASM Sandbox)
-> **Consumed By:** Admin Console plugin management UI
+## Tổng quan Mô hình
+
+### Đây không phải App Store công khai
+
+Enterprise Plugin Registry là hệ thống **khép kín, do IT Admin kiểm soát** cho phép tổ chức mở rộng TeraChat bằng các workflow tích hợp nghiệp vụ (.tapp plugins). Luồng kiểm soát hoàn toàn khác với marketplace công khai:
+
+```
+Publisher nộp .tapp
+      ↓
+TeraChat Security Review (automated + manual)
+      ↓
+.tapp được ký bởi TeraChat CA → Xuất hiện trong Registry (private/public)
+      ↓
+IT Admin của tổ chức duyệt .tapp cho workspace của mình
+      ↓
+.tapp được triển khai đến devices trong tổ chức đó
+      ↓
+End user thấy plugin — nhưng không có quyền tự cài / xóa
+```
+
+End user không thể:
+
+- Tự duyệt cài plugin
+- Truy cập Registry trực tiếp
+- Bypass IT Admin policy
 
 ---
 
-## CHANGELOG
+## CONTRACT: Yêu cầu Bắt buộc Khi Submit .tapp
 
-| Version | Date | Change Summary |
-| ------- | ---------- | ---------------------------------------------------------------------------- |
-| 0.2.6 | 2026-03-13 | (Section Deprecated: Decentralized SLA & Centralized Reports removed); §4.2 Heuristics Scanner |
-| 0.2.3 | 2026-03-11 | Add §4 Automated Static Scan & Security Manifest Audit; Publisher Trust Tier table |
-| 0.2.1 | 2026-03-05 | Add §3 WASM Sandbox resource limits (CPU 10%, RAM 64MB cap); egress rate limiting |
-| 0.1.1 | 2026-03-03 | Initial spec: §1 Decentralized Provisioning; §2 Ed25519 Signature flow; §3 OPA injection |
+> Mọi .tapp submit vào Registry phải pass toàn bộ gates dưới đây trước khi được listed.
 
----
-
-## CONTRACT: Plugin Publishing Requirements
-
-> **Mọi `.tapp` submit lên Marketplace phải pass toàn bộ các gate dưới đây trước khi được listed.**
-
-- [ ] `manifest.json` **phải** khai báo đầy đủ: `publisher_public_key`, `egress_endpoints` whitelist, `permissions`, `version_hash` (BLAKE3).
-- [ ] WASM bytecode **phải** pass Static Analysis Scanner — không có syscall nằm ngoài allowlist.
-- [ ] Bundle **phải** được ký `Ed25519` bởi Publisher Key đã đăng ký trên Merkle Registry.
-- [ ] Egress endpoint **phải** nằm trong `egress_endpoints` whitelist — bất kỳ outbound call nào ra ngoài danh sách → bị block ở Lõi Rust.
-- [ ] RAM usage trong Sandbox **phải** ≤ 64MB (softcap) — vượt ngưỡng → OOM-kill không warning.
-- [ ] CPU usage **phải** ≤ 10% sustained — spike được phép nhưng không kéo dài > 500ms.
+- [ ] `manifest.json` khai báo đầy đủ: `publisher_public_key`, `egress_endpoints`, `permissions`, `version_hash` (BLAKE3), `host_api_version`
+- [ ] WASM bytecode pass Static Analysis Scanner — không có syscall ngoài allowlist
+- [ ] Bundle được ký `Ed25519` bởi Publisher Key đã đăng ký
+- [ ] RAM usage ≤ 64MB (mobile soft cap) — vượt → OOM-kill không cảnh báo
+- [ ] CPU usage ≤ 10% sustained — spike cho phép nhưng không > 500ms
+- [ ] WasmParity CI gate pass: wasm3 vs wasmtime semantically identical (≤ 20ms delta)
+- [ ] Egress endpoints phải khai báo trong manifest — call ra ngoài danh sách → blocked ở Core
 
 ---
 
-## 1. [ARCHITECTURE] [PLUGIN] Decentralized Plugin Provisioning & Signature Verification
+## §1. Kiến trúc Phân phối Plugin
 
-> **Tầm nhìn:** TeraChat Marketplace không phải App Store truyền thống. Đây là một **Decentralized Trust Registry** — nơi Publisher ký `.tapp` bằng chính Private Key của mình, TeraChat chỉ đóng vai trò xác minh chữ ký và forward. Không có server trung gian nào có thể "inject" mã độc vào plugin.
+### 1.1 Content-Addressed Distribution
 
-### 1.1 [ARCHITECTURE] [PLUGIN] Kiến trúc Phân phối (Manifest-driven WASM Distribution)
+Mỗi .tapp bundle được lưu trên Registry CDN theo địa chỉ nội dung:
+`CAS_UUID = BLAKE3(bundle_bytes)`
 
-- ☁️ **Manifest-driven WASM Distribution:** Mỗi `.tapp` được đóng gói thành bundle: `{ logic.wasm, manifest.json, assets/ }`. `manifest.json` khai báo: `publisher_public_key` (Ed25519), `egress_endpoints` (whitelist URL), `permissions` (scope), `version_hash` (BLAKE3 của WASM bytecode).
-- ☁️ **Content-Addressed Distribution (CAS):** `.tapp` bundle được lưu trên Marketplace CDN theo địa chỉ nội dung `CAS_UUID = BLAKE3(bundle_bytes)`. URL tải về là xác định (deterministic) — mọi thiết bị tải cùng UUID sẽ nhận byte-for-byte identical bundle. Không thể silently swap backend.
-- ☁️ **Incremental Update (Delta Manifest):** Khi Publisher release update, chỉ Delta manifest (diff của `manifest.json` + nếu WASM đổi thì WASM mới) được publish. Thiết bị client tải delta, verify lại BLAKE3 + Ed25519, áp dụng atomic update.
+URL tải về là xác định (deterministic) — mọi tổ chức tải cùng UUID nhận byte-for-byte identical bundle. Không thể swap backend silently.
 
-### 1.2 [ARCHITECTURE] [PLUGIN] Ed25519 Signature Verification
+### 1.2 Ed25519 Signature Chain
 
-- ☁️ **Publisher Key Registration:** Publisher đăng ký `Ed25519_PublicKey` trên Marketplace Registry (on-chain hoặc self-hosted Merkle Log). Key registration event được ghi vào append-only log — không thể revoke retroactively mà không để lại dấu vết.
-- 🗄️☁️ **Ed25519 Digital Signature Flow:**
-  1. Publisher sign `SHA3-256(manifest.json || logic.wasm)` bằng Private Key → tạo `bundle.sig`.
-  2. Marketplace server verify signature trước khi accept upload — server không thể tamper bundle vì không có Private Key.
-  3. Client (Lõi Rust) verify lại signature khi install và mỗi khi Egress được yêu cầu (EMIP — xem Core_Spec.md §5.24).
+```
+Publisher Key Registration (on TeraChat Registry)
+        ↓
+Publisher signs: SHA3-256(manifest.json || logic.wasm) → bundle.sig
+        ↓
+Registry verifies → ký thêm bởi TeraChat_Marketplace_CA_Key (Ed25519)
+        ↓
+Client (Rust Core) verifies BOTH signatures khi install và mỗi khi egress
+```
 
-### 1.3 [ARCHITECTURE] [PLUGIN] OPA Policy Injection
+Không có chữ ký TeraChat CA → Rust Core từ chối load. Không có ngoại lệ.
 
-- ☁️ **Manifest-to-OPA Compiler:** Khi `.tapp` được install, Marketplace backend biên dịch `manifest.json` thành OPA Rego Policy và bundle kèm vào `.tapp`. Policy này enforce: egress endpoint whitelist, max payload size, required consent level, rate limiting.
-- ☁️ **Policy Version Pinning:** Mỗi OPA Policy bundle được gán `policy_hash` (BLAKE3). Lõi Rust từ chối load `.tapp` nếu `policy_hash` không khớp với hash được ký trong `manifest.json` — ngăn server-side policy swap.
-- 💻📱 **Local Manifest Validation (Boot-time):** Xem Core_Spec.md §5.24 EMIP cho chi tiết boot-time validation flow.
+### 1.3 OPA Policy Compilation
 
-### 1.4 [ARCHITECTURE] [PLUGIN] Publisher Trust Tiers
+Khi IT Admin approve một .tapp:
 
-| Tier | Điều kiện | Egress Privilege | Marketplace Badge |
-|---|---|---|---|
-| **Unverified** | Chỉ có Ed25519 key | HTTP GET only, no file, < 1KB payload | 🔵 Community |
-| **Verified** | KYC + Key + Review | Egress file < 10MB, standard consent | ✅ Verified |
-| **Enterprise** | SOC2/ISO27001 cert | Full file egress, custom consent flow | 🏢 Enterprise |
-| **TeraChat Native** | First-party `.tapp` | Unrestricted (subject to OPA) | ⭐ Native |
+1. Manifest được compile thành OPA Rego Policy
+2. Policy bundle được ký bởi Enterprise CA của tổ chức (M-of-N: 2/3 CISO + CTO + Legal)
+3. Policy được push xuống devices qua OPA update channel
+4. Client enforce locally — không round-trip server
 
-### 1.5 [ARCHITECTURE] [PLUGIN] Revocation & Emergency Kill-switch
+### 1.4 Publisher Trust Tiers
 
-- ☁️ **Publisher Key Revocation:** Publisher có thể revoke key bằng cách sign `REVOKE { key_hash, timestamp }` bundle bằng Master Recovery Key (stored offline). Marketplace push revocation event đến tất cả tenants — Lõi Rust nhận và disable tất cả `.tapp` từ key đó.
-- ☁️ **TeraChat Emergency Suspension:** Xem Function.md §9 PARA — Control Plane có thể push `REVOKE_TAPP` bundle đến toàn bộ fleet khi phát hiện `.tapp` bị compromise, không cần store review hay app update.
-- ☁️ **Transparency Log:** Mọi sự kiện (publish, update, revocation, suspension) được ghi vào Transparency Log (append-only, Merkle-proofed). CISO của bất kỳ tenant nào có thể audit log độc lập để verify không có tampering.
+| Tier | Yêu cầu | Egress Privilege | Badge |
+|------|---------|-----------------|-------|
+| **Unverified** | Ed25519 key đã đăng ký | HTTP GET only, < 1KB payload | 🔵 Community |
+| **Verified** | KYC + Key + Security Review | File < 10MB, standard consent | ✅ Verified |
+| **Enterprise** | SOC2/ISO27001 cert | Full file egress, custom consent | 🏢 Enterprise |
+| **TeraChat Native** | First-party .tapp | Unrestricted (subject to OPA) | ⭐ Native |
 
-## 2. [SECURITY] [PLUGIN] Ngăn chặn Rò rỉ Dữ liệu qua AI Extension (WASM Data Exfiltration)
+---
 
-> **Bài toán:** Tiện ích AI tải về từ Marketplace có thể độc hại ngầm, thu thập ngữ cảnh tài liệu và lén lút tuồn dữ liệu (Exfiltration) ra máy chủ của bên thứ ba qua các API ẩn.
+## §2. Vòng đời .tapp Trong Tổ chức
 
-- ☁️ **OPA Egress Whitelist (Domain & Port):** Lõi Rust nhúng bộ quy tắc OPA (Open Policy Agent) trực tiếp vào ranh giới mạng của Sandbox. Bất kỳ nỗ lực mở socket nào nằm ngoài danh sách Whitelist Domain & Port đã đăng ký từ trước đều bị chặt đứt ngay lập tức ở tầng OS.
-- 📱💻 **Metadata Stripping Proxy:** Trước khi payload HTTP/RPC rời khỏi thiết bị đến máy chủ của Tiện ích thứ 3, nó phải đi qua Proxy Kiểm duyệt cục bộ để gọt sạch mọi siêu dữ liệu nhạy cảm (User-Agent, IP, Thiết bị, Thời gian) — không chừa lại bất kỳ dấu vết định danh nào (Fingerprinting).
-- ☁️ **Seccomp Sandbox (Socket/File I/O):** Ép khâu giám sát vào cấp độ Sandbox. Mọi lời gọi hệ thống (Syscalls) yêu cầu mở file I/O hay tạo Socket mới đều bị chặn và đối chiếu thời gian thực (Real-time).
+### 2.1 Luồng IT Admin Approval
 
-## 3. [PERFORMANCE] [PLUGIN] Tối ưu Hiệu năng WASM Plugin (CPU-Bound Task Freeze)
+```
+[Registry] Có .tapp mới phù hợp với use case
+         ↓
+[IT Admin] Tìm kiếm trong Admin Console → Tab "Plugin Registry"
+         ↓
+[IT Admin] Xem Security Report: egress domains, permissions, scan results
+         ↓
+[IT Admin] Approve cho workspace → chọn target groups/devices
+         ↓
+[Rust Core] OPA Policy push đến devices trong 60s
+         ↓
+[Device] .tapp xuất hiện trong launcher — user thấy và dùng được
+```
 
-> **Bài toán:** Các mô hình thuật toán chạy trong WASM có thể tiêu tốn 100% CPU (CPU-Bound), làm nghẽn Event Loop và đóng băng (Freeze) giao diện nhắn tin chính.
+IT Admin có thể:
 
-- 📱💻 **WasmEdge AOT Compiler (Ahead-of-Time):** Chuyển đổi toàn bộ Bytecode của WASM Plugin rườm rà sang Machine Code bản địa (Native) ngay tại thời điểm tải về. Thao tác AOT này triệt tiêu hoàn toàn độ trễ của JIT (Just-In-Time) Compiler, tăng tốc thông lượng thực thi lên gấp 5 lần.
-- ☁️ **SIMD (Single Instruction, Multiple Data) Vectorization:** Bật cờ phần cứng SIMD (WebAssembly SIMD128) để xử lý ma trận và phép băm mã hóa song song, giải phóng băng thông cho bộ xử lý tín hiệu lõi.
-- 🗄️ **Pre-warmed WASM Instance Pool:** Desktop và Server duy trì sẵn một hồ bơi (Pool) các Instance WASM đã "ngâm nóng" (Pre-warmed memory). Khi người dùng kích hoạt Plugin, thời gian Cold-Start giảm từ 300ms xuống < 5ms (chấm dứt tình trạng giật cục).
+- Approve/revoke bất kỳ lúc nào (revoke effective ≤ 60s)
+- Restrict .tapp cho specific user groups
+- Set egress rate limits theo policy
+- View audit log của tất cả .tapp activity
 
-## 4. [SECURITY] [PLUGIN] Automated Static Scan & Security Manifest Audit
+### 2.2 .tapp Lifecycle States
 
-> **Bài toán:** `.tapp` độc hại lách luật kiểm duyệt thông qua hướng dẫn mang chữ ký hợp lệ nhưng chứa Bytecode thóa mã xượng vầt qua OPA Policy.
+```
+PENDING_REVIEW → SECURITY_REVIEWED → REGISTRY_LISTED
+                                            ↓
+                                   IT Admin Approves
+                                            ↓
+                              DEPLOYED (trong workspace)
+                              ↙              ↘
+                       SUSPENDED          REVOKED
+                       (violation)        (permanent)
+```
 
-- ☁️ **Static WASM Syscall Scan (Chặn lệnh nhảy trái phép):** Phân tích tĩnh toàn bộ Bytecode WASM bằng Abstract Interpretation trước khi chấp nhận Publish. Ký hiệu nhảy trực tiếp ra ngoài Sandbox (`call_indirect` không khai báo) → Từ chối ngay lập tức.
-- 💻 **Manifest Whitelist Enforcement (Khóa cứng allowed_domains):** Trước khi nhận bandt tải lên, Marketplace vác định dạng `manifest.json` và so sánh danh sách `egress_endpoints` với Registry Domain Whitelist — phát hiện bất kỳ domain nẳm ngoài dải cho phép ngưng Upload ngượng cưa.
-- 🗄️ **Ed25519 Signed Bundle (Chứng thực CA từ TeraChat HQ):** Mọi bundle `.tapp` phải mang chữ ký hợp lệ từ ít nhất 1 trong 3 Root CA offline của TeraChat HQ. Không có chữ ký → Lõi Rust từ chối nạp.
+### 2.3 Vòng đời Trên Thiết bị
 
-#### 4.2 [SECURITY] [PLUGIN] Heuristics Scanner Engine & EMIP Immutable Distribution
+1. **Install**: Download, BLAKE3 verify, signature verify
+2. **Verify DID**: Publisher DID xác thực trước Sandbox launch
+3. **Instantiate**: Virtual Memory + Guard Pages + Ring Buffer allocated
+4. **Execute**: Trong WASM Sandbox, mọi I/O qua Host Proxy
+5. **Suspend**: Snapshot AES-256-GCM encrypted → sled LSM-Tree
+6. **Terminate**: RAM freed, Capability Tokens revoked, KV-Cache cleared
 
-> **Giải pháp:** Chặn đứng mã độc tiêm nhiễm vào bundle `.tapp` và rủi ro hạ tầng không tương thích.
+---
 
-- ☁️ **VPS Recommendation Engine (Heuristics Scanner):** Tự động rà soát thông số phần cứng VPS (CPU, RAM, I/O) qua API để đưa ra khuyến nghị triển khai tối ưu, tránh tình trạng app crash do thiếu hụt tài nguyên.
-- ☁️ **TeraPay Smart Escrow:** Tiền bản quyền (tapp fee) chỉ được giải ngân cho Publisher sau khi Lõi Rust của Client xác nhận bundle đã được cài đặt và pass qua khâu kiểm tra chữ ký tại chỗ.
-- 💻 📱 **BLAKE3 Segmented Merkle Tree:** Sử dụng JSI/FFI để kiểm tra mã băm BLAKE3 theo từng phân đoạn (Segment) của bundle. Nếu bất kỳ byte nào bị thay đổi so với bản gốc trên Marketplace, quá trình nạp sẽ bị đình chỉ ngay lập tức.
+## §3. WASM Sandbox Security Model
 
+### 3.1 W^X Compliance và Dual-Runtime
 
+| Platform | Runtime | Mode |
+|---------|---------|------|
+| 📱 iOS | `wasm3` pure interpreter | W^X compliant; +15-20ms/call |
+| 📱 Android | `wasmtime` JIT (Cranelift) | CFI enforcement |
+| 📱 Huawei | `wasmtime` JIT + AOT fallback | AppGallery: `.waot` bundle bắt buộc |
+| 💻 macOS | `wasmtime` JIT trong XPC Worker | Main App: NO allow-jit |
+| 🖥️ Windows/Linux | `wasmtime` JIT | Maximum throughput |
 
-## 5. [SECURITY] [OS-CONSTRAINT] [PLUGIN] Mandatory Capability-Based WASM Sandboxing — Zero-Trust Tiện ích
+**WasmParity Rule**: `wasm3` = reference runtime. `wasmtime` phải produce semantically identical output. Verified by CI gate trước mọi Marketplace listing.
 
-> **Lập trường Kiến trúc:** Không có `.tapp` nào được phép yêu cầu "exception" khỏi Sandbox. Mọi Exception Policy đều phá vỡ Zero-Trust. Thay vào đó, mọi capability cần thiết đều được khai báo tường minh trong `manifest.json` và được OPA Policy kiểm soát.
+### 3.2 Resource Limits (Hard — Không Exceptions)
 
-### Nguyên tắc W^X (Write XOR Execute)
+```
+RAM:     ≤ 64MB mobile / ≤ 64MB desktop    → vượt: OOM-kill, không warning
+CPU:     ≤ 10% sustained                   → spike ≤ 500ms; vượt: SUSPEND
+Egress:  4096 bytes/call hard limit         → vượt: Circuit Breaker trip
+Session: 512KB cumulative egress/session    → vượt: suspend + Admin alert
+Rate:    50 req/s token bucket per .tapp    → exhausted: SUSPEND 60s cooldown
+```
 
-#### (Section Deprecated: BPF Syscall Trapping removed)
-- 📱💻 **WASM No-Syscall Isolation:** `.tapp` chạy trong WasmEdge runtime với profile Seccomp-BPF khắt khe — toàn bộ `execve`, `fork`, `ptrace`, `socket` bị drop ở tầng kernel. `.tapp` không thể tạo process con hay mở raw socket.
-- 📱 **iOS AOT W^X Compliance:** Trên iOS, WASM phải được biên dịch AOT (Ahead-of-Time) sang machine code trước khi deploy. JIT interpreter bị cấm vì vi phạm W^X policy của iOS — vùng nhớ chỉ có thể Write OR Execute, không bao giờ cả hai.
-- 📱💻 **Linear Memory Isolation:** Mỗi `.tapp` instance được cấp một vùng Linear Memory cô lập (max 64MB, configurable). Không có shared memory giữa các instance. Overflow sang vùng TeraChat Core → SIGSEGV + instance kill.
-- 💻 🖥️ **AOT Compilation (Cranelift) & seccomp-bpf cjail:** Áp dụng kiến trúc Strict AOT Architecture thay thế JIT Compilation để đóng băng nguy cơ WASM Sandbox Escape.
-- 📱 **Pure Interpreter Mode (`--jitless`):** Kích hoạt vận hành trình thông dịch thuần túy ngăn chặn tuyệt đối can thiệp Dynamic Memory trên nền tảng di động.
-- 🗄️ **ARMv9 MTE SIGSEGV Hard-Kill:** Kích nổ rào chắn Hardware Memory Tagging Extension, tiêu diệt lập tức luồng tiến trình dị thường qua tín hiệu SIGSEGV.
-- ☁️ **Marketplace Ed25519 Signing Gate (Publish-time):** Khi Publisher submit `.tapp`:
-  1. Marketplace backend chạy Static WASM Analysis (Abstract Interpretation)
-  2. Kiểm tra `manifest.json` capability list vs. OPA Policy Registry
-  3. Nếu pass → ký bundle bằng `TeraChat_Marketplace_CA_Key` (Ed25519)
-  4. Bundle unsigned hoặc capability khai báo không khớp bytecode → reject, không refund
-
-### Capability Declaration (Manifest Whitelist)
+### 3.3 Capability Declaration (Manifest Whitelist)
 
 | Capability | Điều kiện cấp phép | Default |
-| ---------- | ------------------- | ------- |
-| `network.egress` | Chỉ domain list trong manifest | ❌ Blocked |
+|-----------|------------------|---------|
+| `network.egress` | Domain list trong manifest | ❌ Blocked |
 | `clipboard.read` | User consent per-session | ❌ Blocked |
 | `file.read` | Explicit user file picker | ❌ Blocked |
 | `crypto.sign` | Publisher Ed25519 identity proof | ❌ Blocked |
-| `push.notify` | Admin whitelist per-tenant | ❌ Blocked |
+| `push.notify` | IT Admin whitelist per-workspace | ❌ Blocked |
+| `storage.persist` | Per-DID sled namespace only | ❌ Blocked |
 
-- 📱💻 **Runtime Capability Check:** Mọi syscall từ `.tapp` đều bị intercept tại WASM host function boundary. Rust Core kiểm tra `granted_capabilities` trong `OPA Policy` trước khi forward. Capability không được khai báo → `PermissionDenied` error về sandbox, không crash app.
+**Không có Capability nào được cấp mặc định. Không có "request at runtime".**
 
-## 6. [SECURITY] [PLUGIN] DLP Bypass Prevention — WASM Egress Circuit Breaker
+### 3.4 Data Diode Architecture
 
-> **Lỗ hổng:** `.tapp` độc hại có thể tích lũy dữ liệu chat qua nhiều callback nhỏ (Salami Attack) và exfiltrate qua endpoint hợp lệ trong whitelist nhưng với payload bất thường.
+```
+[Rust Core — Company_Key] ── push masked data ──▶ [WASM Sandbox]
+                                                         │
+                                              write to Egress_Outbox
+                                                         │
+                                         [Egress Daemon — separate process]
+                                              OPA check → BLAKE3 verify
+                                                         │
+                                                 URLSession / HTTP
+                                                         ▼
+                                              Partner API (declared only)
+```
 
-- ☁️ **Automated WASM O-LLVM Scan (Pre-publish):** Marketplace backend chạy LLVM IR analysis trên WASM bytecode: phát hiện data accumulation pattern (buffer tăng dần qua multiple calls), obfuscated string construction, unusual control flow graph. Plugin nghi ngờ → manual security review queue.
-- 💻🖥️ **OPA Policy Engine Firewall (Runtime):** Mọi `egress` call từ `.tapp` bị OPA intercept tại Rust boundary. OPA check: `payload_size`, `destination_domain`, `call_frequency_per_minute`, `cumulative_bytes_per_session`. Vi phạm bất kỳ threshold → `EgressBlocked`.
-- 📱💻 **Byte-Quota Circuit Breaker (4096 Bytes Threshold):** Hard limit mỗi egress call = **4096 Bytes**. Bất kỳ attempt gửi payload > 4KB → Circuit Breaker ngắt kết nối ngay, log `EgressQuotaExceeded {plugin_id, bytes_attempted, timestamp}` vào Tamper-Proof Audit Log (Ed25519 signed). Sau 3 vi phạm trong 1 session → plugin bị terminate và quarantine.
-- ☁️ **Cumulative Session Quota:** Tổng egress của 1 `.tapp` instance trong 1 session không được vượt **512KB**. Vượt ngưỡng → tự động suspend instance, alert Admin Console.
-- 📱💻 **No Persistent Storage Egress:** `.tapp` không được phép read từ local persistent storage rồi immediate egress. Pipeline `storage.read → network.write` phải có user consent dialog intervene per attempt.
+Company_Key **không bao giờ** vào WASM sandbox. WASM nhận chỉ masked, sanitized data.
 
-### Chống Kênh Rò rỉ Ngầm qua Data Diode (Timing Covert Channel)
+---
 
-- 💻 🖥️ **Strict Token Bucket & Ring Buffer:** Áp đặt Time-Laundering với Constant-Rate Egress Shaper dập tắt nhiễu loạn băng thông triệt tiêu Kênh rò rỉ ngầm (Timing Covert Channel).
-- 💻 🖥️ **5ms Fixed-Interval Dispatch Metronome:** Cưỡng chế nhịp độ xuất phát gói tin cố định che giấu tín hiệu phân tích tần suất gửi từ Data Diode.
-- 💻 🖥️ **ChaCha20 Cryptographic Noise Padding:** Bơm đệm ngẫu nhiên ngụy trang kích thước Payload gốc vô hiệu hóa thuật toán dò thám dung lượng gói tin.
+## §4. Chống Data Exfiltration
 
-## 7. [SECURITY] [ARCHITECTURE] [PLUGIN] Policy Integrity — Immutable Cryptographic OPA Artifacts (ISO 27001 A.8.2)
+### 4.1 Byte-Quota Circuit Breaker
 
-> **Mối đe dọa:** Insider threat hoặc kẻ tấn công chiếm quyền Admin có thể sửa OPA Policy để tắt DLP, mở egress whitelist hoặc leo thang đặc quyền.
+```
+Mỗi egress call > 4KB → Circuit Breaker trip ngay lập tức
+  → Log: EgressQuotaExceeded {plugin_id, bytes_attempted, timestamp}
+  → Append to Tamper-Proof Audit Log (Ed25519 signed)
 
-### 7.1 [SECURITY] [ARCHITECTURE] [PLUGIN] Ed25519 Signed Policy Bundles
+3 vi phạm / session → plugin terminate + quarantine
+Session total > 512KB → suspend + Admin Console alert
+```
 
-- ☁️ **Signed OPA Bundle:** Mọi OPA Policy bundle (`.tar.gz`) phải được ký bằng `Enterprise_CA Ed25519 key` trước khi distribute. Lõi Rust trên mọi client verify signature khi boot và khi nhận policy update — policy không có chữ ký hợp lệ bị reject toàn bộ, không apply partial.
-- ☁️ **Content-Hash Pinning:** Sau khi verify signature, Lõi Rust tính BLAKE3 hash của policy bundle và pin vào `policy_hash_registry`. Mọi runtime OPA evaluation check `active_policy_hash` khớp pin — tránh in-memory policy tampering.
-- 🗄️ **Tamper-Proof Audit Log (Policy Changes):** Mọi thay đổi policy (upload bundle mới, revoke policy) đều được append vào Ed25519-signed Audit Log Merkle Chain. Không thể xóa lịch sử thay đổi mà không phá vỡ chain.
+### 4.2 Runtime Schema Validation
 
-### 7.2 [SECURITY] [ARCHITECTURE] [PLUGIN] M-of-N Hardware-Backed Policy Consensus (Multi-Sig Quorum)
+Trước khi dispatch HTTP request, Egress Daemon:
 
-> **Không có cá nhân đơn lẻ nào — kể cả CEO hay CISO — có thể đơn phương thay đổi OPA Policy sản xuất.**
+1. Deserialize payload
+2. Validate against JSON Schema khai báo trong manifest
+3. Check `additionalProperties: false` (enforced ngay cả khi developer quên)
+4. Compute BLAKE3(validated_payload) → match với hash Core cấp trước đó
 
-- 🗄️📱 **HSM Quorum M-of-N (mặc định 2/3):** Policy bundle mới phải được ký bởi ít nhất **2 trong 3** Hardware Security Key (YubiKey 5 FIPS / NFC-backed device) thuộc các C-Level khác nhau: `CISO`, `CTO`, `Legal`. Thiếu chữ ký → bundle bị server từ chối deploy.
-- 🗄️ **Offline Signing Ceremony:** CISO và CTO ký offline (air-gapped laptop) bằng HSM. Legal ký online qua NFC NitroKey. Ba chữ ký được aggregate bằng Ed25519 Multi-Signature scheme (Ristretto255 schnorr) → một bundle signature duy nhất.
-- 💻🖥️ **Local OPA Enforcement in WASM Sandbox:** Mỗi client `.tapp` runtime sử dụng OPA WASM build (`opa_wasm`) để enforce policy locally mà không cần round-trip server. WASM OPA binary được hash-pin và phân phối cùng với policy bundle — không thể substitute OPA engine.
-- ☁️ **Policy Rollback Protection (Monotonic Version Counter):** Policy bundle chứa `version: u64` (monotonic, không thể giảm). Nếu server cố push bundle version nhỏ hơn version hiện tại của client → client từ chối và alert `POLICY_ROLLBACK_ATTACK` vào Audit Log.
+Mismatch → tampering detected → block + alert ngay lập tức.
 
-## 9. [ARCHITECTURE] [PLUGIN] Zero-Touch CLI Provisioning — Khắc phục Rủi ro Kiến thức Hạ tầng (Deployment Complexity)
+### 4.3 Timing Covert Channel Defense
 
-> **Vấn đề:** Triển khai mạng diện rộng VPS Enclave (SGX/Nitro/SEV) để load logic `.tapp` Heavyweight đòi hỏi chứng chỉ DevOps/SME rất lớn, tạo rào cản quá cao cho doanh nghiệp tự host (Self-hosted).
+- 5ms Fixed-Interval Dispatch Metronome (che khuất traffic pattern)
+- ChaCha20 Cryptographic Noise Padding (obfuscate payload size)
+- Constant-Rate Egress Shaper (loại bỏ timing side-channel)
 
-- 💻 **`tera-deploy` CLI (Zero-Touch Provisioning):** Bọc toàn bộ các vòng lặp tay biên dịch hệ thống. IT Admin thuộc doanh nghiệp chỉ cần cung cấp Access Key (AWS/GCP), gõ 1 lệnh CLI, mọi tham chiếu Cloud sẽ tự động map 100%.
-- ☁️ **Infrastructure as Code (Terraform):** `tera-deploy` kích hoạt tự động các module ☁️ Terraform (đã pre-audited bởi TeraChat Core Team). Tự động spin-up Single-Binary Rust Daemons, set up VPC isolation, TLS Passthrough rule, và IAM roles với Least Privilege (Giới hạn quyền hẹp nhất có thể).
-- 🗄️ **WASM Bundle Packaging (WBP) Auto-Build:** Tiến trình Build Pipeline dịch Lõi Server Rust thành gói nhị phân tối ưu và băm tĩnh ra các mã BLAKE3 hash. Các mã này sẽ auto-inject trực tiếp vào OPA Policy Trust Store — CISO có checklist để apply mà không cần hiểu tầng Base Assembly.
+---
 
+## §5. IT Admin Operations
 
-## 8. [IMPLEMENTATION] [PLUGIN] Static Egress Schema Declaration — Manifest Contract (.tapp Publisher)
+### 5.1 Admin Console — Plugin Management UI
 
-> **Yêu cầu:** Mọi `.tapp` muốn publish lên TeraChat Marketplace **bắt buộc** khai báo tĩnh JSON Schema của tất cả payload dự định gửi qua `Egress_Outbox`. Không khai báo = không được publish.
+| Action | Mô tả |
+|--------|-------|
+| Browse Registry | Tìm kiếm plugins theo category, vendor, permission scope |
+| Security Review | Xem automated scan results, egress domains, permission manifest |
+| Approve | Deploy cho all users hoặc specific groups |
+| Configure | Set resource limits, egress restrictions per workspace |
+| Monitor | Real-time metrics: egress bytes, CPU usage, crash count |
+| Revoke | Immediate revocation (effective ≤ 60s trên mọi device online) |
 
-### 8.1 [IMPLEMENTATION] [PLUGIN] Egress Schema trong `manifest.json`
+### 5.2 Revocation
+
+Khi IT Admin revoke một .tapp:
+
+1. OPA Policy push với `{plugin_id: "REVOKED"}` đến toàn bộ fleet
+2. Devices nhận policy trong ≤ 60s (online) hoặc khi next online (offline)
+3. Rust Core disable .tapp execution ngay lập tức khi nhận policy
+4. Transient state (sled) được purge
+5. Audit log entry: `PLUGIN_REVOKED {plugin_id, admin_id, timestamp, reason}`
+
+---
+
+## §6. Developer Guidelines
+
+### 6.1 manifest.json Contract
 
 ```json
 {
-  "tapp_id": "crm-integration-v2",
-  "publisher": "Acme Corp",
+  "tapp_id":        "acme-crm-integration-v2",
+  "publisher":      "Acme Corp",
+  "publisher_public_key": "ed25519:...",
+  "host_api_version":     "1.3.0",
+  "min_host_api_version": "1.0.0",
+  "max_host_api_version": "2.0.0",
+  "permissions": ["network.egress", "storage.persist"],
   "egress_schemas": [
     {
-      "endpoint": "api.acme.com/summarize",
-      "method": "POST",
-      "tls_pin": "sha256/ABC123...",
+      "endpoint":          "api.acme.com/crm",
+      "method":            "POST",
+      "tls_pin":           "sha256/XXXXXXX",
+      "max_payload_bytes": 4096,
       "schema": {
         "type": "object",
         "properties": {
-          "summary": { "type": "string", "maxLength": 2048 },
-          "ticket_id": { "type": "string", "pattern": "^TKT-[0-9]+$" }
+          "contact_ref": {"type": "string", "maxLength": 64},
+          "action":      {"type": "string", "enum": ["lookup", "update"]}
         },
-        "required": ["summary", "ticket_id"],
+        "required": ["contact_ref", "action"],
         "additionalProperties": false
-      },
-      "max_payload_bytes": 4096
+      }
     }
-  ]
+  ],
+  "version_hash": "blake3:a3f2e1d4..."
 }
 ```
 
-- 📱💻🖥️ **Schema Bắt buộc trong Manifest:** Mỗi endpoint egress phải có: `endpoint` (domain), `tls_pin` (SHA-256 HPKP), `schema` (JSON Schema Draft 7), `max_payload_bytes` (tối đa 4096). Thiếu bất kỳ field nào → CI/CD Marketplace pipeline reject.
-- 📱💻🖥️ **Runtime Schema Validation (Egress Daemon):** Trước khi dispatch HTTP request, `tera_egress_daemon` deserialize Outbox payload và validate chống JSON Schema đã khai báo trong Manifest (sử dụng `jsonschema` Rust crate). Payload không khớp schema → drop + `EGRESS_SCHEMA_VIOLATION` alert + audit log.
-- ☁️ **`additionalProperties: false` Enforced:** Egress Daemon thêm thêm rule `additionalProperties: false` vào mọi schema khi validate — kể cả Developer quên khai báo. Điều này ngăn `.tapp` nhồi thêm key-value secret vào payload mà không khai báo.
-- 🗄️ **Marketplace Pre-publish Schema Audit:** Trước khi bundle được ký và publish, Marketplace Backend chạy static analysis: kiểm tra schema có `maxLength` cho mọi `string` field (ngăn dump toàn bộ conversation), kiểm tra không có `type: "any"`, không có schema `{}` rỗng. Vi phạm → require manual security review.
-- 📱💻 **BLAKE3 Hash Verification Chain:** Payload bytes sau khi qua JSON Schema validation → Egress Daemon tính `BLAKE3(validated_payload)` → đối chiếu with hash Lõi Rust cấp trước đó → mismatch = tampering detected → block + alert. Đây là lớp bảo vệ cuối cùng trước khi data ra Internet.
+### 6.2 Host Function ABI
+
+```rust
+// Crypto (offloaded to Rust Core — WASM không tự chạy crypto)
+fn host_blake3_hash(data: *const u8, len: usize, out: *mut u8) -> i32;
+fn host_ed25519_sign(key_id: u64, msg: *const u8, msg_len: usize, sig_out: *mut u8) -> i32;
+fn host_aes256gcm_encrypt(key_id: u64, nonce: *const u8, pt: *const u8, pt_len: usize, ct_out: *mut u8) -> i32;
+
+// Network (via Egress_Outbox — không direct socket)
+fn host_egress_write(endpoint_id: u64, payload: *const u8, len: usize) -> i32;
+// Returns: 0=OK, 1=QuotaExceeded, 2=SchemaViolation, 3=OPADeny, 4=MeshRestricted
+
+// Storage (scoped per .tapp DID namespace)
+fn host_storage_get(key: *const u8, key_len: usize, out: *mut u8, out_max: usize) -> i32;
+fn host_storage_set(key: *const u8, key_len: usize, val: *const u8, val_len: usize) -> i32;
+```
+
+### 6.3 ABI Versioning & Deprecation
+
+- Breaking changes chỉ trong **major version**
+- Minor version: additive-only (backward compatible)
+- TeraChat support **2 major versions đồng thời**
+- Deprecation window: **12 tháng** từ ngày announce
+- `.tapp` với `host_api_version` ngoài range → **rejected at install**
+
+### 6.4 Platform-Specific Distribution
+
+| Platform | Format | Notes |
+|---------|--------|-------|
+| 📱 iOS | `.wasm` (interpreted by wasm3) | AOT `.dylib` option trong XPC Worker (macOS only) |
+| 📱 Android | `.wasm` | JIT via wasmtime |
+| 📱 Huawei | `.waot` bundle | **Bắt buộc** cho AppGallery review; JIT-with-AOT-fallback runtime |
+| 💻 Desktop | `.wasm` | JIT via wasmtime |
 
 ---
 
-## 9. [ARCHITECTURE] [PLUGIN] Đặc quyền Hệ thống và Giới hạn Tài nguyên TeraDiag
+## §7. Security Audit & Registry Transparency
 
-- ☁️ **System-Level Tapp Privileges & Deterministic Memory Chunking:**
-  - ☁️ **OPA Policy Enforcement (AppID com.terachat.diag Egress Blocked):** Các ứng dụng chẩn đoán với ID `com.terachat.diag` được áp đặt chính sách OPA nghiêm ngặt: Tuyệt đối chặn mọi kết nối Egress ra internet (Egress Blocked). Dữ liệu chỉ được phép luân chuyển trong mạng Mesh nội bộ.
-  - 🗄️ **128MB Resident Memory Cap:** Cấp hạn mức RAM vật lý cố định 128MB cho TeraDiag để xử lý các tệp log lớn mà không gây ảnh hưởng đến Messaging Core.
-  - 🗄️ **Deterministic Memory Chunking (Multi-part Archive):** Dữ liệu chẩn đoán được chia nhỏ và đóng gói thành Multi-part Archive phục vụ truyền tải qua mạng Mesh.
-  - ⭐ **Publisher Trust Tier 1 (TeraChat HQ Sign):** Mọi ứng dụng TeraDiag phải mang chữ ký Root CA của TeraChat HQ để đảm bảo tính chính danh và quyền can thiệp hệ thống mức cao.
+### 7.1 Transparency Log
 
+Mọi sự kiện Registry được ghi vào Transparency Log (append-only, Merkle-proofed):
 
----
+- Plugin publish, update, revocation
+- Security scan results
+- IT Admin approval/rejection events
 
-## Mục Mới: .tapp Lifecycle & WASM Security Standards
+IT Admin của bất kỳ workspace nào có thể audit log độc lập.
 
-### MARKETPLACE-01: .tapp Vòng đời (Lifecycle)
+### 7.2 Emergency Kill-Switch
 
-Mọi tiện ích `.tapp` trên TeraChat Marketplace phải tuân thủ vòng đời sau:
+TeraChat có thể push `KILL_DIRECTIVE` cho bất kỳ .tapp nào bị phát hiện compromise:
 
-1. **Install:** Tải về, quét mã WASM tự động (lỗ hổng Buffer Overflow, tràn bộ nhớ).
-2. **Verify DID:** Xác thực chữ ký số của Nhà phát triển qua DID trước khi Sandbox khởi chạy.
-3. **Instantiate:** Control Plane cấp phát Virtual Memory, Guard Pages, Ring Buffer.
-4. **Execute:** `.tapp` chạy trong Sandbox cô lập. Mọi network request qua Secure Host Proxy.
-5. **Suspend:** State snapshot AES-256-GCM encrypted. `terachat_wakeup` hook cho re-hydration.
-6. **Terminate:** Giải phóng RAM, hủy Capability Tokens, dọn KV-Cache.
+- Không cần app update hoặc store review
+- Effective trong < 60s trên toàn bộ fleet online
+- Audit log entry được tạo với justification và evidence hash
+- IT Admin nhận notification với full technical report
 
-### MARKETPLACE-02: WASM Security Scanning
+### 7.3 Automated Static Analysis (Pre-listing)
 
-- 💻☁️ **Tự động quét mã WASM:** Phát hiện lỗ hổng Buffer Overflow, tràn bộ nhớ, các syscall nguy hiểm trước khi lên Marketplace.
-- 💻☁️ **Manifest Domain Declaration:** `.tapp` bắt buộc khai báo trước danh sách Domain/API sẽ dùng trong manifest. Proxy Host enforce theo danh sách này.
-- ☁️ **DID Developer Verification:** Nhà phát triển phải đăng ký DID hợp lệ. Signature được verify mỗi lần Sandbox launch.
+Trước khi accept upload:
 
-### MARKETPLACE-03: .tapp DID Verification Flow
+1. WASM bytecode: Abstract Interpretation → detect buffer overflow, forbidden syscall, data accumulation patterns
+2. Manifest: egress domain validation, schema completeness check
+3. LLVM IR analysis: detect obfuscated string construction, unusual CFG
+4. Dependency audit: check third-party WASM imports
+5. WasmParity test: run against wasm3 + wasmtime test vector suite
 
-```
-[Developer uploads .tapp]
-        ↓
-[WASM Auto-scan: Buffer Overflow, Memory Leak, Forbidden Syscall check]
-        ↓
-[Manifest validation: Domain/API whitelist declared]
-        ↓
-[Developer DID Signature Verification]
-        ↓ (Pass)
-[Marketplace Approved]
-        ↓
-[Client Install → TEE Attestation → Sandbox Launch]
-```
-
-### MARKETPLACE-04: AI Token Economy
-
-- 💻📱 **B2B App Store Model:** `.tapp` miễn phí, nhưng AI features yêu cầu "TeraChat Pro" hoặc AI Token purchase.
-- 💻📱 **AI Quota per DID:** 10,000 tokens/giờ mặc định. Enterprise plan: vô hạn.
-- 💻📱 **Upgrade prompt:** Gold-tinted Frosted Glass Modal khi `.tapp` hết AI Quota.
-
+Plugin nghi ngờ → **manual security review queue** (không auto-approve).
 
 ---
 
-## Mục Mới: Host Function ABI Versioning, Linux Signing & Huawei Rules
-
-### MARKETPLACE-05: Host Function ABI Versioning Contract
-
-```json
-// manifest.json của mọi .tapp bắt buộc có:
-{
-  "host_api_version": "1.3.0",
-  "min_host_api_version": "1.0.0",
-  "max_host_api_version": "2.0.0"
-}
-```
-
-**Rules:**
-- TeraChat Core publish Host API Changelog theo semver.
-- Breaking changes chỉ trong **major version**.
-- Minor version chỉ additive (không phá vỡ backward compat).
-- `.tapp` load bị reject nếu `host_api_version` nằm ngoài range Core hỗ trợ.
-- TeraChat Foundation cam kết support 2 major versions đồng thời (deprecation window 12 tháng).
-
-### MARKETPLACE-06: Linux Package Signing (GPG + Cosign)
-
-- 🐧 **.deb/.rpm:** Signed bằng TeraChat GPG Release Key. Public key published tại `packages.terachat.com/gpg.key`.
-- 🐧 **AppImage:** Signed bằng Sigstore Cosign. Verify: `cosign verify-blob --key terachat-root.pub terachat.AppImage`.
-
-**AppArmor note cho Linux .tapp publishers:** `.tapp` chạy trong WASM Sandbox của Rust Core — seccomp-bpf profile của TeraChat đã include các syscall cần thiết. Publishers không cần (và không được phép) request thêm syscall ngoài whitelist.
-
-### MARKETPLACE-07: Huawei HarmonyOS .tapp Distribution Rules
-
-- 📱 **AOT bundle bắt buộc:** Không có dynamic WASM loading từ Marketplace trên Huawei (tương tự iOS).
-- 📱 **AOT precompile:** Mỗi `.tapp` phải submit kèm AOT-compiled binary `.waot` cho HarmonyOS ARM64.
-- 📱 **Attestation:** HMS SafetyDetect verify `.tapp` DID trước khi Sandbox launch.
-- 📱 **Distribution:** AppGallery — submit source `.tapp` + `.waot` bundle vào AppGallery Developer Console.
-
-### MARKETPLACE-08: Whisper Voice Plugin Requirements
-
-Các `.tapp` có voice-to-text feature PHẢI khai báo trong manifest:
-
-```json
-{
-  "features": ["voice_transcription"],
-  "whisper_model_tier": "tiny",  // "tiny" (39MB) hoặc "base" (74MB)
-  "min_available_ram_mb": 100    // Rust Core enforce trước khi load model
-}
-```
-
-Host Runtime tự chọn tier theo `WhisperModelTier` protocol — publisher không được override.
-
-### MARKETPLACE-09: Publisher Migration Guide (ABI Breaking Changes)
-
-1. **6 tháng trước deprecation:** Thông báo trong Developer Console + Email.
-2. **3 tháng trước:** Warning trong CI/CD khi `.tapp` compile against old ABI.
-3. **Deprecation day:** Core hỗ trợ cả 2 ABI version. Old `.tapp` vẫn load, nhưng badged ⚠️ "Cần cập nhật".
-4. **EoL (End-of-Life):** 12 tháng sau deprecation — Core drop support, `.tapp` cũ bị reject.
+*Cross-references: TERA-CORE §F-11 (WASM Runtime) · TERA-FEAT §F-07 (Plugin Sandbox) · TERA-FEAT §F-08 (Inter-.tapp IPC)*

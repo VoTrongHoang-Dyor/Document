@@ -1,12 +1,12 @@
-# Core_Spec.md — TeraChat Alpha v0.3.7
+# Core_Spec.md — TeraChat Alpha v0.3.0
 
 ```yaml
 # DOCUMENT IDENTITY
 id:                   "TERA-CORE"
 title:                "TeraChat — Core Technical Specification"
-version:              "0.3.7"
+version:              "3.0"
 audience:             "System Architect, Backend Engineer, Security Engineer"
-purpose:              "Đặc tả kiến trúc lõi hệ thống: Cryptography (MLS, E2EE), Mesh Network, Offline CRDT Sync, Server Infrastructure, Enterprise License System."
+purpose:              "Đặc tả kiến trúc lõi hệ thống: Cryptography (MLS, E2EE), Mesh Network, Offline CRDT Sync, Server Infrastructure."
 scope:                "Infrastructure, Security, Cryptography, Network Protocols — Implementation-level only."
 non_goals:
   - "UI rendering logic (→ TERA-DESIGN)"
@@ -23,11 +23,10 @@ constraints_global:
   - "Không mlock() trên iOS — dùng kCFAllocatorMallocZone + ZeroizeOnDrop"
   - "Mọi FFI endpoint KHÔNG trả raw ptr — dùng Token Protocol"
   - "Ed25519 signed, append-only Audit Log — không thể delete/modify"
-  - "License JWT validate trước mọi operation — license invalid = lockout"
 breaking_changes_policy: |
   Major version bump bắt buộc khi thay đổi: MLS epoch format, CRDT schema,
   Crypto Host ABI, Host Function API. Minor version = additive only.
-  Deprecation window: 12 tháng.
+  Deprecation window: 12 tháng. Xem §11 Versioning & Migration.
 
 ai_routing_hint: |
   Mở file này khi hỏi về Crypto, bảo mật, MLS, E2EE, Mesh network,
@@ -46,7 +45,7 @@ ai_routing_hint: |
 
 | Version | Date       | Change Summary                                                                                    |
 |---------|------------|---------------------------------------------------------------------------------------------------|
-| v0.3.7    | 2026-03-15 | Restructure toàn bộ sang production-grade format; thêm §1 Executive Summary, §5 State Machine, §8 NFR, §11 Versioning, §12 Observability |
+| v3.0    | 2026-03-15 | Restructure toàn bộ sang production-grade format; thêm §1 Executive Summary, §5 State Machine, §8 NFR, §11 Versioning, §12 Observability |
 | v0.3.6  | 2026-03-13 | Deprecate eBPF/XDP, Hardware TEE (SGX/SEV), mlock() Pinning, Envoy Sidecar                       |
 | v0.3.5  | 2026-03-13 | Add §3.5 Lightweight Micro-Core Relay; §4.6 Soft-Enclave WASM Isolation; §3.4.2 SQLite OOM Prevention |
 | v0.3.0  | 2026-03-11 | Remove ODES/Blind Shard → E2EE Cloud Backup (§9.1); §5.9 simplified → Gossip Broadcast + iBeacon |
@@ -144,6 +143,22 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 - 📱💻🖥️ **Unidirectional State Sync:** Rust bắn signal `StateChanged(table, version)` qua IPC. UI kéo snapshot tại thời điểm rảnh — không polling, không push JSON cục.
 
 ### 2.2 Blind Routing & Zero-Knowledge
+
+
+```markdown
+#### Formal IPC Memory Ownership Contract (Token Protocol)
+
+Rust Core xuất 2 FFI primitive thay vì raw pointer:
+
+1. `tera_buf_acquire(id)` → trả handle opaque (`u64` token), không phải raw pointer.
+2. `tera_buf_release(token)` → Rust mới được phép zeroize.
+
+iOS JSI và Android Dart FFI đều gọi `tera_buf_release()` trong destructor/finalizer.
+Rust Core có reference counter per-token: `ZeroizeOnDrop` chỉ thực thi khi `ref_count == 0`.
+
+**CI lint rule:** Cấm FFI endpoint trả `Vec<u8>/ptr` trực tiếp không qua Token Protocol.
+Cross-reference: → TERA-FEAT §1 IPC Signal/Command Contract
+```
 
 - ☁️ Server là **Blind Relay** — chỉ thấy: `destination_device_id`, `blob_size`, `timestamp`.
 - ☁️ **Sealed Sender:** Header người gửi mã hóa bằng public key người nhận — Server không biết who-to-whom.
@@ -273,6 +288,17 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 - 📱💻🖥️ **Enterprise PIN Độc lập & Dual-Wrapped KEK:** Argon2id (0.5s CPU) sinh `Fallback_KEK`. Device_Key bọc 2 bản độc lập: Bản 1 qua Secure Enclave/StrongBox; Bản 2 qua `Fallback_KEK`. `Drop()` + Zeroize xóa PIN và KEK khỏi RAM ngay sau wrap.
 - 📱💻🖥️ **Cryptographic PIN Fallback via FFI Pointer:** PIN 6 số truyền từ UI qua FFI Pointer (không qua UI state). Tái tạo `Fallback_KEK` → giải mã Bản bọc 2 → extract `Device_Key` → ký `OIDC_ID_Token` → `ZeroizeOnDrop` PIN thô.
 - 📱💻🖥️ **Ruthless Cryptographic Self-Destruct:** Counter `Failed_PIN_Attempts` (max 5). Vượt giới hạn → Crypto-Shredding toàn bộ Local DB + `OIDC_ID_Token` + 2 bản bọc `Device_Key` → Factory Reset.
+
+
+```markdown
+#### iOS Key Protection — Double-Buffer Zeroize Protocol
+
+📱 **Double-Buffer:** Phân bổ key vào 2 page liền kề `MAP_ANONYMOUS|MAP_PRIVATE`.
+Ngay sau decrypt xong: ghi đè `0x00` vào page 1 TRƯỚC KHI dùng key. Dùng key từ page 2.
+Sau `ZeroizeOnDrop`: ghi đè cả 2 page.
+Nếu Jetsam kill trước Drop: page 1 đã clean, page 2 còn key nhưng là 1 page đơn lẻ
+khó exploit hơn so với madvise đơn lẻ.
+```
 
 **Platform Signing APIs:**
 
@@ -538,6 +564,33 @@ Tuân thủ chuẩn CNSA 2.0 và NSA SNDL/HNDL requirements.
 - 📱 **Quantum Checkpoints:** ML-KEM payload (~1.18KB) chỉ đính kèm vào `KeyPackage` MLS Handshake hoặc mỗi 10.000 tin nhắn. Luồng hàng ngày chạy thuần AES-256-GCM → tiết kiệm 99.9% băng thông.
 - 📱💻 **Survival Mesh Fragmentation:** BLE 5.0 MTU ~512 bytes → Rust Core băm nhỏ Kyber blob 1.18KB thành mảnh 400 bytes + Sequence ID + FEC (RaptorQ RFC 6330).
 
+**BLE Channel Disambiguation — ML-KEM Key Exchange:**
+
+> ⚠️ **Quan trọng:** ML-KEM key exchange **KHÔNG** sử dụng BLE Advertising channel (31-byte beacon).
+
+| BLE Channel | MTU | Mục đích trong TeraChat |
+|---|---|---|
+| **Advertising (ADV_EXT_IND)** | 31 bytes | Peer discovery ONLY — `BLE_Stealth_Beacon` (§6.3) |
+| **GATT Connected (ATT MTU negotiated)** | 512 bytes | Data transfer — ML-KEM, CRDT events, key material |
+
+ML-KEM Kyber768 payload (~1.18KB) sử dụng **BLE GATT connected mode** với RaptorQ FEC
+fragmentation (RFC 6330) thành các fragments ≤ 400 bytes để đảm bảo reliable delivery
+qua GATT ATT MTU 512 bytes.
+
+**Prohibit:** Không bao giờ fragment PQ key material vào ADV_EXT_IND PDU frames.
+Beacon frames chỉ carry HMAC commitment để peer discovery — không carry bất kỳ key bytes nào.
+Cross-reference: → §6.3 BLE Stealth Beaconing
+
+**Beacon Content Restriction (HARD RULE):**
+- ✅ Beacon carries: `HMAC(R, PK_identity)[0:8]` — identity commitment (8 bytes)
+- ✅ Beacon carries: `slot_rotation_counter` — replay protection (4 bytes)
+- ✅ Beacon carries: `capability_flags` — mesh role indicators (2 bytes)
+- ❌ **PROHIBITED:** Key material, PQ keys, MLS epoch data, CRDT payloads trong beacon frame.
+
+Mọi key exchange (ML-KEM, X25519, MLS KeyPackage) đi qua **BLE GATT connected channel**
+sau khi peer discovery hoàn tất qua beacon. Beacon là discovery-only.
+Cross-reference: → §5.4 Hybrid PQ-KEM, BLE Channel Disambiguation
+
 **Hardware Key Wrapping:**
 
 - 📱💻🖥️ Sinh cặp khóa PQ trên phân vùng RAM được bảo vệ bởi `MAP_CONCEAL`.
@@ -557,6 +610,19 @@ Tuân thủ chuẩn CNSA 2.0 và NSA SNDL/HNDL requirements.
 ---
 
 ### F-07: Infrastructure & Control Plane
+
+```markdown
+#### XPC Transaction Journal Protocol (macOS)
+```
+
+```rust
+// hot_dag.db journal trước khi dispatch sang XPC Worker
+// States: PENDING → VERIFIED → COMMITTED
+// Crash in PENDING  → abort + notify user "Phiên ký bị gián đoạn. Vui lòng ký lại."
+// Crash in VERIFIED → commit from journal (idempotent)
+pub struct XpcTransactionJournal { /* tx_id, status, payload_hash */ }
+```
+
 
 **Description:** Backend services, Gateway, OPA Policy, Database layer.
 
@@ -954,6 +1020,40 @@ SoloAppendOnly: 1 device only, no election needed
 - 📱💻🖥️ **Deterministic LWW:** `Hash(Node_ID)` Tie-breaker + HLC cho Last-Write-Wins conflicts.
 - 📱💻🖥️ **Ed25519 Signed Merge Patches:** Mọi state change phải kèm chữ ký Ed25519. Nodes xác thực trước khi apply.
 
+
+```rust
+/// SAFE VACUUM pattern cho hot_dag.db — tránh concurrent write race condition.
+///
+/// Prefer WAL checkpoint thay vì VACUUM cho append-only DB:
+/// hot_dag.db không có deleted rows (INV-08: append-only),
+/// nên VACUUM chỉ có ích khi WAL file quá lớn.
+pub async fn compact_hot_dag(db: &SqlitePool) -> Result<(), StorageError> {
+    // Option A (PREFERRED): WAL checkpoint — không cần exclusive lock
+    db.execute("PRAGMA wal_checkpoint(TRUNCATE)").await?;
+
+    // Option B: Nếu VACUUM INTO thực sự cần (e.g., fragmentation analysis):
+    // BẮT BUỘC acquire exclusive lock trước khi VACUUM
+    // db.execute("BEGIN EXCLUSIVE TRANSACTION").await?;
+    // db.execute("VACUUM INTO 'hot_dag_tmp.db'").await?;
+    // db.execute("COMMIT").await?;
+    // tokio::fs::rename("hot_dag_tmp.db", "hot_dag.db").await?;
+
+    Ok(())
+}
+```
+
+**Append rule:**
+
+```markdown
+**VACUUM INTO Locking Rule (bắt buộc):**
+Mọi `VACUUM INTO` operation trên `hot_dag.db` phải được bao bọc trong
+`BEGIN EXCLUSIVE TRANSACTION ... COMMIT` để prevent concurrent Tokio writer
+swap incomplete DB qua atomic `rename()`.
+
+**Ưu tiên:** Dùng `PRAGMA wal_checkpoint(TRUNCATE)` thay VACUUM cho append-only DB.
+Không có deleted rows để reclaim → WAL checkpoint hiệu quả hơn và không cần exclusive lock.
+```
+
 **Tombstone & GC:**
 
 - 💻📱🖥️ **Merged_Vector_Clock (MVC):** Tombstone chỉ Vacuum khi `tombstone.clock ≤ MVC` — tất cả peer đã xác nhận.
@@ -1205,6 +1305,39 @@ extern "C" {
 5. Nếu Jetsam kill trước Drop: page 1 đã clean; page 2 = 1 page đơn lẻ khó exploit
 ```
 
+#### Android Doze Mitigation — StrongBox Wrap-on-Derive Pattern
+
+📱 Android: `mlock()` không khả dụng (StrongBox/TrustZone không expose `mlock` API).
+Risk: Doze-triggered process freeze có thể xảy ra mid-`ZeroizeOnDrop`, để key material
+trong RAM page chưa được zero-fill.
+
+**Mitigation — Wrap-on-Derive (bắt buộc cho mọi sensitive key trên Android):**
+
+```rust
+pub fn derive_and_wrap_android(
+    input_key_material: &[u8],
+    context: &KeyDerivationContext,
+) -> Result<WrappedKey, KeyError> {
+    // Step 1: Derive key trong local scope
+    let plaintext_key = hkdf_sha256(input_key_material, &context.info)?;
+
+    // Step 2: NGAY LẬP TỨC wrap vào StrongBox trước khi bất kỳ await point nào
+    // Không có async operation giữa derive và wrap — Doze không thể freeze giữa 2 bước
+    let wrapped = android_keystore::wrap(
+        &plaintext_key,
+        &context.wrapping_key_alias,
+        KeyProtection::StrongBox,
+    )?;
+
+    // Step 3: ZeroizeOnDrop plaintext ngay sau wrap
+    drop(plaintext_key); // ZeroizeOnDrop triggered
+    Ok(wrapped)
+}
+```
+
+**Invariant:** Plaintext key window tồn tại < 1ms (derive → wrap → zeroize đồng bộ, không await).
+Doze kill chỉ có thể xảy ra trước hoặc sau window này — không thể vào giữa.
+
 **Dart FFI NativeFinalizer Contract:**
 
 ```dart
@@ -1222,19 +1355,6 @@ class TeraSecureBuffer {
 ---
 
 ### F-22: License Architecture & Cryptographic Entanglement
-
-ENTERPRISE-ONLY CONSTRAINT:
-TeraChat không có consumer accounts. Mọi License JWT được cấp cho
-organization (not individual). License JWT chứa:
-
-- tenant_id: organization identifier
-- domain: verified org domain
-- max_seats: maximum concurrent enrolled devices
-- tier: Business | Enterprise | GovMilitary
-- features: enabled feature flags
-
-Không có free tier, không có trial period mà không có sales engagement.
-Pilot Program (90 ngày) được cấp qua license với tier="pilot".
 
 **Description:** HSM FIPS 140-3 JWT licensing, KDF entanglement với DeviceIdentityKey, graceful degradation.
 
@@ -1638,7 +1758,6 @@ aarch64-linux-android      → Android + Huawei HarmonyOS
 | NSE Process | ≤24MB | 📱 iOS | Apple hard limit |
 | NSE Micro-Crypto | ~4MB | 📱 iOS | Stripped MLS/CRDT/SQLCipher |
 | NSE Micro-NER ONNX | **PROHIBITED** | 📱 iOS | `NsePolicy::ProhibitOnnxLoad` — KHÔNG bao giờ load ONNX trong NSE process. Lý do: NSE Arena 10MB + decrypt 2MB + MLS 2MB = 14MB → không còn margin để load 8MB Micro-NER. Dùng regex-only PII detection trong NSE. Full NER defer sang Main App qua `main_app_decrypt_needed=true`. |
-| NSE Micro-NER ONNX | **PROHIBITED** | 📱 iOS | `NsePolicy::ProhibitOnnxLoad` — KHÔNG bao giờ load ONNX trong NSE process. Lý do: NSE Arena 10MB + decrypt 2MB + MLS 2MB = 14MB → không còn margin để load 8MB Micro-NER. Dùng regex-only PII detection trong NSE. Full NER defer sang Main App qua `main_app_decrypt_needed=true`. |
 | WASM Sandbox per instance | ≤64MB (soft cap) | 📱💻🖥️ | OOM-kill without warning |
 | LRU Cache (Main App) | 50MB | 📱 | ZeroizeOnDrop on evict |
 | Delta-State CRDT Buffer | ≤50MB disk | 📱 | Mobile Leaf Node limit |
@@ -1648,12 +1767,6 @@ aarch64-linux-android      → Android + Huawei HarmonyOS
 | Vector Index RAM | ≤8MB heap | 📱💻 | ZeroizeOnDrop per session |
 | Egress_Outbox Ring Buffer | 2MB max | 📱💻🖥️ | Hard limit; overflow = terminate |
 | File Chunk Double Buffer | ~10MB | 📱💻🖥️ | 2 chunks × 2MB at any time |
-
-> ⚠️ **NSE RAM Ceiling Additive Rule:**
-> NSE Arena (10MB) + MLS Decrypt (~2MB) + system overhead (~2MB) = 14MB baseline.
-> Hard margin còn lại: 6MB. ONNX Micro-NER (8MB) vi phạm ceiling → Jetsam kill → notification mất.
-> **Invariant:** `NsePolicy::ProhibitOnnxLoad` là non-negotiable. Không exception.
-> Cross-reference: → §5.5 NSE RAM Budget Protocol
 
 > ⚠️ **NSE RAM Ceiling Additive Rule:**
 > NSE Arena (10MB) + MLS Decrypt (~2MB) + system overhead (~2MB) = 14MB baseline.
@@ -1777,6 +1890,13 @@ aarch64-linux-android      → Android + Huawei HarmonyOS
 - 📱💻 Sliding Context Buffer (SCB) N=20 messages, bảo vệ ZeroizeOnDrop, không persist.
 - 📱💻 Lazy Triggered ONNX: chạy khi EDES flag ≥2 borderline entities trong 5 messages.
 - 📱💻 Retroactive Taint: nếu `Intent_Score[SOCIAL_ENGINEERING] > 0.75` → taint N-3 messages + seal conversation.
+
+**NSE Context Restriction:**
+- 📱 iOS NSE: `NsePolicy::ProhibitOnnxLoad` — **ONNX model load trong NSE process bị cấm tuyệt đối**.
+- NSE chỉ được dùng regex-based PII detection (Aho-Corasick pattern matching, no neural model).
+- Full Micro-NER scan (ONNX) chỉ chạy trong Main App context sau khi NSE set `main_app_decrypt_needed=true`.
+- Lý do: NSE 20MB hard ceiling bị vi phạm khi ONNX (8MB) + Arena (10MB) + overhead cộng lại.
+- Cross-reference: → §8.2 RAM Budget, → §5.5 NSE RAM Budget Protocol
 
 ---
 
@@ -1944,6 +2064,41 @@ pub struct TacticalRelayConfig {
 - **Không merge DAG**, **không xử lý conflict**, **không rotate MLS Epoch**.
 - TTL 60 phút; auto-expire để tránh pin drain.
 
+#### EMDP Shun Exception Protocol
+
+Trong điều kiện bình thường, EMDP prohibit MLS Epoch rotation. Exception bắt buộc
+khi Byzantine Shun xảy ra trong all-iOS EMDP mesh:
+
+```
+EMDP_SHUN_EXCEPTION = {
+    trigger:      Shun Record nhận được trong EMDP active state,
+    condition_A:  poisoned_node != tactical_relay → Proceed với limited re-key,
+    condition_B:  poisoned_node == tactical_relay → Emergency handover IMMEDIATELY
+}
+```
+
+**Case A — Poisoned node là regular member (không phải Tactical Relay):**
+1. Loại poisoned node khỏi EMDP text buffer ngay lập tức.
+2. Derive temporary group key:
+   `TempGroupKey = HKDF(EmdpKeyEscrow.relay_session_key, "shun-rekey" || poisoned_node_id || HLC_now)`.
+   - ⚠️ Security note: Nếu poisoned node đã nhận `EmdpKeyEscrow` trước khi bị Shun,
+     `TempGroupKey` này bị tainted. Accepted risk: (a) TTL còn tối đa 60 phút,
+     (b) EMDP chỉ carry text messages, không carry key material.
+     Desktop sẽ re-key hoàn toàn khi reconnect.
+3. Subsequent messages encrypt bằng `TempGroupKey`.
+4. Log `EmdpShunEvent { poisoned_node_id, hlc, tainted_escrow: bool }` vào local append buffer.
+
+**Case B — Tactical Relay bị Shun:**
+1. Terminate EMDP session NGAY LẬP TỨC (không chờ TTL).
+2. Trigger new Tactical Relay election từ iOS nodes còn lại.
+3. Nếu không đủ nodes (< 2 iOS với battery > 20%): enter `CAUSAL_FREEZE` mode.
+4. Emit `CoreSignal::EmdpTerminated { reason: TacticalRelayCompromised }`.
+
+**Invariant — Post-Desktop-Reconnect:**
+1. Desktop kiểm tra `tainted_escrow` flag trong EMDP log.
+2. Nếu `true`: treat toàn bộ EMDP window messages như potentially compromised.
+3. Full MLS Epoch rotation bắt buộc trước khi merge EMDP messages vào main DAG.
+
 ### 12.2 EMDP Key Escrow Handshake
 
 ```rust
@@ -2021,11 +2176,10 @@ fn derive_master_unlock_key(license_token: &LicenseToken, epoch: u64) -> Result<
 
 ```rust
 pub enum OfflineTTLProfile {
-    Pilot      { ttl_hours: 72 },       // 90-day pilot, then expires
-    Business   { ttl_hours: u32 },      // configurable, default 168 (7 days)
-    Enterprise { ttl_hours: u32 },      // configurable, default 720 (30 days)
+    Consumer { ttl_hours: 24 },
+    Enterprise { ttl_hours: u32 },      // configurable
     GovMilitary { ttl_hours: 720 },     // 30 ngày
-    AirGapped  { revocation_only: bool },
+    AirGapped { revocation_only: bool },
 }
 ```
 
@@ -2267,3 +2421,89 @@ INSERT INTO ai_egress_audit (
 ---
 
 *Xem → TERA-FEAT cho Client App-layer. Xem → TERA-FUNC cho Product flows.*
+
+
+```rust
+pub struct EmdpKeyEscrow {
+    relay_session_key: AesKey256,
+    emdp_start_epoch:  u64,
+    emdp_expires_at:   u64, // now() + 3600
+}
+// Desktop xuất EMDP Escrow Key trước khi offline/handover:
+// 1. Sinh EmdpKeyEscrow
+// 2. ECIES encrypt với iOS device pubkey
+// 3. Gửi qua BLE Control Plane
+// Khi Desktop reconnect:
+// → nhận lại escrow từ iOS → decrypt relay messages → merge vào DAG với đúng epoch context
+// → Không có orphan messages.
+```
+
+
+### 11 Huawei HarmonyOS Stack
+
+```markdown
+#### §11.6 Huawei CRL Polling Fallback
+
+📱 **Vấn đề:** HMS không có equivalent APNs `content-available` background push cho CRL updates.
+📱 **Giải pháp:** CRL refresh 4h polling khi Foreground + HMS Data Message khi Background.
+**Acknowledged limitation:** Huawei CRL update có thể delay tối đa 4h so với iOS/Android 30 phút.
+Phải được disclosed trong Enterprise SLA documentation.
+```
+
+
+### 13 License Architecture
+
+```markdown
+### §13.6 Offline TTL Profile (Dynamic — không hardcode 24h)
+```
+
+```rust
+pub enum OfflineTTLProfile {
+    Consumer    { ttl_hours: 24 },
+    Enterprise  { ttl_hours: u32 },    // configurable bởi Admin, default 168 (7 ngày)
+    GovMilitary { ttl_hours: 720 },    // 30 ngày
+    AirGapped   { revocation_only: bool },
+}
+```
+
+```markdown
+TTL được cấu hình bởi Admin trong Admin Console và baked vào License JWT field `offline_ttl_hours`.
+**Lý do:** Hardcode 24h mâu thuẫn với Survival Mesh promise cho Gov/Military deployment kéo dài nhiều ngày.
+```
+
+
+### 14 Network Layer
+
+```markdown
+### §14.8 AES-NI / ARM NEON — Software Fallback
+```
+
+```rust
+pub fn init_crypto_backend() -> CryptoBackend {
+    if is_cpu_feature_detected!("aes") && is_cpu_feature_detected!("sse2") {
+        CryptoBackend::HardwareAccelerated
+    } else {
+        tracing::warn!("AES-NI not available, using software backend. Expect ~3x slower.");
+        CryptoBackend::Software
+    }
+}
+```
+
+```markdown
+Admin Console hiển thị warning khi thiết bị dùng software backend:
+*"Thiết bị này không có hardware crypto. Mã hóa chậm hơn 3x bình thường."*
+```
+
+
+```markdown
+### §14.9 Shadow DB Write Lock Protocol
+```
+
+```rust
+pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
+// NSURLSession completion check lock → queue to hot_dag.db nếu migration đang chạy
+// Đảm bảo không race giữa shadow rename và NSURLSession background write
+impl ShadowMigrationLock {
+    pub fn is_migration_in_progress(&self) -> bool { self.migration_in_progress.load(Ordering::SeqCst) }
+}
+```

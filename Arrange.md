@@ -2596,6 +2596,96 @@ Trước khi mark edit là MERGED:
 
 ---
 
+**Phân tích routing:**
+
+Nội dung document 15 là một báo cáo điều hành mang tính **business/strategic positioning** — so sánh competitive, problem landscape, value proposition, và future outlook. Không chứa technical spec hay implementation detail.
+
+Theo document dependency map trong `Arrange.md §2.1`:
+
+```
+BusinessPlan.md (TERA-BIZ) ← phụ thuộc TERA-CORE cho technical claims
+TestMatrix.md (TERA-TEST)  ← leaf node
+```
+
+**Routing quyết định: `BusinessPlan.md` (TERA-BIZ)**
+
+Lý do: nội dung thuộc loại *competitive analysis + risk landscape + strategic positioning* — đây là domain của TERA-BIZ, không phải TERA-CORE hay TERA-FEAT. Cụ thể nhất là mapping vào section **§6 Competitive Advantage** và **§11 Risk & Mitigation** của BusinessPlan.md hiện tại.
+
+---
+
+**Edit record cho Arrange.md:**
+
+```yaml
+edit_id:       "B-05"
+conflict_id:   null
+target_file:   "BusinessPlan.md"
+target_section: "§6 Competitive Advantage — sau §6.3 Head-to-Head Comparison"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Nội dung append vào §6:**
+
+```markdown
+### §6.4 Systemic Risk Landscape — Tại sao Window Cơ hội Đang Mở
+
+Giai đoạn 2023–2026 đánh dấu bước ngoặt khi các lỗi hệ thống chuyển từ "trục trặc cục bộ" sang "thảm họa mang tính hệ thống." Bốn nhóm rủi ro hội tụ tạo ra demand không thể đảo ngược:
+
+| Nhóm Rủi ro | Biểu hiện | Impact với TeraChat |
+|---|---|---|
+| **Tập trung hóa Cloud** | AWS us-east-1 cascading failure (12/2021), Cloudflare (6/2022) | TeraChat single-binary on-prem loại bỏ single point of failure |
+| **Mối đe dọa địa chính trị** | Salt Typhoon (US telecoms), drone attacks vào data center | Air-gapped + BLE Mesh hoạt động khi infrastructure bị tấn công |
+| **Chuỗi cung ứng & Danh tính** | XZ Utils backdoor, Change Healthcare, Snowflake API breach | Zero-Knowledge: server mù; không có credential tĩnh |
+| **Tác nhân AI vượt quyền** | AWS Kiro xóa môi trường, Meta AI data leak | WASM sandbox + OPA policy + human-in-the-loop cho mọi destructive action |
+
+**So sánh kiến trúc niềm tin:**
+
+| Yếu tố | Hệ thống Truyền thống (SaaS cũ) | TeraChat |
+|---|---|---|
+| Mô hình niềm tin | Implicit trust sau perimeter | Xác minh mật mã liên tục |
+| Phạm vi sự cố | Cascading, hệ thống | Cục bộ, phân lập |
+| Quản trị AI | IAM tĩnh cho người dùng | JIT provisioning cho cả human + AI agent |
+| Chuỗi cung ứng | Dễ bị nhiễm độc transitive | Immutable binary, reproducible build, SBOM |
+| Khả năng offline | 0 | BLE Mesh + CRDT DAG |
+
+**Kết luận positioning:** TeraChat không cạnh tranh trên feature — cạnh tranh trên *kiến trúc niềm tin*. Các nền tảng SaaS cũ không thể retrofit Zero-Knowledge hay Offline Mesh mà không rebuild hoàn toàn. Window cơ hội: 18–24 tháng trước khi đối thủ lớn vào thị trường.
+```
+
+---
+
+**Edit record thứ hai:**
+
+```yaml
+edit_id:       "B-06"
+conflict_id:   null
+target_file:   "BusinessPlan.md"
+target_section: "§11 Risk & Mitigation — sau bảng Risk Register hiện tại"
+change_type:   "Append"
+sprint:        "Sprint2"
+status:        "TODO"
+```
+
+**Nội dung append vào §11:**
+
+```markdown
+### §11.3 Strategic Outlook — Niềm tin như Lợi thế Cạnh tranh
+
+Khái niệm "niềm tin" trong công nghệ đang dịch chuyển từ *implicit trust* sang *continuous cryptographic proof*. Khi số lượng AI agent vượt xa người dùng con người và căng thẳng địa chính trị vũ khí hóa internet infrastructure, các hệ thống truyền thống trở thành rủi ro không thể cứu vãn.
+
+**Ba lợi thế dài hạn của kiến trúc TeraChat:**
+
+1. **Giảm blast radius:** Phân lập rủi ro theo vùng; một sự cố không cascade toàn hệ thống. Bảo vệ uy tín thương hiệu khi đối thủ sập.
+
+2. **AI-safe by design:** Các rào chắn WASM sandbox + OPA policy cho phép doanh nghiệp triển khai AI agent mạnh dạn trong khi đối thủ còn ngần ngại. Đây là lợi thế ROI thực sự trong 2027–2030.
+
+3. **Compliance tự nhiên:** Kiến trúc phi tập trung + audit log Ed25519 + reproducible build SBOM đơn giản hóa báo cáo theo SEC cybersecurity disclosure rules, ISO 27001, và các quy định data localization SEA.
+
+**Target narrative cho investor:** TeraChat không bán phần mềm — bán *khả năng phục hồi như lợi thế cạnh tranh*. Doanh nghiệp adopt TeraChat không chỉ tồn tại qua kỷ nguyên rủi ro hệ thống; họ biến resilience thành moat.
+```
+
+---
+
 ## §13 APPENDIX
 
 ### 13.1 Conflict ID Glossary
@@ -2697,3 +2787,293 @@ Trước khi mark edit là MERGED:
 *TeraChat Arrange.md v2.0.0 — Restructured 2026-03-21*
 *Dùng file này như master checklist trong sprint planning. Check-off từng EDIT ID khi VERIFIED.*
 *Mỗi edit độc lập — có thể rollback riêng lẻ trong 48h sau merge.*
+
+Dựa vào file tài liệu gốc `BusinessPlan.md` của hệ thống TeraChat, hãy cập nhật và tái cấu trúc lại tài liệu này bằng cách tích hợp nội dung về chiến lược "Ngựa Thành Troy" (Combo 2-3-4) và các lập luận pháp lý chiến lược.
+
+Yêu cầu giữ nguyên văn phong B2B Enterprise (sắc bén, tập trung vào giải pháp cho C-Level/CISO) và định dạng Markdown gốc. Hãy chèn/sửa các nội dung sau vào ĐÚNG các vị trí được chỉ định:
+
+### YÊU CẦU 1: Cập nhật "Phần 3. Go-to-Market Strategy & Operations"
+
+Thay thế hoặc định hình lại mục `3.1 GTM Phases` thành: **3.1 Chiến lược Go-to-Market**
+Tích hợp 3 giai đoạn sau vào mục này:
+
+- **Giai đoạn 1: Tạo Compliance as a Service:** Nhắm vào CISO/Legal với Compliance Dashboard, Legal as a Feature (Cam kết đền bù pháp lý), và tính năng Vùng cách ly (Data Sovereignty). Thay vì bán app chat, hãy bán "Sự an tâm".
+- **Giai đoạn 2: Land & Expand:** Luồng Onboarding qua gói "Black Ops Team" (nhóm nhỏ 20 người dùng cho dự án mật). Định vị song song với Slack/Teams. Rủi ro bằng 0, trải nghiệm mượt mà để nuôi dưỡng "Internal Champions".
+- **Giai đoạn 3: One-Click Migration:** Dùng TeraChat Migration Suite làm đòn dứt điểm. Ánh xạ 1:1 API của Slack/Teams (channels, threads, files). Chạy "Shadow Mode" đồng bộ realtime 30 ngày để IT có thể Cut-over với 0 giờ downtime.
+
+### YÊU CẦU 2: Bổ sung "Lập luận Pháp lý về Migration" vào Phần 3
+
+Tạo một sub-section mới trong Phần 3 (ví dụ: `3.8 Tính hợp pháp của Data Migration`) để giải quyết objection của Giám đốc Pháp chế:
+
+- **Quyền sở hữu dữ liệu:** Nhấn mạnh Khách hàng sở hữu 100% dữ liệu trên Slack/Teams, không vi phạm ToS.
+- **Cơ chế kỹ thuật:** Sử dụng Official APIs (Slack Corporate Export API, Microsoft Graph API) thông qua ủy quyền OAuth 2.0.
+- **Data Portability:** Tuân thủ GDPR/CCPA về quyền di động dữ liệu.
+
+### YÊU CẦU 3: Cập nhật "Phần 2. Competitive Advantage"
+
+Thêm một mục mới (ví dụ: `2.11 Vũ khí Pháp lý Phi đối xứng: Legal Indemnification`) để giải thích tại sao TeraChat dám đền bù $X triệu:
+
+- Phân tích rủi ro của Slack/Teams: Dùng Server-side encryption, giữ chìa khóa, nên rủi ro lộ plaintext cao -> Không dám cam kết.
+- Điểm mạnh của TeraChat: Dựa vào Zero-Knowledge & E2EE. Kể cả nhân viên/hacker xâm nhập server cũng chỉ thấy ciphertext. Xác suất rủi ro bằng 0.
+- Biến đây thành đòn bẩy tâm lý (Psychological Leverage) để chốt sales Enterprise.
+
+### YÊU CẦU 4: Cập nhật "Phần 6. Funding Allocation & Operations"
+
+Bổ sung cấu trúc tổ chức đội ngũ (Task Forces) vào phần Vận hành/Giải ngân:
+
+- **Đội Khiên chắn (Shield):** Legal, Security, QA -> Tập trung chứng chỉ ISO, SOC2 và Compliance Dashboard.
+- **Đội Mũi nhọn (Spearhead):** Product Design, Growth -> Tập trung Onboarding siêu mượt cho gói Black Ops 20 người.
+- **Đội Xây cầu (Bridge):** Data Engineers -> Tập trung hoàn thiện TeraChat Migration Suite hút dữ liệu từ Slack/Teams.
+
+Sau khi tiếp nhận yêu cầu này, hãy in ra toàn bộ nội dung của file `BusinessPlan.md` mới đã được tích hợp hoàn chỉnh và mạch lạc.
+Tôi cần xem tài liệu Pricing_Packages.md để hiểu đúng context về tính năng "doanh nghiệp tự code tiện ích" trước khi đề xuất giải pháp kiến trúc.Có vẻ file `Pricing_Packages.md` chưa được upload vào hệ thống. Tuy nhiên, dựa trên context bạn mô tả — **doanh nghiệp tự code tiện ích** — tôi hoàn toàn hiểu bài toán. Hãy để tôi phân tích ngay.
+
+---
+
+# Kiến trúc TeraChat `.tapp` — Mô hình WeChat MiniProgram
+
+## Vấn đề gốc rễ cần giải quyết
+
+```
+Mô hình AOT (.dylib nhúng sẵn):        Mô hình cần đạt được:
+────────────────────────────────        ────────────────────────────────
+✅ Vượt Rule 2.5.2                      ✅ Vượt Rule 2.5.2
+❌ Doanh nghiệp KHÔNG tự code được     ✅ Doanh nghiệp TỰ code tiện ích
+❌ TeraChat phải compile từng plugin    ✅ TeraChat chỉ cung cấp SDK/Runtime
+❌ Mỗi plugin mới = release app mới    ✅ Plugin mới = không cần update app
+❌ App phình to theo số plugin          ✅ App size cố định
+```
+
+---
+
+## Giải pháp: Áp dụng Mô hình WeChat JSCore vào TeraChat
+
+### Nền tảng pháp lý Apple cho phép
+
+```
+Apple CẤM:                          Apple CHO PHÉP (ngoại lệ):
+──────────────────────────────      ──────────────────────────────
+❌ Tải file .wasm từ server         ✅ Tải file .js / .html từ server
+❌ Tải file .dylib từ server        ✅ Chạy JS trong JavaScriptCore
+❌ JIT compiler tự triển khai       ✅ Dùng WebKit engine của Apple
+❌ Thực thi mã nhị phân động        ✅ Thực thi JS trong Sandbox WebView
+```
+
+> **Chìa khóa:** TeraChat không tải *mã máy* — tải *mã nguồn JS* và giao cho Apple's engine thực thi. Apple tự xử lý, Apple tự chịu trách nhiệm runtime.
+
+---
+
+## Kiến trúc Chi tiết: TeraChat MiniApp Runtime
+
+### Tổng quan hệ thống
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    TeraChat iOS App                          │
+│                                                             │
+│  ┌─────────────────┐    ┌──────────────────────────────┐   │
+│  │   App Core      │    │     .tapp Runtime Engine      │   │
+│  │  (Swift/ObjC)   │    │                              │   │
+│  │                 │    │  ┌────────────────────────┐  │   │
+│  │  - Chat         │    │  │  JavaScriptCore (JSC)  │  │   │
+│  │  - Auth         │◄───┤  │  (Apple's engine)      │  │   │
+│  │  - File         │    │  │                        │  │   │
+│  │  - Notification │    │  │  ┌──────────────────┐  │  │   │
+│  │                 │    │  │  │  .tapp Sandbox   │  │  │   │
+│  └─────────────────┘    │  │  │  ┌────────────┐  │  │  │   │
+│                         │  │  │  │ JS Bundle  │  │  │  │   │
+│  ┌─────────────────┐    │  │  │  │(từ server) │  │  │  │   │
+│  │  TeraChat API   │    │  │  │  └────────────┘  │  │  │   │
+│  │  Bridge (Swift) │◄───┤  │  └──────────────────┘  │  │   │
+│  │                 │    │  └────────────────────────┘  │   │
+│  │  - sendMessage()│    │                              │   │
+│  │  - getUser()    │    │  Mỗi .tapp = 1 JSC instance  │   │
+│  │  - uploadFile() │    │  hoàn toàn cô lập            │   │
+│  └─────────────────┘    └──────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                                    ▲
+                                    │ Tải JS Bundle
+                              ┌─────┴──────┐
+                              │  .tapp CDN │
+                              │  (Server)  │
+                              └────────────┘
+```
+
+---
+
+### Luồng hoạt động thực tế
+
+```
+Doanh nghiệp A tự code tiện ích "HR Leave Request":
+
+Bước 1 — DEV (Doanh nghiệp tự làm):
+  Dùng TeraChat SDK (giống WeChat DevTools)
+  Code bằng JavaScript/TypeScript thuần
+  Gọi TeraChat Bridge API:
+    TeraChatAPI.sendMessage({to: "hr_channel", content: form})
+    TeraChatAPI.getCurrentUser() → {id, name, department}
+    TeraChatAPI.uploadFile(pdfBlob) → fileUrl
+
+Bước 2 — PUBLISH:
+  Build → xuất ra file bundle.js (đã minify + encrypt)
+  Upload lên TeraChat Developer Portal
+  TeraChat review (automated security scan ~24h)
+  Xuất bản lên Private Marketplace (chỉ nội bộ công ty)
+
+Bước 3 — RUNTIME trên iOS:
+  User bấm mở tiện ích "HR Leave Request"
+  App tải bundle.js từ CDN về RAM (không lưu disk)
+  Nạp vào JSC Sandbox instance mới
+  Render giao diện qua WKWebView
+  Mọi call API → qua Bridge → App Core xử lý
+  Đóng tiện ích → JSC instance bị hủy hoàn toàn
+```
+
+---
+
+### Thiết kế TeraChat Bridge API (SDK cho doanh nghiệp)
+
+```javascript
+// ============================================
+// TeraChat .tapp SDK — Doanh nghiệp sử dụng
+// ============================================
+
+// 1. MESSAGING
+TeraChatAPI.sendMessage({
+  channelId: "general",
+  content: "Xin nghỉ phép ngày 25/3",
+  attachments: [fileUrl],
+  mentions: ["@manager_id"]
+})
+
+// 2. USER & ORG
+const user = await TeraChatAPI.getCurrentUser()
+// → { id, name, email, department, role }
+
+const members = await TeraChatAPI.getChannelMembers("team-dev")
+
+// 3. FILE
+const url = await TeraChatAPI.uploadFile(blob, "leave-form.pdf")
+const file = await TeraChatAPI.downloadFile(fileId)
+
+// 4. STORAGE (sandbox riêng mỗi .tapp)
+await TeraChatAPI.storage.set("draft", JSON.stringify(formData))
+const draft = await TeraChatAPI.storage.get("draft")
+
+// 5. UI NATIVE COMPONENTS
+TeraChatAPI.ui.showDatePicker(({ date }) => setLeaveDate(date))
+TeraChatAPI.ui.showAlert({ title: "Đã gửi!", type: "success" })
+TeraChatAPI.ui.navigate("back")
+
+// ============================================
+// CÁC API BỊ SANDBOX CHẶN — Không thể gọi:
+// ============================================
+// ❌ fetch("https://external-server.com")  → bị chặn
+// ❌ localStorage                          → không tồn tại
+// ❌ navigator.geolocation                 → cần xin phép
+// ❌ XMLHttpRequest đến domain lạ          → bị chặn
+// ❌ eval(), new Function()                → bị chặn
+```
+
+---
+
+### So sánh trực tiếp với WeChat MiniProgram
+
+```
+Tiêu chí              WeChat MiniProgram        TeraChat .tapp
+────────────────────────────────────────────────────────────────
+Runtime               JSCore + WKWebView         JSCore + WKWebView
+Ngôn ngữ dev          WXML + WXSS + JS           HTML + CSS + JS/TS
+SDK                   wx.sendMessage()           TeraChatAPI.sendMessage()
+Sandbox               Có, cô lập mỗi app         Có, cô lập mỗi .tapp
+Tải từ server         ✅ JS bundle               ✅ JS bundle
+Vượt Rule 2.5.2       ✅                         ✅
+Dev tự publish        ✅ (WeChat DevTools)        ✅ (TeraChat DevTools)
+Private distribution  ✅ (Enterprise WeChat)      ✅ (Private Marketplace)
+Context               Super-app xã hội           Super-app doanh nghiệp
+```
+
+---
+
+## Cơ chế Bảo mật Sandbox — Tại sao Apple chấp nhận?
+
+```
+Mỗi .tapp chạy trong vùng cô lập hoàn toàn:
+
+┌─────────────────────────────────────────────┐
+│              .tapp Sandbox                  │
+│                                             │
+│  ✅ Có thể:                                 │
+│     - Gọi TeraChat Bridge API (whitelist)   │
+│     - Đọc/ghi storage riêng của .tapp       │
+│     - Render UI trong WKWebView             │
+│     - Nhận data từ TeraChat (qua Bridge)    │
+│                                             │
+│  ❌ Không thể:                              │
+│     - Gọi API ngoài TeraChat domain         │
+│     - Truy cập camera/micro (không xin phép)│
+│     - Đọc data của .tapp khác               │
+│     - Truy cập file system của app          │
+│     - Chạy eval() / dynamic code gen        │
+│     - Giao tiếp trực tiếp với server riêng  │
+└─────────────────────────────────────────────┘
+
+→ Apple reviewer thấy: "Đây là WebView sandbox"
+→ Không khác gì Safari chạy một trang web
+→ Hoàn toàn hợp lệ theo App Store Guidelines
+```
+
+---
+
+## Kết hợp 2 mô hình: Giải pháp Hybrid hoàn chỉnh
+
+```
+Loại Plugin              Mô hình              Lý do
+──────────────────────────────────────────────────────────────────
+Plugin hệ thống          AOT .dylib           Cần hiệu năng cao
+(OCR, mã hóa, camera)    (nhúng sẵn)          Truy cập native API
+
+Plugin doanh nghiệp      JSCore Sandbox       Doanh nghiệp tự code
+(HR, ERP, Workflow)      (tải JS từ server)   Không cần update app
+
+Plugin public            JSCore Sandbox       Bên thứ 3 publish
+(3rd party)              (tải JS từ server)   TeraChat review JS code
+```
+
+```
+App Size khi dùng Hybrid:
+
+  App Core:              ~40 MB
+  System plugins (AOT):  ~30 MB  (OCR, encrypt, camera...)
+  JSCore Runtime:        ~15 MB  (1 lần, dùng mãi)
+  ─────────────────────────────
+  Tổng cố định:          ~85 MB  ← KHÔNG tăng dù có 1000 plugin JS
+  Plugin JS mỗi cái:     ~200KB  ← Tải về RAM, không lưu disk
+```
+
+---
+
+## Tóm tắt Toàn bộ Kiến trúc
+
+```
+                    TỔNG KẾT KIẾN TRÚC .TAPP
+    ┌──────────────────────────────────────────────┐
+    │                                              │
+    │   Plugin hệ thống   →   AOT .dylib           │
+    │   (hiệu năng cao)       (nhúng trong .ipa)   │
+    │                                              │
+    │   Plugin doanh nghiệp → JSCore Sandbox       │
+    │   (linh hoạt, mở rộng)  (tải JS từ CDN)     │
+    │                                              │
+    │   Cả hai đều:                                │
+    │   ✅ Vượt Apple Rule 2.5.2                   │
+    │   ✅ Chạy trong Sandbox cô lập               │
+    │   ✅ Doanh nghiệp tự phát triển được         │
+    │   ✅ App size không phình to vô hạn           │
+    │   ✅ Không cần update app khi thêm plugin     │
+    └──────────────────────────────────────────────┘
+```
+
+> **Kết luận:** TeraChat không cần chọn một trong hai mô hình — **dùng cả hai có chủ đích**. AOT cho những gì cần sức mạnh native, JSCore Sandbox cho những gì cần sự linh hoạt của ecosystem. Đây chính xác là cách WeChat vận hành MiniProgram song song với native features của họ.
+
+Bạn muốn tôi đi sâu vào phần **TeraChat DevTools** (công cụ để doanh nghiệp code `.tapp`) hay phần **security review pipeline** khi doanh nghiệp publish tiện ích không?

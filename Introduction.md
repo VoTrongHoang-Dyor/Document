@@ -1,122 +1,187 @@
+# Introduction.md — TeraChat System Gateway
+
 ```yaml
 # DOCUMENT IDENTITY
 id:       "TERA-INTRO"
-title:    "Introduction — System Gateway"
-version:  "0.2.6"
-audience: "New Team Member, System Architect, Product Manager, Investor / Executive"
-purpose:  "Giải thích tại sao hệ thống tồn tại, kiến trúc tổng thể, thuật ngữ chung và bản đồ định tuyến tài liệu."
+title:    "TeraChat — System Gateway & Architecture Overview"
+version:  "0.3.7"
+status:   "ACTIVE"
+date:     "2026-03-23"
+audience: "New Team Member, System Architect, Product Manager, Enterprise Sales, Investor"
+purpose:  "Định nghĩa sản phẩm, kiến trúc tổng thể, mô hình truy cập doanh nghiệp, và bản đồ điều hướng tài liệu."
 
 ai_routing_hint: |
-  "Đọc file này đầu tiên để nắm tổng quan về kiến trúc, lý do tồn tại của hệ thống và điều hướng tài liệu."
+  "Đọc file này đầu tiên để hiểu sản phẩm TeraChat là gì, ai được phép sử dụng,
+   kiến trúc hoạt động ra sao, và điều hướng đến tài liệu phù hợp."
 ```
 
-# Introduction.md — System Gateway
+---
 
-> *"Trong thế giới mà dữ liệu là quyền lực, ai kiểm soát khóa mã hóa — kẻ đó làm chủ cuộc chơi. TeraChat trao lại chìa khóa đó về tay doanh nghiệp."*
->
-> — CEO, TeraChat
+## 1. Sản phẩm TeraChat là gì?
 
-Chào mừng đến với TeraChat. Đây không đơn thuần là một ứng dụng nhắn tin. Đây là sự khởi đầu của một kỷ nguyên mới về **Chủ quyền số (Digital Sovereignty)** — một hệ điều hành công tác (Operating System for Work) bất khả xâm phạm dành cho các doanh nghiệp, chính phủ và tổ chức từ chối giao phó sinh mệnh dữ liệu của mình cho các máy chủ bên thứ ba.
+TeraChat là **nền tảng messaging doanh nghiệp Zero-Knowledge, End-to-End Encrypted** — được thiết kế cho các tổ chức yêu cầu kiểm soát tuyệt đối dữ liệu giao tiếp nội bộ mà không phụ thuộc vào bất kỳ nhà cung cấp dịch vụ đám mây nào.
 
-Tài liệu này là cánh cổng đầu tiên bước vào hệ sinh thái TeraChat. Nó được thiết kế để truyền tải tầm nhìn, các nguyên lý cốt lõi và kiến trúc khái quát định hình nên toàn bộ nền tảng.
+**TeraChat không phải ứng dụng công khai.**
+
+Mỗi phiên bản triển khai thuộc về một tổ chức duy nhất. Người dùng không thể đăng ký tài khoản cá nhân — mọi truy cập đều yêu cầu license JWT hợp lệ được cấp bởi tổ chức, được ký bởi HSM FIPS 140-3, và được neo vào domain doanh nghiệp.
+
+> **Cam kết cốt lõi:** Bảo mật được bảo đảm bằng toán học, không phải bằng điều khoản dịch vụ.
 
 ---
 
-## 1. [CONCEPT] Vision & Mission
+## 2. Mô hình Truy cập Doanh nghiệp
 
-**Nhiệm vụ của chúng tôi là trả lại toàn quyền kiểm soát thông tin cho người sở hữu đích thực của nó.**
+### 2.1 License-Gated Architecture
 
-Trong thập kỷ qua, các nền tảng đám mây công cộng đã định hình lại cách thế giới làm việc, nhưng sự tiện lợi đó đi kèm với một cái giá đắt: sự phụ thuộc và việc đánh mất quyền kiểm soát thực sự. Các tổ chức tin tưởng đặt toàn bộ tài sản trí tuệ, chiến lược kinh doanh và thông tin tình báo của mình lên các trung tâm dữ liệu mà họ không thể thấu hiểu hoàn toàn.
+```
+Tổ chức ký hợp đồng với TeraChat
+         ↓
+TeraChat cấp License JWT (HSM FIPS 140-3, signed)
+  {tenant_id, domain, max_seats, tier, valid_until, features}
+         ↓
+IT Admin triển khai TeraRelay (1 binary, 1 command)
+         ↓
+IT Admin phân phát app đến nhân viên qua MDM hoặc App Store internal
+         ↓
+Nhân viên cài đặt app — app BẮT BUỘC xác thực License JWT trước khi hoạt động
+         ↓
+Không có license hợp lệ → app hiển thị màn hình "Liên hệ IT Admin"
+```
 
-TeraChat ra đời với một sứ mệnh duy nhất: Xóa bỏ ranh giới của sự phụ thuộc này. Tầm nhìn của chúng tôi là tạo ra thế hệ hạ tầng viễn thông doanh nghiệp đầu tiên trên thế giới mà ở đó, **Sự Bảo Mật Được Đảm Bảo Bằng Toán Học, Không Phải Bằng Lời Hứa.**
+### 2.2 Phân tầng Tổ chức
 
----
+| Thành phần | Vai trò |
+|-----------|---------|
+| **TeraChat Inc.** | Cấp license, duy trì binary, hỗ trợ kỹ thuật |
+| **IT Admin** | Triển khai relay, quản lý thiết bị, phê duyệt plugins |
+| **Nhân viên** | Sử dụng trong phạm vi chính sách tổ chức |
+| **TeraRelay** | Binary mù hoàn toàn — chỉ định tuyến ciphertext |
 
-## 2. [CONCEPT] Why TeraChat Exists
-
-Ngành công nghiệp viễn thông doanh nghiệp hiện nay được xây dựng trên một nền tảng thiếu sự tin cậy:
-
-* Mọi tương tác đều đi qua máy chủ bên thứ ba, vi phạm nguyên tắc bảo mật thông tin và tạo ra lỗ hổng bẩm sinh cho gián điệp công nghiệp.
-* Công việc bị đình trệ hoàn toàn khi hệ thống mạng trung tâm gặp sự cố. Sự phụ thuộc vào Internet đang làm tê liệt khả năng làm việc trong môi trường thực địa nhạy cảm, vùng sâu vùng xa hoặc các tình huống khủng hoảng.
-* Hệ thống quy định tuân thủ lưu trữ (ISO 27001, SOC2, Luật An ninh mạng) ngày càng nghiêm ngặt nhưng cấu trúc đám mây truyền thống không thể đáp ứng tiêu chuẩn.
-
-TeraChat tồn tại để xóa bỏ "điểm đứt gãy duy nhất" (Single Point of Failure). Chúng tôi thiết kế lại toàn bộ luồng giao tiếp theo phương thức **Zero-Knowledge**, nơi nhà cung cấp dịch vụ trở nên mù lòa vĩnh viễn trước dữ liệu của khách hàng, đồng thời duy trì khả năng sinh tồn tuyệt đối trong môi trường Offline (→ TERA-CORE §[Mạng lưới Sinh tồn]).
-
----
-
-## 3. [RULE] Core Principles
-
-Hệ thống được thiết kế xung quanh 4 nguyên lý bất di bất dịch:
-
-* **Zero-Knowledge Architecture:** Máy chủ của chúng tôi hoạt động theo mô hình máy chủ mù (`Blind Relay`). Hệ thống chỉ thực hiện việc định tuyến các gói tin đã mã hóa. Chúng tối hoàn toàn không nắm giữ khóa giải mã, không biết danh tính thực của người dùng, và không có khả năng đọc được nội dung thảo luận (→ TERA-CORE).
-* **End-to-End Encryption (E2EE):** Toàn bộ vòng đời của dữ liệu – từ văn bản, tệp tin đến các cuộc gọi thoại và video – được mã hóa và giải mã ngay tại thiết bị vật lý của người dùng. Dữ liệu không bao giờ tồn tại dưới dạng bản rõ (plaintext) trên không gian mạng.
-* **Offline Survival Capability:** Quyền kết nối không phụ thuộc vào Internet. Ngay cả khi hạ tầng mạng quốc gia hoặc toàn cầu sụp đổ, hệ thống vẫn duy trì sống sót bằng cách tự động kết nối các thiết bị thông qua mạng lưới vô tuyến cục bộ, tạo ra một mạng sinh tồn độc lập cho doanh nghiệp (`Survival Mesh`).
-* **Zero-Trust System Design:** Hệ thống không bao giờ tin tưởng bất kỳ ai, thiết bị hay kết nối nào, kể cả ở môi trường nội bộ. Mọi quyền truy cập, mọi luồng giao tiếp ra khỏi thiết bị đều bị chất vấn, đóng đinh bởi bộ xử lý bảo mật trước khi được cấp phép thực thi.
-
----
-
-## 4. [ARCHITECTURE] High-Level Architecture
-
-TeraChat là sự hội tụ giữa khoa học mật mã và kỹ thuật máy tính phân tán. Các thành phần nền móng định hình nên kiến trúc này bao gồm:
-
-* **Shared Rust Core:** Một lõi xử lý duy nhất xuyên nền tảng, đảm đương 100% nghiệp vụ mạng, mật mã học nhằm đồng nhất tuyệt đối nguyên tắc an toàn (→ TERA-CORE).
-* **Client-Side Cryptography:** Chìa khóa bảo mật được sinh ra, quản lý và sử dụng bên trong các vi mạch an toàn của thiết bị cực đoan phần cứng, loại trừ nguy cơ giải mã từ xa.
-* **Blind Relay Servers:** Cơ sở hạ tầng trung chuyển dữ liệu mù loà làm nhiệm vụ lưu trữ, trung chuyển nhưng không có chìa khóa, xóa bỏ quyền lực đọc hiểu từ nền tảng máy chủ đám mây.
-* **Survival Mesh Networking:** Kiến trúc kết nối mạng ngang hàng sinh tồn (P2P), cho phép tạo chuỗi mạng không dây độc lập và tự chữa lành.
-* **Tiered Connectivity Model:** Chiến lược thích ứng thông minh tự đo lường tình trạng băng thông từ Internet quốc tế tới Bluetooth tầm xa để quyết định luồng dữ liệu truyền tải tối ưu.
+Không có thành phần "người dùng công khai". Mọi identity đều thuộc về một tổ chức có license.
 
 ---
 
-## 5. [CONCEPT] Core Capabilities
+## 3. Nguyên lý Kiến trúc Bất biến
 
-Những năng lực then chốt mà nền tảng mang lại cho một tổ chức quy mô lớn:
+**1. Zero-Knowledge Server**
+Máy chủ relay hoạt động như Blind Router — chỉ thấy `destination_device_id`, `blob_size`, và `timestamp`. Không bao giờ thấy plaintext, không bao giờ có khóa giải mã. Đây là thuộc tính kiến trúc, không phải cấu hình.
 
-* **Secure messaging & Voice/video:** Nhắn tin, gọi video/âm thanh nhóm an toàn tuyệt đỉnh chống nghe lén.
-* **Offline collaboration:** Khả năng chat và chia sẻ tài liệu ngang hàng (P2P) khi các hệ thống truyền thống mất kết nối.
-* **AI privacy protection:** Lõi kiến trúc làm sạch ẩn danh thực hiện quét và tự động loại bỏ mọi dữ liệu định danh cấu trúc/thông tin nhạy cảm của doanh nghiệp trước khi giao tiếp AI.
-* **Cross-organization federation:** Thiết lập các "đường hầm liên kết ngầm" cho phép Tổng công ty lớn và nhiều cơ quan, chi nhánh con hoạt động ở từng Private Cloud riêng biệt nhưng vẫn an toàn trao đổi (→ TERA-FUNC).
-* **Extension ecosystem (`.tapp`):** Môi trường cách ly để tích hợp an toàn các tiện ích nghiệp vụ nội bộ (Zalo Office, Quản lý kho, Quản lý tài liệu). Kích hoạt tiềm năng khổng lồ từ thị trường công cụ quản trị B2B (→ TERA-MKT).
+**2. Key Material không rời Chip**
+Mọi private key sinh ra và tồn tại vĩnh viễn trong Secure Enclave (iOS/macOS), StrongBox (Android), hoặc TPM 2.0 (Desktop). Không có đường dẫn nào để export key ra plaintext.
 
----
+**3. Offline-First Survival**
+Hệ thống không phụ thuộc vào Internet. Khi mất kết nối, BLE 5.0 + Wi-Fi Direct tự động tạo mạng P2P sinh tồn. Nhắn tin, file transfer, và voice hoạt động trong phạm vi mesh.
 
-## 6. [RULE] System Terminology
+**4. Zero-Trust theo Thiết kế**
+Không tin tưởng bất kỳ thành phần nào — bao gồm cả TeraChat Inc. Mọi quyền truy cập đều được kiểm tra bởi OPA Policy Engine tại thiết bị, không chỉ tại server.
 
-Sự thống nhất về khái niệm là cơ sở cho các kiến trúc vĩ đại.
-
-* **`.tapp`:** Tiện ích nghiệp vụ siêu nhỏ chạy cách ly an toàn trên thiết bị bảo mật.
-* **`Company_Key`:** Khóa cấp doanh nghiệp/tổ chức, mã hóa mọi lưu lượng dữ liệu trước khi đi qua đám mây.
-* **`Blind Relay`:** Các máy chủ trung gian chuyển dữ liệu mà không nắm giữ quyền giải mã.
-* **`TreeKEM / MLS`:** Phương thức quản trị khóa nhóm mã hóa tối tân, mở rộng được cho cả 5.000 tham dự viên trong một nhóm chat an toàn.
-* **`Survival Mesh`:** Mạng lưới giao tiếp tự thiết lập giúp duy trì kết nối Offline.
-* **`Shared Rust Core`:** Trái tim mật mã xử lý mọi giao dịch bảo mật cốt lõi chung cho mọi thiết bị.
+**5. License Entanglement**
+License JWT được neo vào `DeviceIdentityKey` qua KDF — sai license = key sai = database thành rác. Không thể bypass bằng cách bẻ gãy license file.
 
 ---
 
-## 7. [RULE] Product Scope
+## 4. Kiến trúc Kỹ thuật Tổng quan
 
-**In Scope (Trong Phạm vi Thực thi)**
+```
+┌───────────────────────────────────────────────────────────────┐
+│                     THIẾT BỊ DOANH NGHIỆP                     │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │              RUST CORE (Shared Binary)                  │  │
+│  │  MLS E2EE · CRDT DAG · BLE Mesh · Key Management       │  │
+│  │  OPA Policy · WASM Sandbox · Offline Storage            │  │
+│  └────────────────────────┬────────────────────────────────┘  │
+│           IPC/FFI          │                                   │
+│  ┌─────────────────────┐  │  ┌───────────────────────────┐    │
+│  │  UI Layer           │  │  │  Secure Hardware           │    │
+│  │  Flutter / Tauri    │◄─┘  │  Enclave/StrongBox/TPM    │    │
+│  │  (Pure Renderer)    │     │  (Key Material — Never Out)│    │
+│  └─────────────────────┘     └───────────────────────────┘    │
+└───────────────────────────────────────────────────────────────┘
+          │ TLS 1.3 + mTLS                    │ BLE/Wi-Fi Direct
+          ▼                                   ▼
+┌───────────────────────┐         ┌──────────────────────────┐
+│  TERARELAY (On-Prem)  │         │  PEER DEVICES (Mesh)     │
+│  Blind ciphertext     │         │  Store-and-Forward CRDT  │
+│  routing only         │         │  P2P encrypted           │
+│  License validation   │         └──────────────────────────┘
+└───────────────────────┘
+```
 
-* Môi trường truyền thông an toàn tuyệt đối cấp độ tổ chức.
-* Cơ sở hạ tầng trung chuyển Zero-knowledge.
-* Khả năng sinh tồn đồng bộ nhóm khi vắng bóng nền tảng mạng Internet.
-* Chống chia cắt thông tin giữa các thực thể liên minh tổ chức (Federation).
+### Stack Kỹ thuật
 
-**Out of Scope (Ngoài Phạm vi Cung cấp)**
-
-* Lưu trữ thông tin văn bản thuần (plaintext) trên đám mây quốc gia.
-* Nền tảng làm việc chia sẻ bắt buộc dựa dẫm vào kết nối Cloud trung tâm.
-* Can thiệp kiểm duyệt tự động dựa trên phân tích từ vựng đối thoại tại máy chủ.
+| Layer | Technology | Platform |
+|-------|-----------|---------|
+| Core Logic | Rust (shared binary) | All platforms |
+| Mobile UI | Flutter + Dart FFI | iOS · Android · Huawei |
+| Desktop UI | Tauri (Rust + WebView) | macOS · Windows · Linux |
+| Protocol | MLS RFC 9420 + QUIC/gRPC/WSS | All |
+| Encryption | AES-256-GCM + ML-KEM-768 (PQ) | All |
+| Storage | SQLite WAL + SQLCipher | All |
+| Plugin Runtime | wasm3 (iOS) / wasmtime (others) | All |
 
 ---
 
-## 8. [RULE] Documentation Reading Map
+## 5. Thành phần Sản phẩm
 
-Cánh cổng này sẽ dẫn dắt từng chuyên môn tìm đến tài liệu lõi của mình:
+| Thành phần | Mô tả |
+|-----------|-------|
+| **TeraRelay** | Single Rust binary, blind router, tự deploy 5 phút trên VPS $6-$48/tháng |
+| **TeraChat Client** | App native: iOS, Android, Huawei HarmonyOS, macOS, Windows, Linux |
+| **Admin Console** | Quản lý license, thiết bị, policy, audit — trên Desktop + Mobile (read-only) |
+| **Enterprise Plugin Registry** | Kho plugins (.tapp) do IT Admin phê duyệt và triển khai cho tổ chức |
+| **TeraEdge** (optional) | Mini-PC hardware để làm Super Node cố định tại văn phòng |
 
-* **Developers (Lập trình ứng dụng Client):** Xin mời đọc `Feature_Spec.md` (→ TERA-FEAT).
-* **System Architects (Kiến trúc sư hệ thống khối Cloud & Mạng lưới Rust):** Xin mời đọc `Core_Spec.md` (→ TERA-CORE).
-* **Product Managers (Giám đốc sản phẩm chức năng phân quyền nhóm):** Xin mời đọc `Function.md` (→ TERA-FUNC).
-* **Designers (Thiết kế hệ thống giao diện đặc chủng):** Xin mời đọc `Design.md` (→ TERA-DESIGN).
-* **Platform Ecosystem Builders (Phát triển hệ sinh thái thị trường ứng dụng Sandbox .tapp):** Xin mời đọc `Web_Marketplace.md` (→ TERA-MKT).
+---
 
-*TeraChat — Trao lại chủ quyền số cho người tiên phong.*
+## 6. Phạm vi và Ngoài phạm vi
+
+**Trong phạm vi:**
+
+- Giao tiếp doanh nghiệp nội bộ (text, voice, video, file)
+- Lưu trữ Zero-Knowledge (server không đọc được content)
+- Survival mesh khi mất Internet
+- Enterprise plugin ecosystem (workflow tích hợp)
+- Cross-organization federation (mTLS, sealed sender)
+- Compliance và audit cho regulated industries
+
+**Ngoài phạm vi:**
+
+- Tài khoản cá nhân / consumer accounts
+- Nhắn tin ra ngoài tổ chức qua plaintext channel
+- Lưu trữ plaintext trên bất kỳ server nào
+- Tích hợp với nền tảng không tuân thủ zero-knowledge
+
+---
+
+## 7. Mô hình Triển khai
+
+TeraRelay có thể chạy trên nhiều topology khác nhau tùy theo quy mô và yêu cầu bảo mật:
+
+| Tier | Infrastructure | Thời gian Setup | Use Case |
+|------|--------------|----------------|---------|
+| **Self-Hosted Cloud** | VPS (512MB–8GB RAM) | 5–20 phút | SME, startup |
+| **On-Premise** | Server nội bộ | 1–4 giờ | Enterprise, healthcare |
+| **Air-Gapped** | Hardware offline | Nửa ngày | Gov, defense, banking |
+| **Hybrid** | On-prem + cloud relay | 1 ngày | Tập đoàn đa chi nhánh |
+
+---
+
+## 8. Bản đồ Điều hướng Tài liệu
+
+| Đối tượng | Tài liệu | Nội dung |
+|-----------|---------|---------|
+| **Developer (Client)** | `Feature_Spec.md` → TERA-FEAT | IPC bridge, OS hooks, platform behavior, WASM runtime |
+| **System Architect** | `Core_Spec.md` → TERA-CORE | MLS, CRDT, Mesh networking, relay infrastructure |
+| **Product Manager** | `Function.md` → TERA-FUNC | Capabilities, user flows, RBAC, enterprise features |
+| **UI/UX Designer** | `Design.md` → TERA-DESIGN | Glassmorphism system, animations, security state UI |
+| **Plugin Developer** | `Web_Marketplace.md` → TERA-MKT | .tapp lifecycle, WASM sandbox, plugin registry |
+| **QA / SecEng** | `TestMatrix.md` → TERA-TEST | Chaos engineering, combined-failure scenarios |
+| **Investor / Executive** | `Executive_Summary.html` | Investment thesis, market, financials |
+| **Sales** | `Pricing_Packages.html` | Enterprise pricing, tiers, contracts |
+
+---
+
+*TeraChat — Chủ quyền dữ liệu doanh nghiệp, được bảo đảm bằng toán học.*
+
+*v1.0.0 · 2026-03-23 · Internal Reference*

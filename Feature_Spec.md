@@ -8,10 +8,9 @@ version:   "0.4.0"
 status:    "ACTIVE — Implementation Reference"
 date:      "2026-03-21"
 audience:  "Frontend Engineer, Mobile Engineer, Desktop Engineer, Product Engineer"
-purpose:   "Defines all client-facing and system-level features. Maps every feature to a
-            verified core module in Core_Spec.md (TERA-CORE). Governs platform-specific
-            behavior, OS lifecycle hooks, IPC bridge, WASM runtime, local storage, and
-            user interaction contracts."
+purpose:   "Định nghĩa tất cả client-facing và system-level features. Map mọi feature đến
+            TERA-CORE module. Quản lý platform-specific behavior, OS lifecycle hooks,
+            IPC bridge, WASM runtime, local storage, và enterprise access model."
 
 depends_on:
   - id: "TERA-CORE"   # Cryptographic primitives, MLS, Mesh, CRDT, infrastructure
@@ -41,6 +40,9 @@ assumptions:
   - Host adapters (Swift/Kotlin/ArkTS) handle all platform-specific OS APIs.
   - VPS relay has zero-knowledge of plaintext content.
   - TERA-CORE v2.0 is the canonical reference for all Core module contracts.
+  - Mọi user phải thuộc về organization có valid License JWT.
+  - App không thể được sử dụng mà không có enterprise license — đây là hard constraint.
+
 
 constraints_global:
   - All plaintext buffers use ZeroizeOnDrop; no plaintext outlives the render frame.
@@ -48,6 +50,15 @@ constraints_global:
   - All cryptographic operations route through TERA-CORE crypto/ modules.
   - Platform-specific code lives in host adapters, never in shared Rust Core.
   - Every feature maps to at least one TERA-CORE module; orphan features are blockers.
+  - License JWT phải được validate trước khi bất kỳ feature nào hoạt động.
+
+enterprise_access_model: |
+  TeraChat là enterprise-only product. Access model:
+  1. Organization ký hợp đồng → nhận License JWT (HSM FIPS 140-3 signed)
+  2. IT Admin deploy TeraRelay + distribute app via MDM
+  3. App validate License JWT tại startup — nếu invalid/expired → lockout screen
+  4. Không có consumer accounts; không có self-service signup
+  5. License JWT cryptographically entangled với DeviceIdentityKey (→ TERA-CORE §13.3)
 
 breaking_changes_policy: |
   Schema migrations require {db_path}.bak.v{version} backup before execution.
@@ -72,21 +83,44 @@ ai_routing_hint: |
 
 ## §1 — EXECUTIVE SUMMARY
 
-TeraChat is a Zero-Knowledge, end-to-end encrypted team messaging platform. The server relay receives only ciphertext and has no access to user identity, message content, or group membership. All cryptography and business logic live in a shared Rust Core binary deployed identically across iOS, Android, Huawei, macOS, Windows, and Linux.
+TeraChat là Zero-Knowledge, end-to-end encrypted enterprise messaging platform. Server relay chỉ nhận ciphertext và không có quyền truy cập vào user identity, message content, hoặc group membership. Toàn bộ cryptography và business logic tồn tại trong shared Rust Core binary được deploy giống nhau trên iOS, Android, Huawei, macOS, Windows, và Linux.
 
-**Architecture in one sentence:** A shared Rust Core (cryptography, CRDT DAG, network, storage) exposes a strict unidirectional IPC bridge to platform UI layers (Flutter/Swift/Tauri), with a blind VPS relay for ciphertext routing only.
+**Quan trọng: TeraChat không phải public application.** Mọi installation yêu cầu valid enterprise License JWT được cấp bởi organization. App không thể được sử dụng mà không có license hợp lệ — đây là hard constraint, không phải policy.
+
+**Architecture in one sentence:** Shared Rust Core (cryptography, CRDT DAG, network, storage) expose strict unidirectional IPC bridge đến platform UI layers (Flutter/Swift/Tauri), với blind VPS relay cho ciphertext routing only, và enterprise license validation làm access gate.
 
 ### §1.1 Primary Objectives
 
 | Objective | Mechanism |
 |---|---|
-| Zero-Knowledge E2EE at rest and in transit | MLS RFC 9420; AES-256-GCM; server-blind storage |
+| Zero-Knowledge E2EE at rest và in transit | MLS RFC 9420; AES-256-GCM; server-blind storage |
 | Offline-first survival | BLE 5.0 / Wi-Fi Direct Mesh; CRDT DAG; Store-and-Forward |
-| Extensible mini-app platform | WASM `.tapp` sandbox with capability-based isolation |
-| Privacy-safe AI inference | Local ONNX/CoreML SLM with PII redaction; no raw prompt leaves device |
-| Single-binary operational simplicity | VPS relay: 512 MB RAM; 5-minute setup; no cluster coordination |
+| Extensible enterprise plugin platform | WASM `.tapp` sandbox; IT Admin controlled deployment |
+| Privacy-safe AI inference | Local ONNX/CoreML SLM; PII redaction; no raw prompt exits device |
+| Enterprise license enforcement | License JWT + KDF entanglement với DeviceIdentityKey |
+| Single-binary operational simplicity | VPS relay: 512MB RAM; 5-minute setup; no cluster coordination |
 
-### §1.2 Five Critical Features
+### §1.2 Enterprise Access Gate
+
+```text
+App Launch
+     ↓
+tera_license_validate()
+     ├── License JWT found? → verify Ed25519 signature
+     ├── JWT valid? → check expiry via TPM monotonic counter
+     ├── Seat count OK? → check active_device_keys ≤ max_seats
+     └── All pass? → unlock all features
+         FAIL? → show enterprise lockout screen
+```
+
+Lockout screen hiển thị:
+
+- Tên organization (từ JWT `tenant_id`)
+- Lý do lockout (expired / invalid / seat limit)
+- Hướng dẫn: "Liên hệ IT Admin của {org_name}"
+- Không có workaround; không có trial mode
+
+### §1.3 Five Critical Features
 
 | Feature | Why Critical |
 |---|---|
@@ -96,7 +130,7 @@ TeraChat is a Zero-Knowledge, end-to-end encrypted team messaging platform. The 
 | F-07: WASM Plugin Sandbox | Extensibility layer; untrusted code isolated from Core |
 | F-10: AI / SLM Integration | Local inference with PII redaction; no cloud dependency for base tier |
 
-### §1.3 Architecture Overview
+### §1.4 Architecture Overview
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
@@ -829,15 +863,21 @@ bundle.tapp/
 ```
 
 **Launch Sequence:**
+Enterprise Registry Access Control:
 
-1. Admin installs `.tapp` from Marketplace. Signature verified against Publisher Key.
-2. `manifest.json` validated: all required fields present; `egress_endpoints` declared.
-3. Platform WASM runtime initialized:
-   - iOS: `wasm3` interpreter. No JIT. No dynamic code generation.
-   - Android / Huawei / Desktop: `wasmtime` JIT (Cranelift backend).
-   - macOS: `wasmtime` in XPC Worker (`com.apple.security.cs.allow-jit = true`). Main App: `NO allow-jit`.
-4. Sandbox launched: `PROT_READ`-only access to DAG shared memory. Write attempts to DAG buffer trigger `SIGSEGV` caught by `catch_unwind`.
-5. Host Bindings established: all WASM network access routes through `terachat_proxy_request()` → OPA policy check → Rust Core Tokio client → sanitized `Vec<ASTNode>` response.
+- .tapp không tự động available cho end users
+- IT Admin phải approve từng .tapp trong Admin Console
+- Approval push OPA Policy update đến devices trong workspace
+- End user thấy .tapp sau khi IT Admin approve — không thể tự cài
+- IT Admin có thể revoke bất kỳ lúc nào; effective ≤ 60s
+
+IT Admin Approval Flow:
+
+  1. Admin Console: Tab "Plugin Registry" → Browse available .tapp
+  2. Admin xem Security Report: egress domains, permissions, scan results
+  3. Admin approve cho workspace (all users hoặc specific groups)
+  4. OPA Policy push: {plugin_id: "APPROVED", target_groups: [...]}
+  5. Devices nhận policy → .tapp launcher trong app
 
 **WasmParity CI Gate (mandatory before Marketplace listing):**
 
@@ -2982,7 +3022,52 @@ Thresholds that trigger automatic DNS rollback (INFRA-04):
 
 ---
 
-## §14 — CHANGELOG
+### §15.1 License Validation Flow
+
+```rust
+pub struct LicenseValidationResult {
+    pub valid:             bool,
+    pub tier:              LicenseTier,
+    pub features:          FeatureFlags,
+    pub seats_remaining:   u32,
+    pub expires_at:        u64,
+    pub lockout_reason:    Option,
+}
+
+pub enum LockoutReason {
+    Expired,
+    SignatureInvalid,
+    SeatLimitExceeded,
+    RevocationDetected,
+    TpmCounterRollback,
+}
+```
+
+### §15.2 Graceful Degradation Timeline
+
+| Time | State | App Behavior | Admin Notification |
+|------|-------|-------------|-------------------|
+| T-30 days | `WARNING` | Chat/Mesh fully functional | Banner in Admin Console |
+| T-0 | `DEGRADED` | Chat/Mesh OK; AI off; no new enrollment | Warning in all sessions |
+| T+90 days | `LOCKED` | No new connections; existing sessions survive until restart | Lockout screen on app reopen |
+| Renewal | `RESTORED` | All features restore within 5s; no restart | None |
+
+### §15.3 UI Lockout Screen Spec
+
+```text
+Background: Charcoal #1A1A2E
+Icon: Lock (64px, amber)
+Title: "TeraChat — License Inactive"
+Subtitle: "Your organization's license has {reason}"
+Body: "Please contact your IT Administrator to renew."
+Footer: "Organization: {tenant_id} | Device: {device_id[0:8]}"
+```
+
+Không có CTA nào cho end user (chỉ IT Admin có thể resolve). Log lockout reason đến Audit Log.
+
+---
+
+## §16 — VERSIONING & MIGRATION
 
 | Version | Date | Summary |
 |---|---|---|

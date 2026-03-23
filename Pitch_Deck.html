@@ -519,74 +519,35 @@ body::before{
 <!-- ════════════════ S2 — GIẢI PHÁP ════════════════ -->
 <section class="sec reveal" id="s2">
   <div class="label">02 · GIẢI PHÁP</div>
-  <h2 class="sec-title">Chủ quyền bằng kiến trúc, không phải hợp đồng</h2>
+  <h2 class="sec-title">Enterprise-Only — Không có Consumer Tier</h2>
   <div class="rule"></div>
-  <p class="lead">TeraChat là Hệ điều hành Công việc Chủ quyền đầu tiên — nơi máy chủ mù về nội dung theo thiết kế mật mã, và liên lạc sống sót hoàn toàn không cần Internet.</p>
-
-  <div class="g2">
-    <div>
-      <div class="hbox">
-        <div class="hbox-icon">🔐</div>
-        <div>
-          <div class="hbox-title">Zero-Knowledge Architecture</div>
-          <div class="hbox-body">Server chỉ định tuyến ciphertext — không có khóa, không đọc nội dung, không biết danh tính. Mã hóa MLS RFC 9420 + Hybrid PQ-KEM (chống máy tính lượng tử). Bảo mật bằng toán học, không phải lời hứa.</div>
-        </div>
-      </div>
-      <div class="hbox">
-        <div class="hbox-icon">📡</div>
-        <div>
-          <div class="hbox-title">Survival Mesh — Hoạt động khi Internet chết</div>
-          <div class="hbox-body">BLE 5.0 + Wi-Fi Direct tự động tạo mạng P2P khi mất kết nối. Tin nhắn, file, thoại tiếp tục hoạt động trong bán kính 20m. Không nền tảng doanh nghiệp nào có khả năng này.</div>
-        </div>
-      </div>
-      <div class="hbox">
-        <div class="hbox-icon">⚡</div>
-        <div>
-          <div class="hbox-title">Triển khai 5 phút, $6/tháng VPS</div>
-          <div class="hbox-body">1 binary Rust, 1 lệnh CLI, không cần Kubernetes hay PostgreSQL cluster. Doanh nghiệp 500 người có thể tự vận hành mà không cần đội DevOps. Đây là điều không ai làm được trước đây.</div>
-        </div>
-      </div>
+  <p class="lead">TeraChat không phải public app. Mọi installation yêu cầu enterprise License JWT. Điều này tạo ra structural moat mà consumer products không có.</p>
+  
+  <div class="g3">
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <div class="card-tag">BARRIER TO ENTRY</div>
+      <div class="card-title">License-Gated Access</div>
+      <div class="card-body">App không thể dùng mà không có License JWT từ tổ chức. Không có trial, không có freemium. Mọi user là employee của licensed org.</div>
     </div>
-    <div class="cw" style="display:flex;flex-direction:column;justify-content:center;">
-      <div class="cl">LUỒNG DỮ LIỆU</div>
-      <div class="ct">Kiến trúc Zero-Knowledge</div>
-      <div class="cd">Máy chủ chỉ thấy ciphertext — không có ngoại lệ</div>
-      <canvas id="cArch" height="260"></canvas>
+    <div class="card">
+      <div class="card-icon">🏢</div>
+      <div class="card-tag">SWITCHING COST</div>
+      <div class="card-title">Deep IT Integration</div>
+      <div class="card-body">Deployment + AD sync + HSM setup + policy config = 40–80h IT investment. High switching cost sau khi deployed.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📈</div>
+      <div class="card-tag">REVENUE QUALITY</div>
+      <div class="card-title">Annual Contracts</div>
+      <div class="card-body">100% annual contract revenue. Predictable cash flow. Enterprise và Gov tiers: 3-year minimum = 36 months locked ARR.</div>
     </div>
   </div>
 </section>
-
-<!-- ════════════════ S3 — SẢN PHẨM ════════════════ -->
+<!-- ════════════════ S3 — THỊ TRƯỜNG ════════════════ -->
 <section class="sec reveal" id="s3">
-  <div class="label">03 · SẢN PHẨM</div>
-  <h2 class="sec-title">Nền tảng đa lớp, 6 nền tảng, 1 lõi Rust</h2>
-  <div class="rule"></div>
-
-  <div class="mrow">
-    <div class="mc"><div class="val"><em>6</em></div><div class="lbl">Nền tảng hỗ trợ</div><div class="sub">iOS · Android · Huawei · macOS · Windows · Linux</div></div>
-    <div class="mc"><div class="val"><em>1</em></div><div class="lbl">Lõi Rust chung</div><div class="sub">Crypto, CRDT, Mesh — không phân kỳ</div></div>
-    <div class="mc"><div class="val"><em>5</em> phút</div><div class="lbl">Thời gian deploy</div><div class="sub">1 binary, 1 lệnh, bất kỳ VPS $6/tháng</div></div>
-    <div class="mc"><div class="val"><em>10.000</em></div><div class="lbl">Người dùng / nhóm E2EE</div><div class="sub">TreeKEM O(log n) — MLS RFC 9420</div></div>
-  </div>
-
-  <div class="sh">Năng lực cốt lõi</div>
-  <table class="tbl">
-    <thead><tr><th>Tính năng</th><th>Mô tả ngắn</th><th>Lợi thế cạnh tranh</th></tr></thead>
-    <tbody>
-      <tr><td>🔐 E2EE Nhắn tin & Thoại/Video</td><td>MLS RFC 9420, DTLS-SRTP, không server key</td><td class="ta">Không đối thủ nào cùng mức bảo mật + đơn giản</td></tr>
-      <tr><td>📡 Survival Mesh BLE/Wi-Fi</td><td>Store-forward CRDT, tự tổ chức P2P</td><td class="ta">Độc quyền trong phân khúc enterprise</td></tr>
-      <tr><td>🧩 .tapp Plugin Ecosystem</td><td>WASM sandbox, 30% doanh thu marketplace</td><td class="tg">Revenue stream thứ 3 không cần infra cost</td></tr>
-      <tr><td>🤖 AI với PII Shield</td><td>SLM on-device, masking trước cloud AI</td><td class="ta">GDPR/PDPA compliant by design</td></tr>
-      <tr><td>🔑 HSM Key Management</td><td>Shamir 3-of-5, TPM 2.0, Dead Man Switch</td><td class="tg">Gov/Military grade — không ai else làm được</td></tr>
-      <tr class="thl"><td>🛡️ Smart Approval</td><td>Ed25519 ký số sinh trắc học, audit trail</td><td class="tg">Thay thế quy trình phê duyệt giấy tờ</td></tr>
-    </tbody>
-  </table>
-</section>
-
-<!-- ════════════════ S4 — THỊ TRƯỜNG ════════════════ -->
-<section class="sec reveal" id="s4">
-  <div class="label">04 · THỊ TRƯỜNG</div>
-  <h2 class="sec-title">$2.1B tại Đông Nam Á — bắt buộc bởi luật pháp</h2>
+  <div class="label">03 · THỊ TRƯỜNG</div>
+  <h2 class="sec-title">Đông Nam Á — Nơi bị ràng buộc bởi luật pháp</h2>
   <div class="rule"></div>
   <p class="lead">Luật bản địa hóa dữ liệu không phải xu hướng — là quy định bắt buộc. Ngân hàng và chính phủ <em>phải</em> chuyển đổi. Đây không phải bán hàng, đây là tuân thủ.</p>
 
@@ -617,9 +578,9 @@ body::before{
   </div>
 </section>
 
-<!-- ════════════════ S5 — MÔ HÌNH KINH DOANH ════════════════ -->
-<section class="sec reveal" id="s5">
-  <div class="label">05 · MÔ HÌNH KINH DOANH</div>
+<!-- ════════════════ S4 — MÔ HÌNH KINH DOANH ════════════════ -->
+<section class="sec reveal" id="s4">
+  <div class="label">04 · MÔ HÌNH KINH DOANH</div>
   <h2 class="sec-title">Chi phí hạ tầng $0 từ khách hàng — biên lợi nhuận &gt;88%</h2>
   <div class="rule"></div>
   <p class="lead">Kiến trúc on-premise chuyển toàn bộ chi phí hạ tầng về phía khách hàng. TeraChat chỉ thu phí license — tạo ra cấu trúc kinh tế vượt trội so với mọi SaaS cùng phân khúc.</p>
@@ -628,12 +589,12 @@ body::before{
     <div>
       <div class="sh">Các luồng doanh thu</div>
       <table class="tbl">
-        <thead><tr><th>Luồng</th><th>Mức giá</th><th>Biên GP</th></tr></thead>
+        <thead><tr><th>Luồng DT</th><th>Price Range</th><th>Biên GP</th></tr></thead>
         <tbody>
-          <tr><td>📋 SaaS License</td><td>$500–$8,000/tháng</td><td class="tok">~92%</td></tr>
-          <tr><td>🛠️ Professional Services</td><td>$15K–$200K/lần</td><td class="tok">~75%</td></tr>
-          <tr><td>🧩 .tapp Marketplace</td><td>30% doanh thu publisher</td><td class="tok">~95%</td></tr>
-          <tr class="thl"><td>🛡️ Gov/Military</td><td>Custom · tối thiểu 3 năm</td><td class="tg">LTV cao nhất</td></tr>
+          <tr><td>📋 Annual License (B2B)</td><td>$15K–$180K+/yr</td><td class="tok">~88%</td></tr>
+          <tr><td>🛠️ Professional Services</td><td>$15K–$200K/engage</td><td class="tok">~75%</td></tr>
+          <tr><td>🧩 Plugin Registry (rev share)</td><td>30% publisher revenue</td><td class="tok">~95%</td></tr>
+          <tr class="thl"><td>🛡️ Gov/Military</td><td>Custom · 3yr min</td><td class="tg">LTV cao nhất</td></tr>
         </tbody>
       </table>
       <div class="sh">So sánh kinh tế</div>
@@ -656,9 +617,9 @@ body::before{
   </div>
 </section>
 
-<!-- ════════════════ S6 — CẠNH TRANH ════════════════ -->
-<section class="sec reveal" id="s6">
-  <div class="label">06 · CẠNH TRANH</div>
+<!-- ════════════════ S5 — CẠNH TRANH ════════════════ -->
+<section class="sec reveal" id="s5">
+  <div class="label">05 · CẠNH TRANH</div>
   <h2 class="sec-title">Không ai có Zero-Knowledge + Offline + Đơn giản cùng lúc</h2>
   <div class="rule"></div>
 
@@ -693,9 +654,9 @@ body::before{
   </div>
 </section>
 
-<!-- ════════════════ S7 — LỢI THẾ ════════════════ -->
-<section class="sec reveal" id="s7">
-  <div class="label">07 · LỢI THẾ CẠNH TRANH</div>
+<!-- ════════════════ S6 — LỢI THẾ ════════════════ -->
+<section class="sec reveal" id="s6">
+  <div class="label">06 · LỢI THẾ CẠNH TRANH</div>
   <h2 class="sec-title">Ba hào không thể sao chép</h2>
   <div class="rule"></div>
 
@@ -745,9 +706,9 @@ body::before{
   </div>
 </section>
 
-<!-- ════════════════ S8 — GTM ════════════════ -->
-<section class="sec reveal" id="s8">
-  <div class="label">08 · CHIẾN LƯỢC GTM</div>
+<!-- ════════════════ S7 — GTM ════════════════ -->
+<section class="sec reveal" id="s7">
+  <div class="label">07 · CHIẾN LƯỢC GTM</div>
   <h2 class="sec-title">Việt Nam → Đông Nam Á → MENA</h2>
   <div class="rule"></div>
 
@@ -802,9 +763,9 @@ body::before{
   </table>
 </section>
 
-<!-- ════════════════ S9 — LỘ TRÌNH ════════════════ -->
-<section class="sec reveal" id="s9">
-  <div class="label">09 · LỘ TRÌNH & TRACTION</div>
+<!-- ════════════════ S8 — LỘ TRÌNH ════════════════ -->
+<section class="sec reveal" id="s8">
+  <div class="label">08 · LỘ TRÌNH & TRACTION</div>
   <h2 class="sec-title">Sản phẩm hoàn thiện kỹ thuật — sẵn sàng thương mại hóa</h2>
   <div class="rule"></div>
 
@@ -820,6 +781,13 @@ body::before{
         <li>✅ Admin Console mobile app</li>
         <li>✅ Observability stack (Prometheus + OTEL)</li>
       </ul>
+      <div class="callout callout-blue">
+        <p><strong>Enterprise Access Model:</strong> TeraChat operates exclusively as a B2B enterprise product.
+        No self-service signup, no consumer accounts. Every installation requires a valid organizational
+        License JWT cryptographically bound to the company domain. This creates inherent deployment
+        stickiness — average IT investment per deployment is 40–80 hours, resulting in structurally
+        high switching costs compared to cloud-first SaaS alternatives.</p>
+      </div>
       <div class="sh" style="margin-top:24px;">Pipeline thị trường</div>
       <ul class="blist">
         <li>🔄 1 ngân hàng khu vực — LOI nhận, chờ production deploy</li>
@@ -861,9 +829,9 @@ body::before{
   </div>
 </section>
 
-<!-- ════════════════ S10 — TÀI CHÍNH ════════════════ -->
-<section class="sec reveal" id="s10">
-  <div class="label">10 · DỰ BÁO TÀI CHÍNH</div>
+<!-- ════════════════ S9 — TÀI CHÍNH ════════════════ -->
+<section class="sec reveal" id="s9">
+  <div class="label">09 · DỰ BÁO TÀI CHÍNH</div>
   <h2 class="sec-title">Breakeven Q3 Năm 3 — ARR $18M Năm 5</h2>
   <div class="rule"></div>
 
@@ -900,9 +868,9 @@ body::before{
   </table>
 </section>
 
-<!-- ════════════════ S11 — GỌI VỐN ════════════════ -->
-<section class="sec reveal" id="s11">
-  <div class="label">11 · GỌI VỐN</div>
+<!-- ════════════════ S10 — GỌI VỐN ════════════════ -->
+<section class="sec reveal" id="s10">
+  <div class="label">10 · GỌI VỐN</div>
   <h2 class="sec-title">Seed Round: $1.5M USD để chiếm thị trường trước cửa sổ đóng</h2>
   <div class="rule"></div>
 
