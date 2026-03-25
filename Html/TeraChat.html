@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeraChat — Báo Cáo Kiểm Toán Kiến Trúc Kỹ Thuật v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #080e18;
+  --bg2:      #0d1726;
+  --bg3:      #121f32;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --accent:   #00cfbe;
+  --accent2:  #00ffe9;
+  --gold:     #d4a843;
+  --gold2:    #f0c84a;
+  --red:      #e84545;
+  --green:    #34d399;
+  --amber:    #f59e0b;
+  --mid:      #8aafd4;
+  --muted:    #4a6478;
+  --white:    #eef4fc;
+  --dim:      rgba(238,244,252,0.6);
+  --code-bg:  rgba(0,207,190,0.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  line-height: 1.7;
+  overflow-x: hidden;
+  font-size: 14px;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .3;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: 260px;
+  background: rgba(8,14,24,0.95);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  overflow-y: auto;
+  z-index: 100;
+  display: flex; flex-direction: column;
+  padding: 0;
+}
+
+.sidebar-header {
+  padding: 28px 22px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-brand {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 18px; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block; margin-bottom: 4px;
+}
+
+.sidebar-doc-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; color: var(--muted);
+  letter-spacing: 1.5px; text-transform: uppercase;
+}
+
+.sidebar-nav { padding: 16px 0; flex: 1; }
+
+.nav-section-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 12px 22px 6px;
+}
+
+.nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 22px;
+  font-size: 12px; color: var(--dim);
+  text-decoration: none;
+  transition: all .2s;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: rgba(0,207,190,0.05);
+}
+
+.nav-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; color: var(--muted);
+  min-width: 20px;
+}
+
+.nav-badge {
+  margin-left: auto;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  background: rgba(232,69,69,0.15);
+  color: #f87171;
+  border: 1px solid rgba(232,69,69,0.3);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.sidebar-footer {
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  font-size: 10px; color: var(--muted);
+  font-family: 'Space Mono', monospace;
+}
+
+/* ── MAIN ── */
+.main { margin-left: 260px; position: relative; z-index: 1; }
+
+/* ── HERO ── */
+.hero {
+  padding: 72px 64px 56px;
+  background: linear-gradient(180deg, rgba(0,207,190,0.04) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(to right, transparent, var(--accent), transparent);
+}
+
+.hero-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; color: var(--accent);
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.hero-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700; line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+.hero-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 14px; color: var(--dim);
+  max-width: 680px; line-height: 1.8;
+  margin-bottom: 36px;
+}
+
+.meta-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; color: var(--mid);
+  letter-spacing: .5px;
+}
+
+.pill-accent { border-color: rgba(0,207,190,0.3); color: var(--accent); }
+.pill-gold { border-color: rgba(212,168,67,0.3); color: var(--gold); }
+.pill-red { border-color: rgba(232,69,69,0.3); color: #f87171; }
+
+/* ── SECTIONS ── */
+.section {
+  padding: 64px 64px 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-child { border-bottom: none; }
+
+.section-header {
+  display: flex; align-items: flex-start;
+  gap: 20px; margin-bottom: 36px;
+}
+
+.section-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; color: var(--muted);
+  margin-top: 4px; min-width: 24px;
+}
+
+.section-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 700; line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+.section-desc {
+  font-size: 13px; color: var(--dim);
+  max-width: 640px; line-height: 1.75;
+}
+
+.rule {
+  width: 40px; height: 2px;
+  background: linear-gradient(to right, var(--accent), var(--gold));
+  border-radius: 1px; margin: 12px 0 0;
+}
+
+/* ── SUBSECTIONS ── */
+.subsection { margin-bottom: 40px; }
+
+.subsection-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--accent2);
+  letter-spacing: .3px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.subsection-title::before {
+  content: '';
+  width: 3px; height: 14px;
+  background: var(--accent);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.h3 {
+  font-size: 13px; font-weight: 600;
+  color: var(--gold);
+  margin: 20px 0 10px;
+}
+
+/* ── PROSE ── */
+p { color: var(--dim); margin-bottom: 12px; line-height: 1.8; }
+p strong { color: var(--white); font-weight: 600; }
+
+/* ── TABLES ── */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+thead tr {
+  background: var(--bg3);
+}
+
+thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; color: var(--muted);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+
+tbody tr:hover { background: rgba(0,207,190,0.03); }
+
+tbody td {
+  padding: 10px 14px;
+  color: var(--dim);
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+tbody td:first-child { color: var(--white); font-weight: 500; }
+
+.td-center { text-align: center; }
+.td-ok { color: var(--green) !important; }
+.td-warn { color: var(--amber) !important; }
+.td-err { color: var(--red) !important; }
+.td-accent { color: var(--accent) !important; font-weight: 600 !important; }
+.td-gold { color: var(--gold) !important; font-weight: 600 !important; }
+
+tr.row-highlight td { background: rgba(0,207,190,0.04); }
+tr.row-highlight td:first-child { color: var(--accent); }
+
+/* ── CARDS ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px; margin: 16px 0;
+}
+
+.card {
+  background: rgba(13,23,38,0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  transition: border-color .2s, transform .2s;
+  position: relative; overflow: hidden;
+}
+
+.card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, var(--accent), var(--gold));
+  opacity: 0; transition: opacity .2s;
+}
+
+.card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.card:hover::before { opacity: 1; }
+
+.card-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; color: var(--accent);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.card-title { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+.card-body { font-size: 12px; color: var(--dim); line-height: 1.65; }
+
+/* ── CODE BLOCKS ── */
+pre {
+  background: var(--code-bg);
+  border: 1px solid rgba(0,207,190,0.15);
+  border-radius: 8px;
+  padding: 18px 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11.5px; color: var(--accent2);
+  overflow-x: auto;
+  margin: 14px 0;
+  line-height: 1.7;
+}
+
+code {
+  font-family: 'Space Mono', monospace;
+  font-size: 11.5px;
+  background: rgba(0,207,190,0.08);
+  color: var(--accent2);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ── CALLOUTS ── */
+.callout {
+  border-left: 3px solid var(--accent);
+  background: rgba(0,207,190,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+
+.callout p { color: rgba(238,244,252,0.85); font-style: italic; margin: 0; }
+.callout-gold { border-left-color: var(--gold); background: rgba(212,168,67,0.05); }
+.callout-red { border-left-color: var(--red); background: rgba(232,69,69,0.05); }
+.callout-green { border-left-color: var(--green); background: rgba(52,211,153,0.05); }
+.callout-amber { border-left-color: var(--amber); background: rgba(245,158,11,0.05); }
+
+/* ── FLOW DIAGRAM (text-based) ── */
+.flow {
+  background: rgba(8,14,24,0.8);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 20px 24px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--mid);
+  line-height: 1.9;
+  margin: 16px 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ── RISK MATRIX ── */
+.risk-grid { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+
+.risk-item {
+  display: grid;
+  grid-template-columns: 10px 1fr 70px 1fr;
+  gap: 14px; align-items: start;
+  padding: 12px 14px;
+  background: rgba(13,23,38,0.6);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.risk-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; }
+.risk-dot.high { background: var(--red); box-shadow: 0 0 8px rgba(232,69,69,0.4); }
+.risk-dot.medium { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.3); }
+.risk-dot.low { background: var(--green); box-shadow: 0 0 8px rgba(52,211,153,0.3); }
+
+.risk-name { font-size: 12px; font-weight: 700; color: var(--white); }
+.risk-desc { font-size: 11px; color: var(--dim); margin-top: 2px; line-height: 1.45; }
+
+.risk-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  padding: 3px 7px; border-radius: 3px;
+  text-transform: uppercase; text-align: center;
+  align-self: start; margin-top: 2px;
+}
+
+.risk-badge.high { background: rgba(232,69,69,0.12); color: #fca5a5; border: 1px solid rgba(232,69,69,0.3); }
+.risk-badge.medium { background: rgba(245,158,11,0.12); color: #fde68a; border: 1px solid rgba(245,158,11,0.3); }
+.risk-badge.low { background: rgba(52,211,153,0.12); color: #86efac; border: 1px solid rgba(52,211,153,0.3); }
+
+.risk-mit { font-size: 11px; color: var(--dim); line-height: 1.55; }
+
+/* ── STAT ROW ── */
+.stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+
+.stat-box {
+  flex: 1; min-width: 140px;
+  background: linear-gradient(135deg, var(--bg3), rgba(13,23,38,0.8));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 16px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+
+.stat-box::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, var(--accent), var(--gold));
+}
+
+.stat-val {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 26px; font-weight: 700; line-height: 1;
+  color: var(--accent);
+}
+
+.stat-lbl { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+/* ── PLATFORM BADGE ── */
+.plat { display: inline-flex; align-items: center; gap: 4px; margin: 2px; }
+.plat span { font-size: 11px; }
+
+/* ── LISTS ── */
+ul.styled { list-style: none; margin: 10px 0; }
+ul.styled li {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 12.5px; color: var(--dim); line-height: 1.55;
+}
+ul.styled li::before { content: '▸'; color: var(--accent); font-size: 10px; margin-top: 3px; flex-shrink: 0; }
+
+ul.warn-list li::before { color: var(--amber); content: '⚠'; font-size: 10px; }
+ul.block-list li::before { color: var(--red); content: '⛔'; font-size: 10px; }
+ul.ok-list li::before { color: var(--green); content: '✓'; font-size: 11px; font-weight: 700; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,207,190,0.3); }
+
+/* ── COLLAPSIBLE ── */
+details {
+  background: rgba(13,23,38,0.6);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--white);
+  display: flex; align-items: center; gap: 8px;
+  list-style: none;
+}
+
+summary::before { content: '▶'; font-size: 9px; color: var(--accent); transition: transform .2s; }
+details[open] summary::before { transform: rotate(90deg); }
+
+details > *:not(summary) { padding: 0 16px 16px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .sidebar { width: 220px; }
+  .main { margin-left: 220px; }
+}
+
+@media (max-width: 800px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .section { padding: 40px 24px; }
+  .hero { padding: 48px 24px; }
+  .risk-item { grid-template-columns: 10px 1fr; }
+  .risk-badge, .risk-mit { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════ SIDEBAR ════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-brand">TeraChat</span>
+    <span class="sidebar-doc-title">TECHNICAL AUDIT REPORT · v1.0</span>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Nội dung</div>
+    <a class="nav-link active" href="#s0"><span class="nav-num">00</span>Executive Summary</a>
+    <a class="nav-link" href="#s1"><span class="nav-num">01</span>Tổng quan hệ thống</a>
+    <a class="nav-link" href="#s2"><span class="nav-num">02</span>Phân tích chức năng</a>
+    <a class="nav-link" href="#s3"><span class="nav-num">03</span>Kiến trúc kỹ thuật</a>
+    <a class="nav-link" href="#s4"><span class="nav-num">04</span>Phân loại theo tính năng</a>
+    <a class="nav-link" href="#s5"><span class="nav-num">05</span>UX & Luồng người dùng</a>
+    <a class="nav-link" href="#s6"><span class="nav-num">06</span>Xác thực & Rủi ro <span class="nav-badge">15 issues</span></a>
+    <a class="nav-link" href="#s7"><span class="nav-num">07</span>Đề xuất cải tiến</a>
+  </div>
+
+  <div class="sidebar-footer">
+    Phiên bản: 1.0 · 2026-03-24<br>
+    Nguồn: 9 tài liệu đặc tả<br>
+    Độ tin cậy: INTERNAL / CONFIDENTIAL
+  </div>
+</nav>
+
+<!-- ════════════════ MAIN ════════════════ -->
+<main class="main">
+
+<!-- ── HERO ── -->
+<header class="hero" id="s0">
+  <div class="hero-eyebrow">Kiểm toán kiến trúc kỹ thuật · TeraChat Alpha v0.3.0</div>
+  <h1 class="hero-title">Báo Cáo Tổng Quan<br><em>Kiến Trúc Hệ Thống</em></h1>
+  <p class="hero-subtitle">
+    Tài liệu này tổng hợp và kiểm toán toàn bộ kiến trúc của TeraChat dựa trên 9 file đặc tả kỹ thuật chính
+    (Core_Spec.md, Feature_Spec.md, Design.md, Function.md, Web_Marketplace.md, TestMatrix.md, BusinessPlan.md,
+    Introduction.md, Arrange.md). Báo cáo xác định điểm mạnh, mâu thuẫn kỹ thuật, rủi ro triển khai và đề xuất
+    cải tiến có tính thực thi cao.
+  </p>
+  <div class="meta-pills">
+    <span class="pill pill-accent">Alpha v0.3.0</span>
+    <span class="pill pill-gold">6 nền tảng</span>
+    <span class="pill">15 vấn đề được xác định</span>
+    <span class="pill pill-red">3 BLOCKER cứng</span>
+    <span class="pill">MLS RFC 9420</span>
+    <span class="pill">Zero-Knowledge</span>
+  </div>
+
+  <div class="stat-row" style="margin-top: 32px;">
+    <div class="stat-box"><div class="stat-val">15</div><div class="stat-lbl">Feature Groups</div></div>
+    <div class="stat-box"><div class="stat-val">6</div><div class="stat-lbl">Platforms</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--red)">3</div><div class="stat-lbl">Blockers</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--amber)">7</div><div class="stat-lbl">High Risk</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--green)">5</div><div class="stat-lbl">Đã Hoàn Thiện</div></div>
+  </div>
+</header>
+
+<!-- ════════════════ S1 — TỔNG QUAN HỆ THỐNG ════════════════ -->
+<section class="section" id="s1">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <div>
+      <h2 class="section-title">Tổng Quan Hệ Thống</h2>
+      <p class="section-desc">Mục đích, giá trị cốt lõi, và bản đồ các thành phần chính của TeraChat.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <!-- 1.1 Purpose -->
+  <div class="subsection">
+    <div class="subsection-title">Mục Đích & Giá Trị Cốt Lõi</div>
+    <p>TeraChat được định vị là <strong>Sovereign Work OS</strong> — nền tảng cộng tác doanh nghiệp bảo mật đầu cuối (E2EE), hướng đến các môi trường yêu cầu khắt khe: tài chính, chính phủ, quốc phòng, y tế tại Việt Nam và Đông Nam Á. Khác biệt cốt lõi nằm ở 3 cam kết kiến trúc bất biến:</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-tag">Cam kết 1</div>
+        <div class="card-title">🔐 Zero-Knowledge Architecture</div>
+        <div class="card-body">Server relay là "blind router" — chỉ thấy ciphertext blob. Không có key giải mã, không biết danh tính người gửi (Sealed Sender), không đọc nội dung. Đảm bảo bằng MLS RFC 9420 + hardware-bound key management.</div>
+      </div>
+      <div class="card">
+        <div class="card-tag">Cam kết 2</div>
+        <div class="card-title">📡 Offline Survival Capability</div>
+        <div class="card-body">BLE 5.0 + Wi-Fi Direct Mesh tự động kích hoạt khi mất Internet. CRDT DAG đảm bảo đồng bộ cuối cùng. Không nền tảng enterprise nào có khả năng này — đây là moat kỹ thuật thực sự.</div>
+      </div>
+      <div class="card">
+        <div class="card-tag">Cam kết 3</div>
+        <div class="card-title">⚡ Operational Simplicity</div>
+        <div class="card-body">1 Rust binary, 5-minute deploy, $6–48/month VPS. Không Kubernetes, không PostgreSQL cluster, không DevOps team. Cấu trúc chi phí infra $7–48/tenant/month (vs $200–500 đối thủ).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.2 System Components -->
+  <div class="subsection">
+    <div class="subsection-title">Các Thành Phần Chính & Tương Tác</div>
+
+    <pre>
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          TERACHAT SYSTEM MAP                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  CLIENT LAYER (6 Platforms)                                      │   │
+│  │                                                                  │   │
+│  │  📱 iOS        📱 Android     📱 Huawei                         │   │
+│  │  [Swift Host]  [Kotlin Host]  [ArkTS Host]                       │   │
+│  │        │              │              │                            │   │
+│  │  💻 macOS      🖥️ Windows     🖥️ Linux                          │   │
+│  │  [Swift/Tauri] [Tauri]       [Tauri]                             │   │
+│  │                                                                  │   │
+│  │  UI: Flutter (Mobile) / React/Tauri (Desktop)                    │   │
+│  │  Pure renderer — zero business logic, zero key material          │   │
+│  └──────────────────────┬──────────────────────────────────────────┘   │
+│                         │ FFI/IPC Bridge (Token Protocol)               │
+│  ┌──────────────────────▼──────────────────────────────────────────┐   │
+│  │  RUST CORE (Shared Binary — identical across all platforms)      │   │
+│  │                                                                  │   │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  │   │
+│  │  │  crypto/   │  │   crdt/    │  │   mesh/    │  │  infra/  │  │   │
+│  │  │  MLS RFC   │  │  hot_dag   │  │  BLE 5.0   │  │  relay   │  │   │
+│  │  │  9420 E2EE │  │  DAG CRDT  │  │  WiFi-Dir  │  │  WASM    │  │   │
+│  │  │  PQ-KEM    │  │  cold_state│  │  Mesh      │  │  ONNX    │  │   │
+│  │  │  ZeroizeOD │  │  HLC       │  │  EMDP      │  │  OPA     │  │   │
+│  │  └────────────┘  └────────────┘  └────────────┘  └──────────┘  │   │
+│  └───────────┬──────────────────────────────────────────┬──────────┘   │
+│              │ TLS 1.3 + mTLS                            │ BLE/WiFi-D  │
+│  ┌───────────▼──────────────────┐          ┌────────────▼──────────┐   │
+│  │  VPS RELAY (Blind Router)    │          │  PEER MESH NETWORK    │   │
+│  │  Single Rust binary          │          │  Store-and-Forward    │   │
+│  │  Ciphertext routing only     │          │  CRDT Gossip          │   │
+│  │  wal_staging.db              │          │  BLE Stealth Beacons  │   │
+│  │  NATS pub/sub fanout         │          └───────────────────────┘   │
+│  └──────────────────────────────┘                                       │
+│              │                                                           │
+│  ┌───────────▼──────────────────┐                                       │
+│  │  BLOB STORAGE (Zero-KN)      │                                       │
+│  │  MinIO / Cloudflare R2 / B2  │                                       │
+│  │  CAS by BLAKE3 hash          │                                       │
+│  │  Encrypted chunks only       │                                       │
+│  └──────────────────────────────┘                                       │
+└─────────────────────────────────────────────────────────────────────────┘</pre>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Thành phần</th>
+            <th>Công nghệ</th>
+            <th>Trách nhiệm</th>
+            <th>Trust Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>UI Layer</td>
+            <td>Flutter (Mobile) / Tauri+React (Desktop)</td>
+            <td>Pure renderer — phát UICommand, nhận CoreSignal</td>
+            <td class="td-warn">Untrusted</td>
+          </tr>
+          <tr>
+            <td>Host Adapters</td>
+            <td>Swift / Kotlin / ArkTS</td>
+            <td>OS APIs: BLE, CallKit, NSE, FCM, HMS, BGTask</td>
+            <td class="td-warn">Platform-trusted</td>
+          </tr>
+          <tr>
+            <td>Rust Core</td>
+            <td>Rust + Tokio + ring + wasmtime/wasm3</td>
+            <td>All crypto, DAG, network, storage, policy</td>
+            <td class="td-ok">Fully trusted</td>
+          </tr>
+          <tr>
+            <td>IPC Bridge</td>
+            <td>FFI Token Protocol (SAB/JSI/Dart FFI)</td>
+            <td>Zero-copy transfer, no raw pointer</td>
+            <td class="td-accent">Enforced</td>
+          </tr>
+          <tr>
+            <td>VPS Relay</td>
+            <td>Rust Daemon + SQLite WAL + NATS</td>
+            <td>Ciphertext routing only, blind</td>
+            <td class="td-err">Zero-trust</td>
+          </tr>
+          <tr>
+            <td>WASM Sandbox</td>
+            <td>wasm3 (iOS) / wasmtime (others)</td>
+            <td>.tapp plugin isolation, OPA-gated egress</td>
+            <td class="td-err">Untrusted</td>
+          </tr>
+          <tr>
+            <td>Blob Storage</td>
+            <td>MinIO / R2 / B2 (pluggable)</td>
+            <td>Encrypted chunks by cas_hash</td>
+            <td class="td-err">Zero-trust</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ S2 — PHÂN TÍCH CHỨC NĂNG ════════════════ -->
+<section class="section" id="s2">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <div>
+      <h2 class="section-title">Phân Tích Chức Năng</h2>
+      <p class="section-desc">15 nhóm tính năng, luồng tương tác người dùng, và hành vi I/O chi tiết.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <!-- Feature map -->
+  <div class="subsection">
+    <div class="subsection-title">Bản đồ tính năng — Feature ↔ Core Module</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature ID</th>
+            <th>Tên tính năng</th>
+            <th>Core Module chính</th>
+            <th>Platforms</th>
+            <th>Orphan?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-highlight"><td>F-01</td><td>Secure E2EE Messaging</td><td>crypto/mls_engine.rs, crdt/dag.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-02</td><td>Push Notification (E2EE)</td><td>crypto/push_ratchet.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-03</td><td>IPC Bridge & State Sync</td><td>ffi/ipc_bridge.rs, ffi/token_protocol.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-04</td><td>Local Storage Management</td><td>crdt/dag.rs, crdt/snapshot.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-05</td><td>Survival Mesh Networking</td><td>mesh/ (6 modules)</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-06</td><td>Voice & Video Calls</td><td>infra/relay.rs (TURN), host adapters</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-07</td><td>WASM Plugin Sandbox</td><td>ffi/token_protocol.rs, platform WASM adapter</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-08</td><td>Inter-.tapp IPC</td><td>ffi/ipc_bridge.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-09</td><td>Media & File Transfer</td><td>crypto/mls_engine.rs, infra/relay.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-10</td><td>AI / SLM Integration</td><td>infra/relay.rs (VPS Enclave)</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-11</td><td>Device Security</td><td>crypto/hkms.rs, crypto/zeroize.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-12</td><td>Identity & Onboarding</td><td>crypto/hkms.rs, crypto/mls_engine.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-13</td><td>Admin Console</td><td>infra/federation.rs, infra/metrics.rs</td><td>All (R/W varies)</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-14</td><td>Adaptive Network Management</td><td>infra/relay.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+          <tr><td>F-15</td><td>Crash-Safe WAL Management</td><td>crdt/dag.rs, infra/wal_staging.rs</td><td>All 6</td><td class="td-ok">Verified</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout-green">
+      <p><strong>Zero orphan features:</strong> Tất cả 15 features đã có verified Core mapping — không có feature nào thiếu module backend tương ứng. Đây là thành tích kiến trúc đáng ghi nhận.</p>
+    </div>
+  </div>
+
+  <!-- F-01 Detail -->
+  <div class="subsection">
+    <div class="subsection-title">F-01: Secure E2EE Messaging — Luồng chi tiết</div>
+
+    <div class="flow">
+SEND PATH:
+  [User Input]
+       │  UICommand::SendMessage { recipient_did, plaintext }
+       ▼
+  [Rust Core: Epoch_Key lookup (RAM ZeroizeOnDrop)]
+       │  AES-256-GCM encrypt | Nonce = Base_Nonce XOR chunk_seq
+       ▼
+  [CRDT_Event { id, parents, hlc, author_did, payload, ed25519_sig }]
+       │  hot_dag.db WAL append (DURABLE before network dispatch)
+       ▼
+  ┌────────────────────────────────────┐
+  │ ONLINE:  TLS1.3+mTLS → VPS Relay  │
+  │          wal_staging.db → pub/sub  │
+  ├────────────────────────────────────┤
+  │ OFFLINE: BLE Control Plane         │
+  │          Store-and-Forward ≤ 4KB   │
+  └────────────────────────────────────┘
+       │  CoreSignal::StateChanged { table: "messages", version }
+       ▼
+  [UI: UICommand::ScrollViewport → 20-msg snapshot]
+       │  tera_buf_acquire(op_id) → opaque u64 token
+       ▼
+  [Render frame → UICommand::ReleaseBuffer → ZeroizeOnDrop]
+
+RECEIVE PATH:
+  VPS pub/sub → ciphertext CRDT_Event
+       │  Rust Core: MLS decrypt → CRDT merge hot_dag.db
+       ▼
+  CoreSignal::StateChanged → UI refresh</div>
+
+    <div class="h3">Mobile ANR Prevention (quan trọng)</div>
+    <p>DAG merge backlog > 500 events kích hoạt <code>CoreSignal::DagMergeProgress</code> mỗi 200ms. Backlog > 3000 events trên mobile: emit <code>SnapshotRequired</code>, delegate full merge sang Desktop — <strong>không bao giờ block UI thread trên mobile</strong>.</p>
+  </div>
+
+  <!-- F-05 Detail -->
+  <div class="subsection">
+    <div class="subsection-title">F-05: Survival Mesh — Role Assignment & EMDP</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Role</th><th>Platform</th><th>Storage Quota</th><th>TTL</th><th>Khả năng</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Super Node</td><td>Desktop/Laptop (AC power)</td><td>500MB–1GB</td><td>48–72h</td><td class="td-ok">DAG merge, full routing</td></tr>
+          <tr><td>Relay Node</td><td>Android (RAM ≥ 3GB, batt ≥ 40%)</td><td>100MB</td><td>24h</td><td class="td-ok">Intermediate relay</td></tr>
+          <tr><td>Leaf Node</td><td>iOS (luôn luôn)</td><td>50MB (receive only)</td><td>N/A</td><td class="td-warn">Nhận tin, không định tuyến</td></tr>
+          <tr><td>Tactical Relay (EMDP)</td><td>iOS (emergency only)</td><td>1MB text-only</td><td>60 phút</td><td class="td-warn">Text CRDT buffer, no DAG merge</td></tr>
+          <tr><td>Border Node</td><td>Any (internet + BLE active)</td><td>N/A</td><td>N/A</td><td class="td-ok">Bridge TCP/IP ↔ BLE</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-gold">
+      <p><strong>Bất biến kiến trúc:</strong> iOS <code>election_weight = 0</code> — hardcoded trong <code>mesh/election.rs</code>. iOS không bao giờ là DAG merge Dictator. Bất kỳ PR nào thay đổi giá trị này: <strong>BLOCKER</strong>.</p>
+    </div>
+  </div>
+
+  <!-- F-07 Detail -->
+  <div class="subsection">
+    <div class="subsection-title">F-07: WASM Plugin Sandbox — Lifecycle</div>
+
+    <div class="flow">
+[Install] → Ed25519 verify manifest → BLAKE3 hash check
+    ↓
+[Runtime Init]
+    iOS:     wasm3 pure interpreter (W^X compliant, no JIT)
+    Android: wasmtime JIT (Cranelift backend)
+    Huawei:  wasmtime JIT + AOT .waot bundle (AppGallery requirement)
+    macOS:   wasmtime JIT in XPC Worker (allow-jit isolated child process)
+    Win/Lin: wasmtime JIT
+    ↓
+[Sandbox Active]
+    - PROT_READ only to DAG shared memory
+    - All egress via terachat_proxy_request() → OPA policy check
+    - Crypto ops delegated to Rust Core via Host ABI
+    - Rate limit: Token Bucket 50 req/s per .tapp
+    ↓
+[Mesh Mode] → TERMINATE immediately → snapshot to sled
+[Internet Restore] → restore in < 50ms (single UI blink)</div>
+
+    <p><strong>Crypto Host ABI</strong> là thiết kế đúng đắn: WASM sandbox <em>không bao giờ</em> tự chạy crypto. Mọi operation đi qua host functions — đây là điều tạo ra 150–500× throughput improvement so với wasm3 interpreter execution.</p>
+  </div>
+</section>
+
+<!-- ════════════════ S3 — KIẾN TRÚC KỸ THUẬT ════════════════ -->
+<section class="section" id="s3">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <div>
+      <h2 class="section-title">Kiến Trúc Kỹ Thuật</h2>
+      <p class="section-desc">UI layer, Rust Core, Database, IPC Bridge, Infrastructure deployment.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <!-- 3.1 UI Architecture -->
+  <div class="subsection">
+    <div class="subsection-title">3.1 — Kiến Trúc UI Layer</div>
+
+    <p>UI layer được thiết kế theo nguyên tắc <strong>"Pure Renderer"</strong> — không có business logic, không có key material. Đây là thiết kế đúng và an toàn, nhưng tạo ra một số yêu cầu nghiêm ngặt:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Platform</th><th>UI Framework</th><th>IPC Data Plane</th><th>Throughput</th><th>Đặc thù</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>📱 iOS</td><td>Flutter + Swift NSE</td><td>JSI C++ UniquePtr + Token</td><td>~400 MB/s</td><td>W^X: wasm3 only, no JIT</td></tr>
+          <tr><td>📱 Android</td><td>Flutter + Kotlin</td><td>Dart FFI TypedData (C ABI)</td><td>~400 MB/s</td><td>FCM throttle Android 14+</td></tr>
+          <tr><td>📱 Huawei</td><td>Flutter + ArkTS</td><td>Dart FFI TypedData</td><td>~400 MB/s</td><td>HMS Push, AOT .waot required</td></tr>
+          <tr><td>💻 macOS</td><td>Tauri + WebView</td><td>SAB Tier 1 → Named Pipe</td><td>~500 MB/s</td><td>XPC Worker for WASM JIT</td></tr>
+          <tr><td>🖥️ Windows</td><td>Tauri + WebView2</td><td>SAB Tier 1 → Named Pipe</td><td>~500/200 MB/s</td><td>ARM64 SAB validation pending</td></tr>
+          <tr><td>🖥️ Linux</td><td>Tauri + WebView</td><td>SAB → Named Pipe → stdin</td><td>~500/200/50 MB/s</td><td>AppArmor/SELinux postinstall</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="h3">SAB Tier Ladder (Desktop)</div>
+    <pre>
+Tier 1: SharedArrayBuffer (COOP+COEP verified)  → ~500 MB/s  [preferred]
+Tier 2: Named Pipe (Windows fallback)            → ~200 MB/s
+Tier 3: Protobuf over stdin (last resort)        → ~50 MB/s
+
+Selection: Auto-detected at Rust Core init.
+Tier change: ALWAYS logged to audit trail (IPC-02 — silent change = BLOCKER).</pre>
+
+    <div class="h3">Dart FFI TeraSecureBuffer Contract (PLATFORM-17 — Mandatory)</div>
+    <pre>
+class TeraSecureBuffer {
+  // Rule 1: MUST be wrapped by useInTransaction()
+  // Rule 2: Rust Token Registry does NOT auto-expire — timeout → IpcSignal::TransactionTimeout
+  // Rule 3: GC Finalizer = safety net ONLY → WARNING metric (ffi.gc_finalizer_release.count)
+  // Rule 4: releaseNow() = primary path (called in finally block by useInTransaction)
+}</pre>
+  </div>
+
+  <!-- 3.2 Rust Core Architecture -->
+  <div class="subsection">
+    <div class="subsection-title">3.2 — Rust Core: Module Architecture</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Module</th><th>Files chính</th><th>Trách nhiệm</th><th>Key constraint</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>crypto/</td><td>mls_engine.rs, hkms.rs, zeroize.rs, push_ratchet.rs</td><td>MLS E2EE, key hierarchy, ZeroizeOnDrop</td><td>ring crate ONLY — no self-implement</td></tr>
+          <tr><td>crdt/</td><td>dag.rs, snapshot.rs</td><td>hot_dag.db WAL, CRDT merge, HLC, materialized snapshots</td><td>Append-only invariant</td></tr>
+          <tr><td>mesh/</td><td>6 modules: transport, topology, ble_beacon, awdl, election, emdp</td><td>BLE/WiFi-Direct P2P mesh, EMDP protocol</td><td>iOS election_weight = 0 immutable</td></tr>
+          <tr><td>ffi/</td><td>ipc_bridge.rs, token_protocol.rs</td><td>IPC boundary, token lifecycle, data plane</td><td>No raw pointer in pub extern C</td></tr>
+          <tr><td>infra/</td><td>relay.rs, federation.rs, metrics.rs, wal_staging.rs</td><td>TURN, OPA, OTLP, WAL replay</td><td>Stateless VPS relay invariant</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="h3">Key Hierarchy (HKMS)</div>
+    <pre>
+[Master Key] — HSM FIPS 140-3 / Secure Enclave / TPM 2.0  (NEVER leaves chip)
+      └──► [Company_Key] — AES-256 root per workspace
+                 ├──► [Epoch_Key] — MLS leaf key, ZeroizeOnDrop on rotation
+                 ├──► [Push_Key_N] — versioned u32, OOB from MLS TreeKEM
+                 ├──► [ChunkKey_i] — HKDF(Epoch_Key, "chunk"||cas_hash||i), single-use
+                 └──► [Escrow_Key] — Shamir 3-of-5, plaintext lifetime < 100ms</pre>
+  </div>
+
+  <!-- 3.3 Database -->
+  <div class="subsection">
+    <div class="subsection-title">3.3 — Database Design</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Database</th><th>Engine</th><th>Location</th><th>Lifecycle</th><th>Security</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>hot_dag.db</td><td>SQLite WAL</td><td>Client disk</td><td>Permanent, append-only</td><td>Tombstones only, no physical delete</td></tr>
+          <tr><td>cold_state.db</td><td>SQLite + SQLCipher AES-256</td><td>Client disk</td><td>Rebuildable from hot_dag anytime</td><td>Key from Secure Enclave — never hardcoded</td></tr>
+          <tr><td>cold_state_shadow.db</td><td>SQLite transient</td><td>Client disk (temp)</td><td>Created for hydration, deleted on atomic rename</td><td>ShadowMigrationLock prevents race</td></tr>
+          <tr><td>nse_staging.db</td><td>SQLite WAL</td><td>iOS NSE only</td><td>Per push payload, cleared after Main App decrypt</td><td>NSE-only keychain group access</td></tr>
+          <tr><td>wal_staging.db</td><td>SQLite WAL</td><td>VPS Relay</td><td>Per event, STAGED → COMMITTED lifecycle</td><td>Server-side only, no client key access</td></tr>
+          <tr><td>metrics_buffer.db</td><td>SQLite</td><td>Client disk</td><td>Max 48h / 500KB, flushed on reconnect</td><td>Aggregate only, no user-correlated data</td></tr>
+          <tr><td>soul.db</td><td>sled LSM-Tree</td><td>RAM + disk</td><td>Per .tapp session, cleared on Mesh Mode</td><td>AES-256-GCM encrypted</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-gold">
+      <p><strong>Two-DB safety invariant:</strong> <code>cold_state.db</code> luôn có thể rebuild từ <code>hot_dag.db</code>. <code>hot_dag.db</code> là append-only ground truth. Migration failure trên cold_state → drop và rebuild. Đây là thiết kế đúng và elastic.</p>
+    </div>
+
+    <div class="h3">VACUUM/Checkpoint Strategy</div>
+    <pre>
+-- hot_dag.db (append-only, no deleted rows)
+-- Prefer WAL checkpoint over VACUUM
+PRAGMA wal_checkpoint(TRUNCATE);   -- No exclusive lock needed
+
+-- VACUUM INTO (nếu cần fragmentation analysis):
+BEGIN EXCLUSIVE TRANSACTION;
+VACUUM INTO 'hot_dag_tmp.db';
+COMMIT;
+-- Atomic POSIX rename() — zero downtime swap
+
+-- Global setting: PRAGMA wal_autocheckpoint = 1000 (DB-03)</pre>
+  </div>
+
+  <!-- 3.4 Infrastructure -->
+  <div class="subsection">
+    <div class="subsection-title">3.4 — Infrastructure Deployment</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tier</th><th>Users</th><th>VPS Spec</th><th>Cost/month</th><th>Deploy time</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Solo</td><td>≤ 50</td><td>1 vCPU, 512MB RAM, 20GB SSD</td><td class="td-ok">$6–7</td><td>5 min</td></tr>
+          <tr><td>SME</td><td>≤ 500</td><td>2 vCPU, 2GB RAM, 40GB SSD</td><td class="td-ok">$12–17</td><td>10 min</td></tr>
+          <tr><td>Enterprise</td><td>≤ 5,000</td><td>4 vCPU, 8GB RAM, 100GB SSD</td><td class="td-ok">$28–48</td><td>20 min</td></tr>
+          <tr><td>Gov Air-gapped</td><td>Unlimited</td><td>Existing bare-metal</td><td class="td-gold">CAPEX only</td><td>1 hour</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>In-Process Watchdog</strong> (INFRA-03): Mỗi component phải gửi heartbeat. Timeout → auto-restart với delay. Circuit breaker: 5 restarts/hour → mark Degraded, alert Admin. Không phụ thuộc systemd làm primary recovery.</p>
+
+    <div class="h3">Observability Stack</div>
+    <pre>
+Client Metrics: ClientMetricBatch (aggregate, no user ID) → OTLP HTTP every 15min
+Server Metrics: Prometheus @ localhost:9092/metrics → Grafana
+Tracing: OTEL Collector + Tempo
+Logs: Loki (no plaintext message content in any log)
+Crash: Privacy-safe CrashReport (stack_hash = BLAKE3[0:8] of stripped trace)</pre>
+  </div>
+</section>
+
+<!-- ════════════════ S4 — PHÂN LOẠI KỸ THUẬT THEO TÍNH NĂNG ════════════════ -->
+<section class="section" id="s4">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <div>
+      <h2 class="section-title">Phân Loại Kỹ Thuật Theo Tính Năng</h2>
+      <p class="section-desc">Công nghệ, thuật toán, luồng dữ liệu và trade-off cho từng feature group chính.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <!-- Crypto -->
+  <div class="subsection">
+    <div class="subsection-title">Nhóm Crypto & E2EE</div>
+
+    <details>
+      <summary>MLS RFC 9420 — Message Layer Security</summary>
+      <div>
+        <p>TreeKEM O(log n) key distribution cho group ≤ 10,000 members. Epoch rotation khi member rời group (immediate) hoặc theo lịch 24h. Forward Secrecy tự động.</p>
+
+        <div class="h3">Hybrid PQ-KEM (CNSA 2.0 compliant)</div>
+        <pre>
+Final_Session_Key = HKDF(X25519_Shared || Kyber768_Shared)
+-- X25519: classical ECDH (< 100 bytes, fast handshake for SOS)
+-- ML-KEM-768: post-quantum KEM, payload ~1.18KB
+-- PQ payload chỉ kèm vào KeyPackage hoặc mỗi 10,000 messages
+-- BLE Mesh: RaptorQ FEC fragmentation thành ≤ 400 byte chunks</pre>
+
+        <p><strong>OOB Symmetric Push Ratchet:</strong> Push_Key là HKDF one-way chain độc lập với MLS TreeKEM. NSE giải mã O(1) RAM (< 5MB). NSE <strong>không bao giờ</strong> tái dựng TreeKEM — đây là isolation đúng đắn.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>ZeroizeOnDrop — Memory Zeroization Protocol</summary>
+      <div>
+        <pre>
+-- Mandatory cho mọi struct giữ key material
+#[derive(ZeroizeOnDrop)]
+struct EpochKey([u8; 32]);
+
+-- iOS: Double-Buffer Zeroize (Jetsam mitigation)
+-- Phân bổ key vào 2 page MAP_ANONYMOUS|MAP_PRIVATE
+-- Ghi đè 0x00 vào page 1 TRƯỚC KHI dùng key (page 2)
+-- ZeroizeOnDrop: ghi đè cả 2 page
+-- Android: Wrap-on-Derive (Doze mitigation)
+-- plaintext_key tồn tại < 1ms (derive → StrongBox wrap đồng bộ)</pre>
+      </div>
+    </details>
+  </div>
+
+  <!-- CRDT -->
+  <div class="subsection">
+    <div class="subsection-title">Nhóm CRDT & Storage</div>
+
+    <details>
+      <summary>DAG Event Model & Conflict Resolution</summary>
+      <div>
+        <pre>
+CRDT_Event {
+    id:         UUID v7 (time-ordered)
+    parents:    Vec&lt;UUID&gt;  (causal parents)
+    hlc:        { wall_clock: u64, logical_counter: u32 }  // HLC
+    author_did: DeviceId
+    payload:    AES-256-GCM ciphertext
+    signature:  Ed25519Signature  // DeviceIdentityKey, biometric gate
+}
+-- Immutable after append (NEVER update or delete CRDT_Event)
+-- Tombstones for deletion: { entity_id, hlc, type: DELETED }
+-- Deterministic LWW tie-breaker: Hash(Node_ID) + HLC</pre>
+
+        <div class="h3">Tiered Conflict Resolution</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tier</th><th>Môi trường</th><th>Cơ chế</th><th>Cam kết</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Online</td><td>Full Shadow DAG</td><td>User thấy conflict, chọn merge</td></tr>
+              <tr><td>2</td><td>Mesh P2P</td><td>Lightweight Conflict Marker</td><td>Desktop mediator</td></tr>
+              <tr><td>3</td><td>Solo offline</td><td>Optimistic Append</td><td>WARNING "có thể bị ghi đè"</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout-red">
+          <p><strong>Hard rule:</strong> Không bao giờ silent LWW trên <code>content_type = CONTRACT | POLICY | APPROVAL</code>. Phải có Conflict Resolution UI trước khi commit.</p>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- Network -->
+  <div class="subsection">
+    <div class="subsection-title">Nhóm Network & Protocol</div>
+
+    <details>
+      <summary>ALPN Negotiation — Adaptive Protocol Selection</summary>
+      <div>
+        <pre>
+Step 1: QUIC/HTTP3 over UDP:443         → ACK < 50ms → ONLINE_QUIC (~30ms RTT)
+         │ Timeout/DROP
+Step 2: gRPC/HTTP2 over TCP:443         → TLS OK → ONLINE_GRPC (~80ms RTT)
+         │ DPI block
+Step 3: WebSocket Secure over TCP:443   → WS OK → ONLINE_WSS (~120ms RTT)
+         │ All fail
+→ MESH_MODE
+
+Total negotiation: < 50ms (parallel probe, not sequential)
+Adaptive learning: probe_fail_count ≥ 3 → strict_compliance = true
+                   Notify Admin: "Auto-switched to TCP on this network"</pre>
+
+        <div class="callout callout-amber">
+          <p><strong>Bug đã được xác định (NI-01 trong Arrange.md):</strong> Logic cũ increment <code>probe_fail_count</code> TRƯỚC khi race condition resolve — dẫn đến <code>strict_compliance</code> bị set sai. Fix: chỉ increment khi QUIC xác nhận failed và không phải winner.</p>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>WebRTC Voice/Video — CallKit & TURN HA</summary>
+      <div>
+        <p>SDP signaling qua MLS E2EE channel (không cần signaling server riêng). DTLS-SRTP E2EE audio/video. TURN chỉ relay encrypted UDP — không có key.</p>
+        <pre>
+iOS CallKit Integration:
+  CXProvider giữ audio session active khi background → TURN failover không bị suspend
+  Dual TURN Preconnect: khi sắp vào background → proactively connect TURN backup
+  User-perceived drop on TURN failover: 0s
+
+TURN HA: Keepalived Floating IP, failover < 3s
+TURN sizing: 1 node ≈ 50 concurrent HD streams (4 vCPU, 8GB RAM, 1 Gbps)</pre>
+      </div>
+    </details>
+  </div>
+
+  <!-- AI -->
+  <div class="subsection">
+    <div class="subsection-title">Nhóm AI / SLM Integration</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Platform</th><th>Runtime</th><th>Model format</th><th>Ceiling</th><th>Restriction</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>📱 iOS</td><td>CoreML</td><td>.mlmodelc (bundled)</td><td>74MB (Base) / 39MB (Tiny)</td><td>No dynamic WASM AI (App Store 2.5.2)</td></tr>
+          <tr><td>📱 Android</td><td>ONNX Runtime</td><td>.onnx</td><td>39MB (Tiny)</td><td>HiAI fallback on Huawei</td></tr>
+          <tr><td>📱 Huawei</td><td>HiAI / ONNX fallback</td><td>.om or .onnx</td><td>39MB</td><td>AOT bundle only</td></tr>
+          <tr><td>💻🖥️ Desktop</td><td>ONNX Runtime</td><td>.onnx</td><td>74MB (Base), 150MB process ceiling</td><td>Isolated OS process</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="h3">PII Redaction Pipeline (ISDM)</div>
+    <pre>
+User Prompt
+  → Micro-NER (ONNX < 1MB) — Detect: name, phone, email, ID, bank account
+  → Alias substitution: [REDACTED_PHONE_1], [REDACTED_EMAIL_1]
+  → SanitizedPrompt (newtype — cannot construct without redaction pass)
+  → AI inference (local SLM or cloud LLM)
+  → De-tokenize aliases in response
+  → SessionVault::drop() — ZeroizeOnDrop within 100ms
+
+NSE CONSTRAINT: ONNX load PROHIBITED in NSE process (NsePolicy::ProhibitOnnxLoad)
+NSE chỉ dùng regex-only PII detection (Aho-Corasick) — ONNX 8MB vi phạm NSE 20MB ceiling</pre>
+  </div>
+</section>
+
+<!-- ════════════════ S5 — UX & LUỒNG NGƯỜI DÙNG ════════════════ -->
+<section class="section" id="s5">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <div>
+      <h2 class="section-title">Tương Tác Người Dùng & Luồng UX</h2>
+      <p class="section-desc">Glassmorphism design system, state machine UI, và error handling flows.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <!-- UI States -->
+  <div class="subsection">
+    <div class="subsection-title">5.1 — Adaptive Glassmorphism State Machine</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>UI State</th><th>IPC Trigger</th><th>Visual</th><th>Indicator</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Online</td><td>NetworkTier: QUIC/gRPC/WSS</td><td>Light Frosted Glass, #ffffff</td><td>Blue #24A1DE | "E2EE Active · Key Epoch N"</td></tr>
+          <tr><td>Mesh Mode</td><td>CoreSignal::TierChanged { MeshMode }</td><td>Dark Navy #0F172A, Radar Pulse</td><td>"📡 Survival Mesh Active"</td></tr>
+          <tr><td>Memory Pressure</td><td>CoreSignal::MemoryPressureWarning</td><td>blur 20px → 8px</td><td>Banner "Storage cache full"</td></tr>
+          <tr><td>Warning</td><td>Various degraded states</td><td>Amber Glow #F59E0B</td><td>Warning banner</td></tr>
+          <tr><td>Containment</td><td>CoreSignal::FcpTriggered</td><td>Red Border 4px pulse</td><td>FCP overlay</td></tr>
+          <tr><td>Kill-Switch</td><td>Remote Wipe / Self-Destruct</td><td>Blood-Red Frosted, Shatter animation</td><td>Shield icon</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <p><strong>Design contract:</strong> Mesh Mode UI <em>bắt buộc</em> khác Online Mode — không phép subtle variation. GPU Tier fallback: Tier A (hardware compositing, full blur) → Tier B (software, blur 8px) → Tier C (flat solid, full functionality preserved).</p>
+    </div>
+  </div>
+
+  <!-- IPC Signal → UI -->
+  <div class="subsection">
+    <div class="subsection-title">5.2 — CoreSignal Catalog → UI Response Map</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>CoreSignal</th><th>Payload</th><th>UI Response</th><th>User Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>StateChanged</td><td>{ table, version }</td><td>Query fresh snapshot từ Core</td><td>Message list refresh</td></tr>
+          <tr><td>DagMergeProgress</td><td>{ completed, total }</td><td>Non-blocking Progress Banner, disable Send</td><td>Send button grayed, ETA shown</td></tr>
+          <tr><td>TierChanged</td><td>{ new_tier, reason }</td><td>HUD icon update, dark mode switch</td><td>Network indicator, no dialog</td></tr>
+          <tr><td>MeshRoleChanged</td><td>{ new_role }</td><td>Toast notification</td><td>"Relay role transferred to [device]"</td></tr>
+          <tr><td>ComponentFault</td><td>{ component, severity }</td><td>Degraded-mode UI indicator</td><td>.tapp unavailable badge</td></tr>
+          <tr><td>EmdpExpiryWarning</td><td>{ minutes_remaining }</td><td>Countdown banner</td><td>T-10min và T-2min alerts</td></tr>
+          <tr><td>MemoryPressureWarning</td><td>{ component, allocated_mb }</td><td>Blur reduce + storage banner</td><td>Performance visible degradation</td></tr>
+          <tr><td>XpcHealthDegraded</td><td>{ crash_count, window_secs }</td><td>Log + Admin alert nếu persistent</td><td>macOS only, transparent to user</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Error flows -->
+  <div class="subsection">
+    <div class="subsection-title">5.3 — Error Handling Flows</div>
+
+    <details>
+      <summary>Remote Wipe — Non-interruptible sequence</summary>
+      <div>
+        <pre>
+Trigger: self.userID in removedMembers of MLS Commit
+
+Execution (non-interruptible):
+  1. Delete DeviceIdentityKey from Secure Enclave/StrongBox/TPM
+  2. Drop all tables in hot_dag.db + cold_state.db
+  3. Delete all WASM sandbox storage files
+  4. Clear soul.db (sled) entries
+
+iOS:     wrapped in autoreleasepool (cannot be interrupted by user process)
+Android: wrapped in try-finally
+Windows: critical section, cannot be suspended
+
+wipe_in_progress flag: set at start, cleared at end
+Power loss mid-sequence: on next boot, complete remaining steps BEFORE any UI</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>NSE (iOS Push) — Failure cascade</summary>
+      <div>
+        <pre>
+APNs → NSE woken (≤ 20MB RAM enforced by OS)
+  │
+  ├─ Version MATCH → AES-256-GCM decrypt in Static Arena → Display notification
+  │                                                      → ZeroizeOnDrop arena
+  │
+  ├─ Version MISMATCH or payload > 4KB or epoch_delta > 1
+  │   → Cache ciphertext to nse_staging.db
+  │   → Set main_app_decrypt_needed = true in Shared Keychain
+  │   → Send content-available: 1 (Main App wakeup)
+  │   → Main App: rotate Push_Key → decrypt staging → display → clear staging
+  │
+  └─ NSE OOM (Circuit Breaker)
+      → Terminate NSE gracefully
+      → Set main_app_decrypt_needed = true
+      → Main App handles on next foreground</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>License expiry — Graceful degradation</summary>
+      <div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Thời điểm</th><th>UI</th><th>Tính năng bị ảnh hưởng</th></tr></thead>
+            <tbody>
+              <tr><td>T-30 ngày</td><td>Banner vàng Admin Console</td><td class="td-ok">Không</td></tr>
+              <tr><td>T-0</td><td>Admin Console partial lock</td><td class="td-warn">AI + add user bị khóa; Chat/Mesh bình thường</td></tr>
+              <tr><td>T+90 ngày</td><td>Refuse new bootstrap</td><td class="td-warn">App đang chạy OK; không restart được</td></tr>
+              <tr><td>Gia hạn</td><td>JWT mới → restore trong &lt; 5s</td><td class="td-ok">Không cần restart</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ════════════════ S6 — XÁC THỰC & RỦI RO ════════════════ -->
+<section class="section" id="s6">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <div>
+      <h2 class="section-title">Xác Thực & Phân Tích Rủi Ro</h2>
+      <p class="section-desc">15 vấn đề được xác định, phân loại theo severity và impact thực tế.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <p><strong>Phương pháp:</strong> Các vấn đề sau được trích xuất từ Arrange.md conflict audit (15 conflicts) và cross-reference validation giữa 9 spec files. Phân loại: Blocker (ship-stopper) / High (pre-production) / Medium / Low.</p>
+  </div>
+
+  <!-- Blockers -->
+  <div class="subsection">
+    <div class="subsection-title">6.1 — BLOCKER Issues (3) — Không ship được nếu chưa fix</div>
+
+    <div class="risk-grid">
+      <div class="risk-item">
+        <div class="risk-dot high"></div>
+        <div>
+          <div class="risk-name">WasmParity CI Gate — Chưa implement</div>
+          <div class="risk-desc">wasm3 (iOS) vs wasmtime (Android/Desktop) có thể cho output semantics khác nhau. Không có CI gate = không phát hiện divergence cho đến khi user báo lỗi sản xuất. Core_Spec §11.4 ref FI-03.</div>
+        </div>
+        <div class="risk-badge high">BLOCKER</div>
+        <div class="risk-mit">Implement: <code>cargo test --test wasm_parity -- --timeout 60</code>. Criteria: semantic identity 100%, latency delta ≤ 20ms, memory delta ≤ 5MB. Block merge on fail.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot high"></div>
+        <div>
+          <div class="risk-name">CI/CD Code Signing Pipeline — 5 platforms chưa có</div>
+          <div class="risk-desc">Windows EV Code Signing, Linux GPG/Cosign, iOS fastlane match, Android Keystore chưa được automated. Không có signing = SmartScreen blocks install trên Windows, deb/rpm không verify được trên Linux.</div>
+        </div>
+        <div class="risk-badge high">BLOCKER</div>
+        <div class="risk-mit">ops/signing-pipeline.md cần implement đầy đủ. Windows EV cert: mua tháng 1 (30-day reputation build cần thiết). Linux: dpkg-sig + cosign. iOS: fastlane match.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot high"></div>
+        <div>
+          <div class="risk-name">Dart FFI NativeFinalizer Clippy Lint — Chưa có</div>
+          <div class="risk-desc">Không có lint rule = developer có thể để GC làm finalizer cho TeraSecureBuffer. GC release không phải primary path — là security smell (key material có thể tồn tại lâu hơn cần). PLATFORM-17 violation.</div>
+        </div>
+        <div class="risk-badge high">BLOCKER</div>
+        <div class="risk-mit">Implement <code>tera_avoid_direct_ffi_pointer</code> và <code>tera_require_secure_buffer</code> Dart lints. Enforce via <code>tera_dart_lints</code> analyzer plugin. GC release → WARNING metric only (không thể prevent hoàn toàn nhưng phải track).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- High -->
+  <div class="subsection">
+    <div class="subsection-title">6.2 — HIGH Risk Issues (7)</div>
+
+    <div class="risk-grid">
+      <div class="risk-item">
+        <div class="risk-dot high"></div>
+        <div>
+          <div class="risk-name">ALPN Parallel Probe Race — probe_fail_count corruption (NI-01)</div>
+          <div class="risk-desc">Logic cũ increment probe_fail_count TRƯỚC khi tokio::select! resolve. Nếu cả QUIC và gRPC probe đều succeed, count tăng sai → strict_compliance bị bật trên network tốt.</div>
+        </div>
+        <div class="risk-badge high">HIGH</div>
+        <div class="risk-mit">Fix: chỉ increment khi QUIC confirmed failed và không phải winner của race. Code đã có trong Arrange.md EDIT C-10.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot high"></div>
+        <div>
+          <div class="risk-name">Android Doze Mid-ZeroizeOnDrop (RC-02)</div>
+          <div class="risk-desc">Android không expose mlock() API. Process freeze mid-ZeroizeOnDrop có thể để key material trong RAM page chưa zero-fill. Xảy ra khi Doze kill process giữa key derivation và wrap vào StrongBox.</div>
+        </div>
+        <div class="risk-badge high">HIGH</div>
+        <div class="risk-mit">Wrap-on-Derive pattern: derive → StrongBox wrap đồng bộ trong < 1ms, không có await point giữa 2 bước. Doze không thể freeze ở giữa window này.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot high"></div>
+        <div>
+          <div class="risk-name">NSE RAM Budget Additive Overflow (RC-03)</div>
+          <div class="risk-desc">NSE Arena 10MB + MLS decrypt ~2MB + system overhead ~2MB = 14MB baseline. ONNX Micro-NER load thêm 8MB = 22MB > 20MB ceiling → Jetsam kill → notification mất silently. Không có error log.</div>
+        </div>
+        <div class="risk-badge high">HIGH</div>
+        <div class="risk-mit">NsePolicy::ProhibitOnnxLoad bắt buộc. NSE chỉ dùng regex-only PII detection (Aho-Corasick). Full NER defer sang Main App qua main_app_decrypt_needed flag.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot medium"></div>
+        <div>
+          <div class="risk-name">EMDP Shun + MLS Epoch Causal Deadlock (BL-02)</div>
+          <div class="risk-desc">Trong all-iOS EMDP mesh, nhận Shun Record cho node thông thường → cần evict nhưng không thể rotate MLS Epoch (EMDP không cho phép). Deadlock: node bị compromise nhưng vẫn trong group key.</div>
+        </div>
+        <div class="risk-badge medium">HIGH</div>
+        <div class="risk-mit">EMDP Shun Exception Protocol: Case A (regular member) → TempGroupKey từ HKDF(EmdpKeyEscrow.relay_session_key, "shun-rekey"||poisoned_node_id). Case B (Tactical Relay bị shun) → terminate EMDP session immediately.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot medium"></div>
+        <div>
+          <div class="risk-name">OPA Policy + Federation Schema Lock (BL-03)</div>
+          <div class="risk-desc">Khi federation ở READ_ONLY mode (±1 minor schema delta), OPA policy updates bị block. Branch cluster có thể stuck với stale (insecure) OPA policy vô thời hạn.</div>
+        </div>
+        <div class="risk-badge medium">HIGH</div>
+        <div class="risk-mit">OPA Policy distribution channel độc lập với data federation channel. Policy sync EXEMPT khỏi schema restrictions — security update phải đến được mọi cluster bất kể schema version gap.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot medium"></div>
+        <div>
+          <div class="risk-name">AppArmor/SELinux Startup Crash (Linux)</div>
+          <div class="risk-desc">Không có postinstall MAC profile = startup crash trên memfd_create và ipc_lock denial trên enforcing Ubuntu/RHEL systems. Gov/Military thường dùng enforcing SELinux — đây là showstopper.</div>
+        </div>
+        <div class="risk-badge medium">HIGH</div>
+        <div class="risk-mit">Feature_Spec.md §16 postinstall script. Self-test: terachat --check-permissions. AppArmor: apparmor_parser; SELinux: semodule -i. Detection at install time, not runtime.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot medium"></div>
+        <div>
+          <div class="risk-name">Dead Man Switch Audit Trail Gap (BL-01)</div>
+          <div class="risk-desc">CallKit active call defer Dead Man Switch — hành vi đúng nhưng không có audit log. CISO không thể phân biệt legitimate deferral vs compromise. Cho Gov/Military là compliance gap.</div>
+        </div>
+        <div class="risk-badge medium">HIGH</div>
+        <div class="risk-mit">DeadManDeferralEntry struct với device_counter, server_counter delta, call_id. Counter delta giúp CISO assess risk. Ed25519-signed, append-only.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Medium -->
+  <div class="subsection">
+    <div class="subsection-title">6.3 — MEDIUM Risk Issues (5)</div>
+
+    <div class="risk-grid">
+      <div class="risk-item">
+        <div class="risk-dot low"></div>
+        <div>
+          <div class="risk-name">BLE Channel Confusion — PQ Key Exchange</div>
+          <div class="risk-desc">Spec không phân biệt rõ BLE Advertising channel (31 bytes) vs GATT Connected channel (512 bytes). ML-KEM-768 payload ~1.18KB không fit vào ADV_EXT_IND PDU.</div>
+        </div>
+        <div class="risk-badge low">MEDIUM</div>
+        <div class="risk-mit">Clarify: ADV_EXT_IND = peer discovery only (HMAC commitment). ML-KEM exchange dùng GATT connected mode với RaptorQ FEC. Không fragment key material vào beacon frames.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot low"></div>
+        <div>
+          <div class="risk-name">VACUUM INTO Concurrent Write Race (NI-03)</div>
+          <div class="risk-desc">VACUUM INTO hot_dag_tmp.db không được wrap trong EXCLUSIVE TRANSACTION. Concurrent Tokio writer có thể swap incomplete DB qua atomic rename().</div>
+        </div>
+        <div class="risk-badge low">MEDIUM</div>
+        <div class="risk-mit">Prefer WAL checkpoint thay VACUUM cho append-only DB. Nếu VACUUM INTO cần thiết: BEGIN EXCLUSIVE TRANSACTION trước. Code fix trong Arrange.md EDIT C-09.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot low"></div>
+        <div>
+          <div class="risk-name">Huawei WASM JIT vs AOT Ambiguity (RC-01)</div>
+          <div class="risk-desc">Spec không rõ runtime mode: AppGallery yêu cầu AOT .waot bundle nhưng runtime có thể vẫn dùng JIT. Gây nhầm lẫn cho developer và QA.</div>
+        </div>
+        <div class="risk-badge low">MEDIUM</div>
+        <div class="risk-mit">Clarify: AOT bundle = AppGallery review requirement. Runtime = JitWithAotFallback mode. Primary: wasmtime JIT; Fallback: AOT khi JIT detection fails.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot low"></div>
+        <div>
+          <div class="risk-name">Border Node Auto-Detection — Algorithm Undefined</div>
+          <div class="risk-desc">Border Node được mô tả là "auto-assigned khi internet_available && ble_active" nhưng heuristics cụ thể chưa được spec. Không rõ debounce, hysteresis, priority.</div>
+        </div>
+        <div class="risk-badge low">MEDIUM</div>
+        <div class="risk-mit">Cần define: debounce window (5s), check interval, priority khi nhiều devices đều eligible, handoff protocol khi border node rời mesh.</div>
+      </div>
+
+      <div class="risk-item">
+        <div class="risk-dot low"></div>
+        <div>
+          <div class="risk-name">Windows ARM64 SAB Validation — Chưa test</div>
+          <div class="risk-desc">WebView2 trên ARM64 Windows (Surface Pro X, Copilot+ PCs) có thể có SAB behavior khác x64. Chưa có test coverage → có thể fallback sang Named Pipe silently mà không log.</div>
+        </div>
+        <div class="risk-badge low">MEDIUM</div>
+        <div class="risk-mit">Pre-release SAB validation trên ARM64 WebView2. Đảm bảo tier selection được log đúng (IPC-02 — silent tier change = BLOCKER).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture strengths -->
+  <div class="subsection">
+    <div class="subsection-title">6.4 — Điểm Mạnh Kiến Trúc Đã Xác Thực</div>
+
+    <ul class="styled ok-list">
+      <li><strong>Zero orphan features:</strong> 15/15 features có verified Core module mapping — không có floating feature nào.</li>
+      <li><strong>Token Protocol FFI:</strong> Thiết kế opaque u64 token thay vì raw pointer là đúng và an toàn. No raw pointer in pub extern C — enforced by Clippy.</li>
+      <li><strong>Two-DB safety net:</strong> cold_state.db luôn rebuildable từ hot_dag.db — migration failures không gây data loss.</li>
+      <li><strong>Stateless VPS relay invariant:</strong> EMDP journal trong hot_dag.db (client) không phải trên relay — preserves zero-knowledge.</li>
+      <li><strong>Crash-safe WAL:</strong> SQLite WAL replay on next open — power loss không mất data.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ════════════════ S7 — ĐỀ XUẤT CẢI TIẾN ════════════════ -->
+<section class="section" id="s7">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <div>
+      <h2 class="section-title">Đề Xuất Cải Tiến</h2>
+      <p class="section-desc">Điều chỉnh kỹ thuật cụ thể, đơn giản hóa over-engineering, và bổ sung thiếu sót.</p>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <!-- Sprint roadmap -->
+  <div class="subsection">
+    <div class="subsection-title">7.1 — Sprint Execution Roadmap</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sprint</th><th>Focus</th><th>Critical Edits</th><th>Blocker count</th></tr>
+        </thead>
+        <tbody>
+          <tr class="row-highlight"><td>Sprint 1 (Priority)</td><td>Core fixes + Feature_Spec.md creation</td><td>C-01 through C-21, F-01 through F-08</td><td class="td-err">3 Blockers</td></tr>
+          <tr><td>Sprint 2</td><td>Design, Marketplace, Function, Ops</td><td>D-01..D-07, M-01..M-06, FUNC-01..FUNC-05, T-01..T-03</td><td class="td-warn">7 High</td></tr>
+          <tr><td>Sprint 3</td><td>Technical debt</td><td>TD-01..TD-04</td><td class="td-ok">5 Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Specific improvements -->
+  <div class="subsection">
+    <div class="subsection-title">7.2 — Cải Tiến Kỹ Thuật Cụ Thể</div>
+
+    <details open>
+      <summary>🔧 Simplification: ONNX Inference Backend Selection</summary>
+      <div>
+        <p>Hiện tại <code>resolve_inference_backend()</code> có 5 tầng với logic phức tạp. Đề xuất làm rõ priority order và fail-fast behavior:</p>
+        <pre>
+Priority (enforced, not preference):
+1. TeraEdge Desktop LAN (mDNS, latency < 50ms, load < 80%) → RemoteDesktop
+2. Local model (RAM sufficient AND battery > 30%) → Local
+3. VPS Enclave (internet available) → VpsEnclave
+4. Downgrade model tier + retry → LowerTierLocal
+5. All unavailable → Unavailable (không phải error, feature gracefully absent)
+
+Key clarification cần thêm vào spec:
+- "RAM sufficient" = available_ram_mb > 100 (Tiny) or > 200 (Base)
+- Thermal state critical → skip LocalBattery, jump to step 3
+- Desktop offline mid-inference: retry once (3s timeout) → then VPS or Tiny local</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>🔧 Cải tiến: IPC Bridge Dart FFI Transaction Timeout</summary>
+      <div>
+        <p>Hiện tại khi TTL timeout, emit <code>IpcSignal::TransactionTimeout</code> và UI hiển thị "Session expired". Nhưng không rõ: (1) TTL bao lâu? (2) Ai set TTL? (3) Retry policy?</p>
+        <pre>
+Đề xuất làm rõ:
+- TTL mặc định: 30s cho media operations, 5s cho text operations
+- Set bởi Rust Core (không phải UI — UI không biết TTL)
+- Timeout flow:
+    tera_buf_acquire(op_id) → token valid
+    [30s elapsed, no releaseNow()]
+    → Rust Core emits IpcSignal::TransactionTimeout
+    → token revoked
+    → UI displays "Session expired — please retry"
+    → GC Finalizer sẽ catch nếu buffer vẫn referenced (WARNING metric)
+
+Không cần retry tự động — retry là trách nhiệm của UI action (user retriggers)</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>🔧 Cải tiến: EMDP Key Escrow — Tainted Escrow Long-term Fix</summary>
+      <div>
+        <p>Khi Shun xảy ra trong EMDP và poisoned node đã nhận EmdpKeyEscrow, toàn bộ EMDP window messages bị tainted. Workaround hiện tại (TempGroupKey) là accepted risk. Long-term fix:</p>
+        <pre>
+Đề xuất (Sprint 3 / TD-01):
+Desktop pre-provision N escrow keys trước khi offline:
+  EmdpKeyEscrow_1 = ECIES.encrypt(iOS_device_1_pubkey, relay_session_key_1)
+  EmdpKeyEscrow_2 = ECIES.encrypt(iOS_device_2_pubkey, relay_session_key_2)
+  ...
+
+Nếu Tactical Relay bị Shun:
+  Next highest-battery iOS device nhận EmdpKeyEscrow_N → assume role
+  Không cần TempGroupKey workaround
+  Không có tainted escrow risk
+
+Implementation note: Desktop cần biết trước identity của potential relays
+→ BLE peer discovery phải chạy TRƯỚC khi Desktop offline</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>🔧 Đơn giản hóa: License Validation Strategy</summary>
+      <div>
+        <p>Cryptographic entanglement (DeviceIdentityKey + LicenseToken + CurrentEpoch → MasterUnlockKey) là thiết kế thông minh nhưng tạo ra coupling chặt. Đề xuất kiểm tra thực tế:</p>
+        <pre>
+Scenario analysis:
+- License JWT expired → MasterUnlockKey sai → cold_state.db = rác → User bị lock
+  → Q: Có recovery path không nếu license renewal bị trễ?
+  → A hiện tại: Grace period T+0 chat/mesh continue. Đủ.
+
+- Device re-enrollment → DeviceIdentityKey mới → MasterUnlockKey mới
+  → cold_state.db cũ không decrypt được
+  → Q: recovery từ hot_dag.db rebuild có đủ không?
+  → A: Có, đây là DB-02 safety net. OK.
+
+- Epoch rotation → MasterUnlockKey thay đổi nếu CurrentEpoch là input
+  → Q: MasterUnlockKey update mỗi epoch hay one-time?
+  → CẦN LÀM RÕ: Nếu per-epoch, mỗi epoch rotation cần re-derive master key
+    và có thể cần re-encrypt cold_state.db. Chi phí này cần được documented.</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>🔧 Bổ sung thiếu: CRDT Tombstone GC Policy Explicit Definition</summary>
+      <div>
+        <p>Tombstone GC chỉ xảy ra khi <code>tombstone.clock ≤ MVC</code> (Merged Vector Clock). Nhưng: (1) MVC được cập nhật như thế nào và khi nào? (2) Mesh partition kéo dài bao lâu thì MVC bị stale? (3) 7-day hot DAG eviction suspension khi Mesh active — rõ ràng. Nhưng 7 ngày được tính từ khi nào (message created hay last merge)?</p>
+        <pre>
+Cần làm rõ trong spec:
+- MVC update trigger: sau mỗi Gossip round khi ≥ M peers ACK
+- MVC staleness threshold: không GC nếu bất kỳ peer nào offline > 48h
+- 7-day eviction: tính từ tombstone.clock (event time), không phải server receipt time
+- Emergency override: CISO có thể force GC via Admin Console (với audit log)</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>🔧 Bổ sung: Observability Coverage Gaps</summary>
+      <div>
+        <p>Một số metric quan trọng chưa được spec trong ClientMetricBatch:</p>
+        <pre>
+Missing metrics (đề xuất thêm):
+- emdp_activations_total          // Bao nhiêu lần EMDP được kích hoạt
+- mesh_store_forward_bytes_total   // Lưu lượng qua BLE store-forward
+- wasm_host_abi_calls_total        // Host function call rate per .tapp
+- onnx_offload_requests_total      // ONNX offload usage pattern
+- dag_merge_p99_ms                 // Merge latency distribution (chỉ có avg hiện tại)
+- cold_state_rebuild_count         // Tần suất DB rebuild (reliability indicator)
+
+Missing alert rules:
+- wal_size_mb > 150 (mobile): trigger proactive VACUUM (không chờ 200MB ceiling)
+- nse_circuit_breaker_trips > 5/day: potential iOS memory configuration issue
+- ffi.gc_finalizer_release.count > 0: code quality issue, needs developer review</pre>
+      </div>
+    </details>
+  </div>
+
+  <!-- Architecture guardrails -->
+  <div class="subsection">
+    <div class="subsection-title">7.3 — Guardrails Không Được Thay Đổi</div>
+
+    <div class="callout callout-red">
+      <p><strong>Các quyết định kiến trúc bất biến — không được thay đổi dù có lý do gì:</strong></p>
+    </div>
+
+    <ul class="styled block-list">
+      <li><strong>Native Crypto Offloading:</strong> WASM không tự chạy crypto. Mọi op qua Rust Core Host ABI. 150–500× throughput advantage. Không exception.</li>
+      <li><strong>wasm3 trên iOS:</strong> iOS W^X policy prohibits JIT. wasm3 pure interpreter là giải pháp duy nhất. WasmParity CI gate validate behavioral equivalence với wasmtime.</li>
+      <li><strong>Stateless VPS relay:</strong> EMDP journal trong client hot_dag.db. Không lưu journal server-side — vi phạm zero-knowledge và stateless invariant.</li>
+      <li><strong>iOS election_weight = 0:</strong> iOS không bao giờ là Mesh Dictator. Jetsam có thể kill process bất kỳ lúc nào — không reliable làm DAG merge authority.</li>
+      <li><strong>Enterprise-only positioning:</strong> Không consumer pricing, không public marketplace, không self-service signup. B2B annual contract model là duy nhất.</li>
+      <li><strong>ring crate only for crypto:</strong> Không self-implement bất kỳ cryptographic primitive nào. Không swap sang alternative crypto crates mà không extensive security review.</li>
+    </ul>
+  </div>
+
+  <!-- Summary scorecard -->
+  <div class="subsection">
+    <div class="subsection-title">7.4 — Tổng Kết Đánh Giá</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dimension</th><th>Score</th><th>Đánh giá</th><th>Priority</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Cryptographic Architecture</td><td class="td-ok">9/10</td><td>MLS RFC 9420 đúng chuẩn, PQ-KEM forward-looking, ZeroizeOnDrop consistent</td><td>Maintain</td></tr>
+          <tr><td>Zero-Knowledge Integrity</td><td class="td-ok">9/10</td><td>Server genuinely blind. Token Protocol FFI sound. Stateless relay invariant correct.</td><td>Maintain</td></tr>
+          <tr><td>Offline/Mesh Design</td><td class="td-ok">8/10</td><td>EMDP novel và đúng. Border Node heuristics cần clarification.</td><td>Clarify</td></tr>
+          <tr><td>CI/CD & Build Pipeline</td><td class="td-err">5/10</td><td>3 blockers chưa implement. Code signing critical path missing.</td><td>Sprint 1 priority</td></tr>
+          <tr><td>iOS Platform Integration</td><td class="td-warn">7/10</td><td>NSE budget analysis đúng. CallKit integration sound. ONNX prohibition cần enforce.</td><td>Fix NSE policy</td></tr>
+          <tr><td>Android Integration</td><td class="td-warn">7/10</td><td>Doze mitigation pattern solid. FCM throttle workaround complete.</td><td>Minor fixes</td></tr>
+          <tr><td>Documentation Completeness</td><td class="td-warn">7/10</td><td>Feature_Spec.md đã đầy đủ sau v0.4.0. Vài algorithmic gaps cần làm rõ.</td><td>Incremental</td></tr>
+          <tr><td>Observability</td><td class="td-warn">7/10</td><td>Stack tốt (OTEL + Prometheus + Loki). Một số metric gaps cần bổ sung.</td><td>Nice-to-have</td></tr>
+          <tr><td>Deployment Simplicity</td><td class="td-ok">9/10</td><td>Single binary, 5-minute setup là genuine differentiator. Đúng với promise.</td><td>Maintain</td></tr>
+          <tr><td>Security Attack Surface</td><td class="td-ok">8/10</td><td>WASM sandbox sound. OPA gating correct. EMDP Shun deadlock cần fix.</td><td>Fix BL-02</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-green">
+      <p><strong>Kết luận tổng quan:</strong> TeraChat có kiến trúc nền tảng vững chắc với các quyết định cryptographic đúng đắn. 3 Blockers là infrastructure/tooling gaps — không phải design flaws. Sau khi fix Sprint 1, hệ thống có đủ điều kiện cho enterprise pilot. Gov/Military deployment cần hoàn thành thêm Chaos Engineering test suite (28 scenarios) và ISO 27001 certification.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="padding: 40px 64px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; justify-content: space-between; align-items: center;">
+  <div>
+    <div style="font-family: 'Libre Baskerville', serif; font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #00cfbe, #d4a843); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">TeraChat</div>
+    <div style="font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 4px;">TECHNICAL AUDIT REPORT · v1.0</div>
+  </div>
+  <div style="font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-align: right; line-height: 1.8;">
+    Generated: 2026-03-24<br>
+    Source: 9 spec files (TERA-CORE, TERA-FEAT, TERA-DESIGN, TERA-FUNC,<br>
+    TERA-MKT, TERA-TEST, TERA-BIZ, TERA-INTRO, TERA-ARRANGE)<br>
+    Classification: INTERNAL / TECH LEAD REVIEW
+  </div>
+</footer>
+
+</main>
+
+<script>
+// Active nav link on scroll
+const sections = document.querySelectorAll('section[id], header[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { threshold: 0.2, rootMargin: '-100px 0px -60% 0px' });
+
+sections.forEach(sec => observer.observe(sec));
+
+// Smooth scroll for nav links
+navLinks.forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>
