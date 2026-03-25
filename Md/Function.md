@@ -4,9 +4,9 @@
 # DOCUMENT IDENTITY
 id:       "TERA-FUNC"
 title:    "TeraChat — Enterprise Function & Capability Blueprint"
-version:  "0.3.7"
+version:  "1.1.0"
 status:   "ACTIVE"
-date:     "2026-03-23"
+date:     "2026-03-25"
 audience: "Product Manager, Enterprise Sales, Solution Architect, C-Suite, Investor"
 purpose:  "Mô tả toàn bộ năng lực chức năng của TeraChat từ góc độ doanh nghiệp:
            access model, modules, enterprise controls, và giá trị kinh doanh."
@@ -24,25 +24,15 @@ ai_routing_hint: |
 
 ## Mô hình Truy cập Doanh nghiệp
 
-**TeraChat không có tài khoản cá nhân.**
+**TeraChat không có tài khoản cá nhân.** Mọi người dùng thuộc về một tổ chức có license. Không thể đăng ký, không thể tự cài và dùng độc lập — đây là thuộc tính thiết kế, không phải hạn chế kỹ thuật.
 
-Mọi người dùng thuộc về một tổ chức có license. Không thể đăng ký, không thể tự cài và dùng độc lập. Đây là thuộc tính thiết kế, không phải hạn chế kỹ thuật:
-
-```
-Tổ chức có License JWT hợp lệ
-         ↓
-IT Admin triển khai TeraRelay (5 phút)
-         ↓  
-IT Admin phân phát app qua MDM/enterprise store
-         ↓
-Nhân viên cài đặt → app xác thực license trước khi mở
-         ↓
-Không có license = màn hình "Liên hệ IT Admin của bạn"
-```
+> Chi tiết đầy đủ về License-Gated Architecture và phân tầng tổ chức: xem **Introduction.md §2**.
 
 ---
 
 ## Module 1 — Lõi Mật mã & Quản lý Khóa
+
+> **Technical Spec:** Core_Spec.md §5 (Crypto), §5.1 (HKMS), §5.3 (MLS) · Feature_Spec.md §F-01
 
 ### 1.1 Hệ thống Quản lý Khóa Phân tầng (HKMS)
 
@@ -82,6 +72,8 @@ Không có license = màn hình "Liên hệ IT Admin của bạn"
 
 ## Module 2 — Nhắn tin, Cộng tác & Thoại/Video
 
+> **Technical Spec:** Core_Spec.md §7 (CRDT), §8 (Messaging) · Feature_Spec.md §F-01, §F-06, §F-09
+
 ### 2.1 Engine Nhắn tin
 
 - E2EE đa phương thức: văn bản, file, thoại, video — encrypt/decrypt tại thiết bị
@@ -109,6 +101,8 @@ Không có license = màn hình "Liên hệ IT Admin của bạn"
 
 ## Module 3 — Survival Mesh Network
 
+> **Technical Spec:** Core_Spec.md §6 (Mesh) · Feature_Spec.md §F-05
+>
 > Khi Internet sụp đổ, TeraChat không suy giảm. Nó kích hoạt mạng P2P tự tổ chức, zero-trust, không cần server.
 
 ### 3.1 Mô hình Kết nối 4 Tầng
@@ -145,6 +139,8 @@ Kích hoạt khi: không có Desktop + không Internet + ≥ 2 iOS + battery > 2
 
 ## Module 4 — AI Privacy Shield
 
+> **Technical Spec:** Core_Spec.md §3.3 (Memory), §4.4 (Component Isolation) · Feature_Spec.md §F-10, §INFRA-07, §INFRA-08
+>
 > AI worker không bao giờ truy cập database tin nhắn trực tiếp. PII luôn được redact trước bất kỳ cuộc gọi nào ra ngoài thiết bị.
 
 ### 4.1 Pipeline AI Cô lập
@@ -169,13 +165,13 @@ SessionVault.restore_and_drop() — alias map zeroized
 
 ### 4.2 AI Runtime Theo Platform
 
-| Platform | Runtime | Model tối đa | Ghi chú |
-|---------|---------|-------------|---------|
-| iOS | CoreML (.mlmodelc) | 74MB / 39MB | Không dynamic WASM AI (W^X) |
-| Android | ONNX Runtime | 39MB | HiAI fallback trên Huawei |
-| Huawei | HiAI / ONNX | 39MB | AOT bundle only |
-| macOS | CoreML / ONNX | 74MB | Isolated XPC Worker |
-| Windows/Linux | ONNX Runtime | 74MB | CPU; GPU optional |
+| Platform | Runtime | Ghi chú |
+|---------|---------|--------|
+| iOS | CoreML | Không dynamic WASM AI (W^X constraint) |
+| Android | ONNX Runtime | HiAI fallback trên Huawei |
+| Huawei | HiAI / ONNX | AOT bundle only |
+| macOS | CoreML / ONNX | Isolated XPC Worker process |
+| Windows/Linux | ONNX Runtime | CPU; GPU optional |
 
 ### 4.3 Mức Kiểm soát AI (IT Admin Configured)
 
@@ -188,6 +184,8 @@ SessionVault.restore_and_drop() — alias map zeroized
 ---
 
 ## Module 5 — Enterprise Plugin Ecosystem (.tapp)
+
+> **Technical Spec:** Core_Spec.md §4.1 (Sandbox), §4.4 (Fault Isolation) · Feature_Spec.md §F-07, §F-08
 
 ### 5.1 Mô hình Quản trị
 
@@ -212,6 +210,8 @@ Khi Mesh Mode active, tất cả .tapp terminate ngay lập tức. CPU/RAM reser
 ---
 
 ## Module 6 — Identity, RBAC & Enterprise Controls
+
+> **Technical Spec:** Core_Spec.md §5.1 (Identity), §5.2 (Key Hierarchy) · Feature_Spec.md §F-11, §F-12, §F-13
 
 ### 6.1 Role-Based Access Control
 
@@ -265,6 +265,8 @@ Khi HR system gửi `SCIM DELETE /Users/{id}`:
 
 ## Module 7 — Federation & Cross-Org Communication
 
+> **Technical Spec:** Core_Spec.md §9.6 (Federation) · Feature_Spec.md §F-13
+
 ### 7.1 Kiến trúc
 
 - Mỗi tổ chức vận hành Private Cluster độc lập với encryption boundary riêng
@@ -285,6 +287,8 @@ Phù hợp cho:
 ---
 
 ## Module 8 — Compliance, DLP & Audit
+
+> **Technical Spec:** Core_Spec.md §12.4 (Compliance) · Feature_Spec.md §F-11, §F-13
 
 ### 8.1 Data Loss Prevention
 
@@ -308,16 +312,20 @@ Phù hợp cho:
 
 ## Module 9 — Infrastructure & Deployment
 
+> **Technical Spec:** Core_Spec.md §9 (Infrastructure) · Feature_Spec.md §INFRA-01–09
+
 ### 9.1 Deployment Tiers
 
-| Tier | VPS Spec | Setup Time | Phù hợp |
-|------|---------|-----------|---------|
-| Solo (≤ 50 users) | 1 vCPU, 512MB RAM, 20GB SSD | 5 phút | SME, startup |
-| Business (≤ 500) | 2 vCPU, 2GB RAM, 40GB SSD | 10 phút | Mid-size |
-| Enterprise (≤ 5000) | 4 vCPU, 8GB RAM, 100GB SSD | 20 phút | Large org |
-| Gov (air-gapped) | Existing hardware | 1–4 giờ | Government, defense |
+| Tier | Users | VPS Spec | Setup Time | Phù hợp |
+|------|-------|---------|-----------|----------|
+| Business | ≤ 100 | 1 vCPU, 512MB RAM | 5 phút | SME, startup |
+| Enterprise | ≤ 500 | 2 vCPU, 2GB RAM | 10 phút | Mid-size |
+| Enterprise+ | ≤ 1,000 | 4 vCPU, 8GB RAM | 20 phút | Large org |
+| Gov/Military | Custom | Existing hardware | 1–4 giờ | Government, defense |
 
-Single Rust binary. Không cluster coordination. Không Kubernetes. Không PostgreSQL cluster.
+Single Rust binary. Không cluster coordination. Không Kubernetes.
+
+> **Lưu ý:** PostgreSQL chỉ dùng cho relay-side (server) khi triển khai Enterprise+ và Gov/Military. Client-side hoàn toàn sử dụng SQLite encrypted.
 
 ### 9.2 Performance Targets
 
@@ -335,16 +343,18 @@ Single Rust binary. Không cluster coordination. Không Kubernetes. Không Postg
 
 ## Licensing & Service Tiers
 
-| Feature | Business | Enterprise | Gov/Military |
-|---------|----------|------------|--------------|
-| Offline Mesh TTL | 7 ngày | 30 ngày | 30 ngày |
-| EMDP Tactical Relay | ✓ | ✓ | ✓ |
-| Air-Gapped License | — | ✓ | ✓ |
-| Compliance Retention | 90 ngày | 1 năm | 7 năm |
-| Chaos Engineering Cert | — | Optional | **Bắt buộc** |
-| Intel SGX / TEE | — | — | Available |
-| Federation | ✓ | ✓ | Air-gapped option |
-| AI Token Quota | 50K/tháng/workspace | Unlimited | Unlimited + local-only |
+| Feature | Business | Enterprise | Enterprise+ | Gov/Military |
+|---------|----------|------------|-------------|-------------|
+| Offline Mesh TTL | 7 ngày | 7 ngày | 30 ngày | 30 ngày |
+| EMDP Tactical Relay | ✓ | ✓ | ✓ | ✓ |
+| Air-Gapped License | — | — | ✓ | ✓ |
+| Compliance Retention | — | 90 ngày | 1 năm | 7 năm |
+| Chaos Engineering Cert | — | — | Optional | **Bắt buộc** |
+| Intel SGX / TEE | — | — | — | Available |
+| Federation mTLS | — | — | ✓ | Air-gapped option |
+| AI Token Quota | 50K/tháng/workspace | Unlimited | Unlimited | Unlimited + local-only |
+
+> **Giá chi tiết:** Xem `Pricing_Packages.html` — single source of truth cho enterprise pricing.
 
 **Open-Core Boundary:**
 
@@ -369,20 +379,6 @@ Single Rust binary. Không cluster coordination. Không Kubernetes. Không Postg
 
 ---
 
-## Document Navigation Map
-
-| Audience | Document | Nội dung |
-|---------|---------|---------|
-| Developer (Client) | `Feature_Spec.md` → TERA-FEAT | IPC, OS hooks, platform behavior |
-| System Architect | `Core_Spec.md` → TERA-CORE | MLS, CRDT, Mesh, infrastructure |
-| Designer | `Design.md` → TERA-DESIGN | UI state machine, animations |
-| Plugin Developer | `Web_Marketplace.md` → TERA-MKT | .tapp lifecycle, WASM sandbox |
-| QA / Security | `TestMatrix.md` → TERA-TEST | Chaos scenarios |
-| Investor | `Executive_Summary.html` | Investment thesis |
-| Sales | `Pricing_Packages.html` | Enterprise pricing |
-
----
-
 *TeraChat — Hệ điều hành Công việc Chủ quyền. Trao lại chủ quyền số cho người tiên phong.*
 
-*TERA-FUNC v1.0.0 · 2026-03-23*
+*TERA-FUNC v1.1.0 · 2026-03-25*

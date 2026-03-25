@@ -579,7 +579,9 @@ Tuân thủ chuẩn CNSA 2.0 và NSA SNDL/HNDL requirements.
 
 #### Database Layer
 
-**PostgreSQL HA:**
+**PostgreSQL HA (Relay-Side Only — Enterprise+ / Gov/Military):**
+
+> **Clarification:** PostgreSQL chỉ sử dụng cho relay server (store-and-forward metadata, user directory). Client-side hoàn toàn dùng SQLite encrypted. Deployment Business/Enterprise tier KHÔNG yêu cầu PostgreSQL.
 
 - ☁️🗄️ pgRepmgr + PgPool — Failover tự động, streaming replication.
 - ☁️🗄️ Geo-Partitioning cho quy mô 100k+ user.

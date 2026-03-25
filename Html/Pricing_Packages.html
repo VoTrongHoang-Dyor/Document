@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TeraChat — Enterprise Pricing 2026</title>
+<title>TeraChat — Enterprise Pricing Blueprint</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -42,27 +42,27 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 /* COVER */
 .cover{min-height:80vh;display:flex;flex-direction:column;justify-content:center;padding:80px 56px;position:relative;overflow:hidden;}
 .cover-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,180,216,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,216,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent);}
-.cover-inner{position:relative;z-index:1;max-width:900px;}
+.cover-inner{position:relative;z-index:1;max-width:950px;}
 .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:16px;}
-.cover-title{font-family:'Syne',sans-serif;font-size:clamp(52px,8vw,96px);font-weight:800;line-height:.9;margin-bottom:20px;letter-spacing:-2px;}
+.cover-title{font-family:'Syne',sans-serif;font-size:clamp(46px,7vw,86px);font-weight:800;line-height:1;margin-bottom:20px;letter-spacing:-2px;}
 .cover-title em{background:linear-gradient(135deg,var(--teal) 0%,var(--teal2) 50%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:normal;}
-.cover-sub{font-size:16px;font-weight:300;color:var(--mid);max-width:560px;margin-bottom:48px;line-height:1.7;}
+.cover-sub{font-size:16px;font-weight:300;color:var(--mid);max-width:720px;margin-bottom:48px;line-height:1.7;}
 .cover-notice{display:inline-flex;align-items:center;gap:10px;background:rgba(0,180,216,.08);border:1px solid rgba(0,180,216,.3);border-radius:8px;padding:12px 20px;font-size:13px;margin-bottom:40px;}
 .cover-notice-icon{font-size:18px;}
 .cover-notice strong{color:var(--teal);}
 .kpi-row{display:flex;gap:2px;}
-.kpi{background:var(--glass);border:1px solid var(--gb);backdrop-filter:blur(12px);padding:20px 24px;flex:1;max-width:180px;}
+.kpi{background:var(--glass);border:1px solid var(--gb);backdrop-filter:blur(12px);padding:20px 24px;flex:1;max-width:200px;}
 .kpi:first-child{border-radius:10px 0 0 10px;}
 .kpi:last-child{border-radius:0 10px 10px 0;}
 .kpi-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1;}
 .kpi-val em{color:var(--teal);font-style:normal;}
-.kpi-lbl{font-size:10px;color:var(--mid);margin-top:5px;letter-spacing:.3px;line-height:1.4;}
+.kpi-lbl{font-size:11px;color:var(--mid);margin-top:5px;letter-spacing:.3px;line-height:1.4;}
 
 /* SECTION */
 .label{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:8px;}
 .sec-title{font-family:'Syne',sans-serif;font-size:clamp(20px,2.8vw,34px);font-weight:700;line-height:1.2;margin-bottom:8px;}
 .rule{width:44px;height:3px;background:linear-gradient(to right,var(--teal),var(--gold));border-radius:2px;margin-bottom:28px;}
-.lead{font-size:14px;color:rgba(255,255,255,.65);max-width:680px;margin-bottom:28px;line-height:1.75;}
+.lead{font-size:14px;color:rgba(255,255,255,.65);max-width:720px;margin-bottom:28px;line-height:1.75;}
 
 /* PRICING TIERS */
 .tier-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0;}
@@ -100,7 +100,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .tc-cta-ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.75);}
 .tc-div{height:1px;background:rgba(255,255,255,.07);margin-bottom:18px;}
 .tc-feats{list-style:none;}
-.tc-feats li{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:rgba(255,255,255,.7);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.45;}
+.tc-feats li{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:rgba(255,255,255,.7);padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.45;}
 .tc-feats li::before{content:'→';color:var(--teal);font-size:10px;margin-top:2px;flex-shrink:0;}
 .premium-card .tc-feats li::before{color:var(--gold);}
 
@@ -169,8 +169,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .blist li{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12.5px;color:rgba(255,255,255,.7);line-height:1.5;}
 .blist li::before{content:'▸';color:var(--teal);font-size:10px;margin-top:2px;flex-shrink:0;}
 
-@media(max-width:1000px){.tier-grid{grid-template-columns:1fr 1fr;}}
-@media(max-width:700px){.tier-grid,.g2,.g3,.g4,.charts2{grid-template-columns:1fr;}.sec,.cover{padding:52px 28px;}}
+@media(max-width:1100px){.tier-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.tier-grid,.g2,.g3,.g4,.charts2,.mrow{grid-template-columns:1fr; flex-direction:column;}.sec,.cover{padding:52px 28px;}}
 </style>
 </head>
 <body>
@@ -180,9 +180,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="dot" data-label="Tổng quan" onclick="scrollToId('cover')"></div>
   <div class="dot" data-label="Gói Giá" onclick="scrollToId('s1')"></div>
   <div class="dot" data-label="Tính Năng" onclick="scrollToId('s2')"></div>
-  <div class="dot" data-label="Professional" onclick="scrollToId('s3')"></div>
+  <div class="dot" data-label="Dịch vụ" onclick="scrollToId('s3')"></div>
   <div class="dot" data-label="Add-ons" onclick="scrollToId('s4')"></div>
-  <div class="dot" data-label="Enterprise" onclick="scrollToId('s5')"></div>
+  <div class="dot" data-label="Hợp đồng" onclick="scrollToId('s5')"></div>
   <div class="dot" data-label="Thanh Toán" onclick="scrollToId('s6')"></div>
   <div class="dot" data-label="ROI" onclick="scrollToId('s7')"></div>
   <div class="sidenav-line"></div>
@@ -190,160 +190,131 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <div class="main">
 
-<!-- COVER -->
 <section class="cover" id="cover">
   <div class="cover-grid"></div>
   <div class="cover-inner">
-    <p class="eyebrow">Enterprise Pricing Guide · Q2 2026</p>
-    <h1 class="cover-title">Tera<em>Chat</em><br>Enterprise Pricing</h1>
-    <p class="cover-sub">License doanh nghiệp theo workspace. Annual contract. Không tính phí per-seat cho standard tiers. Toàn quyền kiểm soát dữ liệu từ ngày đầu.</p>
+    <p class="eyebrow">Enterprise Pricing Guide & Platform Architecture · Q2 2026</p>
+    <h1 class="cover-title">Tera<em>Chat</em> Enterprise<br>Pricing Blueprint</h1>
+    <p class="cover-sub">Nền tảng Tích hợp: Năng lực điện toán AI bảo mật, Quản trị định danh tập trung (AD/SCIM) và Chủ quyền dữ liệu tuyệt đối. Kiến trúc phân tán theo chuẩn BYOM, SLA 99.999%. Không giới hạn lưu trữ hạ tầng.</p>
 
     <div class="cover-notice">
       <span class="cover-notice-icon">🔒</span>
-      <div><strong>Enterprise-Only Product</strong> — TeraChat không có tài khoản cá nhân. Mọi truy cập yêu cầu License JWT hợp lệ từ tổ chức. Không có self-service signup.</div>
+      <div><strong>Enterprise-Only Product</strong> — Không có tài khoản cá nhân. Mọi người dùng đều bị ràng buộc bởi License JWT, OPA Policies và công cụ quản trị thiết bị (MDM) của tổ chức.</div>
     </div>
 
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-val"><em>$1.5K</em></div><div class="kpi-lbl">Business / tháng<br>≤ 50 seats · Annual</div></div>
-      <div class="kpi"><div class="kpi-val"><em>$4K</em></div><div class="kpi-lbl">Enterprise / tháng<br>≤ 200 seats · Annual</div></div>
-      <div class="kpi"><div class="kpi-val"><em>$10K</em></div><div class="kpi-lbl">Enterprise+ / tháng<br>≤ 1,000 seats</div></div>
-      <div class="kpi"><div class="kpi-val"><em>Custom</em></div><div class="kpi-lbl">Gov/Military<br>3-year minimum</div></div>
+      <div class="kpi"><div class="kpi-val"><em>$6K</em></div><div class="kpi-lbl">Business / năm<br>≤ 100 nhân sự</div></div>
+      <div class="kpi"><div class="kpi-val"><em>$24K</em></div><div class="kpi-lbl">Enterprise / năm<br>≤ 500 nhân sự</div></div>
+      <div class="kpi"><div class="kpi-val"><em>$48K</em></div><div class="kpi-lbl">Enterprise+ / năm<br>≤ 1,000 nhân sự</div></div>
+      <div class="kpi"><div class="kpi-val"><em>Custom</em></div><div class="kpi-lbl">Gov/Military<br>Min $96K / năm</div></div>
     </div>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- S1: GÓI GIÁ -->
 <section class="sec reveal" id="s1">
   <div class="label">01 — ENTERPRISE TIERS</div>
-  <h2 class="sec-title">Pricing Tiers</h2>
+  <h2 class="sec-title">Bảng Giá Linh Hoạt (Hybrid Cloud & Quản Trị Lõi)</h2>
   <div class="rule"></div>
-  <p class="lead">Tất cả gói yêu cầu annual contract (12 tháng tối thiểu). Monthly billing khả dụng với +25% surcharge. Pilot program 90 ngày có sẵn cho qualified prospects qua engagement với Sales team.</p>
+  <p class="lead">Tất cả gói giá đều cho phép doanh nghiệp tự kiểm soát hạ tầng, không thu phí lưu trữ (storage) hay định mức truy cập. Giảm ngay <strong>25%</strong> khi cam kết hợp đồng thanh toán theo năm.</p>
 
   <div class="tier-grid">
 
-    <!-- Business -->
     <div class="tier-card">
       <div class="tc-label">Business</div>
       <div class="tc-name">Business</div>
-      <div class="tc-desc">Dành cho SME, văn phòng, team từ 10–50 người. Đầy đủ E2EE + Offline Mesh.</div>
-      <div class="tc-price"><span class="amt"><em>$1,500</em></span><span class="tc-period">/ tháng</span></div>
-      <div class="tc-annual">$15,000 / năm · ≤ 50 seats</div>
+      <div class="tc-desc">Dành cho SME. Đồng bộ danh tính, bảo mật thiết bị và sức mạnh AI đám mây trên Local Edge.</div>
+      <div class="tc-price"><span class="amt"><em>$500</em></span><span class="tc-period">/ tháng</span></div>
+      <div class="tc-annual">$6,000 / năm (Đã giảm 25%)</div>
       <a class="tc-cta tc-cta-outline" href="#">Liên Hệ Sales</a>
       <div class="tc-div"></div>
       <ul class="tc-feats">
-        <li>E2EE messaging, voice, video</li>
-        <li>Offline Mesh (BLE + Wi-Fi Direct)</li>
-        <li>Offline TTL: 7 ngày</li>
-        <li>Azure AD / Google Workspace sync</li>
-        <li>Remote Wipe & device management</li>
-        <li>Lưu trữ 100GB blob storage</li>
-        <li>Retention: 90 ngày</li>
-        <li>Email support (business hours)</li>
-        <li>Self-hosted VPS deployment</li>
+        <li>Đồng bộ Azure AD / Google Workspace</li>
+        <li>Quản lý thiết bị & Remote Wipe</li>
+        <li>Zero-Knowledge Server & E2EE</li>
+        <li>Survival Mesh (Offline BLE / Wi-Fi)</li>
+        <li>AI SLM Local & Blind RAG Cơ bản</li>
+        <li>Không giới hạn lưu trữ dữ liệu</li>
+        <li>Hỗ trợ Email (Giờ hành chính)</li>
       </ul>
     </div>
 
-    <!-- Enterprise -->
     <div class="tier-card featured">
-      <div class="tc-badge blue">Phổ Biến</div>
+      <div class="tc-badge blue">Phổ biến</div>
       <div class="tc-label">Enterprise</div>
       <div class="tc-name">Enterprise</div>
-      <div class="tc-desc">Dành cho tổ chức 50–200 người. AI Shield, Federation, full compliance.</div>
-      <div class="tc-price"><span class="amt"><em>$4,000</em></span><span class="tc-period">/ tháng</span></div>
-      <div class="tc-annual">$40,000 / năm · ≤ 200 seats</div>
+      <div class="tc-desc">Tổ chức 100–500 người. Tự động hóa offboarding, API mở rộng và hệ sinh thái Plugin mạnh mẽ.</div>
+      <div class="tc-price"><span class="amt"><em>$2,000</em></span><span class="tc-period">/ tháng</span></div>
+      <div class="tc-annual">$24,000 / năm (Đã giảm 25%)</div>
       <a class="tc-cta tc-cta-teal" href="#">Đặt Lịch Demo</a>
       <div class="tc-div"></div>
       <ul class="tc-feats">
-        <li>Tất cả tính năng Business</li>
-        <li>Offline TTL: 30 ngày</li>
-        <li>SCIM 2.0 auto-offboarding (&lt; 30s)</li>
-        <li>AI SLM on-device + PII Shield</li>
-        <li>Federation (cross-org, sealed sender)</li>
-        <li>Post-Quantum Encryption (ML-KEM-768)</li>
-        <li>Full API Access (4 loại)</li>
-        <li>Lưu trữ 1TB blob storage</li>
-        <li>Retention: 1 năm</li>
+        <li><strong>Tất cả tính năng Business</strong></li>
+        <li>SCIM 2.0 Auto-offboarding (< 30s)</li>
         <li>Enterprise Plugin Registry</li>
-        <li>Dedicated support + SLA 99.9%</li>
-        <li>On-premise deployment option</li>
+        <li>Phát triển ứng dụng .tapp tùy chỉnh</li>
+        <li>Full API Access (4 loại)</li>
+        <li>Cụm VPS Phân tán (SLA 99.999%)</li>
+        <li>Stateless Enclave (Cụm AI vô hình)</li>
+        <li>Hỗ trợ chuyên trách (Dedicated SLA)</li>
       </ul>
     </div>
 
-    <!-- Enterprise+ -->
     <div class="tier-card premium-card">
-      <div class="tc-badge gold">Large Org</div>
+      <div class="tc-badge gold">Tập Đoàn</div>
       <div class="tc-label">Enterprise+</div>
       <div class="tc-name">Enterprise+</div>
-      <div class="tc-desc">Tổ chức 200–1,000 người. Multi-site, HSM-backed, air-gapped option.</div>
-      <div class="tc-price"><span class="amt"><em>$10,000</em></span><span class="tc-period">/ tháng</span></div>
-      <div class="tc-annual">$100,000 / năm · ≤ 1,000 seats</div>
+      <div class="tc-desc">Tổ chức lớn tới 1,000 người. Liên kết đa tổ chức (Federation), vLLM, và kiến trúc độ trễ thấp.</div>
+      <div class="tc-price"><span class="amt"><em>$4,000</em></span><span class="tc-period">/ tháng</span></div>
+      <div class="tc-annual">$48,000 / năm (Đã giảm 25%)</div>
       <a class="tc-cta tc-cta-gold" href="#">Request Proposal</a>
       <div class="tc-div"></div>
       <ul class="tc-feats">
-        <li>Tất cả tính năng Enterprise</li>
-        <li>Offline TTL: 30 ngày</li>
-        <li>HSM FIPS 140-3 key management</li>
-        <li>Shamir Secret Sharing (3-of-5)</li>
-        <li>EMDP Tactical Relay</li>
-        <li>Air-gapped license option</li>
-        <li>Lưu trữ 5TB blob storage</li>
-        <li>Retention: configurable</li>
-        <li>Custom .tapp development (quota)</li>
-        <li>TAM (Technical Account Manager)</li>
-        <li>SLA 99.99% · 24/7 support</li>
+        <li><strong>Tất cả tính năng Enterprise</strong></li>
+        <li>Liên kết tổ chức (Federation mTLS)</li>
+        <li>Động cơ AI vLLM & Continuous Batching</li>
+        <li>Tách biệt cụm Node RAG và Node AI</li>
+        <li>Semantic Caching (Trễ mili-giây)</li>
+        <li>Hỗ trợ .tapp tùy chỉnh nâng cao</li>
+        <li>Dynamic App Attestation (Xác thực sống)</li>
+        <li>Hỗ trợ TAM Chuyên trách 24/7</li>
       </ul>
     </div>
 
-    <!-- Gov/Military -->
     <div class="tier-card gov-card">
       <div class="tc-label">Gov/Military</div>
       <div class="tc-name">Gov / Military</div>
-      <div class="tc-desc">Cơ quan chính phủ, quốc phòng, tình báo. Air-gapped. 3-year contract minimum.</div>
+      <div class="tc-desc">Chính phủ & Quân đội. Chống nội gián, Air-Gapped, bảo mật tài sản trí tuệ và kiểm toán mã nguồn.</div>
       <div class="tc-price"><span class="amt" style="color:rgba(255,255,255,.9)">Custom</span></div>
-      <div class="tc-annual" style="color:rgba(255,255,255,.5);">Liên hệ trực tiếp · Minimum $15K/tháng</div>
+      <div class="tc-annual" style="color:rgba(255,255,255,.5);">Bắt buộc hợp đồng 3 năm · Min $96K/năm</div>
       <a class="tc-cta tc-cta-ghost" href="#">Liên Hệ Trực Tiếp</a>
       <div class="tc-div"></div>
       <ul class="tc-feats">
-        <li>Unlimited seats</li>
-        <li>Air-gapped deployment</li>
-        <li>Offline TTL: 30 ngày</li>
-        <li>Intel SGX / TEE option</li>
-        <li>Chaos Engineering cert (28+ scenarios)</li>
-        <li>Compliance retention: 7 năm</li>
-        <li>AI local-only (không cloud)</li>
-        <li>Custom hardware (TeraEdge)</li>
-        <li>NDA required · Escrow source code</li>
-        <li>Dedicated PSO team onsite</li>
+        <li><strong>Tất cả tính năng Enterprise+</strong></li>
+        <li>Triển khai Air-Gapped & Local IPC</li>
+        <li>Open-Core Auditability (Ký quỹ AGPLv3)</li>
+        <li>Phục hồi Đa chữ ký (Shamir 3-of-5)</li>
+        <li>Anti-Insider Key Ceremony</li>
+        <li>Ruthless Crypto-Shredding (Hủy RAM)</li>
+        <li>Chặn API Tools bảo vệ System Prompt</li>
+        <li>Message Queue Bất đồng bộ Cao cấp</li>
       </ul>
     </div>
 
   </div>
-
-  <div class="mrow">
-    <div class="mc"><div class="mc-val"><em>$15K</em></div><div class="mc-lbl">Business / năm</div><div class="mc-sub">≤ 50 seats</div></div>
-    <div class="mc"><div class="mc-val"><em>$40K</em></div><div class="mc-lbl">Enterprise / năm</div><div class="mc-sub">≤ 200 seats</div></div>
-    <div class="mc"><div class="mc-val"><em>$100K</em></div><div class="mc-lbl">Enterprise+ / năm</div><div class="mc-sub">≤ 1,000 seats</div></div>
-    <div class="mc"><div class="mc-val" style="font-size:18px;">Custom</div><div class="mc-lbl">Gov/Military</div><div class="mc-sub">3-year minimum</div></div>
-  </div>
-
-  <div class="callout">
-    <p><strong>Pilot Program:</strong> Qualified enterprise prospects có thể đăng ký 90-ngày pilot với full Enterprise features. Pilot yêu cầu: minimum 50 users, IT Admin engagement, sign NDA. Liên hệ sales@terachat.io để bắt đầu.</p>
-  </div>
 </section>
 
-<!-- S2: TÍNH NĂNG -->
 <section class="sec reveal" id="s2">
   <div class="label">02 — FEATURE BREAKDOWN</div>
-  <h2 class="sec-title">Feature Comparison</h2>
+  <h2 class="sec-title">Bảng So Sánh Chi Tiết (Quản trị & Kiến trúc AI)</h2>
   <div class="rule"></div>
 
   <div class="feat-wrap">
     <table class="feat-table">
       <thead>
         <tr>
-          <th style="min-width:220px;">Feature</th>
+          <th style="min-width:240px;">Tính năng Doanh nghiệp</th>
           <th>Business</th>
           <th>Enterprise</th>
           <th>Enterprise+</th>
@@ -351,286 +322,171 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </tr>
       </thead>
       <tbody>
-        <tr class="cat-row"><td colspan="5">CORE — Messaging & Communication</td></tr>
-        <tr><td>E2EE Text, Voice, Video (MLS RFC 9420)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Offline Mesh (BLE 5.0 + Wi-Fi Direct)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Offline TTL</td><td class="tlim">7 ngày</td><td class="tlim">30 ngày</td><td class="tlim">30 ngày</td><td class="tok">30 ngày</td></tr>
-        <tr><td>Smart Document + Smart Approval</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Full-text Search (local, zero-knowledge)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>Post-Quantum Encryption (ML-KEM-768)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="cat-row"><td colspan="5">IDENTITY & DEVICE MANAGEMENT (MDM)</td></tr>
+        <tr><td>Đồng bộ Azure AD / Google Workspace</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Quản lý thiết bị & Remote Wipe</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thigh"><td>SCIM 2.0 Auto-offboarding (&lt; 30s)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Smart DLP & Chống quay/chụp màn hình</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thigh"><td>Xác thực Sống (Dynamic App Attestation)</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td></tr>
 
-        <tr class="cat-row"><td colspan="5">SECURITY — Key Management</td></tr>
-        <tr><td>Secure Enclave / StrongBox / TPM 2.0</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Biometric-bound key access</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Remote Wipe (device + keys)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>HSM FIPS 140-3 key management</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>Shamir Secret Sharing (M-of-N)</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>EMDP Tactical Relay (iOS mesh)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>Air-Gapped License</td><td class="tno">—</td><td class="tno">—</td><td class="tlim">Option</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>Intel SGX / TEE</td><td class="tno">—</td><td class="tno">—</td><td class="tno">—</td><td class="tlim">Option</td></tr>
-
-        <tr class="cat-row"><td colspan="5">INTEGRATION — Identity & HR</td></tr>
-        <tr><td>Azure AD / Google Workspace sync</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>SCIM 2.0 auto-offboarding (&lt; 30s)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Okta / OneLogin / SAML SSO</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Federation (cross-org, sealed sender)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tlim">Air-gapped</td></tr>
+        <tr class="cat-row"><td colspan="5">INTEGRATION & ECOSYSTEM</td></tr>
+        <tr><td>Enterprise Plugin Registry</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">Kiểm duyệt kín</td></tr>
         <tr><td>Full API Access (4 loại)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thigh"><td>Phát triển ứng dụng .tapp tùy chỉnh</td><td class="tno">—</td><td class="tlim">Cơ bản</td><td class="tok">Nâng cao</td><td class="tok">Tối đa</td></tr>
+        <tr class="thigh"><td>Liên kết tổ chức (Federation mTLS)</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">Zone 2 Secure</td></tr>
 
-        <tr class="cat-row"><td colspan="5">AI — Privacy-First Intelligence</td></tr>
-        <tr class="thigh"><td>AI SLM on-device (zero cloud)</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">Local only</td></tr>
-        <tr class="thigh"><td>PII redaction trước mọi AI call</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>AI Token Quota / tháng / workspace</td><td class="tno">—</td><td class="tlim">50K tokens</td><td class="tok">Unlimited</td><td class="tok">Unlimited</td></tr>
+        <tr class="cat-row"><td colspan="5">CORE INFRASTRUCTURE & AI ENCLAVE</td></tr>
+        <tr><td>Zero-Knowledge Server & Stateless Enclave</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Không giới hạn Storage & Offline TTL</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Blind RAG (Mã hóa Vector Cục bộ)</td><td class="tok">Cơ bản</td><td class="tok">Nâng cao</td><td class="tok">Tách Node</td><td class="tok">Tối đa</td></tr>
+        <tr><td>Bring Your Own Model (BYOM)</td><td class="tlim">1 Mô hình SLM</td><td class="tok">Đa mô hình</td><td class="tok">Đa mô hình</td><td class="tok">Không giới hạn</td></tr>
+        <tr class="thigh"><td>vLLM PagedAttention & Continuous Batching</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Semantic Caching (Bộ nhớ đệm ngữ nghĩa)</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td></tr>
 
-        <tr class="cat-row"><td colspan="5">PLUGINS — Enterprise Plugin Registry</td></tr>
-        <tr><td>3 Native plugins (Calendar, Notes, Tasks)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>Enterprise Plugin Registry access</td><td class="tno">—</td><td class="tok">IT Admin deploy</td><td class="tok">IT Admin deploy</td><td class="tok">Vetted only</td></tr>
-        <tr class="thigh"><td>Custom .tapp development</td><td class="tno">—</td><td class="tno">—</td><td class="tlim">Quota included</td><td class="tok">Bespoke</td></tr>
-
-        <tr class="cat-row"><td colspan="5">ADMIN — Management & Compliance</td></tr>
-        <tr><td>Admin Console (web + mobile read-only)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>OPA Policy customization</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>Tamper-proof Audit Log (Ed25519)</td><td class="tlim">Basic</td><td class="tok">Full</td><td class="tok">Full + SIEM</td><td class="tok">Full + 7yr</td></tr>
-        <tr class="thigh"><td>Compliance retention</td><td class="tlim">90 ngày</td><td class="tlim">1 năm</td><td class="tlim">Configurable</td><td class="tok">7 năm</td></tr>
-        <tr class="thigh"><td>Chaos Engineering certification</td><td class="tno">—</td><td class="tlim">Optional</td><td class="tlim">Optional</td><td class="tok">Bắt buộc</td></tr>
-
-        <tr class="cat-row"><td colspan="5">DEPLOYMENT</td></tr>
-        <tr><td>Self-hosted VPS (1 binary)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr><td>On-premise server</td><td class="tno">—</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
-        <tr class="thigh"><td>Air-gapped (zero internet)</td><td class="tno">—</td><td class="tno">—</td><td class="tlim">Option</td><td class="tok">✓</td></tr>
-        <tr><td>SLA uptime</td><td class="tlim">99.5%</td><td class="tlim">99.9%</td><td class="tok">99.99%</td><td class="tok">Custom</td></tr>
+        <tr class="cat-row"><td colspan="5">SECURITY & CRYPTOGRAPHY</td></tr>
+        <tr><td>Mã hóa Hậu lượng tử (ML-KEM-768)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr><td>Survival Mesh (BLE 5.0 + Wi-Fi Direct)</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td><td class="tok">✓</td></tr>
+        <tr class="thigh"><td>Phục hồi Đa chữ ký (Shamir 3-of-5)</td><td class="tno">—</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td></tr>
+        <tr class="thigh"><td>Chống Nội gián (Anti-Insider Key Ceremony)</td><td class="tno">—</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td></tr>
+        <tr class="thigh"><td>Air-Gapped & Local IPC (Cô lập Internet)</td><td class="tno">—</td><td class="tno">—</td><td class="tno">—</td><td class="tok">✓</td></tr>
+        <tr><td>Open-Core Auditability (Ký quỹ AGPLv3)</td><td class="tno">—</td><td class="tno">—</td><td class="tno">—</td><td class="tok">Bắt buộc</td></tr>
       </tbody>
     </table>
   </div>
 </section>
 
-<!-- S3: PROFESSIONAL SERVICES -->
 <section class="sec reveal" id="s3">
   <div class="label">03 — PROFESSIONAL SERVICES</div>
-  <h2 class="sec-title">Professional Services</h2>
+  <h2 class="sec-title">Dịch Vụ Chuyên Gia & Tích Hợp</h2>
   <div class="rule"></div>
-  <p class="lead">Deployment, security audit, và custom integration services. Billed separately từ license. Tất cả PSO engagements bao gồm post-deployment 90-day support.</p>
+  <p class="lead">Hỗ trợ thiết lập hạ tầng Private Cloud, tinh chỉnh hệ thống vLLM, và tư vấn triển khai quản trị danh tính (AD/SCIM) phức tạp. Các dịch vụ này giúp doanh nghiệp chuyển đổi số nhanh chóng với biên lợi nhuận cao cho đối tác.</p>
 
   <div class="g3">
     <div class="card">
       <div class="card-icon">🚀</div>
-      <div class="card-title">Standard Deployment</div>
-      <div class="card-body">Guided deployment trên cloud VPS hoặc on-premise server. Cấu hình mTLS, AD integration, initial OPA policy setup. Phù hợp Business + Enterprise tiers.</div>
-      <div class="card-price">$15,000 – $30,000</div>
+      <div class="card-title">Cluster Setup & Load Balancing</div>
+      <div class="card-body">Thiết lập Cụm VPS phân tán trên hạ tầng của doanh nghiệp. Cấu hình HAProxy, Nginx, mTLS và hệ thống chịu lỗi để đạt chuẩn SLA 99.999%.</div>
+      <div class="card-price">$15,000 – $30,000 / dự án</div>
     </div>
     <div class="card">
-      <div class="card-icon">🏭</div>
-      <div class="card-title">On-Premise Enterprise</div>
-      <div class="card-body">Full on-premise deployment: hardware sizing, OS hardening, HSM setup (nếu cần), multi-site federation, custom monitoring. Enterprise+ và Gov/Military.</div>
-      <div class="card-price">$50,000 – $100,000</div>
+      <div class="card-icon">🧠</div>
+      <div class="card-title">BYOM Tuning & Custom .tapp</div>
+      <div class="card-body">Dịch vụ tinh chỉnh (Fine-tuning) mô hình ngôn ngữ riêng và tư vấn phát triển ứng dụng .tapp nội bộ, nhúng an toàn vào TeraChat Secure Engine.</div>
+      <div class="card-price">$20,000 – $50,000 / dự án</div>
     </div>
     <div class="card">
       <div class="card-icon">🛡️</div>
-      <div class="card-title">Air-Gapped Gov Deployment</div>
-      <div class="card-body">Fully offline deployment: hardware delivery, air-gapped license ceremony, Shamir key ceremony, HSM FIPS 140-3 setup, chaos engineering 28-scenario certification.</div>
-      <div class="card-price">$100,000 – $200,000</div>
-    </div>
-    <div class="card">
-      <div class="card-icon">🔍</div>
-      <div class="card-title">Annual Security Audit</div>
-      <div class="card-body">Independent security audit report: vulnerability assessment, compliance gap analysis, ISO 27001 readiness. Ed25519-signed report suitable for internal compliance.</div>
-      <div class="card-price">$8,000 – $15,000 / năm</div>
-    </div>
-    <div class="card">
-      <div class="card-icon">🔌</div>
-      <div class="card-title">Custom Integration</div>
-      <div class="card-body">API integration với ERP, HR systems, custom .tapp development, SIEM connector, custom OPA policies. Rate-based engagement.</div>
-      <div class="card-price">$200 / giờ · hoặc fixed-price</div>
-    </div>
-    <div class="card">
-      <div class="card-icon">🎓</div>
-      <div class="card-title">Training & Enablement</div>
-      <div class="card-body">IT Admin training (2 ngày), Security Officer certification, End User onboarding program, .tapp Developer workshop.</div>
-      <div class="card-price">$3,000 – $8,000 / cohort</div>
+      <div class="card-title">Air-Gapped Deployment</div>
+      <div class="card-body">Thiết lập toàn bộ hệ thống (Core + Secure Engine) trên siêu máy chủ nội bộ. Setup Local IPC, chặn mọi truy cập Terminal, bàn giao bảo mật YubiKey.</div>
+      <div class="card-price">$100,000 – $200,000 / site</div>
     </div>
   </div>
 </section>
 
-<!-- S4: ADD-ONS -->
 <section class="sec reveal" id="s4">
-  <div class="label">04 — ADD-ONS</div>
-  <h2 class="sec-title">License Add-ons</h2>
+  <div class="label">04 — ADD-ONS & ECOSYSTEM</div>
+  <h2 class="sec-title">Hệ Sinh Thái Plugin & Mở Rộng</h2>
   <div class="rule"></div>
 
   <div class="g2">
     <div class="card">
-      <div class="card-icon">👥</div>
-      <div class="card-title">Seat Expansion</div>
-      <div class="card-body">Thêm seats vào license hiện tại. Prorated cho phần thời gian còn lại của contract.</div>
-      <div class="card-price">+$150 / seat / tháng (Business) · +$100 / seat (Enterprise+)</div>
-    </div>
-    <div class="card">
-      <div class="card-icon">💾</div>
-      <div class="card-title">Additional Blob Storage</div>
-      <div class="card-body">Mở rộng encrypted blob storage cho workspace. Áp dụng cho Enterprise và Enterprise+.</div>
-      <div class="card-price">+$20 / 100GB / tháng</div>
-    </div>
-    <div class="card">
-      <div class="card-icon">🤖</div>
-      <div class="card-title">AI Token Expansion</div>
-      <div class="card-body">Tăng AI quota cho workspace. Chỉ áp dụng Enterprise (có AI SLM). Không rollover sang tháng sau.</div>
-      <div class="card-price">+$30 / 100K tokens / tháng</div>
+      <div class="card-icon">🧩</div>
+      <div class="card-title">Kho Lưu Trữ Enterprise Plugin Registry</div>
+      <div class="card-body">Truy cập hệ sinh thái ứng dụng mini-app bảo mật (.tapp). Doanh nghiệp có thể tích hợp ERP, CRM. TeraChat thu <strong>30% chiết khấu</strong> từ các nhà phát hành thứ 3 trên Marketplace.</div>
     </div>
     <div class="card">
       <div class="card-icon">🔗</div>
       <div class="card-title">Additional Federation Cluster</div>
-      <div class="card-body">Mỗi federation cluster connection sau cluster thứ 3 tính thêm. Sealed Sender protocol mỗi cluster.</div>
+      <div class="card-body">Mở rộng kết nối liên tổ chức (Federation) cho các tập đoàn, tổng công ty có nhiều công ty con độc lập. Phí áp dụng cho mỗi kết nối bổ sung ngoài giới hạn mặc định.</div>
       <div class="card-price">+$500 / cluster / tháng</div>
     </div>
   </div>
 </section>
 
-<!-- S5: ENTERPRISE DETAILS -->
 <section class="sec reveal" id="s5">
-  <div class="label">05 — ENTERPRISE</div>
-  <h2 class="sec-title">Enterprise & Gov Contract Details</h2>
+  <div class="label">05 — CONTRACT & LICENSING</div>
+  <h2 class="sec-title">Quy Định Cấp Phép Doanh Nghiệp</h2>
   <div class="rule"></div>
 
   <div class="g2">
     <div>
-      <div class="sh">Contract Terms</div>
+      <div class="sh">Bản quyền & SLA</div>
       <ul class="blist">
-        <li>Minimum contract: 12 tháng (Business / Enterprise) · 36 tháng (Gov/Military)</li>
-        <li>Payment: Net 30 invoice, annual prepay (10% discount) hoặc semi-annual</li>
-        <li>Price lock: giá được cố định trong toàn bộ contract term</li>
-        <li>Renewal: giá tăng tối đa 8% YoY với 90 ngày notice</li>
-        <li>NDA bắt buộc trước demo và technical documentation</li>
-      </ul>
-      <div class="sh" style="margin-top:20px;">What's Included</div>
-      <ul class="blist">
-        <li>License JWT (HSM FIPS 140-3 signed)</li>
-        <li>TeraRelay binary (latest stable release)</li>
-        <li>All client apps (iOS, Android, Huawei, macOS, Windows, Linux)</li>
-        <li>Admin Console access</li>
-        <li>Security updates và patches</li>
-        <li>SLA per tier (99.5% → 99.99%)</li>
+        <li>Cung cấp License JWT (HSM FIPS 140-3 signed) cho tổ chức.</li>
+        <li>Hỗ trợ đa nền tảng (iOS, Android, macOS, Windows, Linux, Huawei).</li>
+        <li>Price lock: Cố định giá trong toàn bộ thời hạn hợp đồng đã ký.</li>
+        <li>Hỗ trợ qua Email trong giờ hành chính (Gói Business) và Dedicated 24/7 (Gói Enterprise+).</li>
+        <li>Bảo vệ chống Jailbreak & System Prompt leak tuyệt đối.</li>
       </ul>
     </div>
     <div>
-      <div class="sh">Gov/Military Special Requirements</div>
+      <div class="sh">Đặc quyền Gov/Military</div>
       <ul class="blist">
-        <li>Technical evaluation: 90-day paid pilot required trước full contract</li>
-        <li>Chaos Engineering certification: 28+ scenarios, independent auditor</li>
-        <li>Source code escrow available</li>
-        <li>On-site PSO team cho air-gapped deployment</li>
-        <li>Security clearance process for PSO staff available</li>
-        <li>Custom SLA negotiable (uptime, incident response, data sovereignty)</li>
-        <li>FIPS 140-3 Level 3 compliance documentation</li>
+        <li>Bắt buộc ký NDA trước quá trình đánh giá kỹ thuật (Technical evaluation).</li>
+        <li>Ký quỹ mã nguồn (Source Code Escrow) đảm bảo an ninh dài hạn.</li>
+        <li>Sẵn sàng vượt qua bài test Chaos Engineering với 28+ kịch bản ngặt nghèo.</li>
+        <li>Cam kết không có Backdoor dưới mọi hình thức (Bảo chứng bằng Toán học).</li>
+        <li>Đội ngũ kỹ thuật hỗ trợ On-site yêu cầu Clearance an ninh đặc biệt.</li>
       </ul>
     </div>
   </div>
-
-  <div class="callout callout-gold">
-    <p>Mọi hợp đồng Enterprise+ và Gov/Military bao gồm <strong>independent security audit</strong> trước khi go-live và cam kết SLA bằng văn bản có penalty clause.</p>
-  </div>
 </section>
 
-<!-- S6: BILLING -->
 <section class="sec reveal" id="s6">
   <div class="label">06 — BILLING POLICIES</div>
-  <h2 class="sec-title">Billing & Payment</h2>
+  <h2 class="sec-title">Chính Sách Thanh Toán Doanh Thu</h2>
   <div class="rule"></div>
 
   <div class="g2">
     <div class="card">
-      <div class="card-title" style="color:var(--teal);margin-bottom:14px;">PAYMENT TERMS</div>
+      <div class="card-title" style="color:var(--teal);margin-bottom:14px;">ƯU ĐÃI DÒNG TIỀN (CASH FLOW)</div>
       <ul class="blist">
-        <li>Annual prepay: Net 30 sau invoice date (10% discount vs semi-annual)</li>
-        <li>Semi-annual: Net 30 sau mỗi kỳ 6 tháng</li>
-        <li>Monthly: Net 30 + 25% surcharge (Business tier only)</li>
-        <li>Currencies: USD, VND (theo tỷ giá ngày invoice)</li>
-        <li>Methods: Wire transfer, chuyển khoản ngân hàng, SWIFT</li>
-        <li>Invoice VAT: xuất sau thanh toán xác nhận</li>
+        <li><strong>Thanh toán hàng năm:</strong> Giảm giá <strong>25%</strong> so với trả theo tháng (Đã phản ánh ở biểu giá trên).</li>
+        <li>Khách hàng SME/Enterprise: Thanh toán Net 30 sau invoice date.</li>
+        <li>Gov/Military: Yêu cầu hợp đồng thanh toán trước 3 năm tối thiểu.</li>
       </ul>
     </div>
     <div class="card">
-      <div class="card-title" style="color:var(--teal);margin-bottom:14px;">UPGRADE / DOWNGRADE</div>
+      <div class="card-title" style="color:var(--teal);margin-bottom:14px;">CHÍNH SÁCH MỞ RỘNG</div>
       <ul class="blist">
-        <li>Upgrade: effective ngay lập tức; phần chênh lệch prorated</li>
-        <li>Downgrade: effective từ renewal period tiếp theo</li>
-        <li>Seat reduction: effective từ renewal; không hoàn phí trong period</li>
-        <li>Tier change: yêu cầu 30 ngày notice trước renewal</li>
-        <li>Data migration: IT Admin chịu trách nhiệm trước downgrade</li>
-      </ul>
-    </div>
-    <div class="card">
-      <div class="card-title" style="color:var(--teal);margin-bottom:14px;">CANCELLATION</div>
-      <ul class="blist">
-        <li>Annual contract: không refund mid-term (standard practice enterprise)</li>
-        <li>Non-renewal: 60 ngày notice trước renewal date</li>
-        <li>Data export: IT Admin export trong 90 ngày sau contract end</li>
-        <li>License deactivation: sau grace period 90 ngày</li>
-        <li>Pilot program: không tính phí, cancel bất kỳ lúc nào</li>
-      </ul>
-    </div>
-    <div class="card">
-      <div class="card-title" style="color:var(--teal);margin-bottom:14px;">DISCOUNTS</div>
-      <ul class="blist">
-        <li>Annual prepay: 10% discount vs semi-annual billing</li>
-        <li>Multi-year contract: 15% (2yr) · 20% (3yr)</li>
-        <li>NGO / Non-profit: 30% upon verification</li>
-        <li>Academic institution: 40% upon verification</li>
-        <li>Volume (>1,000 seats): custom pricing</li>
-        <li>Partner referral: phụ thuộc vào reseller agreement</li>
+        <li>Nâng cấp Gói (Upgrade): Hiệu lực tức thì, chênh lệch tính theo Prorated.</li>
+        <li>Không thu khoản phụ phí hạ tầng (lưu trữ file, CPU), doanh nghiệp tự kiểm soát hệ thống VPS.</li>
+        <li>Đại lý phân phối (Resellers) áp dụng mức chiết khấu riêng theo Tier.</li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- S7: ROI -->
 <section class="sec reveal" id="s7">
-  <div class="label">07 — ROI ANALYSIS</div>
-  <h2 class="sec-title">Total Cost of Ownership</h2>
+  <div class="label">07 — TCO & ROI ANALYSIS</div>
+  <h2 class="sec-title">Lợi Thế Unit Economics</h2>
   <div class="rule"></div>
-  <p class="lead">So sánh TCO cho 200 nhân viên trong 12 tháng. TeraChat Enterprise vs các giải pháp thay thế.</p>
+  <p class="lead">Vì doanh nghiệp tự chạy hạ tầng, chi phí server chỉ còn $7–$48/tháng/tenant. Khách hàng sở hữu công cụ Quản trị Thiết bị (MDM), Thu hồi Quyền (SCIM) và Sức mạnh AI mà không tốn chi phí rác về lưu trữ đám mây.</p>
 
   <div class="charts2">
     <div class="cw">
       <div class="cl">CHART — 01</div>
-      <div class="ct">Annual TCO — 200 Employees (USD)</div>
-      <div class="cd">License + Infrastructure + IT overhead</div>
+      <div class="ct">Annual TCO — Doanh nghiệp 100 Nhân sự</div>
+      <div class="cd">So sánh License + Infra Cost</div>
       <canvas id="cTCO" height="250"></canvas>
     </div>
     <div class="cw">
       <div class="cl">CHART — 02</div>
-      <div class="ct">Infrastructure Cost Scaling</div>
-      <div class="cd">Monthly infra cost as seat count grows</div>
-      <canvas id="cScale" height="250"></canvas>
+      <div class="ct">Biên lợi nhuận gộp (Gross Margin)</div>
+      <div class="cd">Lợi thế của kiến trúc Stateless Enclave</div>
+      <canvas id="cMargin" height="250"></canvas>
     </div>
   </div>
 
-  <div class="sh">TCO Breakdown — 200 Seats / Year</div>
-  <div class="feat-wrap">
-    <table class="feat-table">
-      <thead><tr><th>Cost Component</th><th>Slack Pro</th><th>Matrix Self-Hosted</th><th>TeraChat Enterprise</th></tr></thead>
-      <tbody>
-        <tr><td>License fee / year</td><td style="text-align:center;color:#e63946;">~$30,000</td><td style="text-align:center;color:var(--mid);">$0</td><td style="text-align:center;color:var(--teal);">$40,000</td></tr>
-        <tr><td>Infrastructure / year</td><td style="text-align:center;color:var(--mid);">Included</td><td style="text-align:center;color:#e63946;">~$12,000</td><td style="text-align:center;color:var(--teal);">~$2,400</td></tr>
-        <tr><td>IT Admin overhead / year</td><td style="text-align:center;color:var(--mid);">Low</td><td style="text-align:center;color:#e63946;">High (~$15K)</td><td style="text-align:center;color:var(--teal);">Very Low (~$1K)</td></tr>
-        <tr><td>Security audit / year</td><td style="text-align:center;color:var(--mid);">N/A</td><td style="text-align:center;color:#e63946;">~$20K+</td><td style="text-align:center;color:var(--teal);">$10,000 (optional)</td></tr>
-        <tr><td>Compliance fine risk</td><td style="text-align:center;color:#e63946;">High (PDPA, NĐ 13)</td><td style="text-align:center;color:var(--amber);">Medium</td><td style="text-align:center;color:var(--green);">Minimal</td></tr>
-        <tr class="thigh"><td><strong>Total TCO / year</strong></td><td style="text-align:center;font-weight:700;color:#e63946;">~$30,000+</td><td style="text-align:center;font-weight:700;color:var(--amber);">~$27,000+</td><td style="text-align:center;font-weight:700;color:var(--teal);">~$43,400</td></tr>
-        <tr><td>Zero-Knowledge Server</td><td class="tno tc">✗</td><td class="tok tc">✓</td><td class="tok tc">✓</td></tr>
-        <tr><td>Offline Mesh (no internet needed)</td><td class="tno tc">✗</td><td class="tno tc">✗</td><td class="tok tc">✓</td></tr>
-        <tr><td>Regulatory compliance (VN/SEA)</td><td class="tno tc">✗</td><td class="tlim tc">Partial</td><td class="tok tc">✓</td></tr>
-        <tr><td>Air-Gapped option</td><td class="tno tc">✗</td><td class="tno tc">✗</td><td class="tok tc">✓</td></tr>
-      </tbody>
-    </table>
-  </div>
-
   <div class="callout callout-green">
-    <p>Khi tính compliance risk (Vietnam NĐ 13/2023 penalty tối đa 50–100 triệu VND/vi phạm), <strong>TeraChat Enterprise có TCO thực tế thấp hơn Slack</strong> cho tổ chức trong ngành tài chính, y tế, và chính phủ.</p>
+    <p>Giải pháp của chúng tôi kết hợp hoàn hảo giữa <strong>Công cụ Quản trị chuẩn SaaS (AD Sync, SCIM, Remote Wipe)</strong> và <strong>Sức mạnh tính toán Vô hình (Blind AI)</strong>, biến rủi ro tuân thủ thành lợi thế cạnh tranh số một cho doanh nghiệp.</p>
   </div>
 </section>
 
 <div class="footer">
   <div class="footer-brand">TeraChat</div>
   <div class="footer-txt">
-    Enterprise Pricing Guide · Q2 2026 · v1.0<br>
+    Enterprise Pricing Blueprint · Q2 2026 · v3.0<br>
     Confidential — For Sales & Qualified Prospects Only
   </div>
 </div>
@@ -654,28 +510,28 @@ const TEAL='#00b4d8',GOLD='#e9c46a',GREEN='#52b788',RED='#e63946',NAVY='#0b1829'
 new Chart(document.getElementById('cTCO'),{
   type:'bar',
   data:{
-    labels:['Slack Pro','Matrix/Self-Hosted','TeraChat Enterprise'],
+    labels:['Slack/Teams Cloud','Matrix Self-Hosted','TeraChat Enterprise'],
     datasets:[
-      {label:'License',data:[30000,0,40000],backgroundColor:['rgba(230,57,70,.65)','rgba(255,255,255,.15)','rgba(0,180,216,.65)'],borderRadius:6,borderWidth:0},
-      {label:'Infrastructure',data:[0,12000,2400],backgroundColor:['rgba(230,57,70,.25)','rgba(247,127,0,.5)','rgba(0,180,216,.25)'],borderRadius:6,borderWidth:0},
-      {label:'IT Overhead',data:[5000,15000,1000],backgroundColor:['rgba(230,57,70,.15)','rgba(247,127,0,.3)','rgba(0,180,216,.15)'],borderRadius:6,borderWidth:0},
+      {label:'License Fee',data:[30000,0,24000],backgroundColor:['rgba(230,57,70,.65)','rgba(255,255,255,.15)','rgba(0,180,216,.8)'],borderRadius:6,borderWidth:0},
+      {label:'Infrastructure Cost',data:[0,12000,1500],backgroundColor:['rgba(230,57,70,.25)','rgba(247,127,0,.6)','rgba(0,180,216,.3)'],borderRadius:6,borderWidth:0},
+      {label:'IT & Admin Overhead',data:[5000,18000,2000],backgroundColor:['rgba(230,57,70,.15)','rgba(247,127,0,.3)','rgba(0,180,216,.15)'],borderRadius:6,borderWidth:0},
     ]
   },
   options:{responsive:true,plugins:{legend:{position:'top',labels:{padding:12,boxWidth:10}}},
     scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>'$'+v.toLocaleString()}}}}
 });
 
-new Chart(document.getElementById('cScale'),{
-  type:'line',
+new Chart(document.getElementById('cMargin'),{
+  type:'bar',
+  indexAxis: 'y',
   data:{
-    labels:['10','50','100','200','500','1000'],
+    labels:['TeraChat (Target)','Slack (SaaS)','Teams (Est)','Self-Hosted FOSS'],
     datasets:[
-      {label:'TeraChat (self-hosted relay)',data:[6,12,20,40,80,150],borderColor:TEAL,backgroundColor:'rgba(0,180,216,.1)',fill:true,tension:.4,borderWidth:2},
-      {label:'Typical SaaS infra cost',data:[50,250,500,1000,2500,5000],borderColor:RED,backgroundColor:'rgba(230,57,70,.08)',fill:true,tension:.4,borderWidth:2}
+      {label:'Biên Lợi Nhuận (%)',data:[88,87,68,60],backgroundColor:[TEAL,'rgba(255,255,255,.2)','rgba(255,255,255,.1)','rgba(255,255,255,.05)'],borderRadius:6,borderWidth:0}
     ]
   },
-  options:{responsive:true,plugins:{legend:{position:'top',labels:{padding:12,boxWidth:10}}},
-    scales:{x:{grid:{display:false},title:{display:true,text:'Seats'}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>'$'+v+'/mo'}}}}
+  options:{responsive:true,plugins:{legend:{display:false}},
+    scales:{x:{max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}
 });
 </script>
 </body>

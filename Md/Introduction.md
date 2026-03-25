@@ -4,9 +4,9 @@
 # DOCUMENT IDENTITY
 id:       "TERA-INTRO"
 title:    "TeraChat — System Gateway & Architecture Overview"
-version:  "0.3.7"
+version:  "0.4.0"
 status:   "ACTIVE"
-date:     "2026-03-23"
+date:     "2026-03-25"
 audience: "New Team Member, System Architect, Product Manager, Enterprise Sales, Investor"
 purpose:  "Định nghĩa sản phẩm, kiến trúc tổng thể, mô hình truy cập doanh nghiệp, và bản đồ điều hướng tài liệu."
 
@@ -184,4 +184,4 @@ TeraRelay có thể chạy trên nhiều topology khác nhau tùy theo quy mô v
 
 *TeraChat — Chủ quyền dữ liệu doanh nghiệp, được bảo đảm bằng toán học.*
 
-*v1.0.0 · 2026-03-23 · Internal Reference*
+*v0.4.0 · 2026-03-25 · Internal Reference*
