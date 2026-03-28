@@ -2,12 +2,12 @@
 
 ```yaml
 # DOCUMENT IDENTITY
-id:                   "TERA-CORE"
-title:                "TeraChat — Core Technical Specification"
-version:              "3.1"
-audience:             "System Architect, Backend Engineer, Security Engineer"
-purpose:              "Đặc tả kiến trúc lõi hệ thống: Cryptography (MLS, E2EE), Mesh Network, Offline CRDT Sync, Server Infrastructure, AI Hybrid Edge-Cloud."
-scope:                "Infrastructure, Security, Cryptography, Network Protocols, AI Enclave — Implementation-level only."
+id: "TERA-CORE"
+title: "TeraChat — Core Technical Specification"
+version: "3.1"
+audience: "System Architect, Backend Engineer, Security Engineer"
+purpose: "Đặc tả kiến trúc lõi hệ thống: Cryptography (MLS, E2EE), Mesh Network, Offline CRDT Sync, Server Infrastructure, AI Hybrid Edge-Cloud."
+scope: "Infrastructure, Security, Cryptography, Network Protocols, AI Enclave — Implementation-level only."
 non_goals:
   - "UI rendering logic (→ TERA-DESIGN)"
   - "Client-side IPC bridges (→ TERA-FEAT)"
@@ -41,22 +41,22 @@ ai_routing_hint: |
 > **Status:** `ACTIVE — Implementation Reference`
 > **Audience:** Backend Engineer · DevOps · Security / Cryptography Engineer
 > **Last Updated:** 2026-03-25
-> **Depends On:** *(root spec — no external deps)*
+> **Depends On:** _(root spec — no external deps)_
 > **Consumed By:** → TERA-FEAT · → TERA-DESIGN · → TERA-MKT
 
 ---
 
 ## CHANGELOG
 
-| Version | Date       | Change Summary                                                                                    |
-|---------|------------|---------------------------------------------------------------------------------------------------|
+| Version | Date       | Change Summary                                                                                                                                                                                                                                                                 |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | v3.1    | 2026-03-25 | Add §F-23 AI Hybrid Edge-Cloud Architecture (BYOM, VPS Enclave, E2EE Prompt Tunneling, Blind RAG, Semantic Caching); Add §18 AI Enclave Infrastructure; Update §9.4 AI Safety với Blind RAG threat model; Update §5.3 CRDT với AI event types; Update §3.6 License với AI tier |
-| v3.0    | 2026-03-15 | Restructure toàn bộ sang production-grade format; thêm §1 Executive Summary, §5 State Machine, §8 NFR, §11 Versioning, §12 Observability |
-| v0.3.6  | 2026-03-13 | Deprecate eBPF/XDP, Hardware TEE (SGX/SEV), mlock() Pinning, Envoy Sidecar                       |
-| v0.3.5  | 2026-03-13 | Add §3.5 Lightweight Micro-Core Relay; §4.6 Soft-Enclave WASM Isolation; §3.4.2 SQLite OOM Prevention |
-| v0.3.0  | 2026-03-11 | Remove ODES/Blind Shard → E2EE Cloud Backup (§9.1); §5.9 simplified → Gossip Broadcast + iBeacon |
-| v0.2.9  | 2026-03-05 | Add §5.35 Hierarchical Crypto-Shredding; §5.36 SSA Retroactive Taint                             |
-| v0.2.8  | 2026-03-04 | Add §9.2 Constant-time Memory Access; §5.24 EMIP Plugin Integrity; §6.13 TeraVault VFS           |
+| v3.0    | 2026-03-15 | Restructure toàn bộ sang production-grade format; thêm §1 Executive Summary, §5 State Machine, §8 NFR, §11 Versioning, §12 Observability                                                                                                                                       |
+| v0.3.6  | 2026-03-13 | Deprecate eBPF/XDP, Hardware TEE (SGX/SEV), mlock() Pinning, Envoy Sidecar                                                                                                                                                                                                     |
+| v0.3.5  | 2026-03-13 | Add §3.5 Lightweight Micro-Core Relay; §4.6 Soft-Enclave WASM Isolation; §3.4.2 SQLite OOM Prevention                                                                                                                                                                          |
+| v0.3.0  | 2026-03-11 | Remove ODES/Blind Shard → E2EE Cloud Backup (§9.1); §5.9 simplified → Gossip Broadcast + iBeacon                                                                                                                                                                               |
+| v0.2.9  | 2026-03-05 | Add §5.35 Hierarchical Crypto-Shredding; §5.36 SSA Retroactive Taint                                                                                                                                                                                                           |
+| v0.2.8  | 2026-03-04 | Add §9.2 Constant-time Memory Access; §5.24 EMIP Plugin Integrity; §6.13 TeraVault VFS                                                                                                                                                                                         |
 
 ---
 
@@ -87,20 +87,20 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 
 **3 đảm bảo cốt lõi:**
 
-1. Server không thể đọc nội dung — *ciphertext-only relay*.
+1. Server không thể đọc nội dung — _ciphertext-only relay_.
 2. Mesh P2P duy trì liên lạc khi mất Internet hoàn toàn.
-3. Mọi key material và AI prompt tự hủy ngay khi scope kết thúc — *ZeroizeOnDrop everywhere*.
+3. Mọi key material và AI prompt tự hủy ngay khi scope kết thúc — _ZeroizeOnDrop everywhere_.
 
 ### 1.2 Tính năng chiến lược
 
-| Feature | Mô tả | Section |
-|---------|-------|---------|
-| MLS E2EE (RFC 9420) | TreeKEM O(log n) cho 5000+ users, Forward Secrecy tự động | §4.2 |
-| Survival Mesh | BLE 5.0 + Wi-Fi Direct P2P, Store-and-Forward CRDT | §5.2 |
-| Zero-Knowledge Server | Blind Relay, Sealed Sender, Oblivious CAS Routing | §2.2 |
-| WASM Sandbox (.tapp) | Capability-based isolation, Crypto Host ABI offloading | §5.18 |
-| Hybrid PQ-KEM | X25519 + ML-KEM-768, CNSA 2.0 compliant | §4.4 |
-| HKMS Key Hierarchy | HSM FIPS 140-3 → KEK → DEK, Shamir 3-of-5 recovery | §4.1 |
+| Feature                  | Mô tả                                                         | Section   |
+| ------------------------ | ------------------------------------------------------------- | --------- |
+| MLS E2EE (RFC 9420)      | TreeKEM O(log n) cho 5000+ users, Forward Secrecy tự động     | §4.2      |
+| Survival Mesh            | BLE 5.0 + Wi-Fi Direct P2P, Store-and-Forward CRDT            | §5.2      |
+| Zero-Knowledge Server    | Blind Relay, Sealed Sender, Oblivious CAS Routing             | §2.2      |
+| WASM Sandbox (.tapp)     | Capability-based isolation, Crypto Host ABI offloading        | §5.18     |
+| Hybrid PQ-KEM            | X25519 + ML-KEM-768, CNSA 2.0 compliant                       | §4.4      |
+| HKMS Key Hierarchy       | HSM FIPS 140-3 → KEK → DEK, Shamir 3-of-5 recovery            | §4.1      |
 | **AI Hybrid Edge-Cloud** | **BYOM + VPS Enclave stateless + Blind RAG + Semantic Cache** | **§F-23** |
 
 ### 1.3 Kiến trúc tổng quan
@@ -143,15 +143,15 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 
 ### 1.4 Trust Boundaries
 
-| Boundary | Bên trong tin tưởng | Bên ngoài không tin tưởng |
-|----------|---------------------|---------------------------|
-| Secure Enclave / StrongBox / TPM | Private key ops | RAM, OS, Admin |
-| Rust Core | Crypto logic, State | UI layer, WASM sandbox |
-| AI Worker Process | Local inference only | Raw prompt, key material |
-| VPS Enclave | In-RAM decryption only | Plaintext persisted anywhere |
-| WASM Sandbox | .tapp business logic | Host network, filesystem |
-| Blind Relay VPS | Routing ciphertext | Plaintext content |
-| Mesh Peer | Relaying signed packets | Unsigned/unverified data |
+| Boundary                         | Bên trong tin tưởng     | Bên ngoài không tin tưởng    |
+| -------------------------------- | ----------------------- | ---------------------------- |
+| Secure Enclave / StrongBox / TPM | Private key ops         | RAM, OS, Admin               |
+| Rust Core                        | Crypto logic, State     | UI layer, WASM sandbox       |
+| AI Worker Process                | Local inference only    | Raw prompt, key material     |
+| VPS Enclave                      | In-RAM decryption only  | Plaintext persisted anywhere |
+| WASM Sandbox                     | .tapp business logic    | Host network, filesystem     |
+| Blind Relay VPS                  | Routing ciphertext      | Plaintext content            |
+| Mesh Peer                        | Relaying signed packets | Unsigned/unverified data     |
 
 ---
 
@@ -163,8 +163,8 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 - 📱💻🖥️ **Tầng UI (Flutter / Tauri):** Pure Renderer — cấm tuyệt đối port Crypto/Business Logic lên Dart/JS Thread.
 - 📱💻🖥️ **AI Worker Process:** Tiến trình OS riêng biệt — crash AI không kéo Rust Core sập. Giao tiếp qua Anonymous Pipe (local) hoặc E2EE mTLS Tunnel (VPS Enclave).
 - 📱💻🖥️ **IPC — Tách Control/Data Plane:**
-  - *Control Plane:* Protobuf qua FFI/JSI — lệnh nhỏ <1KB.
-  - *Data Plane:* Dart FFI TypedData (Mobile) / `SharedArrayBuffer` (Desktop) — Zero-Copy, throughput ~400–500MB/s.
+  - _Control Plane:_ Protobuf qua FFI/JSI — lệnh nhỏ <1KB.
+  - _Data Plane:_ Dart FFI TypedData (Mobile) / `SharedArrayBuffer` (Desktop) — Zero-Copy, throughput ~400–500MB/s.
 - 📱💻🖥️ **Unidirectional State Sync:** Rust bắn signal `StateChanged(table, version)` qua IPC. UI kéo snapshot tại thời điểm rảnh — không polling, không push JSON cục.
 
 ### 2.2 Blind Routing & Zero-Knowledge
@@ -200,11 +200,11 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
                 └─ BYOM Registry (Ed25519-signed model manifests)
 ```
 
-| Quy mô    | Topology                                     | Storage                                      |
-|-----------|----------------------------------------------|----------------------------------------------|
-| 10k Users | Single-Node Rust Relay + 1 AI Enclave Node   | Local SSD                                    |
-| 100k Users| Geo-Federated Clusters + AI Enclave HA       | PostgreSQL Geo-Partitioning + HA TURN Array  |
-| 1M+ Users | Multi-Cloud Active-Active + AI Enclave Multi-Zone | Data Mule + NTN Satellite routing       |
+| Quy mô     | Topology                                          | Storage                                     |
+| ---------- | ------------------------------------------------- | ------------------------------------------- |
+| 10k Users  | Single-Node Rust Relay + 1 AI Enclave Node        | Local SSD                                   |
+| 100k Users | Geo-Federated Clusters + AI Enclave HA            | PostgreSQL Geo-Partitioning + HA TURN Array |
+| 1M+ Users  | Multi-Cloud Active-Active + AI Enclave Multi-Zone | Data Mule + NTN Satellite routing           |
 
 ### 2.4 Dynamic Micro-Core Loading (Platform-Aware)
 
@@ -216,83 +216,83 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 
 ## §3 DATA MODEL
 
-> **Catalog đầy đủ mọi đối tượng dữ liệu trong hệ thống.** Các algorithm (§4–§5) chỉ là *operations* tác động lên những objects này.
+> **Catalog đầy đủ mọi đối tượng dữ liệu trong hệ thống.** Các algorithm (§4–§5) chỉ là _operations_ tác động lên những objects này.
 
 ### 3.1 Domain: Cryptographic Identity
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `DeviceIdentityKey` | Ed25519 Key Pair | Secure Enclave / StrongBox | Permanent (hardware-bound) | Không export. Ký/derive only. | §4.3 |
-| `Company_Key` | AES-256-GCM Root Key | HKMS (wrapped by DeviceKey) | Per-workspace, rotated on member exit | Không rời thiết bị thành viên | §4.1 |
-| `Epoch_Key` | MLS Leaf Key | RAM (Userspace) | Per MLS Epoch, zeroized on rotation | ZeroizeOnDrop mandatory | §4.2 |
-| `ChunkKey` | AES-256-GCM Ephemeral | Rust `ZeroizeOnDrop` struct | 1 chunk (~2MB) lifetime | Zeroized immediately after use | §5.18 |
-| `Session_Key` | ECDH Curve25519 Derived | RAM (Userspace) | Per session, zeroized after disconnect | ZeroizeOnDrop mandatory | §5.10.2 |
-| `Push_Key` | AES-256-GCM Symmetric | Shared Keychain (iOS) / StrongBox (Android) | Per push_epoch, OOB from MLS | Versioned: push_key_version (u32) | §4.2 |
-| `Master_Unlock_Key` | KDF output | RAM only (<100ms) | Duration of license validation op | ZeroizeOnDrop; never persisted | §13.3 |
-| **`AI_Session_Key`** | **AES-256-GCM Ephemeral** | **RAM (AI Worker Process)** | **Per AI inference session; ZeroizeOnDrop after response** | **Không rời AI Worker Process; không persist** | **§F-23** |
-| **`EnclaveAttestation_Token`** | **Signed JWT (Ed25519)** | **RAM; validated on each request** | **TTL 60s; re-issued per session** | **Signed by DeviceIdentityKey; Enclave verifies before decrypt** | **§F-23** |
+| Object                         | Type                      | Storage                                     | Lifecycle                                                  | Security Constraint                                              | Ref       |
+| ------------------------------ | ------------------------- | ------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- | --------- |
+| `DeviceIdentityKey`            | Ed25519 Key Pair          | Secure Enclave / StrongBox                  | Permanent (hardware-bound)                                 | Không export. Ký/derive only.                                    | §4.3      |
+| `Company_Key`                  | AES-256-GCM Root Key      | HKMS (wrapped by DeviceKey)                 | Per-workspace, rotated on member exit                      | Không rời thiết bị thành viên                                    | §4.1      |
+| `Epoch_Key`                    | MLS Leaf Key              | RAM (Userspace)                             | Per MLS Epoch, zeroized on rotation                        | ZeroizeOnDrop mandatory                                          | §4.2      |
+| `ChunkKey`                     | AES-256-GCM Ephemeral     | Rust `ZeroizeOnDrop` struct                 | 1 chunk (~2MB) lifetime                                    | Zeroized immediately after use                                   | §5.18     |
+| `Session_Key`                  | ECDH Curve25519 Derived   | RAM (Userspace)                             | Per session, zeroized after disconnect                     | ZeroizeOnDrop mandatory                                          | §5.10.2   |
+| `Push_Key`                     | AES-256-GCM Symmetric     | Shared Keychain (iOS) / StrongBox (Android) | Per push_epoch, OOB from MLS                               | Versioned: push_key_version (u32)                                | §4.2      |
+| `Master_Unlock_Key`            | KDF output                | RAM only (<100ms)                           | Duration of license validation op                          | ZeroizeOnDrop; never persisted                                   | §13.3     |
+| **`AI_Session_Key`**           | **AES-256-GCM Ephemeral** | **RAM (AI Worker Process)**                 | **Per AI inference session; ZeroizeOnDrop after response** | **Không rời AI Worker Process; không persist**                   | **§F-23** |
+| **`EnclaveAttestation_Token`** | **Signed JWT (Ed25519)**  | **RAM; validated on each request**          | **TTL 60s; re-issued per session**                         | **Signed by DeviceIdentityKey; Enclave verifies before decrypt** | **§F-23** |
 
 ### 3.2 Domain: MLS Session Objects
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `KeyPackage` | MLS RFC 9420 Struct | Server (public) / Local DB | Refreshed periodically | Public info only | §4.2 |
-| `Welcome_Packet` | ECIES-encrypted payload | Encrypted in-flight | Single use, consumed on join | ECIES Curve25519, receiver-keyed | §5.10.2 |
-| `TreeKEM_Update_Path` | MLS tree delta | In-memory, broadcast | Per epoch rotation | Ed25519 signed | §5.14, §5.15 |
-| `Epoch_Ratchet` | Sequence counter | `hot_dag.db` | Monotonically increasing | Tamper-evident via append-only log | §4.2 |
-| `Enterprise_Escrow_Key` | Shamir-split AES-256 | M-of-N hardware tokens | Per KMS bootstrap | 3-of-5 Shamir; no single holder | §4.2 |
+| Object                  | Type                    | Storage                    | Lifecycle                    | Security Constraint                | Ref          |
+| ----------------------- | ----------------------- | -------------------------- | ---------------------------- | ---------------------------------- | ------------ |
+| `KeyPackage`            | MLS RFC 9420 Struct     | Server (public) / Local DB | Refreshed periodically       | Public info only                   | §4.2         |
+| `Welcome_Packet`        | ECIES-encrypted payload | Encrypted in-flight        | Single use, consumed on join | ECIES Curve25519, receiver-keyed   | §5.10.2      |
+| `TreeKEM_Update_Path`   | MLS tree delta          | In-memory, broadcast       | Per epoch rotation           | Ed25519 signed                     | §5.14, §5.15 |
+| `Epoch_Ratchet`         | Sequence counter        | `hot_dag.db`               | Monotonically increasing     | Tamper-evident via append-only log | §4.2         |
+| `Enterprise_Escrow_Key` | Shamir-split AES-256    | M-of-N hardware tokens     | Per KMS bootstrap            | 3-of-5 Shamir; no single holder    | §4.2         |
 
 ### 3.3 Domain: Mesh Network Objects
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `BLE_Stealth_Beacon` | 31-byte BLE Adv PDU | Broadcast-only (air) | Ephemeral per scan cycle | HMAC-wrapped; no static identifiers | §5.9.3 |
-| `Identity_Commitment` | `HMAC(R, PK_identity)[0:8]` | Embedded in Beacon | Per session nonce | R rotated every 5min | §5.9.3 |
-| `Shun_Record` | `{Node_ID, Ed25519_Sig, HLC}` | `hot_dag.db` broadcast | Until node is rehabilitated | Enterprise CA signed | §5.10 |
-| `MergeCandidate` | `{Node_ID, BLAKE3_Hash, HLC}` | RAM only | Duration of Split-brain resolution | Ephemeral; no persist | §5.12, §5.16 |
-| `Hash_Frontier` | `{Vector_Clock, Root_Hash}` | `hot_dag.db` | Updated on every Gossip round | BLAKE3 integrity | §5.15 |
-| `EmdpKeyEscrow` | AES-256 session key | BLE Control Plane (in-flight) | EMDP session (max 60min) | ECIES-encrypted to relay device pubkey | §12.2 |
+| Object                | Type                          | Storage                       | Lifecycle                          | Security Constraint                    | Ref          |
+| --------------------- | ----------------------------- | ----------------------------- | ---------------------------------- | -------------------------------------- | ------------ |
+| `BLE_Stealth_Beacon`  | 31-byte BLE Adv PDU           | Broadcast-only (air)          | Ephemeral per scan cycle           | HMAC-wrapped; no static identifiers    | §5.9.3       |
+| `Identity_Commitment` | `HMAC(R, PK_identity)[0:8]`   | Embedded in Beacon            | Per session nonce                  | R rotated every 5min                   | §5.9.3       |
+| `Shun_Record`         | `{Node_ID, Ed25519_Sig, HLC}` | `hot_dag.db` broadcast        | Until node is rehabilitated        | Enterprise CA signed                   | §5.10        |
+| `MergeCandidate`      | `{Node_ID, BLAKE3_Hash, HLC}` | RAM only                      | Duration of Split-brain resolution | Ephemeral; no persist                  | §5.12, §5.16 |
+| `Hash_Frontier`       | `{Vector_Clock, Root_Hash}`   | `hot_dag.db`                  | Updated on every Gossip round      | BLAKE3 integrity                       | §5.15        |
+| `EmdpKeyEscrow`       | AES-256 session key           | BLE Control Plane (in-flight) | EMDP session (max 60min)           | ECIES-encrypted to relay device pubkey | §12.2        |
 
 ### 3.4 Domain: DAG State Objects
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `CRDT_Event` | Typed append-only log entry | `hot_dag.db` (WAL) | Permanent (Append-Only) | Ed25519 signed per event | §5.10.1 |
-| `HLC_Timestamp` | `{wall_clock, logical_counter}` | Embedded in every Event | Attached to event, immutable | No SystemTime::now() — use HLC | §5.14 |
-| `Tombstone_Stub` | `{entity_id, hlc, type=DELETED}` | `cold_state.db` | Permanent (never physically deleted) | Replay-attack protection | §5.10.1, §5.17 |
-| `Proof_Bundle` | `{Ed25519_Sig, HLC, Evidence}` | Encrypted broadcast | Until dispute resolved | Hardware-bound non-repudiation | §5.10.3 |
-| `AppendBlock` | `{id, content, timestamp, device_sig}` | RAM / `hot_dag.db` | Pending until Desktop reconcile | Ed25519 signed; Optimistic mode | §12.1 |
+| Object           | Type                                   | Storage                 | Lifecycle                            | Security Constraint             | Ref            |
+| ---------------- | -------------------------------------- | ----------------------- | ------------------------------------ | ------------------------------- | -------------- |
+| `CRDT_Event`     | Typed append-only log entry            | `hot_dag.db` (WAL)      | Permanent (Append-Only)              | Ed25519 signed per event        | §5.10.1        |
+| `HLC_Timestamp`  | `{wall_clock, logical_counter}`        | Embedded in every Event | Attached to event, immutable         | No SystemTime::now() — use HLC  | §5.14          |
+| `Tombstone_Stub` | `{entity_id, hlc, type=DELETED}`       | `cold_state.db`         | Permanent (never physically deleted) | Replay-attack protection        | §5.10.1, §5.17 |
+| `Proof_Bundle`   | `{Ed25519_Sig, HLC, Evidence}`         | Encrypted broadcast     | Until dispute resolved               | Hardware-bound non-repudiation  | §5.10.3        |
+| `AppendBlock`    | `{id, content, timestamp, device_sig}` | RAM / `hot_dag.db`      | Pending until Desktop reconcile      | Ed25519 signed; Optimistic mode | §12.1          |
 
 ### 3.5 Domain: Recovery & Audit Objects
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `Snapshot_CAS` | Content-Addressable Hash | `TeraVault VFS` | Permanent | SHA-256 integrity | §5.10.2, §6.13 |
-| `Hydration_Checkpoint` | `{Snapshot_CAS_UUID, last_chunk_index}` | `hot_dag.db` | Overwritten on each successful chunk | Atomic pre-write before batch | §6.14.1 |
-| `Monotonic_Counter` | TPM 2.0 hardware counter | TPM chip register | Hardware-bound, tamper-evident | Rollback-proof; hardware only | §4.5 |
-| `Audit_Log_Entry` | `{device_id, timestamp, payload_hash, ed25519_sig}` | Append-only CRDT chain | Permanent | Ed25519 signed; cannot delete | §4.3 |
-| `XpcTransactionJournal` | `{tx_id, status, payload_hash}` | `hot_dag.db` | Per XPC transaction | PENDING/VERIFIED/COMMITTED states | §14.4 |
+| Object                  | Type                                                | Storage                | Lifecycle                            | Security Constraint               | Ref            |
+| ----------------------- | --------------------------------------------------- | ---------------------- | ------------------------------------ | --------------------------------- | -------------- |
+| `Snapshot_CAS`          | Content-Addressable Hash                            | `TeraVault VFS`        | Permanent                            | SHA-256 integrity                 | §5.10.2, §6.13 |
+| `Hydration_Checkpoint`  | `{Snapshot_CAS_UUID, last_chunk_index}`             | `hot_dag.db`           | Overwritten on each successful chunk | Atomic pre-write before batch     | §6.14.1        |
+| `Monotonic_Counter`     | TPM 2.0 hardware counter                            | TPM chip register      | Hardware-bound, tamper-evident       | Rollback-proof; hardware only     | §4.5           |
+| `Audit_Log_Entry`       | `{device_id, timestamp, payload_hash, ed25519_sig}` | Append-only CRDT chain | Permanent                            | Ed25519 signed; cannot delete     | §4.3           |
+| `XpcTransactionJournal` | `{tx_id, status, payload_hash}`                     | `hot_dag.db`           | Per XPC transaction                  | PENDING/VERIFIED/COMMITTED states | §14.4          |
 
 ### 3.6 Domain: License Objects
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `License_JWT` | Ed25519-signed JSON | Delivered via email/USB | Valid until `valid_until` field | HSM FIPS 140-3 signed; no export | §13.1 |
-| `Feature_Flags` | Struct returned by license-guard FFI | RAM only | Duration of license check | No key material crosses FFI | §13.2 |
-| `OfflineTTL_Profile` | Enum: Consumer/Enterprise/GovMilitary/AirGapped | License JWT field | Per tenant | Configurable; not hardcoded | §13.5 |
+| Object               | Type                                            | Storage                 | Lifecycle                       | Security Constraint              | Ref   |
+| -------------------- | ----------------------------------------------- | ----------------------- | ------------------------------- | -------------------------------- | ----- |
+| `License_JWT`        | Ed25519-signed JSON                             | Delivered via email/USB | Valid until `valid_until` field | HSM FIPS 140-3 signed; no export | §13.1 |
+| `Feature_Flags`      | Struct returned by license-guard FFI            | RAM only                | Duration of license check       | No key material crosses FFI      | §13.2 |
+| `OfflineTTL_Profile` | Enum: Consumer/Enterprise/GovMilitary/AirGapped | License JWT field       | Per tenant                      | Configurable; not hardcoded      | §13.5 |
 
-### 3.7 Domain: AI Hybrid Objects *(NEW — §F-23)*
+### 3.7 Domain: AI Hybrid Objects _(NEW — §F-23)_
 
-| Object | Type | Storage | Lifecycle | Security Constraint | Ref |
-|--------|------|---------|-----------|--------------------|----|
-| `SanitizedPrompt` | Newtype wrapping `String` | RAM (AI Worker Process) | Per inference call; ZeroizeOnDrop after send | Không thể tạo nếu không qua Micro-NER pass | §F-23.3 |
-| `EncryptedPromptBundle` | `{ciphertext: Vec<u8>, nonce: [u8;12], session_key_id: u64}` | In-flight only | Tồn tại trong transit; never stored anywhere | AES-256-GCM với `AI_Session_Key` | §F-23.4 |
-| `EnclaveResponseBundle` | `{ciphertext: Vec<u8>, nonce: [u8;12], request_id: Uuid}` | In-flight only | Tồn tại trong transit; decrypted in AI Worker RAM | AES-256-GCM; ZeroizeOnDrop after de-alias | §F-23.4 |
-| `SemanticCacheKey` | `BLAKE3(normalized_prompt_embedding[0:16])` | Enclave Redis-compatible cache | TTL 30 min; keyed by semantic hash not plaintext | Server không bao giờ thấy plaintext; chỉ thấy hash | §F-23.6 |
-| `BlindVector` | `[f32; 384]` embedding | Enclave VectorDB (Qdrant) | Per document chunk; no plaintext stored alongside | Vector chỉ; ciphertext chunk lưu ở MinIO Blind Storage | §F-23.5 |
-| `ChunkCiphertext` | `AES-256-GCM(chunk_plaintext)` | MinIO Blind Storage | Permanent until user delete | Key (`ChunkKey`) chỉ tồn tại ở client | §F-23.5 |
-| `ModelManifest` | `{model_id, blake3_hash, publisher_key, min_vram_gb, tier}` | Enclave BYOM Registry | Per model version | Ed25519 signed by publisher + TeraChat CA counter-sign | §F-23.2 |
-| `InferenceSessionVault` | `{alias_map: HashMap<String,String>}` | AI Worker RAM | Per inference call; ZeroizeOnDrop < 100ms after response | Alias map `[MASK_01] → real@email.com`; never leaves AI Worker | §F-23.3 |
+| Object                  | Type                                                         | Storage                        | Lifecycle                                                | Security Constraint                                            | Ref     |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------ | -------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| `SanitizedPrompt`       | Newtype wrapping `String`                                    | RAM (AI Worker Process)        | Per inference call; ZeroizeOnDrop after send             | Không thể tạo nếu không qua Micro-NER pass                     | §F-23.3 |
+| `EncryptedPromptBundle` | `{ciphertext: Vec<u8>, nonce: [u8;12], session_key_id: u64}` | In-flight only                 | Tồn tại trong transit; never stored anywhere             | AES-256-GCM với `AI_Session_Key`                               | §F-23.4 |
+| `EnclaveResponseBundle` | `{ciphertext: Vec<u8>, nonce: [u8;12], request_id: Uuid}`    | In-flight only                 | Tồn tại trong transit; decrypted in AI Worker RAM        | AES-256-GCM; ZeroizeOnDrop after de-alias                      | §F-23.4 |
+| `SemanticCacheKey`      | `BLAKE3(normalized_prompt_embedding[0:16])`                  | Enclave Redis-compatible cache | TTL 30 min; keyed by semantic hash not plaintext         | Server không bao giờ thấy plaintext; chỉ thấy hash             | §F-23.6 |
+| `BlindVector`           | `[f32; 384]` embedding                                       | Enclave VectorDB (Qdrant)      | Per document chunk; no plaintext stored alongside        | Vector chỉ; ciphertext chunk lưu ở MinIO Blind Storage         | §F-23.5 |
+| `ChunkCiphertext`       | `AES-256-GCM(chunk_plaintext)`                               | MinIO Blind Storage            | Permanent until user delete                              | Key (`ChunkKey`) chỉ tồn tại ở client                          | §F-23.5 |
+| `ModelManifest`         | `{model_id, blake3_hash, publisher_key, min_vram_gb, tier}`  | Enclave BYOM Registry          | Per model version                                        | Ed25519 signed by publisher + TeraChat CA counter-sign         | §F-23.2 |
+| `InferenceSessionVault` | `{alias_map: HashMap<String,String>}`                        | AI Worker RAM                  | Per inference call; ZeroizeOnDrop < 100ms after response | Alias map `[MASK_01] → real@email.com`; never leaves AI Worker | §F-23.3 |
 
 ---
 
@@ -321,24 +321,24 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 
 **Platform Signing APIs:**
 
-| Platform | API | Mechanism |
-|----------|-----|-----------|
-| 📱 iOS | `LAContext` | `SecKeyCreateSignature` + `.biometryCurrentSet` |
-| 📱 Android | `BiometricPrompt` | `setUserAuthenticationRequired(true)` + Hardware Keystore |
-| 💻 macOS | `CryptoTokenKit` | `kSecAttrTokenIDSecureEnclave` |
-| 💻🖥️ Windows | `CNG` | `Microsoft Platform Crypto Provider (TPM 2.0)` + `NCryptSignHash` |
-| 🗄️ Gov-Grade | PKCS#11 | SafeNet/Viettel/VNPT CA — Rust `pkcs11` crate |
+| Platform     | API               | Mechanism                                                         |
+| ------------ | ----------------- | ----------------------------------------------------------------- |
+| 📱 iOS       | `LAContext`       | `SecKeyCreateSignature` + `.biometryCurrentSet`                   |
+| 📱 Android   | `BiometricPrompt` | `setUserAuthenticationRequired(true)` + Hardware Keystore         |
+| 💻 macOS     | `CryptoTokenKit`  | `kSecAttrTokenIDSecureEnclave`                                    |
+| 💻🖥️ Windows | `CNG`             | `Microsoft Platform Crypto Provider (TPM 2.0)` + `NCryptSignHash` |
+| 🗄️ Gov-Grade | PKCS#11           | SafeNet/Viettel/VNPT CA — Rust `pkcs11` crate                     |
 
 **Remote Attestation:**
 
-| Platform | API | Requirement |
-|----------|-----|-------------|
-| 📱 iOS | `DCAppAttestService` | App gốc, không Jailbreak |
-| 📱 Android | `Play Integrity API` | `MEETS_STRONG_INTEGRITY` |
-| 📱 Huawei | HMS SafetyDetect `DeviceIntegrity()` | TrustZone (ARM) |
-| 💻🖥️ Windows | `TPM 2.0 Health Attestation` | PCR check + BitLocker ON |
-| 💻 macOS | Notarization + Hardened Runtime | Secure Enclave |
-| 🖥️ Linux | TPM 2.0 + IMA | varies |
+| Platform     | API                                  | Requirement              |
+| ------------ | ------------------------------------ | ------------------------ |
+| 📱 iOS       | `DCAppAttestService`                 | App gốc, không Jailbreak |
+| 📱 Android   | `Play Integrity API`                 | `MEETS_STRONG_INTEGRITY` |
+| 📱 Huawei    | HMS SafetyDetect `DeviceIntegrity()` | TrustZone (ARM)          |
+| 💻🖥️ Windows | `TPM 2.0 Health Attestation`         | PCR check + BitLocker ON |
+| 💻 macOS     | Notarization + Hardened Runtime      | Secure Enclave           |
+| 🖥️ Linux     | TPM 2.0 + IMA                        | varies                   |
 
 **Security Notes:**
 
@@ -431,12 +431,12 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
                           └──> [AI_Session_Key]  ← ephemeral, per AI session
 ```
 
-| Device | Private Key Storage | Mechanism |
-|--------|--------------------|-----------|
-| 📱 iOS | Secure Enclave | Không extract. Ký/Giải mã yêu cầu biometric. |
-| 📱 Android | StrongBox Keymaster (HAL) | Key sinh trong chip, không export. |
-| 💻🖥️ Desktop | TPM 2.0 (NCrypt / macOS SEP) | Key binding với device. |
-| 🗄️ Server | HSM Software (PKCS#11) | CA / Cluster signing key. |
+| Device       | Private Key Storage          | Mechanism                                    |
+| ------------ | ---------------------------- | -------------------------------------------- |
+| 📱 iOS       | Secure Enclave               | Không extract. Ký/Giải mã yêu cầu biometric. |
+| 📱 Android   | StrongBox Keymaster (HAL)    | Key sinh trong chip, không export.           |
+| 💻🖥️ Desktop | TPM 2.0 (NCrypt / macOS SEP) | Key binding với device.                      |
+| 🗄️ Server    | HSM Software (PKCS#11)       | CA / Cluster signing key.                    |
 
 **KMS Bootstrap Ritual:**
 
@@ -516,7 +516,7 @@ TeraChat là nền tảng nhắn tin doanh nghiệp **Zero-Knowledge, End-to-End
 
 **Key Derivation:**
 
-```
+```text
 Final_Session_Key = HKDF(X25519_Shared || Kyber768_Shared)
 AI_Session_Key    = HKDF(Final_Session_Key, "ai-session-v1" || ai_session_nonce)
 ```
@@ -569,13 +569,13 @@ Tuân thủ chuẩn CNSA 2.0 và NSA SNDL/HNDL requirements.
 
 #### Cluster 4-trong-1
 
-| Component | Chức năng |
-|-----------|-----------|
-| **MLS Backbone** | Phân phối khóa & định tuyến nhóm 5000+. Zero-Knowledge Encrypted Log Streams. |
-| **HA TURN Cluster** | Floating IP, failover 3s. WebRTC Relay HD/Video Conference. |
-| **Execution Environment** | VPS Egress Proxy backend — dữ liệu chỉ trên RAM, không persist. |
-| **Interop Hub** | Gateway E2EE hóa dữ liệu SAP/Jira/CRM trước khi đẩy xuống Client. |
-| **AI Enclave Cluster** | Stateless inference nodes — xem §F-23 và §18. |
+| Component                 | Chức năng                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| **MLS Backbone**          | Phân phối khóa & định tuyến nhóm 5000+. Zero-Knowledge Encrypted Log Streams. |
+| **HA TURN Cluster**       | Floating IP, failover 3s. WebRTC Relay HD/Video Conference.                   |
+| **Execution Environment** | VPS Egress Proxy backend — dữ liệu chỉ trên RAM, không persist.               |
+| **Interop Hub**           | Gateway E2EE hóa dữ liệu SAP/Jira/CRM trước khi đẩy xuống Client.             |
+| **AI Enclave Cluster**    | Stateless inference nodes — xem §F-23 và §18.                                 |
 
 #### Database Layer
 
@@ -697,12 +697,12 @@ Step 3 │ WebSocket Secure (wss:// over TCP:443)
 
 > ⚠️ iOS áp đặt chính sách W^X nghiêm cấm JIT Runtime. Lõi Rust PHẢI tự động phát hiện Platform và chọn Engine phù hợp.
 
-| Platform | WASM Engine | Rationale |
-|----------|------------|-----------|
-| 📱 iOS | `wasm3` pure interpreter (~10KB binary, zero JIT) | W^X compliant, App Store safe. +15-20ms latency/call — chấp nhận được |
-| 📱 Huawei HarmonyOS | `wasmtime` JIT (Cranelift) | Không bị W^X như iOS |
-| 📱 Android | `wasmtime` JIT (Cranelift) | W^X protection, sandbox CFI |
-| 💻🖥️ Desktop/Server | `wasmtime` JIT (Cranelift) | Maximum throughput |
+| Platform            | WASM Engine                                       | Rationale                                                             |
+| ------------------- | ------------------------------------------------- | --------------------------------------------------------------------- |
+| 📱 iOS              | `wasm3` pure interpreter (~10KB binary, zero JIT) | W^X compliant, App Store safe. +15-20ms latency/call — chấp nhận được |
+| 📱 Huawei HarmonyOS | `wasmtime` JIT (Cranelift)                        | Không bị W^X như iOS                                                  |
+| 📱 Android          | `wasmtime` JIT (Cranelift)                        | W^X protection, sandbox CFI                                           |
+| 💻🖥️ Desktop/Server | `wasmtime` JIT (Cranelift)                        | Maximum throughput                                                    |
 
 Switch condition: `#[cfg(target_os = "ios")]` tại compile-time.
 
@@ -735,7 +735,7 @@ Switch condition: `#[cfg(target_os = "ios")]` tại compile-time.
 extern "C" {
     fn host_blake3_hash(data_ptr: *const u8, data_len: usize, out_ptr: *mut u8) -> i32;
     fn host_ed25519_sign(key_id: u64, msg_ptr: *const u8, msg_len: usize, sig_out: *mut u8) -> i32;
-    fn host_aes256gcm_encrypt(key_id: u64, nonce_ptr: *const u8, plaintext_ptr: *const u8, 
+    fn host_aes256gcm_encrypt(key_id: u64, nonce_ptr: *const u8, plaintext_ptr: *const u8,
                                plaintext_len: usize, ciphertext_out: *mut u8) -> i32;
 }
 // key_id references a ZeroizeOnDrop key in Rust Core — never crosses boundary as bytes
@@ -806,10 +806,10 @@ trait MeshTransport: Send + Sync {
 }
 ```
 
-| Layer | Protocol | iOS | Android/Desktop |
-|-------|----------|-----|----------------|
-| **Signal Plane** | BLE 5.0 Advertising | `CoreBluetooth` | `BluetoothLeAdvertiser` |
-| **Data Plane** | Wi-Fi P2P | `MultipeerConnectivity (AWDL)` | `Wi-Fi Direct` |
+| Layer            | Protocol            | iOS                            | Android/Desktop         |
+| ---------------- | ------------------- | ------------------------------ | ----------------------- |
+| **Signal Plane** | BLE 5.0 Advertising | `CoreBluetooth`                | `BluetoothLeAdvertiser` |
+| **Data Plane**   | Wi-Fi P2P           | `MultipeerConnectivity (AWDL)` | `Wi-Fi Direct`          |
 
 **Platform-Specific Adapters:**
 
@@ -819,11 +819,11 @@ trait MeshTransport: Send + Sync {
 
 **Asymmetric Hierarchical Roles:**
 
-| Role | Device | Capabilities |
-|------|--------|-------------|
+| Role                  | Device                      | Capabilities                                                   |
+| --------------------- | --------------------------- | -------------------------------------------------------------- |
 | Super Node (Backbone) | Desktop/Laptop (AC powered) | Full DAG history, Store-and-Forward 24/7, DAG merge O(N log N) |
-| Relay Node | Android Foreground Service | Data Mule, Temporary Super Node (RAM ≥ 4GB, battery > 30%) |
-| Leaf Node | iOS | Delta-only (max 50MB disk), Observer mode, no DAG merge |
+| Relay Node            | Android Foreground Service  | Data Mule, Temporary Super Node (RAM ≥ 4GB, battery > 30%)     |
+| Leaf Node             | iOS                         | Delta-only (max 50MB disk), Observer mode, no DAG merge        |
 
 **iOS Exclusion from Dictator Candidacy:**
 
@@ -853,7 +853,7 @@ trait MeshTransport: Send + Sync {
 **AWDL Monitor — Hotspot/CarPlay Conflict:**
 
 - 📱 Khi Hotspot active hoặc CarPlay → iOS tắt AWDL → Rust downgrade Tier 2 → Tier 3 (BLE only).
-- 📱 Emit `UIEvent::TierChanged`: *"Hotspot đang bật — Mesh chuyển sang BLE. Voice tạm không khả dụng."*
+- 📱 Emit `UIEvent::TierChanged`: _"Hotspot đang bật — Mesh chuyển sang BLE. Voice tạm không khả dụng."_
 - 📱 Queue voice packets TTL 30s. Sau 30s không phục hồi → drop voice.
 
 **iOS Mesh Graceful Super Node Handover:**
@@ -1122,15 +1122,15 @@ Partition Detected
 
 **HMS Integration:**
 
-| Component | Android | Huawei HarmonyOS |
-|-----------|---------|-----------------|
-| Push | FCM | HMS Push Kit (HPK) |
-| Neural Acceleration | NNAPI | HiAI Foundation API |
-| BLE | Android BLE API | HarmonyOS BLE API |
-| Attestation | Play Integrity | HMS SafetyDetect `DeviceIntegrity()` |
-| TEE | StrongBox | TrustZone (ARM) |
-| WASM | wasmtime JIT | wasmtime JIT |
-| Distribution | Google Play | AppGallery |
+| Component           | Android         | Huawei HarmonyOS                     |
+| ------------------- | --------------- | ------------------------------------ |
+| Push                | FCM             | HMS Push Kit (HPK)                   |
+| Neural Acceleration | NNAPI           | HiAI Foundation API                  |
+| BLE                 | Android BLE API | HarmonyOS BLE API                    |
+| Attestation         | Play Integrity  | HMS SafetyDetect `DeviceIntegrity()` |
+| TEE                 | StrongBox       | TrustZone (ARM)                      |
+| WASM                | wasmtime JIT    | wasmtime JIT                         |
+| Distribution        | Google Play     | AppGallery                           |
 
 **Formal IPC Memory Ownership Contract (Token Protocol):**
 
@@ -1143,7 +1143,7 @@ extern "C" {
 
 **iOS Key Protection — Double-Buffer Zeroize Protocol:**
 
-```
+```text
 1. Phân bổ key vào 2 page liền kề MAP_ANONYMOUS|MAP_PRIVATE
 2. Ngay sau decrypt: ghi đè 0x00 vào page 1 TRƯỚC KHI dùng key
 3. Dùng key từ page 2
@@ -1160,11 +1160,11 @@ extern "C" {
 
 **Open-Core Boundary:**
 
-| Component | License | Scope |
-|-----------|---------|-------|
-| `terachat-core/` | AGPLv3 | Public — Gov/Bank audit |
-| `terachat-license-guard/` | BSL | Closed |
-| `terachat-ui/` | Apache 2.0 | Public |
+| Component                 | License    | Scope                   |
+| ------------------------- | ---------- | ----------------------- |
+| `terachat-core/`          | AGPLv3     | Public — Gov/Bank audit |
+| `terachat-license-guard/` | BSL        | Closed                  |
+| `terachat-ui/`            | Apache 2.0 | Public                  |
 
 **License JWT Structure:**
 
@@ -1183,12 +1183,12 @@ extern "C" {
 
 **AI Tier within License:**
 
-| License AI Tier | Capabilities | Note |
-|-----------------|-------------|------|
-| `local_only` | CoreML/ONNX on-device, no VPS Enclave | Community / Standard |
-| `enclave_shared` | Shared VPS Enclave, quota-limited | Enterprise default |
-| `enclave_dedicated` | Dedicated Enclave node(s) | Enterprise Premium |
-| `byom` | BYOM model slots in dedicated Enclave | Enterprise / Gov |
+| License AI Tier     | Capabilities                          | Note                 |
+| ------------------- | ------------------------------------- | -------------------- |
+| `local_only`        | CoreML/ONNX on-device, no VPS Enclave | Community / Standard |
+| `enclave_shared`    | Shared VPS Enclave, quota-limited     | Enterprise default   |
+| `enclave_dedicated` | Dedicated Enclave node(s)             | Enterprise Premium   |
+| `byom`              | BYOM model slots in dedicated Enclave | Enterprise / Gov     |
 
 **Cryptographic Entanglement:**
 
@@ -1202,16 +1202,16 @@ fn derive_master_unlock_key(license_token: &LicenseToken, epoch: u64) -> Result<
 
 **Graceful Degradation (4 cấp độ):**
 
-| Thời điểm | UI | Ảnh hưởng hoạt động |
-|-----------|-----|---------------------|
-| T-30 ngày | Banner vàng Admin Console | Không |
-| T-0 | Admin Console partial lock | Chat/Mesh OK; AI + add user bị khóa |
-| T+90 | Refuse new bootstrap | App đang chạy OK |
-| Gia hạn | JWT mới → restore <5s | Không restart |
+| Thời điểm | UI                         | Ảnh hưởng hoạt động                 |
+| --------- | -------------------------- | ----------------------------------- |
+| T-30 ngày | Banner vàng Admin Console  | Không                               |
+| T-0       | Admin Console partial lock | Chat/Mesh OK; AI + add user bị khóa |
+| T+90      | Refuse new bootstrap       | App đang chạy OK                    |
+| Gia hạn   | JWT mới → restore <5s      | Không restart                       |
 
 ---
 
-### F-23: AI Hybrid Edge-Cloud Architecture *(NEW)*
+### F-23: AI Hybrid Edge-Cloud Architecture _(NEW)_
 
 **Description:** Kiến trúc AI lai Edge-Cloud với BYOM (Bring Your Own Model), VPS Enclave stateless, E2EE Prompt Tunneling, Blind RAG, và Semantic Caching. Đảm bảo Zero-Knowledge AI — server không bao giờ thấy plaintext prompt hoặc document content.
 
@@ -1446,7 +1446,7 @@ pub async fn handle_inference_request(
 
 **Two-Layer Defense:**
 
-```
+```text
 Layer 1: mTLS (Transport)
   - Client certificate: issued per-device bởi Enterprise CA, TTL 24h
   - Server certificate: TeraChat Enclave CA, pinned in binary
@@ -1661,7 +1661,7 @@ impl SemanticCache {
 
 **Mô hình triển khai:**
 
-```
+```text
 Internet ──► Load Balancer (HAProxy)
                  │
         ┌────────┴────────┐
@@ -1698,26 +1698,26 @@ engine = AsyncLLMEngine.from_engine_args(EngineArgs(
 async def handle_request(encrypted_bundle: bytes) -> bytes:
     session_key = retrieve_session_key(encrypted_bundle)
     plaintext = aes_gcm_decrypt(session_key, encrypted_bundle)  # in RAM only
-    
+
     output = await engine.generate(plaintext, sampling_params)  # batched with other sessions
-    
+
     response_ciphertext = aes_gcm_encrypt(session_key, output.text)
-    
+
     # ZeroizeOnDrop
     del session_key
     del plaintext
     del output
-    
+
     return response_ciphertext
 ```
 
 **Node Sizing Guidelines:**
 
-| Workload | GPU | VRAM | Sessions/Node | Latency (p99) |
-|----------|-----|------|---------------|---------------|
-| Base (7B BYOM) | 1× A10G | 24GB | ~50 concurrent | < 2s |
-| Mid (13B BYOM) | 2× A10G | 48GB | ~30 concurrent | < 4s |
-| Large (70B BYOM) | 4× A100 | 320GB | ~10 concurrent | < 10s |
+| Workload         | GPU     | VRAM  | Sessions/Node  | Latency (p99) |
+| ---------------- | ------- | ----- | -------------- | ------------- |
+| Base (7B BYOM)   | 1× A10G | 24GB  | ~50 concurrent | < 2s          |
+| Mid (13B BYOM)   | 2× A10G | 48GB  | ~30 concurrent | < 4s          |
+| Large (70B BYOM) | 4× A100 | 320GB | ~10 concurrent | < 10s         |
 
 **Stateless Guarantee:**
 
@@ -1742,7 +1742,7 @@ impl Drop for EnclaveSession {
 
 **Observability (Zero-Knowledge metrics):**
 
-```
+```text
 enclave_inference_latency_ms{model_id, backend} histogram
 enclave_requests_total{status="success|error"} counter
 enclave_cache_hit_rate gauge
@@ -1876,7 +1876,7 @@ EMERGENCY_MOBILE_ONLY Properties:
   - EMDP Key Escrow: Desktop exports AES-256 relay_session_key before offline
 ```
 
-### 5.7 AI Inference State Machine *(NEW)*
+### 5.7 AI Inference State Machine _(NEW)_
 
 ```text
 States: IDLE → RESOLVING_BACKEND → LOCAL_INFERENCE → ENCLAVE_TUNNELING →
@@ -1912,55 +1912,55 @@ Side effects at each state exit:
 
 ### 6.1 CoreSignals (Rust → UI)
 
-| Signal | Payload | Trigger | UI Action |
-|--------|---------|---------|-----------|
-| `StateChanged(table, version)` | table name, version number | Any DB write | UI query fresh snapshot |
-| `MeshModeActivated` | `{peer_count, transport}` | Network loss | Switch dark UI (#0F172A); disable AI UI |
-| `MeshRoleChanged(role)` | new role enum | Jetsam pressure / Desktop join | Show role transfer banner |
-| `NetworkProtocolChanged(proto)` | QUIC/gRPC/WSS | ALPN fallback | Update HUD icon |
-| `MemoryPressureHigh` | `{available_mb}` | OS memory warning | Reduce blur 20px→8px |
-| `MlsEpochRotated(n)` | epoch number | Member leave / schedule | Update E2EE badge; invalidate AI session keys |
-| `SecurityEvent::*` | event details | Various | RSOD / warning overlay |
-| `MlsKeyDesync(chat_id)` | chat ID | NSE push_epoch mismatch | Trigger Main App wakeup |
-| `WasmSandboxTerminated(reason)` | reason string | Gas/timeout/mesh | Remove .tapp from UI |
-| `LicenseStateChanged(state)` | new state enum | Heartbeat check | Show/hide feature lock UI |
-| `FcpTriggered` | `{plugin_id, timestamp}` | Admin FCP activation | Red border overlay |
-| `ConversationSealed` | `{chat_id}` | SSA taint threshold | Hazard-stripe overlay |
-| `EgressSchemaViolation(plugin_id)` | plugin ID | Payload mismatch | Alert + quarantine .tapp |
-| `DmaIntrusionDetected` | PCI device info | IOMMU group change | Full-screen DMA alert |
-| `AwdlUnavailable(reason)` | hotspot/carplay | iOS AWDL monitor | Tier downgrade banner |
-| **`AiBackendChanged(backend)`** | **InferenceBackend enum** | **Backend selection changed** | **Update AI mode indicator in HUD** |
-| **`AiEnclaveUnavailable`** | **reason** | **Attestation fail or timeout** | **Show local-fallback indicator** |
-| **`AiSessionComplete`** | **tokens_used, latency_ms** | **Inference done** | **Update quota display** |
+| Signal                             | Payload                     | Trigger                         | UI Action                                     |
+| ---------------------------------- | --------------------------- | ------------------------------- | --------------------------------------------- |
+| `StateChanged(table, version)`     | table name, version number  | Any DB write                    | UI query fresh snapshot                       |
+| `MeshModeActivated`                | `{peer_count, transport}`   | Network loss                    | Switch dark UI (#0F172A); disable AI UI       |
+| `MeshRoleChanged(role)`            | new role enum               | Jetsam pressure / Desktop join  | Show role transfer banner                     |
+| `NetworkProtocolChanged(proto)`    | QUIC/gRPC/WSS               | ALPN fallback                   | Update HUD icon                               |
+| `MemoryPressureHigh`               | `{available_mb}`            | OS memory warning               | Reduce blur 20px→8px                          |
+| `MlsEpochRotated(n)`               | epoch number                | Member leave / schedule         | Update E2EE badge; invalidate AI session keys |
+| `SecurityEvent::*`                 | event details               | Various                         | RSOD / warning overlay                        |
+| `MlsKeyDesync(chat_id)`            | chat ID                     | NSE push_epoch mismatch         | Trigger Main App wakeup                       |
+| `WasmSandboxTerminated(reason)`    | reason string               | Gas/timeout/mesh                | Remove .tapp from UI                          |
+| `LicenseStateChanged(state)`       | new state enum              | Heartbeat check                 | Show/hide feature lock UI                     |
+| `FcpTriggered`                     | `{plugin_id, timestamp}`    | Admin FCP activation            | Red border overlay                            |
+| `ConversationSealed`               | `{chat_id}`                 | SSA taint threshold             | Hazard-stripe overlay                         |
+| `EgressSchemaViolation(plugin_id)` | plugin ID                   | Payload mismatch                | Alert + quarantine .tapp                      |
+| `DmaIntrusionDetected`             | PCI device info             | IOMMU group change              | Full-screen DMA alert                         |
+| `AwdlUnavailable(reason)`          | hotspot/carplay             | iOS AWDL monitor                | Tier downgrade banner                         |
+| **`AiBackendChanged(backend)`**    | **InferenceBackend enum**   | **Backend selection changed**   | **Update AI mode indicator in HUD**           |
+| **`AiEnclaveUnavailable`**         | **reason**                  | **Attestation fail or timeout** | **Show local-fallback indicator**             |
+| **`AiSessionComplete`**            | **tokens_used, latency_ms** | **Inference done**              | **Update quota display**                      |
 
 ### 6.2 UICommands (UI → Rust via FFI/JSI)
 
-| Command | Parameters | Effect |
-|---------|-----------|--------|
-| `fetch_ai_context(depth: u32)` | message depth | Rust handles decrypt→mask→egress; returns via StateChanged |
-| `invoke_ai_context(message_ids)` | Vec<String> | Trigger AI pipeline |
-| `request_mesh_activation()` | none | Rust calls OS BLE/Wi-Fi APIs |
-| `terachat_core_flush_io()` | none | Flush WAL checkpoint (on app terminate) |
-| `terachat_core_emergency_wipe()` | none | Hard kill + ZeroizeOnDrop all (priority override) |
-| `terachat_cancel_task(task_id)` | task ID | AbortHandle → tokio::select! cancel |
-| `tera_buf_acquire(id)` | buffer ID | Returns opaque token (NOT raw ptr) |
-| `tera_buf_release(token)` | token | Triggers ZeroizeOnDrop when ref_count==0 |
-| `vault::pin_file(cas_ref, folder_id)` | CAS ref, folder | Virtual pin; O(1); no file copy |
-| **`invoke_ai_inference(prompt, context_ids, model_id?)`** | **SanitizedPrompt, RAG context refs, optional BYOM model** | **Trigger full AI pipeline (local or enclave)** |
-| **`upload_rag_document(file_bytes, doc_id)`** | **document bytes, document ID** | **Chunk, embed locally, encrypt, upload to Blind RAG** |
-| **`query_rag(query_text, top_k)`** | **query string, result count** | **Local embed → Blind vector search → decrypt locally** |
-| **`select_byom_model(model_id)`** | **BYOM model ID** | **Switch active model for current workspace (Admin only)** |
+| Command                                                   | Parameters                                                 | Effect                                                     |
+| --------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
+| `fetch_ai_context(depth: u32)`                            | message depth                                              | Rust handles decrypt→mask→egress; returns via StateChanged |
+| `invoke_ai_context(message_ids)`                          | Vec<String>                                                | Trigger AI pipeline                                        |
+| `request_mesh_activation()`                               | none                                                       | Rust calls OS BLE/Wi-Fi APIs                               |
+| `terachat_core_flush_io()`                                | none                                                       | Flush WAL checkpoint (on app terminate)                    |
+| `terachat_core_emergency_wipe()`                          | none                                                       | Hard kill + ZeroizeOnDrop all (priority override)          |
+| `terachat_cancel_task(task_id)`                           | task ID                                                    | AbortHandle → tokio::select! cancel                        |
+| `tera_buf_acquire(id)`                                    | buffer ID                                                  | Returns opaque token (NOT raw ptr)                         |
+| `tera_buf_release(token)`                                 | token                                                      | Triggers ZeroizeOnDrop when ref_count==0                   |
+| `vault::pin_file(cas_ref, folder_id)`                     | CAS ref, folder                                            | Virtual pin; O(1); no file copy                            |
+| **`invoke_ai_inference(prompt, context_ids, model_id?)`** | **SanitizedPrompt, RAG context refs, optional BYOM model** | **Trigger full AI pipeline (local or enclave)**            |
+| **`upload_rag_document(file_bytes, doc_id)`**             | **document bytes, document ID**                            | **Chunk, embed locally, encrypt, upload to Blind RAG**     |
+| **`query_rag(query_text, top_k)`**                        | **query string, result count**                             | **Local embed → Blind vector search → decrypt locally**    |
+| **`select_byom_model(model_id)`**                         | **BYOM model ID**                                          | **Switch active model for current workspace (Admin only)** |
 
 ### 6.3 Data Plane IPC
 
-| Platform | Mechanism | Throughput | Use Case |
-|----------|-----------|-----------|----------|
-| 📱 iOS | JSI C++ `std::unique_ptr` + Custom Deleter | ~400MB/s | Large payloads, media |
-| 📱 Android / Huawei | Dart FFI TypedData (C ABI static buffer) | ~400MB/s | Large payloads, media |
-| 💻🖥️ Desktop | `SharedArrayBuffer` (mmap physical) | ~500MB/s | File chunks, embeddings |
-| All | Protobuf over Control Plane (<50 bytes) | N/A | Commands, metadata |
-| **AI Worker ↔ Rust Core** | **Anonymous Pipe (local)** | **~1GB/s** | **AI prompt/response (local path)** |
-| **AI Worker ↔ VPS Enclave** | **mTLS + EncryptedBundle** | **Network-bound** | **AI prompt/response (enclave path)** |
+| Platform                    | Mechanism                                  | Throughput        | Use Case                              |
+| --------------------------- | ------------------------------------------ | ----------------- | ------------------------------------- |
+| 📱 iOS                      | JSI C++ `std::unique_ptr` + Custom Deleter | ~400MB/s          | Large payloads, media                 |
+| 📱 Android / Huawei         | Dart FFI TypedData (C ABI static buffer)   | ~400MB/s          | Large payloads, media                 |
+| 💻🖥️ Desktop                | `SharedArrayBuffer` (mmap physical)        | ~500MB/s          | File chunks, embeddings               |
+| All                         | Protobuf over Control Plane (<50 bytes)    | N/A               | Commands, metadata                    |
+| **AI Worker ↔ Rust Core**   | **Anonymous Pipe (local)**                 | **~1GB/s**        | **AI prompt/response (local path)**   |
+| **AI Worker ↔ VPS Enclave** | **mTLS + EncryptedBundle**                 | **Network-bound** | **AI prompt/response (enclave path)** |
 
 **IPC Security Rules:**
 
@@ -2008,26 +2008,26 @@ extern "C" {
 
 ## §7 PLATFORM MATRIX
 
-| Feature | 📱 iOS | 📱 Android | 📱 Huawei | 💻 macOS | 💻 Windows | 🖥️ Linux |
-|---------|--------|-----------|---------|---------|----------|---------|
-| WASM Engine | wasm3 (interpreter) | wasmtime JIT | wasmtime JIT | wasmtime JIT (XPC isolated) | wasmtime JIT | wasmtime JIT |
-| Key Storage | Secure Enclave | StrongBox Keymaster | TrustZone (ARM) | Secure Enclave | TPM 2.0 + NCrypt | TPM 2.0 + IMA |
-| mlock() | ❌ (kCFAllocatorMallocZone) | ✅ | ✅ | ✅ | ✅ VirtualLock() | ✅ |
-| JIT WASM | ❌ W^X | ✅ | ✅ | ✅ (child XPC only) | ✅ | ✅ |
-| Background BLE | iBeacon + L2CAP | CDM + Doze bypass | HMS BLE API | ✅ | ✅ USB dongle | ✅ |
-| Push | APNs NSE | FCM | HMS Push Kit | Daemon | Daemon | Daemon |
-| Attestation | DeviceCheck + App Attest | Play Integrity | HMS SafetyDetect | Notarization | TPM Health | TPM 2.0 + IMA |
-| File Transfer BG | NSURLSession BGT | WorkManager | WorkManager | ✅ daemon | ✅ daemon | ✅ daemon |
-| Mesh Wi-Fi | AWDL (MCSession) | Wi-Fi Direct | Wi-Fi Direct | AWDL | Wi-Fi Direct | Wi-Fi Direct |
-| Super Node Eligible | ❌ (iOS excluded) | ✅ (RAM ≥ 4GB) | ✅ | ✅ | ✅ | ✅ |
-| AI Local | CoreML | ONNX Runtime | HiAI/ONNX | CoreML/ONNX | ONNX | ONNX |
-| AI Enclave Path | ✅ (mTLS + Attestation) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| BYOM model load | ❌ (Enclave only) | ❌ (Enclave only) | ❌ (Enclave only) | ❌ (Enclave only) | ❌ (Enclave only) | ❌ (Enclave only) |
-| Blind RAG local embed | CoreML embed model | ONNX embed model | HiAI/ONNX | CoreML/ONNX | ONNX | ONNX |
+| Feature               | 📱 iOS                      | 📱 Android          | 📱 Huawei         | 💻 macOS                    | 💻 Windows        | 🖥️ Linux          |
+| --------------------- | --------------------------- | ------------------- | ----------------- | --------------------------- | ----------------- | ----------------- |
+| WASM Engine           | wasm3 (interpreter)         | wasmtime JIT        | wasmtime JIT      | wasmtime JIT (XPC isolated) | wasmtime JIT      | wasmtime JIT      |
+| Key Storage           | Secure Enclave              | StrongBox Keymaster | TrustZone (ARM)   | Secure Enclave              | TPM 2.0 + NCrypt  | TPM 2.0 + IMA     |
+| mlock()               | ❌ (kCFAllocatorMallocZone) | ✅                  | ✅                | ✅                          | ✅ VirtualLock()  | ✅                |
+| JIT WASM              | ❌ W^X                      | ✅                  | ✅                | ✅ (child XPC only)         | ✅                | ✅                |
+| Background BLE        | iBeacon + L2CAP             | CDM + Doze bypass   | HMS BLE API       | ✅                          | ✅ USB dongle     | ✅                |
+| Push                  | APNs NSE                    | FCM                 | HMS Push Kit      | Daemon                      | Daemon            | Daemon            |
+| Attestation           | DeviceCheck + App Attest    | Play Integrity      | HMS SafetyDetect  | Notarization                | TPM Health        | TPM 2.0 + IMA     |
+| File Transfer BG      | NSURLSession BGT            | WorkManager         | WorkManager       | ✅ daemon                   | ✅ daemon         | ✅ daemon         |
+| Mesh Wi-Fi            | AWDL (MCSession)            | Wi-Fi Direct        | Wi-Fi Direct      | AWDL                        | Wi-Fi Direct      | Wi-Fi Direct      |
+| Super Node Eligible   | ❌ (iOS excluded)           | ✅ (RAM ≥ 4GB)      | ✅                | ✅                          | ✅                | ✅                |
+| AI Local              | CoreML                      | ONNX Runtime        | HiAI/ONNX         | CoreML/ONNX                 | ONNX              | ONNX              |
+| AI Enclave Path       | ✅ (mTLS + Attestation)     | ✅                  | ✅                | ✅                          | ✅                | ✅                |
+| BYOM model load       | ❌ (Enclave only)           | ❌ (Enclave only)   | ❌ (Enclave only) | ❌ (Enclave only)           | ❌ (Enclave only) | ❌ (Enclave only) |
+| Blind RAG local embed | CoreML embed model          | ONNX embed model    | HiAI/ONNX         | CoreML/ONNX                 | ONNX              | ONNX              |
 
 **Build Target Matrix:**
 
-```
+```text
 x86_64-apple-darwin        → macOS Intel
 aarch64-apple-darwin       → macOS Apple Silicon
 x86_64-pc-windows-msvc     → Windows x64
@@ -2044,53 +2044,53 @@ aarch64-linux-android      → Android + Huawei HarmonyOS
 
 ### 8.1 Performance
 
-| Metric | Target | Platform | Notes |
-|--------|--------|---------|-------|
-| Message E2EE encrypt/decrypt | <10ms | 📱💻🖥️ | AES-NI/ARM NEON accelerated |
-| CRDT Write Local | <5ms | 📱💻🖥️ | SQLite WAL mode |
-| MLS Group operation (5000 users) | O(log n) | ☁️ | TreeKEM |
-| ALPN Protocol Negotiation | <50ms total | 📱💻☁️ | Parallel probe |
-| AI Local inference (7B model) | <3s p99 | 💻🖥️ | Depends on hardware |
-| AI Enclave inference (7B BYOM) | <2s p99 | ☁️ | vLLM continuous batching |
-| Semantic cache hit | <50ms | ☁️ | BLAKE3 lookup + decrypt |
-| Blind RAG query (10K vectors) | <200ms | ☁️ | ANN search + fetch + decrypt |
-| BYOM model load (7B) | <30s | ☁️ | One-time per Enclave restart |
-| E2EE Prompt bundle round-trip | <5ms overhead | 📱💻🖥️ | PII redact + encrypt |
-| E2E Latency (Online QUIC) | <30ms | ☁️📱💻 | Co-located VPS |
-| Throughput IPC Data Plane | ~400-500MB/s | 📱💻🖥️ | Zero-copy |
-| File Chunker Throughput | 300-500MB/s | ☁️🗄️ | NVMe + io_uring |
+| Metric                           | Target        | Platform | Notes                        |
+| -------------------------------- | ------------- | -------- | ---------------------------- |
+| Message E2EE encrypt/decrypt     | <10ms         | 📱💻🖥️   | AES-NI/ARM NEON accelerated  |
+| CRDT Write Local                 | <5ms          | 📱💻🖥️   | SQLite WAL mode              |
+| MLS Group operation (5000 users) | O(log n)      | ☁️       | TreeKEM                      |
+| ALPN Protocol Negotiation        | <50ms total   | 📱💻☁️   | Parallel probe               |
+| AI Local inference (7B model)    | <3s p99       | 💻🖥️     | Depends on hardware          |
+| AI Enclave inference (7B BYOM)   | <2s p99       | ☁️       | vLLM continuous batching     |
+| Semantic cache hit               | <50ms         | ☁️       | BLAKE3 lookup + decrypt      |
+| Blind RAG query (10K vectors)    | <200ms        | ☁️       | ANN search + fetch + decrypt |
+| BYOM model load (7B)             | <30s          | ☁️       | One-time per Enclave restart |
+| E2EE Prompt bundle round-trip    | <5ms overhead | 📱💻🖥️   | PII redact + encrypt         |
+| E2E Latency (Online QUIC)        | <30ms         | ☁️📱💻   | Co-located VPS               |
+| Throughput IPC Data Plane        | ~400-500MB/s  | 📱💻🖥️   | Zero-copy                    |
+| File Chunker Throughput          | 300-500MB/s   | ☁️🗄️     | NVMe + io_uring              |
 
 ### 8.2 Memory
 
-| Component | Limit | Platform | Notes |
-|-----------|-------|---------|-------|
-| NSE Process | ≤24MB | 📱 iOS | Apple hard limit |
-| WASM Sandbox per instance | ≤64MB (soft cap) | 📱💻🖥️ | OOM-kill without warning |
-| AI Worker Process (local) | ≤150MB | 📱 | Whisper Base = 74MB |
-| AI Worker Process (Desktop) | ≤4GB | 💻🖥️ | vLLM handles KV paging |
-| InferenceSessionVault RAM | < 1MB | AI Worker | alias_map; ZeroizeOnDrop < 100ms |
-| BlindVector per chunk | 384 × 4 bytes = 1.5KB | ☁️ | per document chunk in VectorDB |
-| Enclave KV Cache per session | Managed by PagedAttention | ☁️ | Not persisted across sessions |
+| Component                    | Limit                     | Platform  | Notes                            |
+| ---------------------------- | ------------------------- | --------- | -------------------------------- |
+| NSE Process                  | ≤24MB                     | 📱 iOS    | Apple hard limit                 |
+| WASM Sandbox per instance    | ≤64MB (soft cap)          | 📱💻🖥️    | OOM-kill without warning         |
+| AI Worker Process (local)    | ≤150MB                    | 📱        | Whisper Base = 74MB              |
+| AI Worker Process (Desktop)  | ≤4GB                      | 💻🖥️      | vLLM handles KV paging           |
+| InferenceSessionVault RAM    | < 1MB                     | AI Worker | alias_map; ZeroizeOnDrop < 100ms |
+| BlindVector per chunk        | 384 × 4 bytes = 1.5KB     | ☁️        | per document chunk in VectorDB   |
+| Enclave KV Cache per session | Managed by PagedAttention | ☁️        | Not persisted across sessions    |
 
 ### 8.3 Reliability
 
-| Scenario | SLA | Mechanism |
-|----------|-----|-----------|
-| Online messaging (SLA) | 99.999% | Anti-Entropy Merkle Sync fallback |
-| AI Enclave node failure | <3s failover | HAProxy health check → healthy node |
-| AI Enclave full cluster failure | Fallback to local | `resolve_inference_backend()` |
-| Semantic cache miss | No degradation | Transparent fallback to inference |
-| BYOM model crash | Restart + retry | Isolated ORT session per request |
+| Scenario                        | SLA               | Mechanism                           |
+| ------------------------------- | ----------------- | ----------------------------------- |
+| Online messaging (SLA)          | 99.999%           | Anti-Entropy Merkle Sync fallback   |
+| AI Enclave node failure         | <3s failover      | HAProxy health check → healthy node |
+| AI Enclave full cluster failure | Fallback to local | `resolve_inference_backend()`       |
+| Semantic cache miss             | No degradation    | Transparent fallback to inference   |
+| BYOM model crash                | Restart + retry   | Isolated ORT session per request    |
 
 ### 8.4 Security SLA
 
-| Property | Guarantee | Mechanism |
-|----------|-----------|-----------|
-| Forward Secrecy | Per MLS Epoch | TreeKEM Update Path; old key zeroized |
-| AI prompt privacy | Zero-Knowledge | E2EE Prompt Tunneling; VPS never persists plaintext |
-| BYOM model integrity | Computationally verifiable | BLAKE3 + Ed25519 on every load |
-| AI session unlinkability | Semantic cache keyed by embedding hash | No plaintext prompt in cache keys |
-| Blind RAG server-side | Server sees vectors only | Client holds all ChunkKeys |
+| Property                 | Guarantee                              | Mechanism                                           |
+| ------------------------ | -------------------------------------- | --------------------------------------------------- |
+| Forward Secrecy          | Per MLS Epoch                          | TreeKEM Update Path; old key zeroized               |
+| AI prompt privacy        | Zero-Knowledge                         | E2EE Prompt Tunneling; VPS never persists plaintext |
+| BYOM model integrity     | Computationally verifiable             | BLAKE3 + Ed25519 on every load                      |
+| AI session unlinkability | Semantic cache keyed by embedding hash | No plaintext prompt in cache keys                   |
+| Blind RAG server-side    | Server sees vectors only               | Client holds all ChunkKeys                          |
 
 ---
 
@@ -2098,40 +2098,40 @@ aarch64-linux-android      → Android + Huawei HarmonyOS
 
 ### 9.1 Key Management & Cryptographic Primitives
 
-| Operation | Algorithm | Library | Notes |
-|-----------|-----------|---------|-------|
-| Asymmetric signing | Ed25519 | `ring` | All audit log entries, attestation tokens |
-| Key exchange | X25519 + ML-KEM-768 | `ring` + `pqcrypto` | Hybrid PQ-KEM |
-| Symmetric encryption | AES-256-GCM | `ring` | All E2EE payloads, AI session bundles |
-| Hashing | BLAKE3 | `blake3` | DAG integrity, semantic cache keys |
-| AI embedding | Local ONNX/CoreML | Platform-specific | Blind RAG vector generation |
-| Password KDF | Argon2id | `argon2` | PIN Fallback KEK |
-| Key derivation | HKDF-SHA256 | `ring` | Key hierarchy, AI_Session_Key |
-| Constant-time comparison | `subtle` crate | `subtle` | MAC/signature comparisons |
-| Random generation | OS CSPRNG | `ring::rand` | All nonces, session keys, AI nonces |
+| Operation                | Algorithm           | Library             | Notes                                     |
+| ------------------------ | ------------------- | ------------------- | ----------------------------------------- |
+| Asymmetric signing       | Ed25519             | `ring`              | All audit log entries, attestation tokens |
+| Key exchange             | X25519 + ML-KEM-768 | `ring` + `pqcrypto` | Hybrid PQ-KEM                             |
+| Symmetric encryption     | AES-256-GCM         | `ring`              | All E2EE payloads, AI session bundles     |
+| Hashing                  | BLAKE3              | `blake3`            | DAG integrity, semantic cache keys        |
+| AI embedding             | Local ONNX/CoreML   | Platform-specific   | Blind RAG vector generation               |
+| Password KDF             | Argon2id            | `argon2`            | PIN Fallback KEK                          |
+| Key derivation           | HKDF-SHA256         | `ring`              | Key hierarchy, AI_Session_Key             |
+| Constant-time comparison | `subtle` crate      | `subtle`            | MAC/signature comparisons                 |
+| Random generation        | OS CSPRNG           | `ring::rand`        | All nonces, session keys, AI nonces       |
 
 ### 9.2 Attack Surface Matrix
 
-| Attack Vector | Mitigation | Section |
-|---------------|-----------|---------|
-| Memory dump / Cold Boot | ZeroizeOnDrop everywhere; ChaCha8 RAM scrambling | §4.6 |
-| DMA (Thunderbolt/PCIe) | IOMMU check at startup | §4.4 |
-| JIT spraying (WASM) | iOS: wasm3 interpreter; others: sandbox CFI | §F-11 |
-| Timing side-channel | `subtle` crate; constant-time logic | §2.6 |
-| Traffic pattern analysis | Fixed-size padding; Heartbeat Dummy Traffic; Oblivious CAS Routing | §2.6 |
-| Sybil (Mesh) | mPoW Argon2id; Signed identity | §F-13 |
-| Byzantine fault | PoM Epidemic; Multi-party attribution | §F-13 |
-| Replay attack | HLC Epoch binding; Monotonic Counter; 48h window | §5.10.3 |
-| License bypass | KDF entanglement; O-LLVM obfuscation | §F-22 |
-| Rogue admin injection | Root CA Binary Transparency; M-of-N update signing | §F-10 |
-| WASM sandbox escape | CFI; Gas-metering; PoM Epidemic | §F-11 |
-| **AI prompt exfiltration** | **E2EE Prompt Tunneling; VPS Enclave stateless; ZeroizeOnDrop** | **§F-23** |
-| **BYOM model poisoning** | **BLAKE3 + Ed25519 on every model load; OnnxModelLoader.load_verified()** | **§F-23.2** |
-| **Prompt injection via .tapp** | **SASB AST sanitizer; only Vec<ASTNode> returned; 3-strike suspend** | **§9.4** |
-| **Semantic cache timing attack** | **Threshold 0.92 prevents near-miss fingerprinting; cache keys are embeddings not prompts** | **§F-23.6** |
-| **Blind RAG plaintext exposure** | **VectorDB contains only BlindVector + cas_hash; ChunkKey stays on client** | **§F-23.5** |
-| **VPS Enclave attestation bypass** | **Ed25519 + 60s TTL + Bloom filter replay prevention** | **§F-23.4** |
-| **Unauthorized Enclave access (curl/tools)** | **mTLS client cert (per-device, TTL 24h) + Dynamic App Attestation** | **§F-23.4** |
+| Attack Vector                                | Mitigation                                                                                  | Section     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------- |
+| Memory dump / Cold Boot                      | ZeroizeOnDrop everywhere; ChaCha8 RAM scrambling                                            | §4.6        |
+| DMA (Thunderbolt/PCIe)                       | IOMMU check at startup                                                                      | §4.4        |
+| JIT spraying (WASM)                          | iOS: wasm3 interpreter; others: sandbox CFI                                                 | §F-11       |
+| Timing side-channel                          | `subtle` crate; constant-time logic                                                         | §2.6        |
+| Traffic pattern analysis                     | Fixed-size padding; Heartbeat Dummy Traffic; Oblivious CAS Routing                          | §2.6        |
+| Sybil (Mesh)                                 | mPoW Argon2id; Signed identity                                                              | §F-13       |
+| Byzantine fault                              | PoM Epidemic; Multi-party attribution                                                       | §F-13       |
+| Replay attack                                | HLC Epoch binding; Monotonic Counter; 48h window                                            | §5.10.3     |
+| License bypass                               | KDF entanglement; O-LLVM obfuscation                                                        | §F-22       |
+| Rogue admin injection                        | Root CA Binary Transparency; M-of-N update signing                                          | §F-10       |
+| WASM sandbox escape                          | CFI; Gas-metering; PoM Epidemic                                                             | §F-11       |
+| **AI prompt exfiltration**                   | **E2EE Prompt Tunneling; VPS Enclave stateless; ZeroizeOnDrop**                             | **§F-23**   |
+| **BYOM model poisoning**                     | **BLAKE3 + Ed25519 on every model load; OnnxModelLoader.load_verified()**                   | **§F-23.2** |
+| **Prompt injection via .tapp**               | **SASB AST sanitizer; only Vec<ASTNode> returned; 3-strike suspend**                        | **§9.4**    |
+| **Semantic cache timing attack**             | **Threshold 0.92 prevents near-miss fingerprinting; cache keys are embeddings not prompts** | **§F-23.6** |
+| **Blind RAG plaintext exposure**             | **VectorDB contains only BlindVector + cas_hash; ChunkKey stays on client**                 | **§F-23.5** |
+| **VPS Enclave attestation bypass**           | **Ed25519 + 60s TTL + Bloom filter replay prevention**                                      | **§F-23.4** |
+| **Unauthorized Enclave access (curl/tools)** | **mTLS client cert (per-device, TTL 24h) + Dynamic App Attestation**                        | **§F-23.4** |
 
 ### 9.3 Hardware-Level Cryptography Defenses
 
@@ -2196,42 +2196,42 @@ INSERT INTO ai_egress_audit (
 
 ### 10.1 Network Failures
 
-| Failure | Detection | Recovery | Max Data Loss |
-|---------|-----------|----------|---------------|
-| Internet outage | Heartbeat timeout >30s | Auto-switch to Mesh Mode; AI Enclave disabled | None (Store-and-Forward) |
-| QUIC firewall block | UDP timeout 50ms | ALPN fallback → gRPC → WSS | None (transparent) |
-| AI Enclave node down | HAProxy health check 2s | Route to healthy node; in-flight retry once | Single AI request |
-| AI Enclave cluster down | All nodes health-fail | Fallback to local inference; `AiEnclaveUnavailable` signal | None for messaging |
-| VPS Enclave attestation fail | Token validation error | `ERR_ATTESTATION_FAILED`; log; do not retry same node for 30s | Single AI request |
+| Failure                      | Detection               | Recovery                                                      | Max Data Loss            |
+| ---------------------------- | ----------------------- | ------------------------------------------------------------- | ------------------------ |
+| Internet outage              | Heartbeat timeout >30s  | Auto-switch to Mesh Mode; AI Enclave disabled                 | None (Store-and-Forward) |
+| QUIC firewall block          | UDP timeout 50ms        | ALPN fallback → gRPC → WSS                                    | None (transparent)       |
+| AI Enclave node down         | HAProxy health check 2s | Route to healthy node; in-flight retry once                   | Single AI request        |
+| AI Enclave cluster down      | All nodes health-fail   | Fallback to local inference; `AiEnclaveUnavailable` signal    | None for messaging       |
+| VPS Enclave attestation fail | Token validation error  | `ERR_ATTESTATION_FAILED`; log; do not retry same node for 30s | Single AI request        |
 
 ### 10.2 Storage Failures
 
-| Failure | Detection | Recovery | Max Data Loss |
-|---------|-----------|----------|---------------|
-| Jetsam kill NSE mid-WAL | `PRAGMA quick_check(1)` at startup | Two-Phase Commit recovery | None |
-| `nse_staging.db` Poison Pill | SQLite integrity check | POSIX `unlink()` + Crypto-Shredding | NSE messages in corrupted frame |
-| Hard power loss during Hydration | `Hydration_Checkpoint` present at boot | Resume from last committed chunk_index | Uncommitted chunk |
-| Blind RAG VectorDB failure | ANN search error | Return empty context; AI proceeds without RAG context | No document retrieval for that query |
-| Semantic cache failure | Redis unavailable | Transparent fallback to inference; log metric | Slight latency increase |
+| Failure                          | Detection                              | Recovery                                              | Max Data Loss                        |
+| -------------------------------- | -------------------------------------- | ----------------------------------------------------- | ------------------------------------ |
+| Jetsam kill NSE mid-WAL          | `PRAGMA quick_check(1)` at startup     | Two-Phase Commit recovery                             | None                                 |
+| `nse_staging.db` Poison Pill     | SQLite integrity check                 | POSIX `unlink()` + Crypto-Shredding                   | NSE messages in corrupted frame      |
+| Hard power loss during Hydration | `Hydration_Checkpoint` present at boot | Resume from last committed chunk_index                | Uncommitted chunk                    |
+| Blind RAG VectorDB failure       | ANN search error                       | Return empty context; AI proceeds without RAG context | No document retrieval for that query |
+| Semantic cache failure           | Redis unavailable                      | Transparent fallback to inference; log metric         | Slight latency increase              |
 
 ### 10.3 Key Failures
 
-| Failure | Detection | Recovery | Impact |
-|---------|-----------|----------|--------|
-| DeviceIdentityKey lost | Device lost/wiped | Admin QR Key Exchange or BIP-39 Mnemonic | New key; old messages inaccessible without Escrow |
-| AI_Session_Key derivation fail | HKDF returns error | Retry once; then return `ERR_AI_SESSION_KEY_FAILED` | Single AI request fails |
-| BYOM model BLAKE3 mismatch | OnnxModelLoader.load_verified() | Terminate Enclave session; `ModelIntegrityViolation` audit | BYOM unavailable until model re-verified |
-| EnclaveAttestation_Token expired | TTL check >60s | Re-sign with DeviceIdentityKey (biometric may be required) | <100ms delay |
+| Failure                          | Detection                       | Recovery                                                   | Impact                                            |
+| -------------------------------- | ------------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| DeviceIdentityKey lost           | Device lost/wiped               | Admin QR Key Exchange or BIP-39 Mnemonic                   | New key; old messages inaccessible without Escrow |
+| AI_Session_Key derivation fail   | HKDF returns error              | Retry once; then return `ERR_AI_SESSION_KEY_FAILED`        | Single AI request fails                           |
+| BYOM model BLAKE3 mismatch       | OnnxModelLoader.load_verified() | Terminate Enclave session; `ModelIntegrityViolation` audit | BYOM unavailable until model re-verified          |
+| EnclaveAttestation_Token expired | TTL check >60s                  | Re-sign with DeviceIdentityKey (biometric may be required) | <100ms delay                                      |
 
 ### 10.4 Runtime Failures
 
-| Failure | Detection | Recovery | Impact |
-|---------|-----------|----------|--------|
-| WASM Gas quota exceeded | Gas-metering trap | `ZeroizeOnDrop` Linear Memory; terminate instance | .tapp unavailable |
-| AI Worker process crash (local) | OS process exit code | `catch_unwind`; emit `ComponentFault`; restart after 1s | Single AI request delayed |
-| Enclave inference OOM | vLLM OOM | Reduce batch; queue request; emit `ComponentFault { severity: Warning }` | AI response delayed |
-| PII redaction Micro-NER fail | ONNX runtime error | Block AI request entirely; return `ERR_PII_REDACTION_FAILED` | Single AI request fails; no raw prompt leaves device |
-| InferenceSessionVault leak (GC instead of explicit drop) | `ffi.gc_finalizer_release.count` metric | Log WARNING; GC still ZeroizeOnDrop; but it's a code smell | Security: eventual ZeroizeOnDrop still happens |
+| Failure                                                  | Detection                               | Recovery                                                                 | Impact                                               |
+| -------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------- |
+| WASM Gas quota exceeded                                  | Gas-metering trap                       | `ZeroizeOnDrop` Linear Memory; terminate instance                        | .tapp unavailable                                    |
+| AI Worker process crash (local)                          | OS process exit code                    | `catch_unwind`; emit `ComponentFault`; restart after 1s                  | Single AI request delayed                            |
+| Enclave inference OOM                                    | vLLM OOM                                | Reduce batch; queue request; emit `ComponentFault { severity: Warning }` | AI response delayed                                  |
+| PII redaction Micro-NER fail                             | ONNX runtime error                      | Block AI request entirely; return `ERR_PII_REDACTION_FAILED`             | Single AI request fails; no raw prompt leaves device |
+| InferenceSessionVault leak (GC instead of explicit drop) | `ffi.gc_finalizer_release.count` metric | Log WARNING; GC still ZeroizeOnDrop; but it's a code smell               | Security: eventual ZeroizeOnDrop still happens       |
 
 ---
 
@@ -2248,15 +2248,15 @@ const CURRENT_COLD_STATE_SCHEMA_VERSION: u32 = 1;
 
 ### 11.2 Backward Compatibility Rules
 
-| Change Type | Version Bump | Policy |
-|-------------|-------------|--------|
-| New CRDT event type | Minor | Existing clients ignore unknown types |
-| MLS epoch format change | **Major** | Full deprecation window (12 months) |
-| Crypto Host ABI signature change | **Major** | Dual-support old+new for 12 months |
-| **AI Enclave Protocol change** | **Major** | **Dual-support: old clients use local inference** |
-| **BYOM manifest schema change** | **Major** | **Old manifests rejected with clear error** |
-| Semantic cache key scheme change | Minor | Old cache entries simply miss; no data loss |
-| Blind RAG vector dimension change | **Major** | Re-embed all documents |
+| Change Type                       | Version Bump | Policy                                            |
+| --------------------------------- | ------------ | ------------------------------------------------- |
+| New CRDT event type               | Minor        | Existing clients ignore unknown types             |
+| MLS epoch format change           | **Major**    | Full deprecation window (12 months)               |
+| Crypto Host ABI signature change  | **Major**    | Dual-support old+new for 12 months                |
+| **AI Enclave Protocol change**    | **Major**    | **Dual-support: old clients use local inference** |
+| **BYOM manifest schema change**   | **Major**    | **Old manifests rejected with clear error**       |
+| Semantic cache key scheme change  | Minor        | Old cache entries simply miss; no data loss       |
+| Blind RAG vector dimension change | **Major**    | Re-embed all documents                            |
 
 ### 11.3 MLS Protocol Versioning
 
@@ -2345,7 +2345,7 @@ pub struct EmdpKeyEscrow {
 
 ### 13.2 License Boundary Separation (Open-Core)
 
-```
+```text
 Mã nguồn mở (AGPLv3): terachat-core/     ← Crypto, CRDT, MLS, Mesh, AI pipeline client-side
 Mã nguồn đóng (BSL):  terachat-license-guard/ ← License validation
 Mã nguồn đóng (BSL):  terachat-enclave/   ← VPS Enclave server runtime
@@ -2363,13 +2363,13 @@ fn derive_master_unlock_key(license_token: &LicenseToken, epoch: u64) -> Result<
 
 ### 13.4 License Heartbeat Validation
 
-| Kiểm tra | Cơ chế | Fail → |
-|----------|--------|--------|
-| JWT signature | Ed25519 vs bundled Root CA | Immediate lock |
-| Thời hạn | `valid_until` > Monotonic Counter TPM | Immediate lock |
-| Seat count | `active_device_keys` ≤ `max_seats` | Block new enrollment |
-| AI tier | `ai_tier` field present + valid | Downgrade to local_only |
-| BYOM slots | `byom_model_slots` ≥ active models | Block new BYOM upload |
+| Kiểm tra      | Cơ chế                                | Fail →                  |
+| ------------- | ------------------------------------- | ----------------------- |
+| JWT signature | Ed25519 vs bundled Root CA            | Immediate lock          |
+| Thời hạn      | `valid_until` > Monotonic Counter TPM | Immediate lock          |
+| Seat count    | `active_device_keys` ≤ `max_seats`    | Block new enrollment    |
+| AI tier       | `ai_tier` field present + valid       | Downgrade to local_only |
+| BYOM slots    | `byom_model_slots` ≥ active models    | Block new BYOM upload   |
 
 ### 13.5 Offline TTL Profile
 
@@ -2384,7 +2384,7 @@ pub enum OfflineTTLProfile {
 
 ### 13.6 Tiered Conflict Resolution (Shadow DAG)
 
-```
+```text
 Tier 1 (Online):       Shadow DAG full → User thấy conflict, chọn merge
 Tier 2 (Mesh P2P):     Lightweight Conflict Marker → Desktop Super Node mediator
 Tier 3 (Solo offline): Optimistic Append → WARNING "Bản này có thể bị ghi đè"
@@ -2460,19 +2460,19 @@ pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
 
 > Tham chiếu đến → TERA-TEST cho chi tiết đầy đủ.
 
-| Scenario | Điều kiện | Expected Behavior |
-|----------|-----------|-------------------|
-| SC-01 | iOS AWDL off + TURN failover + CRDT merge >5000 events | AWDL warn → BLE → TURN preconnect → CRDT queue |
-| SC-02 | Jetsam kill NSE mid-WAL + Desktop offline + EMDP active | WAL rollback → DAG self-heal → EMDP key escrow |
-| SC-03 | XPC Worker OOM + Smart Approval pending | Journal PENDING → abort → user re-sign prompt |
-| SC-04 | Battery <20% + Mesh active + Whisper loading | Whisper disabled → Voice text-fallback → BLE only |
-| SC-05 | AppArmor deny memfd + mlock + seccomp active | Graceful degrade to software crypto → performance warn |
-| SC-06 | License expire T+0 + Active emergency call | Chat survives → Admin Console lock only |
-| SC-07 | EMDP 60min + Desktop reconnect + 1000 relay messages | Key escrow decrypt → DAG merge → epoch reconcile |
-| **SC-08** | **VPS Enclave cluster fully down during active AI session** | **Graceful fallback to local inference; AiEnclaveUnavailable signal; session ZeroizeOnDrop** |
-| **SC-09** | **BYOM model BLAKE3 mismatch on Enclave node restart** | **Reject model load; ModelIntegrityViolation audit; all new AI requests route to fallback model** |
-| **SC-10** | **Network partition between client and Enclave mid-inference** | **Client-side timeout 5s; session ZeroizeOnDrop; retry with local inference** |
-| **SC-11** | **Blind RAG VectorDB unavailable during RAG-augmented query** | **Proceed without RAG context; user sees degraded AI response indicator** |
+| Scenario  | Điều kiện                                                      | Expected Behavior                                                                                 |
+| --------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| SC-01     | iOS AWDL off + TURN failover + CRDT merge >5000 events         | AWDL warn → BLE → TURN preconnect → CRDT queue                                                    |
+| SC-02     | Jetsam kill NSE mid-WAL + Desktop offline + EMDP active        | WAL rollback → DAG self-heal → EMDP key escrow                                                    |
+| SC-03     | XPC Worker OOM + Smart Approval pending                        | Journal PENDING → abort → user re-sign prompt                                                     |
+| SC-04     | Battery <20% + Mesh active + Whisper loading                   | Whisper disabled → Voice text-fallback → BLE only                                                 |
+| SC-05     | AppArmor deny memfd + mlock + seccomp active                   | Graceful degrade to software crypto → performance warn                                            |
+| SC-06     | License expire T+0 + Active emergency call                     | Chat survives → Admin Console lock only                                                           |
+| SC-07     | EMDP 60min + Desktop reconnect + 1000 relay messages           | Key escrow decrypt → DAG merge → epoch reconcile                                                  |
+| **SC-08** | **VPS Enclave cluster fully down during active AI session**    | **Graceful fallback to local inference; AiEnclaveUnavailable signal; session ZeroizeOnDrop**      |
+| **SC-09** | **BYOM model BLAKE3 mismatch on Enclave node restart**         | **Reject model load; ModelIntegrityViolation audit; all new AI requests route to fallback model** |
+| **SC-10** | **Network partition between client and Enclave mid-inference** | **Client-side timeout 5s; session ZeroizeOnDrop; retry with local inference**                     |
+| **SC-11** | **Blind RAG VectorDB unavailable during RAG-augmented query**  | **Proceed without RAG context; user sees degraded AI response indicator**                         |
 
 ---
 
@@ -2480,35 +2480,35 @@ pub struct ShadowMigrationLock { migration_in_progress: AtomicBool }
 
 ### 16.1 Signal Types
 
-| Signal Category | Examples | Consumer |
-|----------------|---------|---------|
-| Security Events | `SecurityEvent::DMA_INTRUSION`, `SecurityEvent::HardwareAttestationFailed` | Admin Console, CISO Alert |
-| Network State | `NetworkProtocolChanged`, `AlpnFallbackTriggered`, `MeshModeActivated` | UI HUD, Monitoring |
-| Crypto Events | `MlsEpochRotated`, `MlsKeyDesync`, `WasmSandboxTerminated` | UI Badge, Audit Log |
-| License Events | `LicenseStateChanged`, `LicenseHeartbeatFailed` | Admin Console |
-| CRDT Events | `DagMergeCompleted`, `SplitBrainDetected`, `TombstoneVacuumed` | Internal, Monitoring |
-| AI Safety | `ConversationSealed`, `EgressSchemaViolation`, `FcpTriggered` | UI Overlay, Admin Alert |
-| **AI Hybrid** | **`AiBackendChanged`, `AiEnclaveUnavailable`, `AiSessionComplete`** | **UI HUD, Metrics** |
-| **Model Integrity** | **`ModelIntegrityViolation`** | **Admin Console, Audit Log (CRITICAL)** |
+| Signal Category     | Examples                                                                   | Consumer                                |
+| ------------------- | -------------------------------------------------------------------------- | --------------------------------------- |
+| Security Events     | `SecurityEvent::DMA_INTRUSION`, `SecurityEvent::HardwareAttestationFailed` | Admin Console, CISO Alert               |
+| Network State       | `NetworkProtocolChanged`, `AlpnFallbackTriggered`, `MeshModeActivated`     | UI HUD, Monitoring                      |
+| Crypto Events       | `MlsEpochRotated`, `MlsKeyDesync`, `WasmSandboxTerminated`                 | UI Badge, Audit Log                     |
+| License Events      | `LicenseStateChanged`, `LicenseHeartbeatFailed`                            | Admin Console                           |
+| CRDT Events         | `DagMergeCompleted`, `SplitBrainDetected`, `TombstoneVacuumed`             | Internal, Monitoring                    |
+| AI Safety           | `ConversationSealed`, `EgressSchemaViolation`, `FcpTriggered`              | UI Overlay, Admin Alert                 |
+| **AI Hybrid**       | **`AiBackendChanged`, `AiEnclaveUnavailable`, `AiSessionComplete`**        | **UI HUD, Metrics**                     |
+| **Model Integrity** | **`ModelIntegrityViolation`**                                              | **Admin Console, Audit Log (CRITICAL)** |
 
 ### 16.2 Metrics
 
-| Metric | Type | Notes |
-|--------|------|-------|
-| `message_e2ee_latency_ms` | Histogram | Per-platform |
-| `mesh_active_peers` | Gauge | Updated per Gossip round |
-| `dag_event_count` | Counter | Monitor growth rate |
-| `wasm_execution_time_ms` | Histogram | Per .tapp DID |
-| `egress_bytes_total` | Counter | Per .tapp DID; DLP alert |
-| `protocol_latency_ms` | Histogram | Per protocol (QUIC/gRPC/WSS) |
-| `license_heartbeat_status` | Gauge | 0=OK, 1=Warning, 2=Failed |
-| **`ai_inference_latency_ms`** | **Histogram** | **{backend=local\|enclave, model_id}** |
-| **`ai_enclave_cache_hit_rate`** | **Gauge** | **Semantic cache effectiveness** |
-| **`ai_enclave_requests_total`** | **Counter** | **{status=success\|error\|timeout}** |
-| **`ai_enclave_active_sessions`** | **Gauge** | **Current concurrent sessions** |
-| **`blind_rag_query_latency_ms`** | **Histogram** | **ANN search + fetch + decrypt** |
-| **`byom_model_load_success`** | **Counter** | **Per model_id** |
-| **`ai_pii_redaction_entities`** | **Histogram** | **Entities redacted per request (count, not content)** |
+| Metric                           | Type          | Notes                                                  |
+| -------------------------------- | ------------- | ------------------------------------------------------ |
+| `message_e2ee_latency_ms`        | Histogram     | Per-platform                                           |
+| `mesh_active_peers`              | Gauge         | Updated per Gossip round                               |
+| `dag_event_count`                | Counter       | Monitor growth rate                                    |
+| `wasm_execution_time_ms`         | Histogram     | Per .tapp DID                                          |
+| `egress_bytes_total`             | Counter       | Per .tapp DID; DLP alert                               |
+| `protocol_latency_ms`            | Histogram     | Per protocol (QUIC/gRPC/WSS)                           |
+| `license_heartbeat_status`       | Gauge         | 0=OK, 1=Warning, 2=Failed                              |
+| **`ai_inference_latency_ms`**    | **Histogram** | **{backend=local\|enclave, model_id}**                 |
+| **`ai_enclave_cache_hit_rate`**  | **Gauge**     | **Semantic cache effectiveness**                       |
+| **`ai_enclave_requests_total`**  | **Counter**   | **{status=success\|error\|timeout}**                   |
+| **`ai_enclave_active_sessions`** | **Gauge**     | **Current concurrent sessions**                        |
+| **`blind_rag_query_latency_ms`** | **Histogram** | **ANN search + fetch + decrypt**                       |
+| **`byom_model_load_success`**    | **Counter**   | **Per model_id**                                       |
+| **`ai_pii_redaction_entities`**  | **Histogram** | **Entities redacted per request (count, not content)** |
 
 ### 16.3 Audit Trail
 
@@ -2552,71 +2552,71 @@ INSERT INTO ai_egress_audit (
 
 ### 17.1 Glossary
 
-| Thuật ngữ | Định nghĩa |
-|-----------|-----------|
-| `.tapp` | Gói tiện ích: `logic.wasm` + JSON Schema UI. Chạy trong WASM Sandbox. |
-| `Company_Key` | Khóa cấp Tenant, sinh khi Onboarding. Không rời thiết bị thành viên. |
-| `Blind Relay` | Server chỉ chuyển tiếp ciphertext — không nắm key giải mã. |
-| `TreeKEM` | Cấu trúc cây nhị phân trong MLS, phân phối khóa nhóm O(log n). |
-| `HKMS` | Hierarchical Key Management System — Master Key → KEK → DEK. |
-| `Sealed Sender` | Server biết gói tin đi đến đâu, nhưng không biết từ ai. |
-| `cas_hash` | BLAKE3 của ciphertext dùng cho CAS path và dedup. |
-| `ZeroizeOnDrop` | RAII pattern trong Rust: `Drop` trait ghi đè `0x00` lên toàn bộ struct. |
-| `HLC` | Hybrid Logical Clock: `{wall_clock, logical_counter}`. |
-| `DAG` | Directed Acyclic Graph — cấu trúc dữ liệu cho CRDT Event Log. |
-| `CRDT` | Conflict-free Replicated Data Type. |
-| `EMDP` | Emergency Mobile Dictator Protocol. iOS-only Mesh fallback. |
-| `ISDM` | Interactive SLM Dual-Masking. PII tokenization trước khi gọi external LLM. |
-| `SASB` | Strict AST Sanitization Bridge. AST-level XSS prevention cho AI response. |
-| `EDES` | Edge Deterministic Entity Scanner. Aho-Corasick O(n) real-time PII scanner. |
-| `SSA` | Stateful Semantic Accumulator. Sliding context buffer cho Salami Attack detection. |
-| **`BYOM`** | **Bring Your Own Model. Enterprise mang custom AI model vào VPS Enclave.** |
-| **`VPS Enclave`** | **Stateless AI inference cluster — không log, không persist plaintext.** |
-| **`E2EE Prompt Tunneling`** | **Protocol mã hóa prompt trước khi rời thiết bị; chỉ ciphertext lên VPS.** |
-| **`Blind RAG`** | **RAG architecture mà server chứa BlindVectors; không bao giờ thấy document plaintext.** |
-| **`SanitizedPrompt`** | **Newtype wrapping String đã qua PII redaction; không thể tạo trực tiếp.** |
-| **`SemanticCache`** | **Cache keyed by embedding hash; server không thể đọc cached prompt/response.** |
-| **`InferenceSessionVault`** | **alias_map cho de-aliasing; ZeroizeOnDrop < 100ms sau mỗi inference.** |
-| **`AI_Session_Key`** | **AES-256-GCM key ephemeral per AI session; derived từ Epoch_Key; ZeroizeOnDrop.** |
-| **`EnclaveAttestation_Token`** | **Ed25519 signed JWT (TTL 60s) proving request from legitimate TeraChat app.** |
-| **`BlindVector`** | **[f32; 384] embedding stored in VectorDB; no plaintext stored alongside.** |
-| `ALPN` | Application-Layer Protocol Negotiation. |
-| `W^X` | Write XOR Execute. iOS hardware policy cấm JIT. |
-| `HPKP` | HTTP Public Key Pinning. |
-| `VOPRF` | Verifiable Oblivious Pseudorandom Function. Blind Tokens cho anonymous rate limiting. |
-| **`PagedAttention`** | **vLLM memory management — treats KV cache like virtual memory pages; 5-10× throughput.** |
-| **`Continuous Batching`** | **vLLM scheduling — new requests join running batch; no waiting for full batch.** |
+| Thuật ngữ                      | Định nghĩa                                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------------------- |
+| `.tapp`                        | Gói tiện ích: `logic.wasm` + JSON Schema UI. Chạy trong WASM Sandbox.                     |
+| `Company_Key`                  | Khóa cấp Tenant, sinh khi Onboarding. Không rời thiết bị thành viên.                      |
+| `Blind Relay`                  | Server chỉ chuyển tiếp ciphertext — không nắm key giải mã.                                |
+| `TreeKEM`                      | Cấu trúc cây nhị phân trong MLS, phân phối khóa nhóm O(log n).                            |
+| `HKMS`                         | Hierarchical Key Management System — Master Key → KEK → DEK.                              |
+| `Sealed Sender`                | Server biết gói tin đi đến đâu, nhưng không biết từ ai.                                   |
+| `cas_hash`                     | BLAKE3 của ciphertext dùng cho CAS path và dedup.                                         |
+| `ZeroizeOnDrop`                | RAII pattern trong Rust: `Drop` trait ghi đè `0x00` lên toàn bộ struct.                   |
+| `HLC`                          | Hybrid Logical Clock: `{wall_clock, logical_counter}`.                                    |
+| `DAG`                          | Directed Acyclic Graph — cấu trúc dữ liệu cho CRDT Event Log.                             |
+| `CRDT`                         | Conflict-free Replicated Data Type.                                                       |
+| `EMDP`                         | Emergency Mobile Dictator Protocol. iOS-only Mesh fallback.                               |
+| `ISDM`                         | Interactive SLM Dual-Masking. PII tokenization trước khi gọi external LLM.                |
+| `SASB`                         | Strict AST Sanitization Bridge. AST-level XSS prevention cho AI response.                 |
+| `EDES`                         | Edge Deterministic Entity Scanner. Aho-Corasick O(n) real-time PII scanner.               |
+| `SSA`                          | Stateful Semantic Accumulator. Sliding context buffer cho Salami Attack detection.        |
+| **`BYOM`**                     | **Bring Your Own Model. Enterprise mang custom AI model vào VPS Enclave.**                |
+| **`VPS Enclave`**              | **Stateless AI inference cluster — không log, không persist plaintext.**                  |
+| **`E2EE Prompt Tunneling`**    | **Protocol mã hóa prompt trước khi rời thiết bị; chỉ ciphertext lên VPS.**                |
+| **`Blind RAG`**                | **RAG architecture mà server chứa BlindVectors; không bao giờ thấy document plaintext.**  |
+| **`SanitizedPrompt`**          | **Newtype wrapping String đã qua PII redaction; không thể tạo trực tiếp.**                |
+| **`SemanticCache`**            | **Cache keyed by embedding hash; server không thể đọc cached prompt/response.**           |
+| **`InferenceSessionVault`**    | **alias_map cho de-aliasing; ZeroizeOnDrop < 100ms sau mỗi inference.**                   |
+| **`AI_Session_Key`**           | **AES-256-GCM key ephemeral per AI session; derived từ Epoch_Key; ZeroizeOnDrop.**        |
+| **`EnclaveAttestation_Token`** | **Ed25519 signed JWT (TTL 60s) proving request from legitimate TeraChat app.**            |
+| **`BlindVector`**              | **[f32; 384] embedding stored in VectorDB; no plaintext stored alongside.**               |
+| `ALPN`                         | Application-Layer Protocol Negotiation.                                                   |
+| `W^X`                          | Write XOR Execute. iOS hardware policy cấm JIT.                                           |
+| `HPKP`                         | HTTP Public Key Pinning.                                                                  |
+| `VOPRF`                        | Verifiable Oblivious Pseudorandom Function. Blind Tokens cho anonymous rate limiting.     |
+| **`PagedAttention`**           | **vLLM memory management — treats KV cache like virtual memory pages; 5-10× throughput.** |
+| **`Continuous Batching`**      | **vLLM scheduling — new requests join running batch; no waiting for full batch.**         |
 
 ### 17.2 Section Cross-Reference Map
 
-| Topic | Primary Section | Related Sections |
-|-------|----------------|-----------------|
-| Key Management | §F-04 | §F-01, §9.1, §13 |
-| MLS E2EE | §F-05 | §F-04, §F-06 |
-| Mesh Network | §F-12 | §F-13, §F-14, §5.x |
-| WASM Sandbox | §F-11 | §6.x (TERA-MKT) |
-| License | §F-22 | §13, §8.4 |
-| CRDT Sync | §F-14 | §5.x, §11.x |
-| EMDP | §12 | §F-12, §5.1 |
-| AI Safety | §9.4 | §F-23 |
-| **AI Hybrid Architecture** | **§F-23** | **§9.4, §3.7, §5.7, §F-04, §F-05** |
-| Failure Handling | §10 | §F-xx Security Notes |
-| Observability | §16 | §12.x, §9.x |
+| Topic                      | Primary Section | Related Sections                   |
+| -------------------------- | --------------- | ---------------------------------- |
+| Key Management             | §F-04           | §F-01, §9.1, §13                   |
+| MLS E2EE                   | §F-05           | §F-04, §F-06                       |
+| Mesh Network               | §F-12           | §F-13, §F-14, §5.x                 |
+| WASM Sandbox               | §F-11           | §6.x (TERA-MKT)                    |
+| License                    | §F-22           | §13, §8.4                          |
+| CRDT Sync                  | §F-14           | §5.x, §11.x                        |
+| EMDP                       | §12             | §F-12, §5.1                        |
+| AI Safety                  | §9.4            | §F-23                              |
+| **AI Hybrid Architecture** | **§F-23**       | **§9.4, §3.7, §5.7, §F-04, §F-05** |
+| Failure Handling           | §10             | §F-xx Security Notes               |
+| Observability              | §16             | §12.x, §9.x                        |
 
 ### 17.3 Out-of-Scope References
 
-| Topic | Tài liệu |
-|-------|---------|
-| Client IPC bridges, OS hooks, WASM runtime client-side, AI Worker process OS integration | → TERA-FEAT |
-| UI rendering, Glassmorphism, Animation states | → TERA-DESIGN |
-| User flows, RBAC, Admin/User actions | → TERA-FUNC |
-| Plugin lifecycle, ABI versioning, Publisher rules | → TERA-MKT |
-| Chaos Engineering test scenarios | → TERA-TEST |
-| Business model, pricing, GTM | → TERA-BIZ |
+| Topic                                                                                    | Tài liệu      |
+| ---------------------------------------------------------------------------------------- | ------------- |
+| Client IPC bridges, OS hooks, WASM runtime client-side, AI Worker process OS integration | → TERA-FEAT   |
+| UI rendering, Glassmorphism, Animation states                                            | → TERA-DESIGN |
+| User flows, RBAC, Admin/User actions                                                     | → TERA-FUNC   |
+| Plugin lifecycle, ABI versioning, Publisher rules                                        | → TERA-MKT    |
+| Chaos Engineering test scenarios                                                         | → TERA-TEST   |
+| Business model, pricing, GTM                                                             | → TERA-BIZ    |
 
 ---
 
-## §18 AI ENCLAVE INFRASTRUCTURE *(NEW)*
+## §18 AI ENCLAVE INFRASTRUCTURE _(NEW)_
 
 > Đây là phần đặc tả infrastructure cho VPS Enclave cluster. Phần §F-23 đặc tả protocol; phần này đặc tả deployment.
 
@@ -2632,7 +2632,7 @@ load_balancer:
   backend_failover: immediate
 
 inference_nodes:
-  count: 2  # minimum HA
+  count: 2 # minimum HA
   per_node:
     vcpu: 8
     ram_gb: 32
@@ -2643,13 +2643,13 @@ inference_nodes:
 semantic_cache:
   type: Redis-compatible (Valkey/KeyDB)
   memory_gb: 4
-  persistence: disabled  # stateless by design
+  persistence: disabled # stateless by design
   eviction: allkeys-lru
 
 vector_db:
   type: Qdrant
-  memory_gb: 8  # for 10M vectors
-  persistence: enabled  # vectors are not secret; safe to persist
+  memory_gb: 8 # for 10M vectors
+  persistence: enabled # vectors are not secret; safe to persist
   replication: 2
 
 model_registry:
@@ -2669,7 +2669,7 @@ model_registry:
 
 **Network isolation:**
 
-```
+```text
 Client → mTLS (per-device cert) → Load Balancer → Inference Node
                                                         │
                                               Internal-only network
@@ -2723,7 +2723,7 @@ terachat-admin byom upload \
 
 The AI Enclave integrates with the existing OTEL stack defined in §16:
 
-```
+```text
 Inference Node → OTEL Collector → Prometheus → Grafana
                                 → Loki (aggregate logs, no prompt content)
                                 → Tempo (trace IDs, not content)
@@ -2763,5 +2763,5 @@ Metrics emitted (Zero-Knowledge):
 
 ---
 
-*Xem → TERA-FEAT cho Client App-layer. Xem → TERA-FUNC cho Product flows.*
-*AI Hybrid Architecture: §F-23 (protocol) + §18 (infrastructure) + TERA-FEAT §F-10 (client integration).*
+_Xem → TERA-FEAT cho Client App-layer. Xem → TERA-FUNC cho Product flows._
+_AI Hybrid Architecture: §F-23 (protocol) + §18 (infrastructure) + TERA-FEAT §F-10 (client integration)._

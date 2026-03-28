@@ -1,0 +1,70 @@
+# ==========================================
+# TeraChat Core - .gitignore
+# ==========================================
+
+# ------------------------------------------
+# 1. Nội bộ 
+# ------------------------------------------
+# Môi trường ảo Python
+.venv
+venv/
+env/
+
+# File hệ thống macOS
+.DS_Store
+
+# Cấu hình Agents, System Prompts và quy tắc nội bộ không public
+.agents/
+
+# Công cụ, scripts phát triển nội bộ
+Tools/
+
+# ------------------------------------------
+# 2. Bảo mật & Cấu hình môi trường (QUAN TRỌNG)
+# ------------------------------------------
+# TUYỆT ĐỐI KHÔNG đưa file chứa API keys (OpenAI, Gemini, Database...) lên GitHub
+.env
+.env.local
+.env.*
+*.pem
+secrets/
+credentials.json
+
+# ------------------------------------------
+# 3. Python Cache & Build (Sinh ra trong lúc chạy)
+# ------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Thư mục build và phân phối (nếu sau này đóng gói TeraChat)
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+.installed.cfg
+
+# ------------------------------------------
+# 4. Logs & Database cục bộ
+# ------------------------------------------
+# Bỏ qua các file log ghi lại lịch sử lỗi hoặc quá trình chat
+*.log
+logs/
+
+# Bỏ qua database cục bộ (nếu dùng SQLite để test)
+*.sqlite3
+*.db
+*.db-journal
+
+# ------------------------------------------
+# 5. Cấu hình IDE / Text Editors (Của từng Dev)
+# ------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+.pyre/
